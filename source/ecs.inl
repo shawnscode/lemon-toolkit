@@ -262,6 +262,7 @@ INLINE void EntityManager::accomodate_entity(uint32_t index)
     {
         m_components_mask.resize(index+1);
         m_versions.resize(index+1);
+        m_usages.resize(index+1);
         for( auto p : m_components_pool )
             if( p ) p->resize(index+1);
     }
@@ -286,7 +287,10 @@ ObjectChunksTrait<T>* EntityManager::get_chunks()
 
 INLINE bool EntityManager::is_valid(Entity::Uid id) const
 {
-    return id.index() < m_components_mask.size() && m_versions[id.index()] == id.version();
+    return
+        id.index() < m_versions.size() &&
+        m_usages[id.index()] &&
+        m_versions[id.index()] == id.version();
 }
 
 INLINE bool EntityManager::is_valid(Entity::Uid id, const ComponentMask mask) const
@@ -297,7 +301,8 @@ INLINE bool EntityManager::is_valid(Entity::Uid id, const ComponentMask mask) co
 INLINE void EntityManager::assert_valid(Entity::Uid id) const
 {
     assert( id.index() < m_components_mask.size() && "[ECS] Entity::Uid ID outside entity vector range." );
-    assert( m_versions[id.index()] == id.version() && "[ECS] attempt to access Entity via a stale Entity::Uid.");
+    assert( m_usages[id.index()] && "[ECS] attempt to access a invalid Entity." );
+    assert( m_versions[id.index()] == id.version() && "[ECS] attempt to access Entity via a stale Entity::Uid." );
 }
 
 INLINE Entity EntityManager::get(Entity::Uid id)

@@ -76,6 +76,7 @@ Entity EntityManager::create()
         version = m_versions[index];
     }
 
+    m_usages[index] = true;
     auto entity = Entity(this, Entity::Uid(index, version));
     return entity;
 }
@@ -118,6 +119,7 @@ void EntityManager::erase(Entity::Uid id)
 
     m_components_mask[index].reset();
     m_versions[index] ++;
+    m_usages[index] = false;
     m_freeslots.push_back(index);
 }
 

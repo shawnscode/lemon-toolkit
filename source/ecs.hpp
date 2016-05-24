@@ -235,6 +235,7 @@ private:
     // bitmask of components associated with each entity.
     // the index into the vector is the Entity::Uid.
     std::vector<ComponentMask> m_components_mask;
+    std::vector<bool> m_usages;
     // entity version numbers. incremented each time an entity is destroyed
     std::vector<uint32_t> m_versions;
     // list of available entity slots
