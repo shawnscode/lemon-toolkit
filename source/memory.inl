@@ -1,21 +1,21 @@
 // INCLUDED METHODS OF POOL
 
-INLINE size_t GenericPool::size() const
+INLINE size_t MemoryChunks::size() const
 {
     return m_size;
 }
 
-INLINE size_t GenericPool::capacity() const
+INLINE size_t MemoryChunks::capacity() const
 {
     return m_capacity;
 }
 
-INLINE size_t GenericPool::chunks() const
+INLINE size_t MemoryChunks::chunks() const
 {
     return m_blocks.size();
 }
 
-INLINE void GenericPool::expand(size_t n)
+INLINE void MemoryChunks::resize(size_t n)
 {
     if( n >= m_size )
     {
@@ -24,7 +24,7 @@ INLINE void GenericPool::expand(size_t n)
     }
 }
 
-INLINE void GenericPool::reserve(size_t n)
+INLINE void MemoryChunks::reserve(size_t n)
 {
     while( m_capacity < n )
     {
@@ -34,13 +34,13 @@ INLINE void GenericPool::reserve(size_t n)
     }
 }
 
-INLINE void* GenericPool::get(size_t n)
+INLINE void* MemoryChunks::get(size_t n)
 {
     assert( n < m_size );
     return m_blocks[n / m_chunk_size] + (n % m_chunk_size) * m_element_size;
 }
 
-INLINE const void* GenericPool::get(size_t n) const
+INLINE const void* MemoryChunks::get(size_t n) const
 {
     assert( n < m_size );
     return m_blocks[n / m_chunk_size] + (n % m_chunk_size) * m_element_size;

@@ -45,7 +45,7 @@ void EntityManager::reset()
         for( auto j=0; j<m_components_pool.size(); j++ )
         {
             auto p = m_components_pool[j];
-            if( p != nullptr && mask.test(j) ) p->erase(i);
+            if( p != nullptr && mask.test(j) ) p->destruct(i);
         }
     }
 
@@ -85,13 +85,15 @@ Entity EntityManager::create_from(Entity rh)
     rh.assert_valid();
 
     auto clone  = create();
+    auto to     = clone.get_uid().index();
+
     auto mask   = rh.get_components_mask();
-    // for( auto i=0; i<m_components_pool.size(); i++ )
-    // {
-    //     auto p = m_components_pool[i];
-    //     if( p && mask.test(i) )
-    //         clone.add_component(rh.get_component().get());
-    // }
+    auto from   = rh.get_uid().index();
+    for( auto i=0; i<m_components_pool.size(); i++ )
+    {
+        auto p = m_components_pool[i];
+        if( p && mask.test(i) ) p->construct_from(from, to);
+    }
 
     return clone;
 }
@@ -106,7 +108,7 @@ void EntityManager::erase(Entity::Uid id)
     for( auto i=0; i<m_components_pool.size(); i++ )
     {
         auto p = m_components_pool[i];
-        if( p && mask.test(i) ) p->erase(index);
+        if( p && mask.test(i) ) p->destruct(index);
     }
 
     m_components_mask[index].reset();

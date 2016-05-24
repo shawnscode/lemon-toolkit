@@ -1,7 +1,7 @@
 #pragma once
 
 #include "flow2d.hpp"
-#include "pool.hpp"
+#include "memory.hpp"
 
 #include <bitset>
 #include <vector>
@@ -77,6 +77,7 @@ public:
     const static Uid INVALID;
 };
 
+// an iterator over a specified view with components of the entites in an EntityManager.
 struct EntityIterator : public std::iterator<std::input_iterator_tag, Entity::Uid>
 {
     EntityIterator(EntityManager* manager, uint32_t index);
@@ -139,6 +140,7 @@ template<typename T> struct ComponentHandle
     bool is_valid() const;
     void assert_valid() const;
     operator bool() const;
+
     // remove the component from its entity and destroy it.
     void dispose();
     // returns the entity associated with the component.
@@ -169,6 +171,8 @@ struct Component
     void operator delete(void* p);
     void operator delete[](void *p);
 
+protected:
+    friend class EntityManager;
     static Class s_class_counter;
 };
 
@@ -222,12 +226,12 @@ struct EntityManager
 
 private:
     void accomodate_entity(uint32_t);
-    template<typename T> Pool<T>* accomodate_component();
+    template<typename T> ObjectChunksTrait<T>* get_chunks();
 
     uint32_t m_index_counter = 0;
     // each element in componets_pool corresponds to a Pool for a Component.
     // the index into the vector is the Component::get_class();
-    std::vector<GenericPool*> m_components_pool;
+    std::vector<ObjectChunks*> m_components_pool;
     // bitmask of components associated with each entity.
     // the index into the vector is the Entity::Uid.
     std::vector<ComponentMask> m_components_mask;

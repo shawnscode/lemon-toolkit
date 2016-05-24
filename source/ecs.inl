@@ -263,12 +263,12 @@ INLINE void EntityManager::accomodate_entity(uint32_t index)
         m_components_mask.resize(index+1);
         m_versions.resize(index+1);
         for( auto p : m_components_pool )
-            if( p ) p->expand(index+1);
+            if( p ) p->resize(index+1);
     }
 }
 
 template<typename T>
-Pool<T>* EntityManager::accomodate_component()
+ObjectChunksTrait<T>* EntityManager::get_chunks()
 {
     const auto cls = ComponentTrait<T>::get_class();
     if( m_components_pool.size() < (cls+1) )
@@ -276,12 +276,12 @@ Pool<T>* EntityManager::accomodate_component()
 
     if( m_components_pool[cls] == nullptr )
     {
-        auto pool = new Pool<T>();
-        pool->expand(m_index_counter);
-        m_components_pool[cls] = pool;
+        auto chunks = new ObjectChunksTrait<T>();
+        chunks->resize(m_index_counter);
+        m_components_pool[cls] = chunks;
     }
 
-    return static_cast<Pool<T>*>(m_components_pool[cls]);
+    return static_cast<ObjectChunksTrait<T>*>(m_components_pool[cls]);
 }
 
 INLINE bool EntityManager::is_valid(Entity::Uid id) const
@@ -329,9 +329,7 @@ ComponentHandle<T> EntityManager::add_component(Entity::Uid id, Args&& ... args)
     assert(!m_components_mask[id.index()].test(cls) && "[ECS] duplicated component to Entity.");
 
     // placement new into the component pool
-    auto pool = accomodate_component<T>();
-    ::new(pool->get(id.index())) T(std::forward<Args>(args) ...);
-
+    get_chunks<T>()->construct(id.index(), std::forward<Args>(args) ...);
     // set the bit mask for this component
     m_components_mask[id.index()].set(cls);
 
@@ -351,10 +349,8 @@ void EntityManager::remove_component(Entity::Uid id)
     {
         // remove the bit mask for this component
         m_components_mask[id.index()].reset(cls);
-
         // call destructor
-        auto pool = accomodate_component<T>();
-        pool->erase(index);
+        get_chunks<T>()->destruct(id.index());
     }
 }
 
