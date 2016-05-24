@@ -242,7 +242,7 @@ private:
     std::vector<uint32_t> m_freeslots;
 };
 
-#include "ecs.inl"
+#include "entity.inl"
 NS_FLOW2D_END
 
 namespace std

@@ -1,6 +1,5 @@
 #define CATCH_CONFIG_MAIN
 
-#include "ecs.hpp"
 #include <ostream>
 #include <set>
 #include <map>
@@ -8,6 +7,7 @@
 
 #include "catch.hpp"
 #include "flow2d.hpp"
+#include "entity.hpp"
 
 using namespace std;
 using namespace flow2d;
