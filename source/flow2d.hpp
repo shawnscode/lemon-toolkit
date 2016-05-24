@@ -13,4 +13,14 @@
 // FORWARD DECLARATIONS
 NS_FLOW2D_BEGIN
 
+#define INLINE inline
+
+// ENTITY COMPONENTS SYSTEM CONFIGS
+static const int32_t kEntMaxComponents = 64;
+
+template<typename T> struct Component;
+template<typename T> struct ComponentHandle;
+struct Entity;
+struct EntityManager;
+
 NS_FLOW2D_END
