@@ -89,10 +89,15 @@ Entity EntityManager::create_from(Entity rh)
 
     auto mask   = rh.get_components_mask();
     auto from   = rh.get_uid().index();
+
     for( auto i=0; i<m_components_pool.size(); i++ )
     {
         auto p = m_components_pool[i];
-        if( p && mask.test(i) ) p->construct_from(from, to);
+        if( p && mask.test(i) )
+        {
+            p->construct_from(from, to);
+            m_components_mask[to].set(i);
+        }
     }
 
     return clone;
