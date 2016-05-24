@@ -18,9 +18,14 @@ NS_FLOW2D_BEGIN
 // ENTITY COMPONENTS SYSTEM CONFIGS
 static const int32_t kEntMaxComponents = 64;
 
-template<typename T> struct Component;
+struct Component;
+template<typename T> struct ComponentTrait;
 template<typename T> struct ComponentHandle;
+
 struct Entity;
+struct EntityIterator;
+struct EntityView;
+template<typename ...T> struct EntityViewTrait;
 struct EntityManager;
 
 NS_FLOW2D_END

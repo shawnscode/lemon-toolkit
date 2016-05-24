@@ -12,6 +12,9 @@ NS_FLOW2D_BEGIN
 
 typedef std::bitset<kEntMaxComponents> ComponentMask;
 
+// a convenience handle around an Entity::Uid.
+// if an entity is destroyed, any copies will be invalidated. use is_valid() to
+// check for validity before using.
 struct Entity
 {
     struct Uid
@@ -49,6 +52,7 @@ struct Entity
     template<typename T, typename ... Args> ComponentHandle<T> add_component(Args && ... args);
     template<typename T> ComponentHandle<T> add_component(const T&);
     template<typename T> ComponentHandle<T> get_component();
+    template<typename ... T> std::tuple<ComponentHandle<T>...> get_components();
     template<typename T> void remove_component();
     template<typename T> bool has_component() const;
 
@@ -62,6 +66,7 @@ struct Entity
 
 private:
     friend class EntityManager;
+    friend class EntityIterator;
 
     Entity(EntityManager*, Entity::Uid);
 
@@ -72,6 +77,53 @@ public:
     const static Uid INVALID;
 };
 
+struct EntityIterator : public std::iterator<std::input_iterator_tag, Entity::Uid>
+{
+    EntityIterator(EntityManager* manager, uint32_t index);
+    EntityIterator(EntityManager* manager, const ComponentMask mask, uint32_t index);
+
+    EntityIterator& operator ++ ();
+    bool            operator == (const EntityIterator&) const;
+    bool            operator != (const EntityIterator&) const;
+    Entity          operator * ();
+    const Entity    operator * () const;
+
+protected:
+    void next();
+    bool predicate() const;
+    bool is_finished() const;
+
+    EntityManager*  m_manager;
+    ComponentMask   m_mask;
+    uint32_t        m_current_cursor;
+    size_t          m_capacity;
+};
+
+struct EntityView
+{
+    EntityIterator begin();
+    EntityIterator end();
+    const EntityIterator begin() const;
+    const EntityIterator end() const;
+
+protected:
+    friend class EntityManager;
+    explicit EntityView(EntityManager* manager, ComponentMask mask = ComponentMask());
+
+    EntityManager*  m_manager;
+    ComponentMask   m_mask;
+};
+
+template<typename ... T>
+struct EntityViewTrait : public EntityView
+{
+    void each(std::function<void(Entity, T&...)>);
+
+protected:
+    friend class EntityManager;
+    explicit EntityViewTrait(EntityManager*);
+};
+
 // a ComponentHandle is a wrapper around an instance of a component,
 // it provides safe access to components. the handle will be invalidated
 // under the following conditions:
@@ -79,7 +131,7 @@ public:
 // 2. if its host entity is destroyed.
 template<typename T> struct ComponentHandle
 {
-    typedef T ComponentType;
+    typedef T type;
 
     ComponentHandle() {}
 
@@ -95,6 +147,8 @@ template<typename T> struct ComponentHandle
     // 
     T* operator -> ();
     const T* operator -> () const;
+    T* get();
+    const T* get() const;
 
     bool operator == (const ComponentHandle<T> &rh) const;
     bool operator != (const ComponentHandle<T> &rh) const;
@@ -107,7 +161,7 @@ private:
     Entity::Uid     m_ent       = Entity::INVALID;
 };
 
-struct ComponentTraits
+struct Component
 {
     typedef int32_t Class;
 
@@ -118,32 +172,53 @@ struct ComponentTraits
     static Class s_class_counter;
 };
 
-template<typename T> struct Component : public ComponentTraits
+template<typename T> struct ComponentTrait : public Component
 {
     typedef ComponentHandle<T> Handle;
-
-protected:
-    friend class EntityManager;
     static Class get_class();
 };
 
 struct EntityManager
 {
+    // non-copyable
+    EntityManager() = default;
+    EntityManager(const EntityManager&) = delete;
+    EntityManager& operator=(const EntityManager&) = delete;
+
+    ~EntityManager();
+
+    size_t  size() const;
+    size_t  capacity() const;
+    void    reset();
+
+    // check if the entity id is still valid
     bool    is_valid(Entity::Uid) const;
+    bool    is_valid(Entity::Uid, const ComponentMask mask) const;
     void    assert_valid(Entity::Uid) const;
     Entity  create();
+    Entity  create_from(Entity);
     Entity  get(Entity::Uid);
     void    erase(Entity::Uid);
-    size_t  size();
-    // void    reset();
+    Entity::Uid make_uid(uint32_t);
 
+    // assign a component to an Entity::Uid, passing through component constructor arguments.
     template<typename T, typename ... Args> ComponentHandle<T> add_component(Entity::Uid, Args && ... args);
+    // retrieve a component assigned to an Entity::Uid.
     template<typename T> ComponentHandle<T> get_component(Entity::Uid);
+    template<typename ... T> std::tuple<ComponentHandle<T> ...> get_components(Entity::Uid);
     template<typename T> T* get_component_ptr(Entity::Uid);
     template<typename T> const T* get_component_ptr(Entity::Uid) const;
+    // remove a component from an Entity::Uid.
     template<typename T> void remove_component(Entity::Uid);
-    template<typename T> bool has_component(Entity::Uid);
-    ComponentMask get_components_mask(Entity::Uid);
+    // check if an entity has a component.
+    template<typename T> bool has_component(Entity::Uid) const;
+    ComponentMask get_components_mask(Entity::Uid) const;
+
+    // find entities that have all of the specified components, returns a incremental iterator
+    template<typename T> ComponentMask get_components_mask() const;
+    template<typename T1, typename T2, typename ...Args> ComponentMask get_components_mask() const;
+    template<typename ... T> EntityViewTrait<T...> find_entities_with();
+    EntityView get_entities();
 
 private:
     void accomodate_entity(uint32_t);
@@ -164,3 +239,14 @@ private:
 
 #include "ecs.inl"
 NS_FLOW2D_END
+
+namespace std
+{
+    template<> struct hash<flow2d::Entity>
+    {
+        std::size_t operator() (const flow2d::Entity& entity) const
+        {
+            return static_cast<std::size_t>(entity.get_uid().index() ^ entity.get_uid().version());
+        }
+    };
+}
