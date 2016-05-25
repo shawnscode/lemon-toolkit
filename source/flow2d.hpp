@@ -11,14 +11,16 @@
 #include <functional>
 #include <memory>
 
-// FORWARD DECLARATIONS
 NS_FLOW2D_BEGIN
 
 #define INLINE inline
 
-// ENTITY COMPONENTS SYSTEM CONFIGS
+/// GLOBAL CONFIGS
 static const int32_t kEntMaxComponents = 64;
 
+/// FORWARD DECLARATIONS
+
+//- ENTITY COMPONENT SYSTEM
 struct Component;
 template<typename T> struct ComponentTrait;
 template<typename T> struct ComponentHandle;
@@ -28,5 +30,10 @@ struct EntityIterator;
 struct EntityView;
 template<typename ...T> struct EntityViewTrait;
 struct EntityManager;
+
+//- EVENT DISPATCH SYSTEM
+struct Event;
+template<typename T> struct EventTrait;
+struct EventManager;
 
 NS_FLOW2D_END

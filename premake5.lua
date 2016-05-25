@@ -18,7 +18,7 @@ workspace("flow2d")
         includedirs({ "source" })
         targetdir( "build/libs" )
 
-workspace("test")
+workspace("chore")
     configurations( "debug" )
     location( "build/test" )
     defines({ "DEBUG" })
@@ -30,7 +30,7 @@ workspace("test")
     buildoptions({"-std=c++11", "-stdlib=libc++"})
     targetdir( "build/bin" )
 
-    project( "ecs_test" )
+    project( "test" )
         links({ "flow2d"})
-        files({ "test/ecs_test.cpp" })
+        files({ "test/*_test.cpp" })
 
