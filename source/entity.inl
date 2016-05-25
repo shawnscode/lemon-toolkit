@@ -272,7 +272,7 @@ bool ComponentHandle<T>::operator != (const ComponentHandle<T>& rh) const
 
 // INCLUDED METHODS OF COMPONENT TRAITS
 template<typename T>
-Component::Class ComponentTrait<T>::get_class()
+Component::Class ComponentTrait<T>::type()
 {
     static Class cls = s_class_counter ++;
     assert(cls < kEntMaxComponents);
@@ -295,7 +295,7 @@ INLINE void EntityManager::accomodate_entity(uint32_t index)
 template<typename T>
 ObjectChunksTrait<T>* EntityManager::get_chunks()
 {
-    const auto cls = ComponentTrait<T>::get_class();
+    const auto cls = ComponentTrait<T>::type();
     if( m_components_pool.size() < (cls+1) )
         m_components_pool.resize((cls+1), nullptr);
 
@@ -354,7 +354,7 @@ ComponentHandle<T> EntityManager::add_component(Entity::Uid id, Args&& ... args)
 {
     assert_valid(id);
 
-    const auto cls = ComponentTrait<T>::get_class();
+    const auto cls = ComponentTrait<T>::type();
     assert(!m_components_mask[id.index()].test(cls) && "[ECS] duplicated component to Entity.");
 
     // placement new into the component pool
@@ -372,7 +372,7 @@ void EntityManager::remove_component(Entity::Uid id)
 {
     assert_valid(id);
 
-    const auto cls = ComponentTrait<T>::get_class();
+    const auto cls = ComponentTrait<T>::type();
     const uint32_t index = id.index();
 
     if( m_components_mask[id.index()].test(cls) )
@@ -390,7 +390,7 @@ bool EntityManager::has_component(Entity::Uid id) const
 {
     assert_valid(id);
 
-    const auto cls = ComponentTrait<T>::get_class();
+    const auto cls = ComponentTrait<T>::type();
     return m_components_mask[id.index()].test(cls);
 }
 
@@ -399,7 +399,7 @@ ComponentHandle<T> EntityManager::get_component(Entity::Uid id)
 {
     assert_valid(id);
 
-    const auto cls = ComponentTrait<T>::get_class();
+    const auto cls = ComponentTrait<T>::type();
 
     if( cls >= m_components_pool.size() )
         return ComponentHandle<T>();
@@ -418,7 +418,7 @@ T* EntityManager::get_component_ptr(Entity::Uid id)
 {
     assert_valid(id);
 
-    const auto cls = ComponentTrait<T>::get_class();
+    const auto cls = ComponentTrait<T>::type();
     if( cls >= m_components_pool.size() )
         return nullptr;
 
@@ -430,7 +430,7 @@ const T* EntityManager::get_component_ptr(Entity::Uid id) const
 {
     assert_valid(id);
 
-    const auto cls = ComponentTrait<T>::get_class();
+    const auto cls = ComponentTrait<T>::type();
     if( cls >= m_components_pool.size() )
         return nullptr;
 
@@ -448,7 +448,7 @@ template<typename T>
 ComponentMask EntityManager::get_components_mask() const
 {
     ComponentMask mask;
-    mask.set(ComponentTrait<T>::get_class());
+    mask.set(ComponentTrait<T>::type());
     return mask;
 }
 

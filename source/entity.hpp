@@ -183,7 +183,7 @@ protected:
 template<typename T> struct ComponentTrait : public Component
 {
     typedef ComponentHandle<T> Handle;
-    static Class get_class();
+    static Class type();
 };
 
 struct EntityManager
@@ -235,7 +235,7 @@ private:
     EventManager& m_event_manager;
     uint32_t m_index_counter = 0;
     // each element in componets_pool corresponds to a Pool for a Component.
-    // the index into the vector is the Component::get_class();
+    // the index into the vector is the Component::type();
     std::vector<ObjectChunks*> m_components_pool;
     // bitmask of components associated with each entity.
     // the index into the vector is the Entity::Uid.

@@ -146,7 +146,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentConstruction")
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentIdsDiffer")
 {
-    REQUIRE( ComponentTrait<Position>::get_class() != ComponentTrait<Direction>::get_class() );
+    REQUIRE( ComponentTrait<Position>::type() != ComponentTrait<Direction>::type() );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentHandleInvalidatedWhenEntityDestroyed") {
