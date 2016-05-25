@@ -146,12 +146,15 @@ template<typename T> struct ComponentHandle
     // returns the entity associated with the component.
     Entity entity();
 
-    // 
-    T* operator -> ();
-    const T* operator -> () const;
+    //
     T* get();
     const T* get() const;
+    template<typename T1, typename ... Args> ComponentHandle<T1> add_component(Args && ... args);
+    template<typename T1> ComponentHandle<T1> add_component(const T&);
+    template<typename T1> ComponentHandle<T1> get_component();
 
+    T* operator -> ();
+    const T* operator -> () const;
     bool operator == (const ComponentHandle<T> &rh) const;
     bool operator != (const ComponentHandle<T> &rh) const;
 
@@ -159,8 +162,8 @@ private:
     friend class EntityManager;
     ComponentHandle(EntityManager*, Entity::Uid);
 
-    EntityManager*  m_manager   = nullptr;
-    Entity::Uid     m_ent       = Entity::INVALID;
+    EntityManager*  m_manager       = nullptr;
+    Entity::Uid     m_identifier    = Entity::INVALID;
 };
 
 struct Component

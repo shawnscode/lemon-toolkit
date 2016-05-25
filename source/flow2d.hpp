@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <cassert>
 #include <functional>
+#include <memory>
 
 // FORWARD DECLARATIONS
 NS_FLOW2D_BEGIN

@@ -1,5 +1,6 @@
-#include "flow2d.hpp"
+#pragma once
 
+#include "flow2d.hpp"
 #include <vector>
 
 NS_FLOW2D_BEGIN

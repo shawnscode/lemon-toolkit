@@ -172,12 +172,12 @@ EntityViewTrait<T...>::EntityViewTrait(EntityManager* manager)
 // INCLUDED METHODS OF COMPONENT HANDLE
 template<typename T>
 ComponentHandle<T>::ComponentHandle(EntityManager* manager, Entity::Uid uid)
-: m_manager(manager), m_ent(uid){}
+: m_manager(manager), m_identifier(uid){}
 
 template<typename T>
 bool ComponentHandle<T>::is_valid() const
 {
-    return m_manager && m_manager->is_valid(m_ent) && m_manager->has_component<T>(m_ent);
+    return m_manager && m_manager->is_valid(m_identifier) && m_manager->has_component<T>(m_identifier);
 }
 
 template<typename T>
@@ -196,48 +196,72 @@ template<typename T>
 void ComponentHandle<T>::dispose()
 {
     assert_valid();
-    m_manager->remove_component<T>(m_ent);
+    m_manager->remove_component<T>(m_identifier);
 }
 
 template<typename T>
 Entity ComponentHandle<T>::entity()
 {
     assert_valid();
-    return m_manager->get(m_ent);
-}
-
-template<typename T>
-T* ComponentHandle<T>::operator -> ()
-{
-    assert_valid();
-    return m_manager->get_component_ptr<T>(m_ent);
-}
-
-template<typename T>
-const T* ComponentHandle<T>::operator -> () const
-{
-    assert_valid();
-    return m_manager->get_component_ptr<T>(m_ent);
+    return m_manager->get(m_identifier);
 }
 
 template<typename T>
 T* ComponentHandle<T>::get()
 {
     assert_valid();
-    return m_manager->get_component_ptr<T>(m_ent);
+    return m_manager->get_component_ptr<T>(m_identifier);
 }
 
 template<typename T>
 const T* ComponentHandle<T>::get() const
 {
     assert_valid();
-    return m_manager->get_component_ptr<T>(m_ent);
+    return m_manager->get_component_ptr<T>(m_identifier);
+}
+
+template<typename T>
+template<typename T1, typename ... Args>
+ComponentHandle<T1> ComponentHandle<T>::add_component(Args && ... args)
+{
+    assert_valid();
+    return m_manager->add_component<T1>(m_identifier, std::forward<Args>(args)...);
+}
+
+template<typename T>
+template<typename T1>
+ComponentHandle<T1> ComponentHandle<T>::add_component(const T& rh)
+{
+    assert_valid();
+    return m_manager->add_component<T1>(m_identifier, std::forward<const T&>(rh));
+}
+
+template<typename T>
+template<typename T1>
+ComponentHandle<T1> ComponentHandle<T>::get_component()
+{
+    assert_valid();
+    return m_manager->get_component<T1>(m_identifier);
+}
+
+template<typename T>
+T* ComponentHandle<T>::operator -> ()
+{
+    assert_valid();
+    return m_manager->get_component_ptr<T>(m_identifier);
+}
+
+template<typename T>
+const T* ComponentHandle<T>::operator -> () const
+{
+    assert_valid();
+    return m_manager->get_component_ptr<T>(m_identifier);
 }
 
 template<typename T>
 bool ComponentHandle<T>::operator == (const ComponentHandle<T>& rh) const
 {
-    return m_manager == rh.m_manager && m_ent == rh.m_ent;
+    return m_manager == rh.m_manager && m_identifier == rh.m_identifier;
 }
 
 template<typename T>
@@ -393,7 +417,6 @@ T* EntityManager::get_component_ptr(Entity::Uid id)
     assert_valid(id);
 
     const auto cls = ComponentTrait<T>::get_class();
-
     if( cls >= m_components_pool.size() )
         return nullptr;
 
@@ -406,7 +429,6 @@ const T* EntityManager::get_component_ptr(Entity::Uid id) const
     assert_valid(id);
 
     const auto cls = ComponentTrait<T>::get_class();
-
     if( cls >= m_components_pool.size() )
         return nullptr;
 
