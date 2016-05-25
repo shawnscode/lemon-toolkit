@@ -45,7 +45,9 @@ struct Direction
 
 struct EntityManagerFixture
 {
-    EntityManager em;
+    EntityManagerFixture() : em(event) {}
+    EntityManager   em;
+    EventManager    event;
 };
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestCreateEntity")
@@ -360,7 +362,8 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
 {
     bool freed = false;
     {
-        EntityManager em;
+        EventManager es;
+        EntityManager em(es);
         auto e = em.create();
         e.add_component<FreedSentinel>(freed);
         REQUIRE( !freed );

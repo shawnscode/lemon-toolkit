@@ -2,6 +2,7 @@
 
 #include "flow2d.hpp"
 #include "memory.hpp"
+#include "event.hpp"
 
 #include <bitset>
 #include <vector>
@@ -188,7 +189,7 @@ template<typename T> struct ComponentTrait : public Component
 struct EntityManager
 {
     // non-copyable
-    EntityManager() = default;
+    EntityManager(EventManager& manager) : m_event_manager(manager) {}
     EntityManager(const EntityManager&) = delete;
     EntityManager& operator=(const EntityManager&) = delete;
 
@@ -231,6 +232,7 @@ private:
     void accomodate_entity(uint32_t);
     template<typename T> ObjectChunksTrait<T>* get_chunks();
 
+    EventManager& m_event_manager;
     uint32_t m_index_counter = 0;
     // each element in componets_pool corresponds to a Pool for a Component.
     // the index into the vector is the Component::get_class();
@@ -243,6 +245,37 @@ private:
     std::vector<uint32_t> m_versions;
     // list of available entity slots
     std::vector<uint32_t> m_freeslots;
+};
+
+/// dispatched events during the whole life of event manager
+struct EvtEntityCreated
+{
+    explicit EvtEntityCreated(Entity entity) : entity(entity) {}
+    Entity entity;
+};
+
+struct EvtEntityDisposed
+{
+    explicit EvtEntityDisposed(Entity entity) : entity(entity) {}
+    Entity entity;
+};
+
+template<typename T> struct EvtComponentAdded
+{
+    EvtComponentAdded(Entity entity, ComponentHandle<T> component)
+    : entity(entity), component(component) {}
+
+    Entity entity;
+    ComponentHandle<T> component;
+};
+
+template<typename T> struct EvtComponentRemoved
+{
+    EvtComponentRemoved(Entity entity, ComponentHandle<T> component)
+    : entity(entity), component(component) {}
+
+    Entity entity;
+    ComponentHandle<T> component;
 };
 
 #include "entity.inl"

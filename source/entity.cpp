@@ -78,6 +78,7 @@ Entity EntityManager::create()
 
     m_usages[index] = true;
     auto entity = Entity(this, Entity::Uid(index, version));
+    m_event_manager.emit<EvtEntityCreated>(entity);
     return entity;
 }
 
@@ -107,6 +108,7 @@ Entity EntityManager::create_from(Entity rh)
 void EntityManager::erase(Entity::Uid id)
 {
     assert_valid(id);
+    m_event_manager.emit<EvtEntityDisposed>(Entity(this, id));
 
     const uint32_t index = id.index();
     const auto mask = m_components_mask[index];

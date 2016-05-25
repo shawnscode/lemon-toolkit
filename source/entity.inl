@@ -363,6 +363,7 @@ ComponentHandle<T> EntityManager::add_component(Entity::Uid id, Args&& ... args)
     m_components_mask[id.index()].set(cls);
 
     auto handle = ComponentHandle<T>(this, id);
+    m_event_manager.emit<EvtComponentAdded<T>>(Entity(this, id), handle);
     return handle;
 }
 
@@ -376,6 +377,7 @@ void EntityManager::remove_component(Entity::Uid id)
 
     if( m_components_mask[id.index()].test(cls) )
     {
+        m_event_manager.emit<EvtComponentRemoved<T>>(Entity(this, id), ComponentHandle<T>(this, id));
         // remove the bit mask for this component
         m_components_mask[id.index()].reset(cls);
         // call destructor
