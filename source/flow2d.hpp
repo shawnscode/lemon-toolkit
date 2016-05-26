@@ -8,6 +8,7 @@
 // PRECOMPILED HEADERS
 #include <cstdint>
 #include <cassert>
+#include <cstring>
 #include <functional>
 #include <memory>
 
@@ -35,5 +36,10 @@ struct EntityManager;
 struct Event;
 template<typename T> struct EventTrait;
 struct EventManager;
+
+//- SCENE GRAPH SYSTEM
+struct Transform;
+struct SceneGraphSystem;
+struct ActionSystem;
 
 NS_FLOW2D_END
