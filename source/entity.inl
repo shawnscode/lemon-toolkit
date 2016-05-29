@@ -1,3 +1,6 @@
+// @date 2016/05/22
+// @author Mao Jingkai(oammix@gmail.com)
+
 // INCLUDED METHODS OF ENTITY
 INLINE bool Entity::is_valid() const
 {

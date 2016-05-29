@@ -1,3 +1,6 @@
+// @date 2016/05/24
+// @author Mao Jingkai(oammix@gmail.com)
+
 // INCLUDED METHODS OF POOL
 
 INLINE size_t MemoryChunks::size() const

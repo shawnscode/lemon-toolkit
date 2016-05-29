@@ -1,3 +1,6 @@
+// @date 2016/05/24
+// @author Mao Jingkai(oammix@gmail.com)
+
 #include "memory.hpp"
 
 NS_FLOW2D_BEGIN

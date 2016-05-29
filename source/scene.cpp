@@ -1,3 +1,6 @@
+// @date 2016/05/29
+// @author Mao Jingkai(oammix@gmail.com)
+
 #include "scene.hpp"
 #include "event.hpp"
 #include "transform.hpp"

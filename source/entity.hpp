@@ -1,3 +1,6 @@
+// @date 2016/05/22
+// @author Mao Jingkai(oammix@gmail.com)
+
 #pragma once
 
 #include "flow2d.hpp"
