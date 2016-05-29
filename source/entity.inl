@@ -207,18 +207,18 @@ Entity ComponentHandle<T>::entity()
 }
 
 template<typename T>
-T* ComponentHandle<T>::get()
+T* ComponentHandle<T>::get() const
 {
     assert_valid();
     return m_manager->get_component_ptr<T>(m_identifier);
 }
 
-template<typename T>
-const T* ComponentHandle<T>::get() const
-{
-    assert_valid();
-    return m_manager->get_component_ptr<T>(m_identifier);
-}
+// template<typename T>
+// const T* ComponentHandle<T>::get() const
+// {
+//     assert_valid();
+//     return m_manager->get_component_ptr<T>(m_identifier);
+// }
 
 template<typename T>
 template<typename T1, typename ... Args>
@@ -245,18 +245,18 @@ ComponentHandle<T1> ComponentHandle<T>::get_component()
 }
 
 template<typename T>
-T* ComponentHandle<T>::operator -> ()
+T* ComponentHandle<T>::operator -> () const
 {
     assert_valid();
     return m_manager->get_component_ptr<T>(m_identifier);
 }
 
-template<typename T>
-const T* ComponentHandle<T>::operator -> () const
-{
-    assert_valid();
-    return m_manager->get_component_ptr<T>(m_identifier);
-}
+// template<typename T>
+// const T* ComponentHandle<T>::operator -> () const
+// {
+//     assert_valid();
+//     return m_manager->get_component_ptr<T>(m_identifier);
+// }
 
 template<typename T>
 bool ComponentHandle<T>::operator == (const ComponentHandle<T>& rh) const
@@ -272,9 +272,9 @@ bool ComponentHandle<T>::operator != (const ComponentHandle<T>& rh) const
 
 // INCLUDED METHODS OF COMPONENT TRAITS
 template<typename T>
-Component::Class ComponentTrait<T>::type()
+Component::Type ComponentTrait<T>::type()
 {
-    static Class cls = s_class_counter ++;
+    static Type cls = s_class_counter ++;
     assert(cls < kEntMaxComponents);
     return cls;
 }

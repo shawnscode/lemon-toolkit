@@ -140,3 +140,9 @@ INLINE const char* Transform::get_name() const
 {
     return m_name.c_str();
 }
+
+INLINE void Transform::set_scene(SceneSystem* scene)
+{
+    assert( m_scene == nullptr && "[TRANSFORM] transform has already been attached to scene.");
+    m_scene = scene;
+}

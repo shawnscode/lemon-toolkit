@@ -2,6 +2,7 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include "transform.hpp"
+#include "scene.hpp"
 
 NS_FLOW2D_BEGIN
 
@@ -30,6 +31,20 @@ Transform::Transform(Transform* parent, const glm::vec2& position, const glm::ve
 
 Transform* Transform::set_parent(Transform* parent)
 {
+    detach_from_parent();
+    if( parent == nullptr && m_scene != nullptr )
+        parent = m_scene->root();
+
+    m_parent = parent;
+    m_next_sibling = m_parent->m_first_child;
+    if( m_next_sibling ) m_next_sibling->m_prev_sibling = this;
+    m_parent->m_first_child = this;
+
+    return this;
+}
+
+void Transform::detach_from_parent()
+{
     if( m_parent != nullptr )
     {
         if( m_parent->m_first_child == this )
@@ -40,13 +55,6 @@ Transform* Transform::set_parent(Transform* parent)
             m_parent->m_first_child = m_next_sibling;
         }
     }
-
-    m_parent = parent;
-    m_next_sibling = m_parent->m_first_child;
-    if( m_next_sibling ) m_next_sibling->m_prev_sibling = this;
-    m_parent->m_first_child = this;
-
-    return this;
 }
 
 Transform* Transform::find_with_name(const char* name)

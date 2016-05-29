@@ -87,6 +87,10 @@ struct Transform
 
 protected:
     friend class TransformIterator;
+    friend class SceneSystem;
+
+    void set_scene(SceneSystem*);
+    void detach_from_parent();
 
     glm::vec2   m_position;
     glm::vec2   m_scale;
@@ -94,8 +98,11 @@ protected:
 
     mutable bool        m_update_transform;
     mutable glm::mat3   m_transform;
+    mutable bool        m_update_decents;
+    mutable glm::mat3   m_transform_to_world;
 
     std::string     m_name;
+    SceneSystem*    m_scene = nullptr;
     Transform*      m_parent = nullptr;
     Transform*      m_first_child = nullptr;
     Transform*      m_next_sibling = nullptr;

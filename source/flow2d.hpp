@@ -32,6 +32,10 @@ struct EntityView;
 template<typename ...T> struct EntityViewTrait;
 struct EntityManager;
 
+struct System;
+template<typename T> struct SystemTrait;
+struct SystemManager;
+
 //- EVENT DISPATCH SYSTEM
 struct Event;
 template<typename T> struct EventTrait;
@@ -39,7 +43,7 @@ struct EventManager;
 
 //- SCENE GRAPH SYSTEM
 struct Transform;
-struct SceneGraphSystem;
+struct SceneSystem;
 struct ActionSystem;
 
 NS_FLOW2D_END

@@ -148,14 +148,12 @@ template<typename T> struct ComponentHandle
     Entity entity();
 
     //
-    T* get();
-    const T* get() const;
+    T* get() const;
     template<typename T1, typename ... Args> ComponentHandle<T1> add_component(Args && ... args);
     template<typename T1> ComponentHandle<T1> add_component(const T&);
     template<typename T1> ComponentHandle<T1> get_component();
 
-    T* operator -> ();
-    const T* operator -> () const;
+    T* operator -> () const;
     bool operator == (const ComponentHandle<T> &rh) const;
     bool operator != (const ComponentHandle<T> &rh) const;
 
@@ -169,7 +167,7 @@ private:
 
 struct Component
 {
-    typedef int32_t Class;
+    typedef int32_t Type;
 
     // component memory is always managed by entity manager.
     void operator delete(void* p);
@@ -177,13 +175,13 @@ struct Component
 
 protected:
     friend class EntityManager;
-    static Class s_class_counter;
+    static Type s_class_counter;
 };
 
 template<typename T> struct ComponentTrait : public Component
 {
     typedef ComponentHandle<T> Handle;
-    static Class type();
+    static Type type();
 };
 
 struct EntityManager

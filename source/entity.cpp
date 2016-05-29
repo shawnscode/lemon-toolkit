@@ -19,7 +19,7 @@ EntityView::EntityView(EntityManager* manager, ComponentMask mask)
 : m_manager(manager), m_mask(mask)
 {}
 
-Component::Class Component::s_class_counter = 0;
+Component::Type Component::s_class_counter = 0;
 
 void Component::operator delete(void *)
 {
