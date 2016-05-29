@@ -18,22 +18,19 @@ SceneSystem::~SceneSystem()
     m_transform = nullptr;
 }
 
-void SceneSystem::attach(SystemManager& sys)
+void SceneSystem::attach()
 {
-    // sys.ensure<RequireComponents<Transform, SpatialNode>>();
-    auto& evt = sys.get_event_manager();
-    evt.subscribe<EvtComponentAdded<Transform>>(*this);
-    evt.subscribe<EvtComponentRemoved<Transform>>(*this);
+    event().subscribe<EvtComponentAdded<Transform>>(*this);
+    event().subscribe<EvtComponentRemoved<Transform>>(*this);
 }
 
-void SceneSystem::detach(SystemManager& sys)
+void SceneSystem::detach()
 {
-    auto& evt = sys.get_event_manager();
-    evt.unsubscribe<EvtComponentAdded<Transform>>(*this);
-    evt.unsubscribe<EvtComponentRemoved<Transform>>(*this);
+    event().unsubscribe<EvtComponentAdded<Transform>>(*this);
+    event().unsubscribe<EvtComponentRemoved<Transform>>(*this);
 }
 
-void SceneSystem::update(SystemManager& sys, float)
+void SceneSystem::update(float)
 {
 }
 

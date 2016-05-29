@@ -4,10 +4,12 @@
 #include <set>
 #include <map>
 #include <vector>
+#include <string>
 
 #include "catch.hpp"
 #include "flow2d.hpp"
 #include "entity.hpp"
+#include "system.hpp"
 
 using namespace std;
 using namespace flow2d;
@@ -45,9 +47,10 @@ struct Direction
 
 struct EntityManagerFixture
 {
-    EntityManagerFixture() : em(event) {}
+    EntityManagerFixture() : em(event), sys(em, event) {}
     EntityManager   em;
     EventManager    event;
+    SystemManager   sys;
 };
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestCreateEntity")
@@ -379,4 +382,113 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentDestructorCalledWhenEntityD
     REQUIRE( !freed );
     e.dispose();
     REQUIRE( freed );
+}
+
+struct Counter
+{
+    explicit Counter(int counter = 0) : counter(counter) {}
+    int counter;
+};
+
+struct MovementSystem : public SystemTrait<MovementSystem>
+{
+    explicit MovementSystem(string label = "") : label(label) {}
+
+    void update(float dt) override
+    {
+        entity().find_entities_with<Position, Direction>()
+                .each([&](Entity ent, Position& pos, Direction& dir)
+                {
+                    pos.x += dir.x;
+                    pos.y += dir.y;
+                });
+    }
+
+    std::string label;
+};
+
+struct CounterSystem : public SystemTrait<CounterSystem>
+{
+    void update(float dt) override
+    {
+        entity().find_entities_with<Counter>()
+                .each([&](Entity ent, Counter& c)
+                {
+                    c.counter ++;
+                });
+    }
+};
+
+TEST_CASE_METHOD(EntityManagerFixture, "TestConstructSystemWithArgs")
+{
+    sys.add<MovementSystem>("movement");
+    REQUIRE("movement" == sys.get<MovementSystem>()->label);
+}
+
+TEST_CASE_METHOD(EntityManagerFixture, "TestApplySystem")
+{
+    std::vector<Entity> created_entities;
+    for (int i = 0; i < 150; ++i)
+    {
+        auto e = em.create();
+        created_entities.push_back(e);
+        if (i % 2 == 0) e.add_component<Position>(1, 2);
+        if (i % 3 == 0) e.add_component<Direction>(1, 1);
+        e.add_component<Counter>(0);
+    }
+
+    sys.add<MovementSystem>();
+    sys.update(0.0f);
+    for (auto entity : created_entities)
+    {
+        auto position = entity.get_component<Position>();
+        auto direction = entity.get_component<Direction>();
+
+        if (position && direction)
+        {
+            REQUIRE(2.0 == Approx(position->x));
+            REQUIRE(3.0 == Approx(position->y));
+        }
+        else if (position)
+        {
+            REQUIRE(1.0 == Approx(position->x));
+            REQUIRE(2.0 == Approx(position->y));
+        }
+    }
+}
+
+TEST_CASE_METHOD(EntityManagerFixture, "TestApplyAllSystems")
+{
+    std::vector<Entity> created_entities;
+    for (int i = 0; i < 150; ++i) {
+        auto e = em.create();
+        created_entities.push_back(e);
+        if (i % 2 == 0) e.add_component<Position>(1, 2);
+        if (i % 3 == 0) e.add_component<Direction>(1, 1);
+        e.add_component<Counter>(0);
+    }
+
+    sys.add<MovementSystem>();
+    sys.add<CounterSystem>();
+    sys.update(0.f);
+
+    for (auto entity : created_entities)
+    {
+        auto position   = entity.get_component<Position>();
+        auto direction  = entity.get_component<Direction>();
+        auto counter    = entity.get_component<Counter>();
+
+        if (position && direction)
+        {
+            REQUIRE(2.0 == Approx(position->x));
+            REQUIRE(3.0 == Approx(position->y));
+        }
+        else if (position)
+        {
+            REQUIRE(1.0 == Approx(position->x));
+            REQUIRE(2.0 == Approx(position->y));
+        }
+
+        REQUIRE( 1 == counter->counter );
+    }
 }

@@ -13,13 +13,23 @@ struct System
     typedef size_t Type;
 
     virtual ~System() {}
-    virtual void attach(SystemManager&) {}
-    virtual void detach(SystemManager&) {}
-    virtual void update(SystemManager&, float) {}
+    virtual void attach() {}
+    virtual void detach() {}
+    virtual void update(float) {}
+
+    void configure(EntityManager*, EventManager*, SystemManager*);
+    EntityManager&  entity();
+    EventManager&   event();
+    SystemManager&  system();
 
 protected:
     friend class SystemManager;
     static Type s_type_counter;
+
+private:
+    EntityManager*  m_entity_manager = nullptr;
+    EventManager*   m_event_manager  = nullptr;
+    SystemManager*  m_system_manager = nullptr;
 };
 
 template<typename T> struct SystemTrait : public System
@@ -32,8 +42,8 @@ template<typename T> struct SystemTrait : public System
 template<typename C, typename ... Args>
 struct RequireComponents : public SystemTrait<RequireComponents<C, Args...>>
 {
-    void attach(SystemManager&) override;
-    void detach(SystemManager&) override;
+    void attach() override;
+    void detach() override;
     void receive(const EvtComponentAdded<C>&);
 
 protected:
@@ -52,7 +62,6 @@ struct SystemManager
 
     EventManager&   get_event_manager();
     EntityManager&  get_entity_manger();
-    void            configure();
     void            update(float);
 
     template<typename S, typename ... Args> S* ensure(Args&& ... args);

@@ -3,6 +3,28 @@
 
 // INCLUDED METHODS OF SYSTEM MANAGER
 
+INLINE void System::configure(EntityManager* ent, EventManager* evt, SystemManager* sys)
+{
+    m_entity_manager = ent;
+    m_event_manager = evt;
+    m_system_manager = sys;
+}
+
+INLINE EntityManager& System::entity()
+{
+    return *m_entity_manager;
+}
+
+INLINE EventManager& System::event()
+{
+    return *m_event_manager;
+}
+
+INLINE SystemManager& System::system()
+{
+    return *m_system_manager;
+}
+
 template<typename T>
 System::Type SystemTrait<T>::type()
 {
@@ -11,17 +33,15 @@ System::Type SystemTrait<T>::type()
 }
 
 template<typename C, typename ... Args>
-void RequireComponents<C, Args...>::attach(SystemManager& sys)
+void RequireComponents<C, Args...>::attach()
 {
-    auto& evt = sys.get_event_manager();
-    evt.subscribe<EvtComponentAdded<C>>(*this);
+    System::event().template subscribe<EvtComponentAdded<C>>(*this);
 }
 
 template<typename C, typename ... Args>
-void RequireComponents<C, Args...>::detach(SystemManager& sys)
+void RequireComponents<C, Args...>::detach()
 {
-    auto& evt = sys.get_event_manager();
-    evt.unsubscribe<EvtComponentAdded<C>>(*this);
+    System::event().template unsubscribe<EvtComponentAdded<C> >(*this);
 }
 
 template<typename C, typename ... Args>
@@ -46,12 +66,12 @@ void RequireComponents<C, Args...>::add_component(Entity ent)
     add_component<D1, Tails...>(ent);
 }
 
-EventManager& SystemManager::get_event_manager()
+INLINE EventManager& SystemManager::get_event_manager()
 {
     return m_event_manager;
 }
 
-EntityManager& SystemManager::get_entity_manger()
+INLINE EntityManager& SystemManager::get_entity_manger()
 {
     return m_entity_manager;
 }
@@ -78,6 +98,7 @@ S* SystemManager::add(Args && ... args)
     assert( found == m_systems.end() && "[ECS] duplicated system.");
 
     auto sys = new (std::nothrow) S(std::forward<Args>(args) ...);
+    sys->configure(&m_entity_manager, &m_event_manager, this);
     m_systems.insert(std::make_pair(S::type(), sys));
     return sys;
 }

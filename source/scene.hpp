@@ -12,9 +12,9 @@ struct SceneSystem : public SystemTrait<SceneSystem>
 {
     SceneSystem();
     ~SceneSystem() override;
-    void attach(SystemManager&) override;
-    void detach(SystemManager&) override;
-    void update(SystemManager&, float) override;
+    void attach() override;
+    void detach() override;
+    void update(float) override;
 
     // event receivers
     void receive(const EvtComponentAdded<Transform>&);
