@@ -12,6 +12,7 @@
 #include <string>
 #include <bitset>
 #include <vector>
+#include <array>
 #include <unordered_map>
 
 NS_FLOW2D_BEGIN
@@ -19,7 +20,11 @@ NS_FLOW2D_BEGIN
 #define INLINE inline
 
 /// GLOBAL CONFIGS
-static const int32_t kEntMaxComponents = 64;
+static const size_t kEntMaxComponents   = 64;
+static const size_t kGfxMaxTextures     = 8;
+static const size_t kGfxMaxPrograms     = 8;
+static const size_t kGfxMaxAttributes   = 8;
+static const size_t kGfxMaxUniforms     = 16;
 
 /// FORWARD DECLARATIONS
 
