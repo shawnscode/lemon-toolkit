@@ -3,8 +3,7 @@
 
 #pragma once
 
-#include "flow2d.hpp"
-#include <vector>
+#include <flow2d/forward.hpp>
 
 NS_FLOW2D_BEGIN
 
@@ -63,5 +62,5 @@ struct ObjectChunksTrait : public ObjectChunks
     }
 };
 
-#include "memory.inl"
+#include <flow2d/core/memory.inl>
 NS_FLOW2D_END

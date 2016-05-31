@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "flow2d.hpp"
-#include "entity.hpp"
+#include <flow2d/forward.hpp>
+#include <flow2d/core/entity.hpp>
 
 NS_FLOW2D_BEGIN
 
@@ -76,6 +76,6 @@ protected:
     std::unordered_map<System::Type, System*>   m_systems;
 };
 
-#include "system.inl"
+#include <flow2d/core/system.inl>
 
 NS_FLOW2D_END

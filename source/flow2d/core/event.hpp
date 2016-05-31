@@ -3,9 +3,7 @@
 
 #pragma once
 
-#include "flow2d.hpp"
-#include <vector>
-#include <unordered_map>
+#include <flow2d/forward.hpp>
 
 NS_FLOW2D_BEGIN
 
@@ -83,5 +81,5 @@ protected:
     ReceiverRecords               m_records;
 };
 
-#include "event.inl"
+#include <flow2d/core/event.inl>
 NS_FLOW2D_END

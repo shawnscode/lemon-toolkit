@@ -1,7 +1,7 @@
 // @date 2016/05/28
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include "system.hpp"
+#include <flow2d/core/system.hpp>
 
 NS_FLOW2D_BEGIN
 

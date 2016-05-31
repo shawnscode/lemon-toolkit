@@ -6,10 +6,8 @@
 #include <vector>
 #include <string>
 
-#include "catch.hpp"
-#include "flow2d.hpp"
-#include "entity.hpp"
-#include "system.hpp"
+#include <catch.hpp>
+#include <flow2d.hpp>
 
 using namespace std;
 using namespace flow2d;

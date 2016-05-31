@@ -19,12 +19,12 @@ INLINE bool TransformIterator::operator != (const TransformIterator& rh) const
     return m_cursor != rh.m_cursor;
 }
 
-Transform* TransformIterator::operator * ()
+INLINE Transform* TransformIterator::operator * ()
 {
     return m_cursor;
 }
 
-const Transform* TransformIterator::operator * () const
+INLINE const Transform* TransformIterator::operator * () const
 {
     return m_cursor;
 }

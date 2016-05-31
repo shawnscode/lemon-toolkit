@@ -1,7 +1,7 @@
 // @date 2016/05/24
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include "event.hpp"
+#include <flow2d/core/event.hpp>
 
 NS_FLOW2D_BEGIN
 

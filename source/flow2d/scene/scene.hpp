@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "flow2d.hpp"
-#include "system.hpp"
+#include <flow2d/forward.hpp>
+#include <flow2d/core/system.hpp>
 
 NS_FLOW2D_BEGIN
 

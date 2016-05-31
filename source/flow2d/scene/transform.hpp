@@ -3,14 +3,12 @@
 
 #pragma once
 
-#include "flow2d.hpp"
+#include <flow2d/forward.hpp>
 
-#include "glm/vec2.hpp"
-#include "glm/mat3x3.hpp"
-#include "glm/gtx/matrix_transform_2d.hpp"
-#include "glm/gtc/type_ptr.hpp"
-
-#include <string>
+#include <glm/vec2.hpp>
+#include <glm/mat3x3.hpp>
+#include <glm/gtx/matrix_transform_2d.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 NS_FLOW2D_BEGIN
 
@@ -26,14 +24,14 @@ struct TransformIterator : public std::iterator<std::input_iterator_tag, Transfo
 {
     TransformIterator(Transform* current) : m_cursor(current) {}
 
-    TransformIterator&  operator ++ ();
-    bool                operator == (const TransformIterator&) const;
-    bool                operator != (const TransformIterator&) const;
-    Transform*          operator * ();
-    const Transform*    operator * () const;
+     TransformIterator&  operator ++ ();
+     bool                operator == (const TransformIterator&) const;
+     bool                operator != (const TransformIterator&) const;
+     Transform*          operator * ();
+     const Transform*    operator * () const;
 
-protected:
-    Transform* m_cursor = nullptr;
+ protected:
+     Transform* m_cursor = nullptr;
 };
 
 // transform component is used to allow entities to be coordinated in the world.
@@ -109,5 +107,5 @@ protected:
     Transform*      m_prev_sibling = nullptr;
 };
 
-#include "transform.inl"
+#include <flow2d/scene/transform.inl>
 NS_FLOW2D_END

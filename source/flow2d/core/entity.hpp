@@ -3,12 +3,9 @@
 
 #pragma once
 
-#include "flow2d.hpp"
-#include "memory.hpp"
-#include "event.hpp"
-
-#include <bitset>
-#include <vector>
+#include <flow2d/forward.hpp>
+#include <flow2d/core/memory.hpp>
+#include <flow2d/core/event.hpp>
 
 // a fast, type-safe c++ entity component system based on [EntityX](https://github.com/alecthomas/entityx).
 
@@ -279,7 +276,7 @@ template<typename T> struct EvtComponentRemoved
     ComponentHandle<T> component;
 };
 
-#include "entity.inl"
+#include <flow2d/core/entity.inl>
 NS_FLOW2D_END
 
 namespace std

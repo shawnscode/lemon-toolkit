@@ -1,6 +1,5 @@
-#include "catch.hpp"
-#include "flow2d.hpp"
-#include "event.hpp"
+#include <catch.hpp>
+#include <flow2d.hpp>
 
 #include <string>
 #include <vector>

@@ -1,8 +1,8 @@
 // @date 2016/05/26
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include "transform.hpp"
-#include "scene.hpp"
+#include <flow2d/scene/transform.hpp>
+#include <flow2d/scene/scene.hpp>
 
 NS_FLOW2D_BEGIN
 

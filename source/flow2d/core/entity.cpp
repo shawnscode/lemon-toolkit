@@ -1,7 +1,7 @@
 // @date 2016/05/22
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include "entity.hpp"
+#include <flow2d/core/entity.hpp>
 
 NS_FLOW2D_BEGIN
 
