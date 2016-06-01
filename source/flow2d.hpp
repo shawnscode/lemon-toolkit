@@ -7,4 +7,7 @@
 #include <flow2d/scene/scene.hpp>
 #include <flow2d/scene/transform.hpp>
 
+#include <flow2d/graphic/device.hpp>
+#include <flow2d/graphic/render.hpp>
+
 #define USING_NS_FLOW2D using namespace flow2d;

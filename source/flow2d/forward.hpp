@@ -25,6 +25,7 @@ static const size_t kGfxMaxTextures     = 8;
 static const size_t kGfxMaxPrograms     = 8;
 static const size_t kGfxMaxAttributes   = 8;
 static const size_t kGfxMaxUniforms     = 16;
+static const size_t kGfxMaxBatchVertices = 1024;
 
 /// FORWARD DECLARATIONS
 

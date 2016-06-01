@@ -1,7 +1,7 @@
 // @date 2016/05/31
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <flow2d/graphic/graphic.hpp>
+#include <flow2d/graphic/device.hpp>
 
 extern "C" {
     #include <GL/glew.h>
@@ -85,11 +85,12 @@ static GLint get_sizeof_texture(TextureFormat format, int width, int height)
         case TextureFormat::ALPHA8:
             return width * height;
 
-//            case TextureFormat::PVR2:
-//                return width * height  / 4;
-//            case TextureFormat::PVR4:
-//            case TextureFormat::ETC1:
-//                return width * height / 2;
+        case TextureFormat::PVR2:
+            return width * height  / 4;
+
+        case TextureFormat::PVR4:
+        case TextureFormat::ETC1:
+            return width * height / 2;
         default:
             assert(false);
             return 0;
@@ -631,7 +632,7 @@ void GraphicDevice::clear(uint32_t mask, uint8_t r, uint8_t g, uint8_t b, uint8_
     CHECK_GL_ERROR
 }
 
-void GraphicDevice::submit(DrawMode mode, size_t from_index, size_t number)
+void GraphicDevice::draw(DrawMode mode, size_t from_index, size_t number)
 {
     static int draw_mode[] = {
         GL_TRIANGLES,

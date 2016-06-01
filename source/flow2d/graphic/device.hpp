@@ -127,7 +127,7 @@ struct GraphicDevice
     void bind_uniform(int index, UniformFormat format, const float* v);
 
     void clear(uint32_t mask, uint8_t, uint8_t, uint8_t, uint8_t a = 255);
-    void submit(DrawMode mode, size_t from_index, size_t number_index);
+    void draw(DrawMode mode, size_t from_index, size_t number_index);
     void flush();
 
     Rid create_shader(
@@ -140,6 +140,8 @@ struct GraphicDevice
 
     void update_buffer(RenderObject what, Rid rid, const void* data, size_t size);
     void release(RenderObject what, Rid rid);
+
+    static const Rid INVALID = 0;
 
 protected:
     GraphicDeviceInstance* m_state;
