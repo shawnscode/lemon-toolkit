@@ -122,3 +122,18 @@ TEST_CASE("TestRectOperations")
     Vector2f v { 4.f, -2.f };
     REQUIRE( (r + v) == (Rect2f { 0.f, -2.f, 4.f, 1.f }) );
 }
+
+TEST_CASE("TestColor")
+{
+    Color c { 1.0f, 0.0f, 0.0f };
+    REQUIRE( c == Color::RED );
+    REQUIRE( c.to_uint32() == 0xFF0000FF );
+
+    Color c2 { 1.0f, 0.0f, 1.0f };
+    REQUIRE( c.lerp(c2, 0.5f).equals(Color {1.f, 0.0f, 0.5f}) );
+
+    Color c3 { 2.0f, 4.3f, 0.5f };
+    REQUIRE( c3.clip().equals(Color {1.f, 1.f, 0.5f}) );
+    REQUIRE( c3.invert(true).equals(Color {0.f, 0.f, 0.5f, 0.f}) );
+}
+

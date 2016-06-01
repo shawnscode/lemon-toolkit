@@ -148,14 +148,8 @@ void GraphicRender::submit(size_t vsize, const Vertex2f* vertices, size_t isize,
             vertices[i].vy,
             clamp_float_to_u8(vertices[i].tx),
             clamp_float_to_u8(vertices[i].ty),
-            clamp_float_to_u8(diffuse.r),
-            clamp_float_to_u8(diffuse.g),
-            clamp_float_to_u8(diffuse.b),
-            clamp_float_to_u8(diffuse.a),
-            clamp_float_to_u8(additive.a),
-            clamp_float_to_u8(additive.a),
-            clamp_float_to_u8(additive.a),
-            clamp_float_to_u8(additive.a),
+            diffuse.to_uint32(),
+            additive.to_uint32()
         };
     }
 }

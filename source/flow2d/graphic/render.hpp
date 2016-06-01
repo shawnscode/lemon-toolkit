@@ -7,7 +7,7 @@
 #include <flow2d/graphic/device.hpp>
 #include <flow2d/math/vector.hpp>
 #include <flow2d/math/rect.hpp>
-// #include <flow2d/math/color.hpp>
+#include <flow2d/math/color.hpp>
 
 NS_FLOW2D_BEGIN
 
@@ -15,11 +15,6 @@ struct Vertex2f
 {
     float vx, vy;
     float tx, ty;
-};
-
-struct Color
-{
-    float r, g, b, a;
 };
 
 // a input fixed buffered graphic renderer, with ordering layout position, texcoord,
@@ -30,8 +25,7 @@ struct GraphicRender
     {
         float       vx, vy; // position
         uint16_t    tx, ty; // texcoord
-        uint8_t     dr, dg, db, da; // diffuse color
-        uint8_t     ar, ag, ab, aa; // additive color
+        uint32_t    diffuse, additive;
     };
 
     static GraphicRender& instance();
