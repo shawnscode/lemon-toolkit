@@ -3,178 +3,200 @@
 
 // INCLUDED METHODS OF VECTOR
 
-template<size_t N, typename T>
-Vector<N, T>::Vector()
-{}
+template<typename T> const Vector2<T> Vector2<T>::ZERO  { 0, 0 };
+template<typename T> const Vector2<T> Vector2<T>::ONE   { 1, 1 };
+template<typename T> const Vector2<T> Vector2<T>::LEFT  { -1, 0 };
+template<typename T> const Vector2<T> Vector2<T>::RIGHT { 1, 0 };
+template<typename T> const Vector2<T> Vector2<T>::UP    { 0, 1 };
+template<typename T> const Vector2<T> Vector2<T>::DOWN  { 0, -1 };
 
-template<size_t N, typename T>
-Vector<N, T>::Vector(const std::array<T, N>& values)
-: m_tuple(values)
-{}
+template<typename T>
+Vector2<T>::Vector2()
+{
+    m_tuple[0] = m_tuple[1] = static_cast<T>(0);
+}
 
-template<size_t N, typename T>
-Vector<N, T>::Vector(std::initializer_list<T> values)
+template<typename T>
+Vector2<T>::Vector2(std::initializer_list<T> values)
 {
     auto i = 0;
     for( auto value : values )
-    {
-        if( i < N ) m_tuple[i++] = value;
-        else break;
-    }
+        if( i < 2 ) m_tuple[i++] = value;
 
-    for( ; i<N; i++ )
+    for( ; i < 2; i++ )
         m_tuple[i] = static_cast<T>(0);
 }
 
-template<size_t N, typename T>
-INLINE const T& Vector<N, T>::operator[] (int i) const
+template<typename T>
+INLINE const T& Vector2<T>::operator[] (int i) const
 {
     return m_tuple[i];
 }
 
-template<size_t N, typename T>
-INLINE T& Vector<N, T>::operator[] (int i)
+template<typename T>
+INLINE T& Vector2<T>::operator[] (int i)
 {
     return m_tuple[i];
 }
 
-template<size_t N, typename T>
-INLINE bool Vector<N, T>::operator == (const Vector& rh) const
+template<typename T>
+INLINE bool Vector2<T>::operator == (const Vector2& rh) const
 {
     return m_tuple == rh.m_tuple;
 }
 
-template<size_t N, typename T>
-INLINE bool Vector<N, T>::operator != (const Vector& rh) const
+template<typename T>
+INLINE bool Vector2<T>::operator != (const Vector2& rh) const
 {
     return m_tuple != rh.m_tuple;
 }
 
-template<size_t N, typename T>
-INLINE bool Vector<N, T>::operator < (const Vector& rh) const
+template<typename T>
+INLINE bool Vector2<T>::operator < (const Vector2& rh) const
 {
     return m_tuple < rh.m_tuple;
 }
 
-template<size_t N, typename T>
-INLINE bool Vector<N, T>::operator <= (const Vector& rh) const
+template<typename T>
+INLINE bool Vector2<T>::operator <= (const Vector2& rh) const
 {
     return m_tuple <= rh.m_tuple;
 }
 
-template<size_t N, typename T>
-INLINE bool Vector<N, T>::operator > (const Vector& rh) const
+template<typename T>
+INLINE bool Vector2<T>::operator > (const Vector2& rh) const
 {
     return m_tuple > rh.m_tuple;
 }
 
-template<size_t N, typename T>
-INLINE bool Vector<N, T>::operator >= (const Vector& rh) const
+template<typename T>
+INLINE bool Vector2<T>::operator >= (const Vector2& rh) const
 {
     return m_tuple >= rh.m_tuple;
 }
 
 ////
-template<size_t N, typename T>
-Vector<N, T> operator + (const Vector<N, T>& rh)
+template<typename T>
+INLINE Vector2<T> Vector2<T>::operator + () const
 {
-    return rh;
+    return *this;
 }
 
-template<size_t N, typename T>
-Vector<N, T> operator - (const Vector<N, T>& rh)
+template<typename T>
+INLINE Vector2<T> Vector2<T>::operator - () const
 {
-    Vector<N, T> result;
-    for( auto i=0; i<N; i++ )
-        result[i] = -rh[i];
-    return result;
+    return Vector2<T> { -m_tuple[0], -m_tuple[1] };
 }
 
-template<size_t N, typename T>
-Vector<N, T> operator + (const Vector<N, T>& lh, const Vector<N, T>& rh)
+template<typename T>
+INLINE Vector2<T> Vector2<T>::operator + (const Vector2<T>& rh) const
 {
-    auto result = lh;
-    return result += rh;
+    return Vector2<T> { m_tuple[0] + rh.m_tuple[0], m_tuple[1] + rh.m_tuple[1] };
 }
 
-template<size_t N, typename T>
-Vector<N, T> operator - (const Vector<N, T>& lh, const Vector<N, T>& rh)
+template<typename T>
+INLINE Vector2<T> Vector2<T>::operator - (const Vector2<T>& rh) const
 {
-    auto result = lh;
-    return result -= rh;
+    return Vector2<T> { m_tuple[0] - rh.m_tuple[0], m_tuple[1] - rh.m_tuple[1] };
 }
 
-template<size_t N, typename T>
-Vector<N, T> operator * (const Vector<N, T>& lh, T rh)
+template<typename T>
+INLINE Vector2<T> Vector2<T>::operator * (T rh) const
 {
-    auto result = lh;
-    return result *= rh;
+    return Vector2<T> { m_tuple[0] * rh, m_tuple[1] * rh };
 }
 
-template<size_t N, typename T>
-Vector<N, T> operator / (const Vector<N, T>& lh, T rh)
+template<typename T>
+INLINE Vector2<T> Vector2<T>::operator / (T rh) const
 {
-    auto result = lh;
-    return result /= rh;
+    auto inv = 1.0 / rh;
+    return *this * inv;
 }
 
 
-template<size_t N, typename T>
-Vector<N, T>& operator += (Vector<N, T>& lh, const Vector<N, T>& rh)
+template<typename T>
+INLINE Vector2<T>& Vector2<T>::operator += (const Vector2<T>& rh)
 {
-    for( auto i=0; i<N; i++ )
-        lh[i] += rh[i];
-    return lh;
+    m_tuple[0] += rh.m_tuple[0];
+    m_tuple[1] += rh.m_tuple[1];
+    return *this;
 }
 
-template<size_t N, typename T>
-Vector<N, T>& operator -= (Vector<N, T>& lh, const Vector<N, T>& rh)
+template<typename T>
+INLINE Vector2<T>& Vector2<T>::operator -= (const Vector2<T>& rh)
 {
-    for( auto i=0; i<N; i++ )
-        lh[i] -= rh[i];
-    return lh;
+    m_tuple[0] -= rh.m_tuple[0];
+    m_tuple[1] -= rh.m_tuple[1];
+    return *this;
 }
 
-template<size_t N, typename T>
-Vector<N, T>& operator *= (Vector<N, T>& lh, T rh)
+template<typename T>
+INLINE Vector2<T>& Vector2<T>::operator *= (T rh)
 {
-    for( auto i=0; i<N; i++ )
-        lh[i] *= rh;
-    return lh;
+    m_tuple[0] *= rh;
+    m_tuple[1] *= rh;
+    return *this;
 }
 
-template<size_t N, typename T>
-Vector<N, T>& operator /= (Vector<N, T>& lh, T rh)
+template<typename T>
+INLINE Vector2<T>& Vector2<T>::operator /= (T rh)
 {
     T invrh = 1.0 / rh;
-    return lh *= invrh;
+    return m_tuple *= invrh;
 }
 
-template<size_t N, typename T>
-T dot (const Vector<N, T>& lh, const Vector<N, T>& rh)
+template<typename T>
+INLINE bool Vector2<T>::equals (const Vector2& to, T epslion) const
 {
-    T result = 0;
-    for (auto i = 0; i < N; ++i)
-        result += lh[i] * rh[i];
-    return result;
+    return std::abs(m_tuple[0]-to.m_tuple[0]) < epslion && std::abs(m_tuple[1]-to.m_tuple[1]) < epslion;
 }
 
-template<size_t N, typename T>
-T length (const Vector<N, T>& lh)
+template<typename T>
+INLINE bool Vector2<T>::isnan () const
 {
-    return sqrt(dot(lh, lh));
+    return std::isnan(m_tuple[0]) || std::isnan(m_tuple[1]);
 }
 
-template<size_t N, typename T>
-T length_square (const Vector<N, T>& lh)
+template<typename T>
+INLINE bool Vector2<T>::isinf() const
 {
-    return dot(lh, lh);
+    return std::isinf(m_tuple[0]) || std::isinf(m_tuple[1]);
 }
 
-template<size_t N, typename T>
-T normalize (Vector<N, T>& lh)
+template<typename T>
+INLINE Vector2<T> Vector2<T>::normalize () const
 {
-    T result = length(lh);
-    lh /= result;
-    return result;
+    return (*this) / length();
+}
+
+template<typename T>
+INLINE Vector2<T> Vector2<T>::abs () const
+{
+    return Vector2<T> { std::abs(m_tuple[0]), std::abs(m_tuple[1]) };
+}
+
+template<typename T>
+INLINE Vector2<T> Vector2<T>::lerp (const Vector2<T>& to, float t) const
+{
+    if( t >= 1.0f ) return to;
+    if( t <= 0.0f ) return *this;
+    return (*this) + (to-(*this)) * t;
+}
+
+template<typename T>
+INLINE T Vector2<T>::dot (const Vector2<T>& rh) const
+{
+    return m_tuple[0]*rh.m_tuple[0] + m_tuple[1]*rh.m_tuple[1];
+}
+
+template<typename T>
+INLINE T Vector2<T>::length () const
+{
+    return std::sqrt(dot(*this));
+}
+
+template<typename T>
+INLINE T Vector2<T>::length_square () const
+{
+    return dot(*this);
 }
