@@ -5,7 +5,7 @@
 
 #include <flow2d/forward.hpp>
 #include <flow2d/graphic/device.hpp>
-// #include <flow2d/math/vector.hpp>
+#include <flow2d/math/vector.hpp>
 // #include <flow2d/math/color.hpp>
 
 NS_FLOW2D_BEGIN

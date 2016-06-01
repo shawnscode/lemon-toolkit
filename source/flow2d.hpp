@@ -10,4 +10,6 @@
 #include <flow2d/graphic/device.hpp>
 #include <flow2d/graphic/render.hpp>
 
+#include <flow2d/math/vector.hpp>
+
 #define USING_NS_FLOW2D using namespace flow2d;
