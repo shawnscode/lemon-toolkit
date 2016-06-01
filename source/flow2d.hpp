@@ -11,5 +11,6 @@
 #include <flow2d/graphic/render.hpp>
 
 #include <flow2d/math/vector.hpp>
+#include <flow2d/math/rect.hpp>
 
 #define USING_NS_FLOW2D using namespace flow2d;

@@ -82,3 +82,43 @@ TEST_CASE("TestVectorMethods")
     REQUIRE( !v6.equals(v7, 0.05f) );
     REQUIRE( v6.equals(v7, 0.11f) );
 }
+
+TEST_CASE("TestRectInitializerList")
+{
+    Rect2f r { 0.0f, 1.0f, 3.0f, 4.0f };
+    REQUIRE( r[0][0] == Approx(0.f) );
+    REQUIRE( r[0][1] == Approx(1.f) );
+    REQUIRE( r[1][0] == Approx(3.f) );
+    REQUIRE( r[1][1] == Approx(4.f) );
+
+    Rect2f r2 { 2.0f, 1.0f };
+    REQUIRE( r2[0][0] == Approx(2.f) );
+    REQUIRE( r2[0][1] == Approx(1.f) );
+    REQUIRE( r2[1][0] == Approx(0.f) );
+    REQUIRE( r2[1][1] == Approx(0.f) );
+
+    REQUIRE( Rect2f::FULL == (Rect2f { -1.f, -1.f, 1.f, 1.f }) );
+    REQUIRE( Rect2f::POSITIVE == (Rect2f { 0.f, 0.f, 1.f, 1.f }) );
+}
+
+TEST_CASE("TestRectOperations")
+{
+    Rect2f r { 0.0f, 0.0f, 1.0f, 1.0f };
+
+    REQUIRE( r.is_inside({ 0.f, 0.f }) );
+    REQUIRE( r.is_inside({ 0.f, 0.9f }) );
+    REQUIRE( r.is_inside({ 0.5f, 0.5f }) );
+    REQUIRE( !r.is_inside({ 1.f, 0.f }) );
+    REQUIRE( !r.is_inside({ 1.f, 1.f }) );
+    REQUIRE( !r.is_inside({ 2.f, 0.5f }) );
+
+    Rect2f r2 { 2.0f, 2.0f, 3.0f, 3.0f };
+    Rect2f r3 = r + r2;
+    REQUIRE( r3 == (Rect2f { 0.f, 0.f, 3.f, 3.f }) );
+    r2 += r;
+    REQUIRE( r3 == r2 );
+    REQUIRE( (r + Rect2f { -1.f, 0.f, 2.f, 1.f }) == (Rect2f { -1.f, 0.f, 2.f, 1.f }) );
+
+    Vector2f v { 4.f, -2.f };
+    REQUIRE( (r + v) == (Rect2f { 0.f, -2.f, 4.f, 1.f }) );
+}

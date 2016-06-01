@@ -6,6 +6,7 @@
 #include <flow2d/forward.hpp>
 #include <flow2d/graphic/device.hpp>
 #include <flow2d/math/vector.hpp>
+#include <flow2d/math/rect.hpp>
 // #include <flow2d/math/color.hpp>
 
 NS_FLOW2D_BEGIN
@@ -19,12 +20,6 @@ struct Vertex2f
 struct Color
 {
     float r, g, b, a;
-};
-
-struct Rect2f
-{
-    float x, y;
-    float width, height;
 };
 
 // a input fixed buffered graphic renderer, with ordering layout position, texcoord,
