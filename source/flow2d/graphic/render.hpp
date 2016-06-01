@@ -5,17 +5,13 @@
 
 #include <flow2d/forward.hpp>
 #include <flow2d/graphic/device.hpp>
+#include <flow2d/graphic/vertex.hpp>
+
 #include <flow2d/math/vector.hpp>
 #include <flow2d/math/rect.hpp>
 #include <flow2d/math/color.hpp>
 
 NS_FLOW2D_BEGIN
-
-struct Vertex2f
-{
-    float vx, vy;
-    float tx, ty;
-};
 
 // a input fixed buffered graphic renderer, with ordering layout position, texcoord,
 // diffuse color and addtive color.

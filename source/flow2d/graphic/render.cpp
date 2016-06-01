@@ -121,11 +121,11 @@ void GraphicRender::set_program(Rid rid)
     m_current_program = rid;
 }
 
-static uint8_t clamp_float_to_u8(float t)
+static uint16_t clamp_float_to_u16(float t)
 {
-    if( t > 1.0f ) return 255;
+    if( t > 1.0f ) return std::numeric_limits<uint16_t>::max();
     if( t <= 0.0f ) return 0;
-    return static_cast<uint8_t>(t * 255);
+    return static_cast<uint16_t>(t * std::numeric_limits<uint16_t>::max());
 }
 
 void GraphicRender::submit(size_t vsize, const Vertex2f* vertices, size_t isize, const uint16_t* indices,
@@ -143,11 +143,12 @@ void GraphicRender::submit(size_t vsize, const Vertex2f* vertices, size_t isize,
 
     for( auto i=0; i<vsize; i++ )
     {
+        auto& v = vertices[i];
         m_vbuffer[m_vused++] = GraphicRender::VertexPack {
-            vertices[i].vx,
-            vertices[i].vy,
-            clamp_float_to_u8(vertices[i].tx),
-            clamp_float_to_u8(vertices[i].ty),
+            v.position[0],
+            v.position[1],
+            clamp_float_to_u16(v.texcoord[0]),
+            clamp_float_to_u16(v.texcoord[1]),
             diffuse.to_uint32(),
             additive.to_uint32()
         };
