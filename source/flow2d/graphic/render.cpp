@@ -147,6 +147,8 @@ void GraphicRender::submit(size_t vsize, const Vertex2f* vertices, size_t isize,
         m_vbuffer[m_vused++] = GraphicRender::VertexPack {
             v.position[0],
             v.position[1],
+            // v.texcoord[0],
+            // v.texcoord[1],
             clamp_float_to_u16(v.texcoord[0]),
             clamp_float_to_u16(v.texcoord[1]),
             diffuse.to_uint32(),
@@ -169,6 +171,7 @@ void GraphicRender::flush()
     {
         auto& device = GraphicDevice::instance();
         device.set_blend(m_blend_src, m_blend_dst);
+        device.bind_shader(m_current_program);
         device.update_buffer(RenderObject::VERTEX_BUFFER, m_verts, m_vbuffer, m_vused*sizeof(VertexPack));
         device.update_buffer(RenderObject::INDEX_BUFFER, m_indices, m_ibuffer, m_iused*sizeof(uint16_t));
 
@@ -176,7 +179,6 @@ void GraphicRender::flush()
         auto offset = 0;
 
         device.bind_index_buffer(m_indices, ElementFormat::UNSIGNED_SHORT, 0, 0);
-
         // position
         device.bind_vertex_buffer(0, m_verts, 2, ElementFormat::FLOAT, stride, offset);
         // texcoord

@@ -13,15 +13,14 @@
 
 NS_FLOW2D_BEGIN
 
-// a input fixed buffered graphic renderer, with ordering layout position, texcoord,
-// diffuse color and addtive color.
+// a buffered graphic renderer with fixed input.
 struct GraphicRender
 {
     struct VertexPack
     {
-        float       vx, vy; // position
-        uint16_t    tx, ty; // texcoord
-        uint32_t    diffuse, additive;
+        float    vx, vy; // position
+        uint16_t tx, ty; // texcoord
+        uint32_t diffuse, additive;
     };
 
     static GraphicRender& instance();
@@ -42,9 +41,9 @@ struct GraphicRender
     void set_uniform(int index, UniformFormat format, const float* v);
 
     void submit(size_t vsize, const Vertex2f* vertices, size_t isize, const uint16_t* indices,
-        const Color& diffuse, const Color& additive);
+        const Color& diffuse = Color::WHITE, const Color& additive = Color::TRANSPARENT);
     void submit(const Vertex2f& v1, const Vertex2f& v2, const Vertex2f& v3, const Vertex2f& v4,
-        const Color& diffuse, const Color& additive);
+        const Color& diffuse = Color::WHITE, const Color& additive = Color::TRANSPARENT);
     void flush();
 
 protected:
