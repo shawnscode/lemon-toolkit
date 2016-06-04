@@ -12,8 +12,8 @@ struct SceneSystem : public SystemTrait<SceneSystem>
 {
     SceneSystem();
     ~SceneSystem() override;
-    void attach() override;
-    void detach() override;
+    void on_attach() override;
+    void on_detach() override;
     void update(float) override;
 
     // event receivers

@@ -18,16 +18,16 @@ SceneSystem::~SceneSystem()
     m_transform = nullptr;
 }
 
-void SceneSystem::attach()
+void SceneSystem::on_attach()
 {
-    event().subscribe<EvtComponentAdded<Transform>>(*this);
-    event().subscribe<EvtComponentRemoved<Transform>>(*this);
+    dispatcher().subscribe<EvtComponentAdded<Transform>>(*this);
+    dispatcher().subscribe<EvtComponentRemoved<Transform>>(*this);
 }
 
-void SceneSystem::detach()
+void SceneSystem::on_detach()
 {
-    event().unsubscribe<EvtComponentAdded<Transform>>(*this);
-    event().unsubscribe<EvtComponentRemoved<Transform>>(*this);
+    dispatcher().unsubscribe<EvtComponentAdded<Transform>>(*this);
+    dispatcher().unsubscribe<EvtComponentRemoved<Transform>>(*this);
 }
 
 void SceneSystem::update(float)

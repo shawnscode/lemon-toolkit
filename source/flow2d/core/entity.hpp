@@ -138,14 +138,19 @@ template<typename T> struct ComponentHandle
     ComponentHandle() {}
 
     // check if component handle is valid
-    bool is_valid() const;
-    void assert_valid() const;
+    bool     is_valid() const;
+    void     assert_valid() const;
     operator bool() const;
 
     // remove the component from its entity and destroy it.
     void dispose();
+
     // returns the entity associated with the component.
-    Entity entity();
+    Entity                  entity();
+    EntityManager&          world();
+    const EntityManager&    world() const;
+    EventManager&           dispatcher();
+    const EventManager&     dispatcher() const;
 
     //
     T* get() const;
@@ -178,9 +183,9 @@ protected:
     static Type s_class_counter;
 };
 
-template<typename T> struct ComponentTrait : public Component
+template<typename T> struct ComponentTrait : protected Component
 {
-    typedef ComponentHandle<T> Handle;
+    using Handle = ComponentHandle<T>;
     static Type type();
 };
 
@@ -190,12 +195,14 @@ struct EntityManager
     EntityManager(EventManager& manager) : m_event_manager(manager) {}
     EntityManager(const EntityManager&) = delete;
     EntityManager& operator=(const EntityManager&) = delete;
-
     ~EntityManager();
 
     size_t  size() const;
     size_t  capacity() const;
     void    reset();
+
+    EventManager& dispatcher();
+    const EventManager& dispatcher() const;
 
     // check if the entity id is still valid
     bool    is_valid(Entity::Uid) const;

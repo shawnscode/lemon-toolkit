@@ -2,27 +2,19 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 // INCLUDED METHODS OF SYSTEM MANAGER
-
-INLINE void System::configure(EntityManager* ent, EventManager* evt, SystemManager* sys)
+INLINE EntityManager& System::world()
 {
-    m_entity_manager = ent;
-    m_event_manager = evt;
-    m_system_manager = sys;
+    return *m_world;
 }
 
-INLINE EntityManager& System::entity()
+INLINE EventManager& System::dispatcher()
 {
-    return *m_entity_manager;
+    return *m_dispatcher;
 }
 
-INLINE EventManager& System::event()
+INLINE SystemManager& System::systems()
 {
-    return *m_event_manager;
-}
-
-INLINE SystemManager& System::system()
-{
-    return *m_system_manager;
+    return *m_systems;
 }
 
 template<typename T>
@@ -33,15 +25,15 @@ System::Type SystemTrait<T>::type()
 }
 
 template<typename C, typename ... Args>
-void RequireComponents<C, Args...>::attach()
+void RequireComponents<C, Args...>::on_attach()
 {
-    System::event().template subscribe<EvtComponentAdded<C>>(*this);
+    System::dispatcher().template subscribe<EvtComponentAdded<C>>(*this);
 }
 
 template<typename C, typename ... Args>
-void RequireComponents<C, Args...>::detach()
+void RequireComponents<C, Args...>::on_detach()
 {
-    System::event().template unsubscribe<EvtComponentAdded<C> >(*this);
+    System::dispatcher().template unsubscribe<EvtComponentAdded<C> >(*this);
 }
 
 template<typename C, typename ... Args>
@@ -66,14 +58,14 @@ void RequireComponents<C, Args...>::add_component(Entity ent)
     add_component<D1, Tails...>(ent);
 }
 
-INLINE EventManager& SystemManager::get_event_manager()
+INLINE EventManager& SystemManager::dispatcher()
 {
-    return m_event_manager;
+    return m_dispatcher;
 }
 
-INLINE EntityManager& SystemManager::get_entity_manger()
+INLINE EntityManager& SystemManager::world()
 {
-    return m_entity_manager;
+    return m_world;
 }
 
 template<typename S, typename ... Args>
@@ -98,7 +90,10 @@ S* SystemManager::add(Args && ... args)
     assert( found == m_systems.end() && "[ECS] duplicated system.");
 
     auto sys = new (std::nothrow) S(std::forward<Args>(args) ...);
-    sys->configure(&m_entity_manager, &m_event_manager, this);
+    sys->m_world = &m_world;
+    sys->m_dispatcher = &m_dispatcher;
+    sys->m_systems = this;
+
     m_systems.insert(std::make_pair(S::type(), sys));
     return sys;
 }

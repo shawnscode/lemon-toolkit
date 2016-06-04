@@ -13,23 +13,22 @@ struct System
     typedef size_t Type;
 
     virtual ~System() {}
-    virtual void attach() {}
-    virtual void detach() {}
+    virtual void on_attach() {}
+    virtual void on_detach() {}
     virtual void update(float) {}
 
-    void configure(EntityManager*, EventManager*, SystemManager*);
-    EntityManager&  entity();
-    EventManager&   event();
-    SystemManager&  system();
+    EntityManager&  world();
+    EventManager&   dispatcher();
+    SystemManager&  systems();
 
 protected:
     friend class SystemManager;
     static Type s_type_counter;
 
 private:
-    EntityManager*  m_entity_manager = nullptr;
-    EventManager*   m_event_manager  = nullptr;
-    SystemManager*  m_system_manager = nullptr;
+    EntityManager*  m_world         = nullptr;
+    EventManager*   m_dispatcher    = nullptr;
+    SystemManager*  m_systems       = nullptr;
 };
 
 template<typename T> struct SystemTrait : public System
@@ -42,8 +41,8 @@ template<typename T> struct SystemTrait : public System
 template<typename C, typename ... Args>
 struct RequireComponents : public SystemTrait<RequireComponents<C, Args...>>
 {
-    void attach() override;
-    void detach() override;
+    void on_attach() override;
+    void on_detach() override;
     void receive(const EvtComponentAdded<C>&);
 
 protected:
@@ -60,8 +59,9 @@ struct SystemManager
 
     ~SystemManager();
 
-    EventManager&   get_event_manager();
-    EntityManager&  get_entity_manger();
+    EventManager&   dispatcher();
+    EntityManager&  world();
+
     void            update(float);
 
     template<typename S, typename ... Args> S* ensure(Args&& ... args);
@@ -71,8 +71,8 @@ struct SystemManager
 
 protected:
     bool                                        m_configured;
-    EntityManager&                              m_entity_manager;
-    EventManager&                               m_event_manager;
+    EntityManager&                              m_world;
+    EventManager&                               m_dispatcher;
     std::unordered_map<System::Type, System*>   m_systems;
 };
 

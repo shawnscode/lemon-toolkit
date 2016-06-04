@@ -31,8 +31,6 @@ bool Context::initialize()
     if( !m_system ) return false;
 
     m_system->add<SceneSystem>();
-    m_system->add<RenderSystem>();
-
     return true;
 }
 
