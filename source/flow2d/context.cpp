@@ -7,8 +7,6 @@
 #include <flow2d/core/entity.hpp>
 #include <flow2d/core/system.hpp>
 
-#include <flow2d/scene/scene.hpp>
-
 NS_FLOW2D_BEGIN
 
 Context* Context::create()
@@ -30,7 +28,6 @@ bool Context::initialize()
     m_system.reset(new (std::nothrow) SystemManager(*m_world, *m_dispatcher));
     if( !m_system ) return false;
 
-    m_system->add<SceneSystem>();
     return true;
 }
 

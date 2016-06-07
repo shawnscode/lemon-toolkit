@@ -8,7 +8,7 @@ NS_FLOW2D_BEGIN
 System::Type System::s_type_counter = 0;
 
 SystemManager::SystemManager(EntityManager& ent, EventManager& evt)
-: m_entity_manager(ent), m_event_manager(evt)
+: m_world(ent), m_dispatcher(evt)
 {}
 
 SystemManager::~SystemManager()

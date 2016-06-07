@@ -21,6 +21,7 @@ NS_FLOW2D_BEGIN
 #define INLINE inline
 
 /// GLOBAL CONFIGS
+static const size_t kDbgMaxTracebackFrames = 63;
 static const size_t kEntMaxComponents   = 64;
 static const size_t kGfxMaxTextures     = 8;
 static const size_t kGfxMaxPrograms     = 8;
@@ -31,8 +32,6 @@ static const size_t kGfxMaxBatchVertices = 1024;
 /// FORWARD DECLARATIONS
 
 //- ENTITY COMPONENT SYSTEM
-struct Component;
-template<typename T> struct ComponentTrait;
 template<typename T> struct ComponentHandle;
 
 struct Entity;
@@ -54,5 +53,6 @@ struct EventManager;
 struct Transform;
 struct SceneSystem;
 struct ActionSystem;
+struct TransformComponent;
 
 NS_FLOW2D_END
