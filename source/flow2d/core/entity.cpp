@@ -26,12 +26,12 @@ Component::Type Component::s_class_counter = 0;
 
 void Component::operator delete(void *)
 {
-    assert(false && "[ECS] component memory is always managed by the EntityManager.");
+    ASSERT(false, "[ECS] component memory is always managed by the EntityManager.");
 }
 
 void Component::operator delete[](void *)
 {
-    assert(false && "[ECS] component memory is always managed by the EntityManager.");
+    ASSERT(false, "[ECS] component memory is always managed by the EntityManager.");
 }
 
 EntityManager::~EntityManager()

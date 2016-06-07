@@ -9,7 +9,7 @@ INLINE bool Entity::is_valid() const
 
 INLINE void Entity::assert_valid() const
 {
-    assert(is_valid() && "[ECS] trying to access invalid Entity.");
+    ASSERT( is_valid(), "[ECS] trying to access invalid Entity." );
 }
 
 INLINE Entity::operator bool() const
@@ -186,7 +186,7 @@ bool ComponentHandle<T>::is_valid() const
 template<typename T>
 void ComponentHandle<T>::assert_valid() const
 {
-    assert(is_valid());
+    ENSURE( is_valid() );
 }
 
 template<typename T>
@@ -288,7 +288,7 @@ template<typename T>
 Component::Type ComponentTrait<T>::type()
 {
     static Type cls = s_class_counter ++;
-    assert(cls < kEntMaxComponents);
+    ENSURE( cls < kEntMaxComponents );
     return cls;
 }
 
@@ -337,9 +337,9 @@ INLINE bool EntityManager::is_valid(Entity::Uid id, const ComponentMask mask) co
 
 INLINE void EntityManager::assert_valid(Entity::Uid id) const
 {
-    assert( id.index() < m_components_mask.size() && "[ECS] Entity::Uid ID outside entity vector range." );
-    assert( m_usages[id.index()] && "[ECS] attempt to access a invalid Entity." );
-    assert( m_versions[id.index()] == id.version() && "[ECS] attempt to access Entity via a stale Entity::Uid." );
+    ASSERT( id.index() < m_components_mask.size(), "[ECS] Entity::Uid ID outside entity vector range." );
+    ASSERT( m_usages[id.index()], "[ECS] attempt to access a invalid Entity." );
+    ASSERT( m_versions[id.index()] == id.version(), "[ECS] attempt to access Entity via a stale Entity::Uid." );
 }
 
 INLINE Entity EntityManager::get(Entity::Uid id)
@@ -368,7 +368,7 @@ ComponentHandle<T> EntityManager::add_component(Entity::Uid id, Args&& ... args)
     assert_valid(id);
 
     const auto cls = ComponentTrait<T>::type();
-    assert(!m_components_mask[id.index()].test(cls) && "[ECS] duplicated component to Entity.");
+    ASSERT( !m_components_mask[id.index()].test(cls), "[ECS] duplicated component to Entity." );
 
     // placement new into the component pool
     get_chunks<T>()->construct(id.index(), std::forward<Args>(args) ...);

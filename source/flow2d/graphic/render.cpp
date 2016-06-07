@@ -9,13 +9,13 @@ static GraphicRender* s_render = nullptr;
 
 GraphicRender& GraphicRender::instance()
 {
-    assert( s_render != nullptr );
+    ENSURE( s_render != nullptr );
     return *s_render;
 }
 
 bool GraphicRender::initialize(float width, float height)
 {
-    assert( s_render == nullptr );
+    ENSURE( s_render == nullptr );
 
     s_render = new (std::nothrow) GraphicRender();
     if( s_render == nullptr ) return false;
@@ -98,7 +98,7 @@ void GraphicRender::set_blend(BlendFunc src, BlendFunc dst)
 
 void GraphicRender::set_texture(int index, Rid rid)
 {
-    assert( index >= 0 && index < kGfxMaxTextures );
+    ENSURE( index >= 0 && index < kGfxMaxTextures );
     if( m_textures[index] != rid )
         flush();
 
@@ -134,7 +134,7 @@ void GraphicRender::submit(size_t vsize, const Vertex2f* vertices, size_t isize,
     if( vsize <= 0 || isize <= 0 )
         return;
 
-    assert( vsize < kGfxMaxBatchVertices && isize < kGfxMaxBatchVertices*2 );
+    ENSURE( vsize < kGfxMaxBatchVertices && isize < kGfxMaxBatchVertices*2 );
     if( m_vused >= (kGfxMaxBatchVertices-vsize) || m_iused >= (kGfxMaxBatchVertices*2-isize) )
         flush();
 

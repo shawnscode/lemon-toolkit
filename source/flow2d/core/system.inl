@@ -87,7 +87,7 @@ template<typename S, typename ... Args>
 S* SystemManager::add(Args && ... args)
 {
     auto found = m_systems.find(S::type());
-    assert( found == m_systems.end() && "[ECS] duplicated system.");
+    ASSERT( found == m_systems.end(), "[ECS] duplicated system.");
 
     auto sys = new (std::nothrow) S(std::forward<Args>(args) ...);
     sys->m_world = &m_world;

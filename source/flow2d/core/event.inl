@@ -100,7 +100,7 @@ void EventManager::subscribe(R& receiver)
 
     auto& record = m_records[rid];
     auto cursor = record.find(EventTrait<E>::type());
-    assert( cursor == record.end() && "[EVENT] duplicated subscribe to one event." );
+    ASSERT( cursor == record.end(), "[EVENT] duplicated subscribe to one event." );
 
     auto dispatcher = get_dispatcher(EventTrait<E>::type());
     auto id = dispatcher->connect([&](const void* event){

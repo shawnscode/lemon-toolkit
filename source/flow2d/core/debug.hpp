@@ -1,6 +1,8 @@
 // @date 2016/06/07
 // @author Mao Jingkai(oammix@gmail.com)
 
+#pragma once
+
 #include <flow2d/forward.hpp>
 #include <cstdarg>
 

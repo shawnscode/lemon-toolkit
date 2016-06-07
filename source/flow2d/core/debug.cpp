@@ -1,6 +1,47 @@
 #include <flow2d/core/debug.hpp>
+#include <cassert>
 
 NS_FLOW2D_BEGIN
+
+static void abortx(const char* file, int line, const char* format, va_list args)
+{
+    FLOW_LOGEV(format, args);
+    FLOW_LOGE("\tIn: %s:%d\n\nStacktrace:", file, line);
+    Debug::traceback();
+    exit(0);
+}
+
+void ABORT(const char* file, int line, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    abortx(file, line, format, args);
+    va_end(args);
+}
+
+void LOGI(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    Debug::log(LogLevel::INFORMATION, format, args);
+    va_end(args);
+}
+
+void LOGW(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    Debug::log(LogLevel::WARNING, format, args);
+    va_end(args);
+}
+
+void LOGE(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    Debug::log(LogLevel::ERROR, format, args);
+    va_end(args);
+}
 
 void Debug::log(LogLevel level, const char* msg, va_list args)
 {
@@ -33,14 +74,6 @@ void Debug::log(LogLevel level, const char* format, ...)
     va_start(args, format);
     log(level, format, args);
     va_end(args);
-}
-
-static void abortx(const char* file, int line, const char* format, va_list args)
-{
-    FLOW_LOGEV(format, args);
-    FLOW_LOGE("\tIn: %s:%d\n\nStacktrace:", file, line);
-    Debug::traceback();
-    exit(0);
 }
 
 void Debug::abort(const char* file, int line, const char* format, ...)
@@ -105,11 +138,9 @@ void Debug::traceback()
         // ./module(function+0x15c) [0x8048a6d]
         for (char *p = symbollist[i]; *p; ++p)
         {
-            if (*p == '(')
-                begin_name = p;
-            else if (*p == '+')
-                begin_offset = p;
-            else if (*p == ')' && begin_offset)
+            if( *p == '(' ) begin_name = p;
+            else if( *p == '+' ) begin_offset = p;
+            else if( *p == ')' && begin_offset )
             {
                 end_offset = p;
                 break;
@@ -130,7 +161,7 @@ void Debug::traceback()
             int status;
             char* ret = abi::__cxa_demangle(begin_name,
                             funcname, &funcnamesize, &status);
-            if (status == 0)
+            if( status == 0 )
             {
                 funcname = ret; // use possibly realloc()-ed string
                 FLOW_LOGE("\t%s : %s+%s\n", symbollist[i], funcname, begin_offset);

@@ -13,8 +13,7 @@ NS_FLOW2D_BEGIN
     do { \
         GLenum err = glGetError(); \
         if( err != GL_NO_ERROR && err != GL_INVALID_ENUM ) { \
-            printf("GL_%s - %s:%d\n", get_opengl_error(err), __FILE__, __LINE__); \
-            assert(false); \
+            FATAL("GL_%s - %s:%d\n", get_opengl_error(err), __FILE__, __LINE__); \
         } \
     } while(false);
 
@@ -63,7 +62,7 @@ static GLint get_sizeof_format(GLenum format)
             return 4;
 
         default:
-            assert(false);
+            FATAL("not supported format.");
             return 0;
     }
 }
@@ -92,7 +91,7 @@ static GLint get_sizeof_texture(TextureFormat format, int width, int height)
         case TextureFormat::ETC1:
             return width * height / 2;
         default:
-            assert(false);
+            FATAL("not supported texture format.");
             return 0;
     }
 }
@@ -516,7 +515,7 @@ static GraphicDevice* s_instance = nullptr;
 
 bool GraphicDevice::initialize()
 {
-    assert( s_instance == nullptr );
+    ENSURE( s_instance == nullptr );
     s_instance = new (std::nothrow) GraphicDevice();
     if( !s_instance ) return false;
 
@@ -561,7 +560,7 @@ void GraphicDevice::dispose()
 
 GraphicDevice& GraphicDevice::instance()
 {
-    assert( s_instance != nullptr );
+    ENSURE( s_instance != nullptr );
     return *s_instance;
 }
 
@@ -639,12 +638,12 @@ void GraphicDevice::draw(DrawMode mode, size_t from_index, size_t number)
         GL_LINES,
     };
 
-    assert( (int)mode < sizeof(draw_mode)/sizeof(int) );
+    ENSURE( (int)mode < sizeof(draw_mode)/sizeof(int) );
 
     m_state->commit();
 
     auto index_buffer = array_get(m_state->buffers, m_state->current.index_buffer.rid);
-    assert(index_buffer != nullptr && index_buffer->handle != 0);
+    ENSURE( index_buffer != nullptr && index_buffer->handle != 0 );
     
     auto format = m_state->current.index_buffer.format;
     auto offset = from_index*get_sizeof_format(format);
@@ -662,7 +661,7 @@ void GraphicDevice::bind_index_buffer(Rid id, ElementFormat format, size_t strid
 
 void GraphicDevice::bind_vertex_buffer(int index, Rid id, size_t n, ElementFormat format, size_t stride, size_t offset, bool normalized)
 {
-    assert( index >= 0 && index < kGfxMaxAttributes );
+    ENSURE( index >= 0 && index < kGfxMaxAttributes );
     m_state->current.vertex_buffers[index] = BufferLayout(id,
         n, ElementFormatTable[(int)format],
         stride, offset, normalized);
@@ -671,7 +670,7 @@ void GraphicDevice::bind_vertex_buffer(int index, Rid id, size_t n, ElementForma
 
 void GraphicDevice::bind_texture(int index, Rid id)
 {
-    assert( index >= 0 && index < kGfxMaxTextures );
+    ENSURE( index >= 0 && index < kGfxMaxTextures );
     m_state->current.textures[index] = id;
     m_state->change_flags |= CHANGE_TEXTURE;
 }
@@ -731,7 +730,7 @@ void GraphicDevice::bind_uniform(int index, UniformFormat format, const float* v
             break;
 
         default:
-            assert(0);
+            FATAL("not supported uniform format.");
             return;
     }
 
@@ -812,23 +811,23 @@ Rid GraphicDevice::create_shader(
     program->handle = prog;
     glGenVertexArrays(1, &program->vao);
 
-    assert( attribute_n > 0 && attribute_n < kGfxMaxAttributes );
+    ENSURE( attribute_n > 0 && attribute_n < kGfxMaxAttributes );
     program->attribute_n = attribute_n;
 
-    assert( uniform_n >= 0 && uniform_n < kGfxMaxUniforms );
+    ENSURE( uniform_n >= 0 && uniform_n < kGfxMaxUniforms );
     program->uniform_n = uniform_n;
     for( int i=0; i<uniform_n; i++ )
     {
         program->uniforms[i] = glGetUniformLocation(prog, uniforms[i]);
-        assert( program->uniforms[i] >= 0 );
+        ENSURE( program->uniforms[i] >= 0 );
     }
 
-    assert( texture_n >= 0 && texture_n < kGfxMaxTextures );
+    ENSURE( texture_n >= 0 && texture_n < kGfxMaxTextures );
     program->texture_n = texture_n;
     for( int i=0; i<texture_n; i++ )
     {
         program->textures[i] = glGetUniformLocation(prog, textures[i]);
-        assert( program->textures[i] >= 0 );
+        ENSURE( program->textures[i] >= 0 );
     }
 
     CHECK_GL_ERROR
@@ -837,7 +836,7 @@ Rid GraphicDevice::create_shader(
 
 Rid GraphicDevice::create_buffer(RenderObject what, const void* data, size_t size)
 {
-    assert( what == RenderObject::VERTEX_BUFFER || what == RenderObject::INDEX_BUFFER );
+    ENSURE( what == RenderObject::VERTEX_BUFFER || what == RenderObject::INDEX_BUFFER );
 
     auto buffer = array_alloc(m_state->buffers);
     if( buffer == nullptr ) return 0;
@@ -870,7 +869,7 @@ void GraphicDevice::update_buffer(RenderObject what, Rid id, const void* data, s
 
 Rid GraphicDevice::create_texture(const void* data, size_t width, size_t height, TextureFormat format, int mipmap)
 {
-    assert(mipmap >= 0 && width > 0 && height > 0);
+    ENSURE( mipmap >= 0 && width > 0 && height > 0 );
 
     auto texture = array_alloc(m_state->textures);
     if( texture == nullptr ) return 0;
@@ -914,7 +913,7 @@ Rid GraphicDevice::create_texture(const void* data, size_t width, size_t height,
             element = GL_UNSIGNED_BYTE;
             break;
         default:
-            assert(0);
+            FATAL("not supported texture format.");
             return 0;
     }
 
@@ -973,7 +972,7 @@ void GraphicDevice::release(RenderObject what, Rid id)
             return;
         }
         default:
-            assert(false);
+            FATAL("not supported render object.");
     }
 }
 

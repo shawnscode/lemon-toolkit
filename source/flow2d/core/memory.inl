@@ -39,12 +39,12 @@ INLINE void MemoryChunks::reserve(size_t n)
 
 INLINE void* MemoryChunks::get(size_t n)
 {
-    assert( n < m_size );
+    ENSURE( n < m_size );
     return m_blocks[n / m_chunk_size] + (n % m_chunk_size) * m_element_size;
 }
 
 INLINE const void* MemoryChunks::get(size_t n) const
 {
-    assert( n < m_size );
+    ENSURE( n < m_size );
     return m_blocks[n / m_chunk_size] + (n % m_chunk_size) * m_element_size;
 }

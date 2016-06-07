@@ -5,7 +5,6 @@
 
 // PRECOMPILED HEADERS
 #include <cstdint>
-#include <cassert>
 #include <cstring>
 #include <functional>
 #include <memory>
@@ -30,6 +29,19 @@ static const size_t kGfxMaxUniforms     = 16;
 static const size_t kGfxMaxBatchVertices = 1024;
 
 /// FORWARD DECLARATIONS
+extern void ABORT(const char* file, int line, const char* format, ...);
+extern void LOGI(const char* format, ...);
+extern void LOGW(const char* format, ...);
+extern void LOGE(const char* format, ...);
+
+#define ASSERT(condition, format, ...) do { \
+    if( !(condition) ) { \
+        ABORT(__FILE__, __LINE__, "\nAssertion failed: %s, " format "\n", #condition, ##__VA_ARGS__);\
+    } \
+} while(0)
+
+#define FATAL(format, ...) ASSERT(false, format, ##__VA_ARGS__)
+#define ENSURE(condition) ASSERT(condition, "")
 
 //- ENTITY COMPONENT SYSTEM
 template<typename T> struct ComponentHandle;

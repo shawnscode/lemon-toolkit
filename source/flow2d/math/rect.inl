@@ -22,7 +22,7 @@ Rect2<T>::Rect2(std::initializer_list<T> values)
 template<typename T>
 INLINE const Vector2<T>& Rect2<T>::operator[](int i) const
 {
-    assert( i >= 0 && i < 2 );
+    ENSURE( i >= 0 && i < 2 );
 
     if( i == 0 ) return m_min;
     return m_max;
@@ -31,7 +31,7 @@ INLINE const Vector2<T>& Rect2<T>::operator[](int i) const
 template<typename T>
 INLINE Vector2<T>& Rect2<T>::operator[](int i)
 {
-    assert( i >= 0 && i < 2 );
+    ENSURE( i >= 0 && i < 2 );
 
     if( i == 0 ) return m_min;
     return m_max;

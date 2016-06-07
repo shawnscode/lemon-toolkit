@@ -16,12 +16,12 @@ TransformComponent::TransformComponent(const Vector2f& position, const Vector2f&
 
 TransformComponent* TransformComponent::set_parent(TransformComponent* parent)
 {
-    assert( parent && "[TransformComponent] parent = nullptr." );
+    ASSERT( parent, "[TransformComponent] parent = nullptr." );
     remove_from_parent();
 
     if( parent->first_child != nullptr )
     {
-        assert( parent->first_child->prev_sibling == nullptr );
+        ENSURE( parent->first_child->prev_sibling == nullptr );
         parent->first_child->prev_sibling = this;
         this->next_sibling = parent->first_child;
     }
@@ -40,10 +40,10 @@ void TransformComponent::remove_from_parent()
     {
         if( parent->first_child == this )
         {
-            assert( prev_sibling == nullptr );
+            ENSURE( prev_sibling == nullptr );
             if( next_sibling )
             {
-                assert( next_sibling->prev_sibling == this );
+                ENSURE( next_sibling->prev_sibling == this );
                 next_sibling->prev_sibling = nullptr;
             }
             parent->first_child = next_sibling;
