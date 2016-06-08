@@ -3,48 +3,108 @@
 
 // INCLUDED METHODS OF POOL
 
-INLINE size_t MemoryChunks::size() const
+INLINE size_t MemoryPool::available() const
 {
-    return m_size;
+    size_t available = 0;
+    for( auto cursor = m_first_chunk; cursor; cursor = cursor->next )
+        available += cursor->available;
+    return available;
 }
 
-INLINE size_t MemoryChunks::capacity() const
+INLINE size_t MemoryPool::capacity() const
 {
-    return m_capacity;
+    size_t capacity = 0;
+    for( auto cursor = m_first_chunk; cursor; cursor = cursor->next )
+        capacity += cursor->size;
+    return capacity;
 }
 
-INLINE size_t MemoryChunks::chunks() const
+INLINE size_t MemoryPool::chunks() const
 {
-    return m_blocks.size();
+    size_t chunks = 0;
+    for( auto cursor = m_first_chunk; cursor; cursor = cursor->next )
+        chunks ++;
+    return chunks;
 }
 
-INLINE void MemoryChunks::resize(size_t n)
+INLINE void* MemoryPool::get_first_block_of_chunk(MemoryChunk* chunk)
 {
-    if( n >= m_size )
+    return (void*)((uint8_t*)chunk + sizeof(MemoryChunk));
+}
+
+INLINE void* MemoryPool::get_end_of_chunk(MemoryChunk* chunk)
+{
+    return (void*)((uint8_t*)get_first_block_of_chunk(chunk) + m_element_size * chunk->size);
+}
+
+INLINE bool MemoryPool::is_block_in_chunk(MemoryChunk* chunk, void* block)
+{
+    return
+        ((unsigned long)block >= (unsigned long)get_first_block_of_chunk(chunk)) &&
+        ((unsigned long)block < (unsigned long)get_end_of_chunk(chunk));
+}
+
+template<typename T>
+ObjectChunksTrait<T>::ObjectChunksTrait(size_t chunk_size, size_t grow_chunk_size)
+: ObjectChunks(sizeof(T), chunk_size, grow_chunk_size)
+{}
+
+template<typename T>
+ObjectChunksTrait<T>::~ObjectChunksTrait()
+{
+    for( auto cursor : m_slots )
+        cursor.second->~T();
+}
+
+template<typename T>
+template<typename ... Args>
+INLINE T* ObjectChunksTrait<T>::construct(size_t index, Args && ... args)
+{
+    ENSURE( m_slots.find(index) == m_slots.end() );
+
+    auto block = malloc();
+    ::new(block) T(std::forward<Args>(args) ...);
+
+    m_slots[index] = static_cast<T*>(block);
+    return static_cast<T*>(block);
+}
+
+template<typename T>
+void ObjectChunksTrait<T>::construct_from(size_t to, size_t from)
+{
+    ENSURE( m_slots.find(from) != m_slots.end() );
+    construct( to, std::forward<const T&>(*get(from)) );
+}
+
+template<typename T>
+void ObjectChunksTrait<T>::destruct(size_t index)
+{
+    auto cursor = m_slots.find(index);
+    if( cursor == m_slots.end() )
     {
-        if( n >= m_capacity ) reserve(n);
-        m_size = n;
+        LOGW("try to destruct a non-exist object.");
+        return;
     }
+
+    cursor->second->~T();
+    free(cursor->second);
+    m_slots.erase(cursor);
 }
 
-INLINE void MemoryChunks::reserve(size_t n)
+template<typename T>
+INLINE T* ObjectChunksTrait<T>::get(size_t index)
 {
-    while( m_capacity < n )
-    {
-        char* chunk = new char[m_element_size*m_chunk_size];
-        m_blocks.push_back(chunk);
-        m_capacity += m_chunk_size;
-    }
+    auto cursor = m_slots.find(index);
+    if( cursor == m_slots.end() ) return nullptr;
+
+    return cursor->second;
 }
 
-INLINE void* MemoryChunks::get(size_t n)
+template<typename T>
+INLINE const T* ObjectChunksTrait<T>::get(size_t index) const
 {
-    ENSURE( n < m_size );
-    return m_blocks[n / m_chunk_size] + (n % m_chunk_size) * m_element_size;
-}
+    auto cursor = m_slots.find(index);
+    if( cursor == m_slots.end() ) return nullptr;
 
-INLINE const void* MemoryChunks::get(size_t n) const
-{
-    ENSURE( n < m_size );
-    return m_blocks[n / m_chunk_size] + (n % m_chunk_size) * m_element_size;
+    return cursor->second;
 }

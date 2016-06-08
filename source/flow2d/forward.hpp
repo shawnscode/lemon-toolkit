@@ -20,13 +20,15 @@ NS_FLOW2D_BEGIN
 #define INLINE inline
 
 /// GLOBAL CONFIGS
-static const size_t kDbgMaxTracebackFrames = 63;
-static const size_t kEntMaxComponents   = 64;
-static const size_t kGfxMaxTextures     = 8;
-static const size_t kGfxMaxPrograms     = 8;
-static const size_t kGfxMaxAttributes   = 8;
-static const size_t kGfxMaxUniforms     = 16;
-static const size_t kGfxMaxBatchVertices = 1024;
+static const size_t kDbgMaxTracebackFrames  = 63;
+static const size_t kEntFirstChunksSize     = 1024;
+static const size_t kEntGrowChunkSize       = 1024;
+static const size_t kEntMaxComponents       = 64;
+static const size_t kGfxMaxTextures         = 8;
+static const size_t kGfxMaxPrograms         = 8;
+static const size_t kGfxMaxAttributes       = 8;
+static const size_t kGfxMaxUniforms         = 16;
+static const size_t kGfxMaxBatchVertices    = 1024;
 
 /// FORWARD DECLARATIONS
 extern void ABORT(const char* file, int line, const char* format, ...);

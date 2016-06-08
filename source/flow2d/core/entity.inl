@@ -300,8 +300,6 @@ INLINE void EntityManager::accomodate_entity(uint32_t index)
         m_components_mask.resize(index+1);
         m_versions.resize(index+1);
         m_usages.resize(index+1);
-        for( auto p : m_components_pool )
-            if( p ) p->resize(index+1);
     }
 }
 
@@ -314,8 +312,7 @@ ObjectChunksTrait<T>* EntityManager::get_chunks()
 
     if( m_components_pool[cls] == nullptr )
     {
-        auto chunks = new ObjectChunksTrait<T>();
-        chunks->resize(m_index_counter);
+        auto chunks = new ObjectChunksTrait<T>(kEntFirstChunksSize, kEntGrowChunkSize);
         m_components_pool[cls] = chunks;
     }
 
@@ -435,7 +432,7 @@ T* EntityManager::get_component_ptr(Entity::Uid id)
     if( cls >= m_components_pool.size() )
         return nullptr;
 
-    return static_cast<T*>(m_components_pool[cls]->get(id.index()));
+    return static_cast<ObjectChunksTrait<T>*>(m_components_pool[cls])->get(id.index());
 }
 
 template<typename T>
@@ -447,7 +444,7 @@ const T* EntityManager::get_component_ptr(Entity::Uid id) const
     if( cls >= m_components_pool.size() )
         return nullptr;
 
-    return static_cast<const T*>(m_components_pool[cls]->get(id.index()));
+    return static_cast<ObjectChunksTrait<T>*>(m_components_pool[cls])->get(id.index());
 }
 
 INLINE ComponentMask EntityManager::get_components_mask(Entity::Uid id) const

@@ -394,7 +394,7 @@ struct MovementSystem : public SystemTrait<MovementSystem>
 
     void update(float dt) override
     {
-        entity().find_entities_with<Position, Direction>()
+        world().find_entities_with<Position, Direction>()
                 .each([&](Entity ent, Position& pos, Direction& dir)
                 {
                     pos.x += dir.x;
@@ -409,7 +409,7 @@ struct CounterSystem : public SystemTrait<CounterSystem>
 {
     void update(float dt) override
     {
-        entity().find_entities_with<Counter>()
+        world().find_entities_with<Counter>()
                 .each([&](Entity ent, Counter& c)
                 {
                     c.counter ++;

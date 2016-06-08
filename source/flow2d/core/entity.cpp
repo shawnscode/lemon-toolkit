@@ -100,7 +100,7 @@ Entity EntityManager::create_from(Entity rh)
         auto p = m_components_pool[i];
         if( p && mask.test(i) )
         {
-            p->construct_from(from, to);
+            p->construct_from(to, from);
             m_components_mask[to].set(i);
         }
     }
