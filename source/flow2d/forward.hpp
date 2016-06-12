@@ -30,6 +30,9 @@ static const size_t kGfxMaxAttributes       = 8;
 static const size_t kGfxMaxUniforms         = 16;
 static const size_t kGfxMaxBatchVertices    = 1024;
 
+static const float kGfxDefaultScreenWidth   = 256.f;
+static const float kGfxDefaultScreenHeight  = 256.f;
+
 /// FORWARD DECLARATIONS
 extern void ABORT(const char* file, int line, const char* format, ...);
 extern void LOGI(const char* format, ...);

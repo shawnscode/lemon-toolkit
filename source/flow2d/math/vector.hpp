@@ -8,63 +8,107 @@
 
 NS_FLOW2D_BEGIN
 
-template<typename T> struct Vector2
+template<size_t N, typename T> struct Vector
 {
-    Vector2();
-    Vector2(std::initializer_list<T>);
+    Vector();
+    Vector(std::initializer_list<T>);
 
-    Vector2(const Vector2&) = default;
-    Vector2& operator = (const Vector2&) = default;
+    Vector(const Vector&) = default;
+    Vector& operator = (const Vector&) = default;
 
-    const T& operator[](int) const;
-    T& operator[](int);
+    // member access
+    const T& operator[](size_t) const;
+    T& operator[](size_t);
 
     // comparisons for sorted containers and geometric ordering without epslion
-    bool operator == (const Vector2&) const;
-    bool operator != (const Vector2&) const;
-    bool operator <  (const Vector2&) const;
-    bool operator <= (const Vector2&) const;
-    bool operator >  (const Vector2&) const;
-    bool operator >= (const Vector2&) const;
+    bool operator == (const Vector&) const;
+    bool operator != (const Vector&) const;
+    bool operator <  (const Vector&) const;
+    bool operator <= (const Vector&) const;
+    bool operator >  (const Vector&) const;
+    bool operator >= (const Vector&) const;
 
-    Vector2<T> operator + () const;
-    Vector2<T> operator - () const;
-    Vector2<T> operator + (const Vector2<T>&) const;
-    Vector2<T> operator - (const Vector2<T>&) const;
-    Vector2<T> operator * (T) const;
-    Vector2<T> operator / (T) const;
-
-    Vector2<T>& operator += (const Vector2<T>&);
-    Vector2<T>& operator -= (const Vector2<T>&);
-    Vector2<T>& operator *= (T);
-    Vector2<T>& operator /= (T);
-
-    // 
-    bool equals (const Vector2&, T epslion = std::numeric_limits<T>::epsilon()) const;
-    bool isnan () const;
-    bool isinf () const;
-
-    Vector2<T> normalize () const;
-    Vector2<T> abs () const;
-    Vector2<T> lerp (const Vector2<T>&, float) const;
-
-    T dot (const Vector2<T>&) const;
+    // geometric operations
     T length () const;
     T length_square () const;
+    T normalize ();
 
-    static const Vector2<T> ZERO;
-    static const Vector2<T> ONE;
-    static const Vector2<T> LEFT;
-    static const Vector2<T> RIGHT;
-    static const Vector2<T> UP;
-    static const Vector2<T> DOWN;
+    void zero();
+    void unit(size_t);
 
 protected:
-    std::array<T, 2> m_tuple;
+    std::array<T, N> m_tuple;
 };
 
-using Vector2f = Vector2<float>;
-using Vector2i = Vector2<int>;
+template<typename T>
+using Vector2   = Vector<2, T>;
+using Vector2f  = Vector<2, float>;
+using Vector2i  = Vector<2, int>;
 
-#include "vector.inl"
+static const Vector2f kVector2fZero = { 0.f, 0.f };
+static const Vector2f kVector2fInfinity = { std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity() };
+static const Vector2f kVector2fOne  = { 1.f, 1.f };
+static const Vector2f kVector2fLeft = { -1.f, 0.f };
+static const Vector2f kVector2fRight = { 1.f, 0.f };
+static const Vector2f kVector2fUp = { 0.f, 1.f };
+static const Vector2f kVector2fDown = { 0.f, -1.f };
+
+// unary operations
+template<size_t N, typename T>
+Vector<N, T> operator + (const Vector<N, T>&);
+
+template<size_t N, typename T>
+Vector<N, T> operator - (const Vector<N, T>&);
+
+// linear-algebraic operations
+template<size_t N, typename T>
+Vector<N, T> operator + (const Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
+Vector<N, T> operator - (const Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
+Vector<N, T> operator * (const Vector<N, T>&, T);
+
+template<size_t N, typename T>
+Vector<N, T> operator / (const Vector<N, T>&, T);
+
+template<size_t N, typename T>
+Vector<N, T>& operator += (Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
+Vector<N, T>& operator -= (Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
+Vector<N, T>& operator *= (Vector<N, T>&, T);
+
+template<size_t N, typename T>
+Vector<N, T>& operator /= (Vector<N, T>&, T);
+
+// comparison with epslion
+template<size_t N, typename T>
+bool equals (const Vector<N, T>&, const Vector<N, T>&, T epslion = std::numeric_limits<T>::epsilon());
+
+template<size_t N, typename T>
+T dot (const Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
+Vector<N, T> normalize (const Vector<N, T>&);
+
+template<size_t N, typename T>
+Vector<N, T> abs (const Vector<N, T>&);
+
+template<size_t N, typename T>
+Vector<N, T> lerp (const Vector<N, T>&, const Vector<N, T>&, float);
+
+template<size_t N, typename T>
+Vector<N, T> clamp(const Vector<N, T>&, const Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
+bool isnan (const Vector<N, T>&);
+
+template<size_t N, typename T>
+bool isinf (const Vector<N, T>&);
+
+#include <flow2d/math/vector.inl>
 NS_FLOW2D_END

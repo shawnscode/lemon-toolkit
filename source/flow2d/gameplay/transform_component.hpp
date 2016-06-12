@@ -36,7 +36,7 @@ struct Transform
     Vector2f scale;
     float    rotation;
 
-    Transform(const Vector2f& position = Vector2f::ZERO, const Vector2f& scale = Vector2f::ONE, float rotation = 0.f)
+    Transform(const Vector2f& position = kVector2fZero, const Vector2f& scale = kVector2fOne, float rotation = 0.f)
     : position(position), scale(scale), rotation(rotation)
     {}
 

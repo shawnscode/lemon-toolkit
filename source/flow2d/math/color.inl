@@ -28,25 +28,9 @@ INLINE Color Color::operator * (float t) const
     return Color { r*t, g*t, b*t, a*t };
 }
 
-INLINE bool Color::equals(const Color& rh, float epsilon) const
-{
-    return
-        std::abs(r - rh.r) < epsilon &&
-        std::abs(g - rh.g) < epsilon &&
-        std::abs(b - rh.b) < epsilon &&
-        std::abs(a - rh.a) < epsilon;
-}
-
 INLINE float Color::grayscale() const
 {
     return r * 0.299f + g * 0.587f + b * 0.114f;
-}
-
-INLINE Color Color::lerp(const Color& to, float t) const
-{
-    if( t >= 1.f ) return to;
-    if( t <= 0.f ) return *this;
-    return *this + (to-*this)*t;
 }
 
 INLINE uint32_t Color::to_uint32() const
@@ -78,4 +62,21 @@ INLINE Color& Color::invert(bool alpha)
     if( alpha ) a = 1.f - a;
 
     return *this;
+}
+
+
+INLINE bool equals(const Color& lh, const Color& rh, float epsilon)
+{
+    return
+        std::abs(lh.r - rh.r) < epsilon &&
+        std::abs(lh.g - rh.g) < epsilon &&
+        std::abs(lh.b - rh.b) < epsilon &&
+        std::abs(lh.a - rh.a) < epsilon;
+}
+
+INLINE Color lerp(const Color& from, const Color& to, float t)
+{
+    if( t >= 1.f ) return to;
+    if( t <= 0.f ) return from;
+    return from + (to-from)*t;
 }

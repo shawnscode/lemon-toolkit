@@ -24,12 +24,8 @@ struct Color
     Color operator - (const Color&) const;
     Color operator * (float) const;
 
-    // test for equality with epsilon
-    bool equals(const Color&, float epsilon = std::numeric_limits<float>::epsilon()) const;
     // return the 'grayscale' representation of RGB values
     float grayscale() const;
-    // return linear interpolation o this color with another color
-    Color lerp(const Color&, float t) const;
     // return color packed to a 32-bit integer
     uint32_t to_uint32() const;
 
@@ -53,5 +49,10 @@ struct Color
 };
 
 #include <flow2d/math/color.inl>
+
+// test for equality with epsilon
+bool equals(const Color&, const Color&, float epsilon = std::numeric_limits<float>::epsilon());
+// return linear interpolation o this color with another color
+Color lerp(const Color&, const Color&, float t);
 
 NS_FLOW2D_END

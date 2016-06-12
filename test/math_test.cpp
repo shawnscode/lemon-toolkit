@@ -16,12 +16,12 @@ TEST_CASE("TestVectorInitializerList")
     Vector2f v2 { };
     Vector2f v3 { 1.0f };
 
-    REQUIRE( Vector2f::ZERO == (Vector2f { 0.0f, 0.0f }) );
-    REQUIRE( Vector2f::ONE == (Vector2f { 1.0f, 1.0f }) );
-    REQUIRE( Vector2f::LEFT == (Vector2f { -1.0f, 0.0f }) );
-    REQUIRE( Vector2f::RIGHT == (Vector2f { 1.0f, 0.0f }) );
-    REQUIRE( Vector2f::UP == (Vector2f { 0.0f, 1.0f }) );
-    REQUIRE( Vector2f::DOWN == (Vector2f { 0.0f, -1.0f }) );
+    REQUIRE( kVector2fZero == (Vector2f { 0.0f, 0.0f }) );
+    REQUIRE( kVector2fOne == (Vector2f { 1.0f, 1.0f }) );
+    REQUIRE( kVector2fLeft == (Vector2f { -1.0f, 0.0f }) );
+    REQUIRE( kVector2fRight == (Vector2f { 1.0f, 0.0f }) );
+    REQUIRE( kVector2fUp == (Vector2f { 0.0f, 1.0f }) );
+    REQUIRE( kVector2fDown == (Vector2f { 0.0f, -1.0f }) );
 }
 
 TEST_CASE("TestVectorComparisions")
@@ -65,22 +65,25 @@ TEST_CASE("TestVectorMethods")
     Vector2f v2 = { 4.0f, 5.0f };
     Vector2f v3 = { 3.0f, 3.0f };
 
-    REQUIRE( v1.dot(v2) == Approx(32.f) );
-    REQUIRE( v1.length_square() == Approx(v1.dot(v1)) );
+    REQUIRE( dot(v1, v2) == Approx(32.f) );
+    REQUIRE( v1.length_square() == Approx(dot(v1, v1)) );
     REQUIRE( v1.length() == Approx(5.f) );
 
-    Vector2f v4 = v3.normalize();
+    Vector2f v4 = normalize(v3);
     REQUIRE( v4[0] == Approx(0.707107f) );
     REQUIRE( v4[1] == Approx(0.707107f) );
     REQUIRE( v4.length() == Approx(1.f) );
 
-    Vector2f v5 = (Vector2f { 0.0f, 0.0f }).normalize();
-    REQUIRE( v5.isnan() );
+    Vector2f v5 = { 0.f, 0.f };
+    v5.normalize();
+    REQUIRE( isnan(v5) );
 
     Vector2f v6 = { 1.0f, 2.0f };
     Vector2f v7 = { 1.1f, 2.0f };
-    REQUIRE( !v6.equals(v7, 0.05f) );
-    REQUIRE( v6.equals(v7, 0.11f) );
+    REQUIRE( !equals(v6, v7, 0.05f) );
+    REQUIRE( equals(v6, v7, 0.11f) );
+
+    REQUIRE( clamp( Vector2f{-3.f, 3.f}, kVector2fZero, kVector2fInfinity ) == (Vector2f{0.f, 3.f}) );
 }
 
 TEST_CASE("TestRectInitializerList")
@@ -97,8 +100,8 @@ TEST_CASE("TestRectInitializerList")
     REQUIRE( r2[1][0] == Approx(0.f) );
     REQUIRE( r2[1][1] == Approx(0.f) );
 
-    REQUIRE( Rect2f::FULL == (Rect2f { -1.f, -1.f, 1.f, 1.f }) );
-    REQUIRE( Rect2f::POSITIVE == (Rect2f { 0.f, 0.f, 1.f, 1.f }) );
+    REQUIRE( kRect2fFull == (Rect2f { -1.f, -1.f, 2.f, 2.f }) );
+    REQUIRE( kRect2fPositive == (Rect2f { 0.f, 0.f, 1.f, 1.f }) );
 }
 
 TEST_CASE("TestRectOperations")
@@ -114,13 +117,17 @@ TEST_CASE("TestRectOperations")
 
     Rect2f r2 { 2.0f, 2.0f, 3.0f, 3.0f };
     Rect2f r3 = r + r2;
-    REQUIRE( r3 == (Rect2f { 0.f, 0.f, 3.f, 3.f }) );
+    REQUIRE( r3 == (Rect2f { 0.f, 0.f, 5.f, 5.f }) );
+
     r2 += r;
     REQUIRE( r3 == r2 );
     REQUIRE( (r + Rect2f { -1.f, 0.f, 2.f, 1.f }) == (Rect2f { -1.f, 0.f, 2.f, 1.f }) );
 
     Vector2f v { 4.f, -2.f };
-    REQUIRE( (r + v) == (Rect2f { 0.f, -2.f, 4.f, 1.f }) );
+    REQUIRE( (r + v) == (Rect2f { 0.f, -2.f, 4.f, 3.f }) );
+
+    REQUIRE( clamp( Rect2f{0.f, 0.f, 5.f, 5.f}, Rect2f{1.f, 1.f, 1.f, 1.f} ) == (Rect2f{1.f, 1.f, 1.f, 1.f}) );
+    REQUIRE( clamp( Rect2f{0.f, 0.f, 2.f, 2.f}, Rect2f{1.f, 1.f, 2.f, 2.f} ) == (Rect2f{1.f, 1.f, 1.f, 1.f}) );
 }
 
 TEST_CASE("TestColor")
@@ -130,10 +137,10 @@ TEST_CASE("TestColor")
     REQUIRE( c.to_uint32() == 0xFF0000FF );
 
     Color c2 { 1.0f, 0.0f, 1.0f };
-    REQUIRE( c.lerp(c2, 0.5f).equals(Color {1.f, 0.0f, 0.5f}) );
+    REQUIRE( equals(lerp(c, c2, 0.5f), Color {1.f, 0.0f, 0.5f}) );
 
     Color c3 { 2.0f, 4.3f, 0.5f };
-    REQUIRE( c3.clip().equals(Color {1.f, 1.f, 0.5f}) );
-    REQUIRE( c3.invert(true).equals(Color {0.f, 0.f, 0.5f, 0.f}) );
+    REQUIRE( equals( c3.clip(), Color {1.f, 1.f, 0.5f} ) );
+    REQUIRE( equals( c3.invert(true), Color {0.f, 0.f, 0.5f, 0.f} ) );
 }
 
