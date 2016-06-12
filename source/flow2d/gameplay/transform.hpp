@@ -43,8 +43,8 @@ struct Transform
     Transform(const Transform&) = default;
     Transform& operator = (const Transform&) = default;
 
-    Transform operator -  (const Transform&) const;
-    Transform operator +  (const Transform&) const;
+    Transform operator * (const Transform&) const;
+    Transform operator / (const Transform&) const;
 
     static const Transform IDENTITY;
 };

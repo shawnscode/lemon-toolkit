@@ -29,7 +29,7 @@ INLINE const TransformComponent* TransformIterator::operator * () const
     return cursor;
 }
 
-INLINE Transform Transform::operator - (const Transform& rh) const
+INLINE Transform Transform::operator / (const Transform& rh) const
 {
     return Transform(
         position - rh.position,
@@ -37,7 +37,7 @@ INLINE Transform Transform::operator - (const Transform& rh) const
         rotation - rh.rotation);
 }
 
-INLINE Transform Transform::operator + (const Transform& rh) const
+INLINE Transform Transform::operator * (const Transform& rh) const
 {
     return Transform(
         position + rh.position,
@@ -62,12 +62,12 @@ INLINE void TransformComponent::set_transform(const Transform& pose, TransformSp
     if( TransformSpace::SELF == space )
     {
         transform = pose;
-        if( parent ) world_transform = parent->world_transform - transform;
+        if( parent ) world_transform = parent->world_transform * transform;
     }
     else
     {
         world_transform = pose;
-        if( parent ) transform = world_transform - parent->world_transform;
+        if( parent ) transform = world_transform / parent->world_transform;
     }
 
     update_children();
@@ -78,12 +78,12 @@ INLINE void TransformComponent::set_scale(const Vector2f& scale, TransformSpace 
     if( TransformSpace::SELF == space )
     {
         transform.scale = scale;
-        if( parent ) world_transform = parent->world_transform - transform;
+        if( parent ) world_transform = parent->world_transform * transform;
     }
     else
     {
         world_transform.scale = scale;
-        if( parent ) transform = world_transform - parent->world_transform;
+        if( parent ) transform = world_transform / parent->world_transform;
     }
 
     update_children();
@@ -94,12 +94,12 @@ INLINE void TransformComponent::set_position(const Vector2f& position, Transform
     if( TransformSpace::SELF == space )
     {
         transform.position = position;
-        if( parent ) world_transform = parent->world_transform - transform;
+        if( parent ) world_transform = parent->world_transform * transform;
     }
     else
     {
         world_transform.position = position;
-        if( parent ) transform = world_transform - parent->world_transform;
+        if( parent ) transform = world_transform / parent->world_transform;
     }
 
     update_children();
@@ -110,12 +110,12 @@ INLINE void TransformComponent::set_rotation(float rotation, TransformSpace spac
     if( TransformSpace::SELF == space )
     {
         transform.rotation = rotation;
-        if( parent ) world_transform = parent->world_transform - transform;
+        if( parent ) world_transform = parent->world_transform * transform;
     }
     else
     {
         world_transform.rotation = rotation;
-        if( parent ) transform = world_transform - parent->world_transform;
+        if( parent ) transform = world_transform / parent->world_transform;
     }
 
     update_children();
