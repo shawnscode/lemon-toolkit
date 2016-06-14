@@ -15,6 +15,18 @@ INLINE T* ResourceHandle<T>::operator -> ()
 }
 
 template<typename T>
+INLINE const T* ResourceHandle<T>::operator -> () const
+{
+    return cache->get_ptr<T>(rid);
+}
+
+template<typename T>
+INLINE ResourceHandle<T>::operator bool () const
+{
+    return is_valid();
+}
+
+template<typename T>
 INLINE bool ResourceHandle<T>::operator == (const ResourceHandle<T>& rh)
 {
     return rid == rh.rid && cache == rh.cache;
@@ -30,6 +42,12 @@ template<typename T>
 INLINE void ResourceHandle<T>::release ()
 {
     return cache->release(rid);
+}
+
+template<typename T>
+INLINE bool ResourceHandle<T>::is_valid() const
+{
+    return cache->is_valid(rid);
 }
 
 template<typename T>
@@ -61,15 +79,26 @@ INLINE bool ResourceCacheManager::is_valid(ResourceId id) const
 
 INLINE void ResourceCacheManager::retain(ResourceId id)
 {
-    ASSERT( is_valid(id), "try to retain a non-existed resource." );
-    touch(id);
+    ASSERT( is_valid(id) , "try to retain a non-existed resource." );
+
+    if( m_refcounts[id.index] == 1 )
+    {
+        auto cursor = std::find(m_lru.begin(), m_lru.end(), id);
+        ENSURE( cursor != m_lru.end() );
+        m_lru.erase(cursor);
+    }
+
     m_refcounts[id.index] ++;
 }
 
 INLINE void ResourceCacheManager::release(ResourceId id)
 {
     ASSERT( is_valid(id), "try to release a non-existed resource." );
+    ENSURE( m_refcounts[id.index] > 1 );
+
     m_refcounts[id.index] --;
+    if( m_refcounts[id.index] == 1 )
+        m_lru.push_back(id);
 }
 
 INLINE size_t ResourceCacheManager::get_refcount(ResourceId id) const
@@ -90,14 +119,16 @@ INLINE void ResourceCacheManager::accomodate_storage(size_t index)
 }
 
 template<typename T>
-ResourceHandle<T> ResourceCacheManager::get(const char* name)
+ResourceHandle<typename T::resource_type> ResourceCacheManager::get(const char* name)
 {
     auto cursor = m_identifiers.find(name);
     if( cursor != m_identifiers.end() )
     {
-        ENSURE( is_valid(cursor->second) );
-        touch(cursor->second);
-        return { this, cursor->second };
+        if( is_valid(cursor->second) )
+        {
+            touch(cursor->second);
+            return { this, cursor->second };
+        }
     }
 
     uint32_t index, version;
@@ -115,7 +146,7 @@ ResourceHandle<T> ResourceCacheManager::get(const char* name)
     }
 
     auto id = ResourceId(index, version, T::type() );
-    m_identifiers.insert(std::make_pair(name, id));
+    m_identifiers[name] = id;
 
     auto resource = new T();
     if( !resource->load_from_file(name) )
@@ -126,12 +157,26 @@ ResourceHandle<T> ResourceCacheManager::get(const char* name)
 
     m_resources[index] = resource;
     m_refcounts[index] = 1;
+    m_memory_usage += resource->get_memory_usage();
+
+    if( m_memory_usage > m_cache_threshold )
+        try_make_room( (m_memory_usage - m_cache_threshold)*1.25f );
+
     m_lru.push_back(id);
     return { this, id };
 }
 
 template<typename T>
 INLINE T* ResourceCacheManager::get_ptr(ResourceId id)
+{
+    if( !is_valid(id) || T::type() != id.type )
+        return nullptr;
+
+    return static_cast<T*>(m_resources[id.index]);
+}
+
+template<typename T>
+INLINE const T* ResourceCacheManager::get_ptr(ResourceId id) const
 {
     if( !is_valid(id) || T::type() != id.type )
         return nullptr;

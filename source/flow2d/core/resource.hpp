@@ -22,10 +22,14 @@ union ResourceId
 template<typename T> struct ResourceHandle
 {
     T* operator -> ();
+    const T* operator -> () const;
+    operator bool() const;
     bool operator == (const ResourceHandle&);
 
     void        retain();
     void        release();
+
+    bool        is_valid() const;
     ResourceId  get_resource_id() const;
     size_t      get_refcount() const;
 
@@ -51,25 +55,31 @@ protected:
 
 template<typename T> struct ResourceTrait : public Resource
 {
+    using resource_type = T;
     static RuntimeTypeId type();
+
     virtual ~ResourceTrait() {}
 };
 
 struct ResourceCacheManager
 {
-    ResourceCacheManager() {}
-    ~ResourceCacheManager() {}
+    ResourceCacheManager(size_t threshold = kCacheDefaultThreshold);
+    ~ResourceCacheManager();
 
-    template<typename T> ResourceHandle<T> get(const char*);
+    template<typename T> ResourceHandle<typename T::resource_type>
+    get(const char*);
+
     template<typename T> T* get_ptr(ResourceId);
+    template<typename T> const T* get_ptr(ResourceId) const;
 
     void    retain(ResourceId);
     void    release(ResourceId);
+
+    bool    is_valid(ResourceId) const;
     size_t  get_refcount(ResourceId) const;
     size_t  get_memory_usage() const;
 
 protected:
-    bool is_valid(ResourceId) const;
     void touch(ResourceId);
     void accomodate_storage(size_t);
     void try_make_room(size_t);
@@ -80,6 +90,8 @@ protected:
     //
     std::vector<Resource*>  m_resources;
     //
+    size_t                  m_memory_usage;
+    size_t                  m_cache_threshold;
     std::list<ResourceId>   m_lru;
     // refcount of resource, it could be free if refcount equals zero
     std::vector<size_t>     m_refcounts;

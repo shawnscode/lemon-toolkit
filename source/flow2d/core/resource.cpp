@@ -18,12 +18,18 @@ ResourceId::ResourceId(uint32_t index, uint32_t version, uint32_t type)
 
 Resource::RuntimeTypeId Resource::s_rti = 0;
 
+ResourceCacheManager::ResourceCacheManager(size_t threshold)
+: m_memory_usage(0), m_cache_threshold(threshold) {}
+
+ResourceCacheManager::~ResourceCacheManager()
+{
+    for( auto i=0; i<m_resources.size(); i++ )
+        delete m_resources[i];
+}
+
 size_t ResourceCacheManager::get_memory_usage() const
 {
-    size_t size = 0;
-    for( auto pair : m_identifiers )
-        size += m_resources[pair.second.index]->get_memory_usage();
-    return size;
+    return m_memory_usage;
 }
 
 void ResourceCacheManager::touch(ResourceId id)
@@ -64,6 +70,8 @@ void ResourceCacheManager::try_make_room(size_t size)
                 break;
         }
     }
+
+    m_memory_usage -= removed;
 }
 
 NS_FLOW2D_END
