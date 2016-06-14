@@ -28,7 +28,7 @@ TransformComponent* TransformComponent::set_parent(TransformComponent* parent)
 
     this->parent = parent;
     parent->first_child = this;
-    this->world_transform = parent->world_transform + this->transform;
+    this->world_transform = parent->world_transform * this->transform;
 
     update_children();
     return this;
@@ -58,7 +58,7 @@ void TransformComponent::update_children()
     auto cursor = first_child;
     while( cursor )
     {
-        cursor->set_transform(world_transform + cursor->transform, TransformSpace::WORLD);
+        cursor->set_transform(world_transform * cursor->transform, TransformSpace::WORLD);
         cursor = cursor->next_sibling;
     }
 }

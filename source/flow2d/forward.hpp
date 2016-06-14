@@ -12,6 +12,7 @@
 #include <bitset>
 #include <vector>
 #include <array>
+#include <list>
 #include <unordered_map>
 #include <algorithm>
 
@@ -65,6 +66,9 @@ struct SystemManager;
 struct Event;
 template<typename T> struct EventTrait;
 struct EventManager;
+
+//- RESOURCE CACHE SYSTEM
+struct ResourceCacheManager;
 
 //- SCENE GRAPH SYSTEM
 struct Transform;

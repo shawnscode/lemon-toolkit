@@ -3,6 +3,7 @@
 #include <flow2d/core/entity.hpp>
 #include <flow2d/core/event.hpp>
 #include <flow2d/core/system.hpp>
+#include <flow2d/core/resource.hpp>
 
 #include <flow2d/graphic/device.hpp>
 #include <flow2d/graphic/render.hpp>
