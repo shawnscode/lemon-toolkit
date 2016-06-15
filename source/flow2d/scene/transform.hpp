@@ -103,5 +103,5 @@ protected:
     TransformComponent*  prev_sibling = nullptr;
 };
 
-#include <flow2d/gameplay/transform.inl>
+#include <flow2d/scene/transform.inl>
 NS_FLOW2D_END
