@@ -17,11 +17,13 @@ INLINE Path& Path::set(const std::string& str)
     }
 
     m_path = std::move(tokens);
+    return *this;
 }
 
 INLINE Path& Path::concat(const Path& rh)
 {
     m_path.insert(m_path.begin(), rh.m_path.begin(), rh.m_path.end());
+    return *this;
 }
 
 INLINE bool Path::is_empty() const
@@ -93,4 +95,30 @@ INLINE Path::Iterator Path::begin()
 INLINE Path::Iterator Path::end()
 {
     return m_path.end();
+}
+
+///
+
+template<typename T, typename ... Args>
+void ArchiveManager::add_archive(Args && ... args)
+{
+    static_assert( std::is_base_of<Archive, T>::value, "must be inherited from Archive." );
+
+    T* archive = new (std::nothrow) T(std::forward<Args>(args) ...);
+    m_archives.push_back(archive);
+}
+
+INLINE DataStream::Ptr ArchiveManager::open(const Path& path)
+{
+    if( path.is_empty() )
+        return { nullptr };
+
+    for( auto archive : m_archives )
+    {
+        auto stream = archive->open(path);
+        if( stream )
+            return std::move(stream);
+    }
+
+    return { nullptr };
 }
