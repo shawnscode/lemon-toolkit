@@ -69,6 +69,9 @@ template<typename T> struct EventTrait;
 struct EventManager;
 
 //- RESOURCE CACHE SYSTEM
+struct DataStream;
+struct FilesystemArchive;
+struct ArchiveManager;
 struct ResourceCacheManager;
 
 //- SCENE GRAPH SYSTEM

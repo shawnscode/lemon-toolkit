@@ -1,4 +1,5 @@
 #include <flow2d/core/resource.hpp>
+#include <flow2d/core/archive.hpp>
 
 NS_FLOW2D_BEGIN
 
@@ -18,8 +19,9 @@ ResourceId::ResourceId(uint32_t index, uint32_t version, uint32_t type)
 
 Resource::RuntimeTypeId Resource::s_rti = 0;
 
-ResourceCacheManager::ResourceCacheManager(size_t threshold)
-: m_memory_usage(0), m_cache_threshold(threshold) {}
+ResourceCacheManager::ResourceCacheManager(ArchiveManager& archive, size_t threshold)
+: m_archives(archive), m_memory_usage(0), m_cache_threshold(threshold)
+{}
 
 ResourceCacheManager::~ResourceCacheManager()
 {
@@ -40,6 +42,43 @@ void ResourceCacheManager::touch(ResourceId id)
         m_lru.push_back(*cursor);
         m_lru.erase(cursor);
     }
+}
+
+ResourceId ResourceCacheManager::try_insert(Resource* resource, const char* name, uint32_t size)
+{
+    auto stream = m_archives.open({name});
+    if( !stream || !resource->load_from_file(std::move(stream)) )
+    {
+        delete resource;
+        return ResourceId();
+    }
+
+    uint32_t index, version;
+    if( m_freeslots.empty() )
+    {
+        index = m_index_counter ++;
+        accomodate_storage(index);
+        version = m_versions[index] = 1;
+    }
+    else
+    {
+        index = m_freeslots.back();
+        m_freeslots.pop_back();
+        version = m_versions[index];
+    }
+
+    auto id = ResourceId(index, version, size );
+    m_identifiers[name] = id;
+
+    m_resources[index] = resource;
+    m_refcounts[index] = 1;
+    m_memory_usage += resource->get_memory_usage();
+
+    if( m_memory_usage > m_cache_threshold )
+        try_make_room( (m_memory_usage - m_cache_threshold)*1.25f );
+
+    m_lru.push_back(id);
+    return id;
 }
 
 void ResourceCacheManager::try_make_room(size_t size)

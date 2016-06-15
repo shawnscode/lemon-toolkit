@@ -46,7 +46,7 @@ struct Resource
     using RuntimeTypeId = size_t;
 
     virtual ~Resource() {}
-    virtual bool    load_from_file(const char*) = 0;
+    virtual bool    load_from_file(std::unique_ptr<DataStream>) = 0;
     virtual size_t  get_memory_usage() const = 0;
 
 protected:
@@ -63,7 +63,7 @@ template<typename T> struct ResourceTrait : public Resource
 
 struct ResourceCacheManager
 {
-    ResourceCacheManager(size_t threshold = kCacheDefaultThreshold);
+    ResourceCacheManager(ArchiveManager&, size_t threshold = kCacheDefaultThreshold);
     ~ResourceCacheManager();
 
     template<typename T> ResourceHandle<typename T::resource_type>
@@ -82,8 +82,10 @@ struct ResourceCacheManager
 protected:
     void touch(ResourceId);
     void accomodate_storage(size_t);
+    ResourceId try_insert(Resource*, const char*, uint32_t);
     void try_make_room(size_t);
 
+    ArchiveManager&         m_archives;
     std::unordered_map<std::string, ResourceId> m_identifiers;
     size_t m_index_counter = 0;
 

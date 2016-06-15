@@ -119,7 +119,7 @@ INLINE void ResourceCacheManager::accomodate_storage(size_t index)
 }
 
 template<typename T>
-ResourceHandle<typename T::resource_type> ResourceCacheManager::get(const char* name)
+INLINE ResourceHandle<typename T::resource_type> ResourceCacheManager::get(const char* name)
 {
     auto cursor = m_identifiers.find(name);
     if( cursor != m_identifiers.end() )
@@ -131,39 +131,8 @@ ResourceHandle<typename T::resource_type> ResourceCacheManager::get(const char* 
         }
     }
 
-    uint32_t index, version;
-    if( m_freeslots.empty() )
-    {
-        index = m_index_counter ++;
-        accomodate_storage(index);
-        version = m_versions[index] = 1;
-    }
-    else
-    {
-        index = m_freeslots.back();
-        m_freeslots.pop_back();
-        version = m_versions[index];
-    }
-
-    auto id = ResourceId(index, version, T::type() );
-    m_identifiers[name] = id;
-
-    auto resource = new T();
-    if( !resource->load_from_file(name) )
-    {
-        delete resource;
-        return { this, ResourceId() };
-    }
-
-    m_resources[index] = resource;
-    m_refcounts[index] = 1;
-    m_memory_usage += resource->get_memory_usage();
-
-    if( m_memory_usage > m_cache_threshold )
-        try_make_room( (m_memory_usage - m_cache_threshold)*1.25f );
-
-    m_lru.push_back(id);
-    return { this, id };
+    auto resource = new (std::nothrow) T();
+    return { this, try_insert(resource, name, T::type()) };
 }
 
 template<typename T>
