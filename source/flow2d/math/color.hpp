@@ -48,6 +48,10 @@ struct Color
     static const Color TRANSPARENT;
 };
 
+// struct ColorTransform
+// {
+// };
+
 #include <flow2d/math/color.inl>
 
 // test for equality with epsilon

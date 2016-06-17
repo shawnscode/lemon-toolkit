@@ -94,6 +94,7 @@ protected:
     //
     size_t                  m_memory_usage;
     size_t                  m_cache_threshold;
+
     std::list<ResourceId>   m_lru;
     // refcount of resource, it could be free if refcount equals zero
     std::vector<size_t>     m_refcounts;

@@ -31,9 +31,8 @@ static const size_t kGfxMaxPrograms         = 8;
 static const size_t kGfxMaxAttributes       = 8;
 static const size_t kGfxMaxUniforms         = 16;
 static const size_t kGfxMaxBatchVertices    = 1024;
-
-static const float kGfxDefaultScreenWidth   = 256.f;
-static const float kGfxDefaultScreenHeight  = 256.f;
+static const float  kGfxDefaultScreenWidth  = 256.f;
+static const float  kGfxDefaultScreenHeight = 256.f;
 
 /// FORWARD DECLARATIONS
 extern void ABORT(const char* file, int line, const char* format, ...);
@@ -49,6 +48,8 @@ extern void LOGE(const char* format, ...);
 
 #define FATAL(format, ...) ASSERT(false, format, ##__VA_ARGS__)
 #define ENSURE(condition) ASSERT(condition, "")
+
+#define NOTUSED(v) for(;;) { (void)(1 ? (void)0 : ((void)v)); break; }
 
 //- ENTITY COMPONENT SYSTEM
 template<typename T> struct ComponentHandle;
@@ -69,6 +70,7 @@ template<typename T> struct EventTrait;
 struct EventManager;
 
 //- RESOURCE CACHE SYSTEM
+template<typename T> struct ResourceHandle;
 struct DataStream;
 struct FilesystemArchive;
 struct ArchiveManager;

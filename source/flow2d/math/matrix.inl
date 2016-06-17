@@ -17,7 +17,7 @@ Matrix<R, C, T>::Matrix(std::initializer_list<T> values)
     {
         for( c = 0; c < C; c++, i++ )
         {
-            if( i < size ) m_values[r][c] = *iter++;
+            if( i < size ) m_values[r][c] = *cursor++;
             else break;
         }
 
@@ -77,7 +77,7 @@ INLINE bool Matrix<R, C, T>::operator != (const Matrix<R, C, T>& rh) const
 }
 
 template<size_t R, size_t C, typename T>
-void Matrix<R, C, T>::zero() const
+void Matrix<R, C, T>::zero()
 {
     auto zero = (T)0;
     for( auto i=0; i<R; i++ )
@@ -86,7 +86,7 @@ void Matrix<R, C, T>::zero() const
 }
 
 template<size_t R, size_t C, typename T>
-void Matrix<R, C, T>::unit(size_t r, size_t c) const
+void Matrix<R, C, T>::unit(size_t r, size_t c)
 {
     zero();
     if( 0 <= r && r < R && 0 <= c && c <= C )
@@ -94,7 +94,7 @@ void Matrix<R, C, T>::unit(size_t r, size_t c) const
 }
 
 template<size_t R, size_t C, typename T>
-void Matrix<R, C, T>::identity() const
+void Matrix<R, C, T>::identity()
 {
     zero();
     auto diagonal = R <= C ? R : C;
@@ -147,7 +147,7 @@ Matrix<R, C, T> operator * (T scalar, const Matrix<R, C, T>& M0)
 }
 
 template<size_t R, size_t C, typename T>
-Matrix<R, C, T> operator / (const Matrix<R, C, T>&, T)
+Matrix<R, C, T> operator / (const Matrix<R, C, T>& M0, T scalar)
 {
     auto result = M0;
     return result /= scalar;
@@ -174,6 +174,13 @@ Matrix<R, C, T>& operator *= (Matrix<R, C, T>& M0, T scalar)
     return M0;
 }
 
+template<size_t R, size_t S, size_t C, typename T>
+Matrix<R, C, T>& operator *= (Matrix<R, S, T>& M0, const Matrix<S, C, T>& M1)
+{
+    M0 = M0 * M1;
+    return M0;
+}
+
 template<size_t R, size_t C, typename T>
 Matrix<R, C, T>& operator /= (Matrix<R, C, T>& M0, T scalar)
 {
@@ -194,6 +201,21 @@ Vector<R, T> operator * (const Matrix<R, C, T>& M, const Vector<C, T>& V)
     }
 
     return result;
+}
+
+// M*(V-HLift)
+template<size_t N, typename T>
+Vector<N-1, T> operator * (const Matrix<N, N, T>& M, const Vector<N-1, T>& V)
+{
+    Vector<N, T> L = hlift(V, (T)1);
+    for( auto r = 0; r < N; r++ )
+    {
+        L[r] = (T)0;
+        for( auto c = 0; c < N; c++ )
+            L[r] += M(r, c) * L[c];
+    }
+
+    return hproject(L);
 }
 
 // V^T*M
@@ -229,34 +251,34 @@ Matrix<R, C, T> operator * (const Matrix<R, S, T>& M0, const Matrix<S, C, T>& M1
 
 // M^T
 template<size_t R, size_t C, typename T>
-Matrix<C, R, T> Matrix<R, C, T>::transpose()
+Matrix<C, R, T> transpose(const Matrix<R, C, T>& M)
 {
     Matrix<C, R, T> result;
     for( auto r = 0; r < R; r ++ )
         for( auto c = 0; c < C; c ++ )
-            result(c, r) = m_values[r][c];
+            result(c, r) = M(r, c);
     return result;
 }
 
-template<size_t N, typename T>
-Matrix<N-1, N-1, T> Matrix<R, C, T>::hproject()
+template<size_t R, size_t C, typename T>
+Matrix<R-1, C-1, T> hproject(const Matrix<R, C, T>& M)
 {
-    static_assert( N >= 2, "invalid matrix dimension." );
+    static_assert( R >= 2 && C >= 2, "invalid matrix dimension." );
 
-    Matrix<N-1, N-1, T> result;
-    for( auto r = 0; r < N-1; r ++ )
-        for( auto c = 0; c < N-1; c ++ )
-            result(r, c) = m_values[r][c];
+    Matrix<R-1, C-1, T> result;
+    for( auto r = 0; r < R-1; r ++ )
+        for( auto c = 0; c < C-1; c ++ )
+            result(r, c) = M(r, c);
     return result;
 }
 
-template<size_t N, typename T>
-Matrix<N+1, N+1, T> Matrix::<R, C, T>::hlift()
+template<size_t R, size_t C, typename T>
+Matrix<R+1, C+1, T> hlift(const Matrix<R, C, T>& M)
 {
-    Matrix<N+1, N+1, T> result;
+    Matrix<R+1, C+1, T> result;
     result.identity();
-    for( auto r = 0; r < N; r ++ )
-        for( auto c = 0; c < N; c ++ )
-            result(r, c) = m_values[r][c];
+    for( auto r = 0; r < R; r ++ )
+        for( auto c = 0; c < C; c ++ )
+            result(r, c) = M(r, c);
     return result;
 }

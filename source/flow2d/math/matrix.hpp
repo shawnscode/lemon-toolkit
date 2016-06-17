@@ -15,10 +15,10 @@ template<size_t R, size_t C, typename T> struct Matrix
     Matrix(std::initializer_list<T>);
 
     Matrix(const Matrix&) = default;
-    Matrix operator = (const Matrix&) = default;
+    Matrix& operator = (const Matrix&) = default;
 
-    const T& operator()(size_t, size_t) const;
-    T& operator(size_t, size_t) const;
+    const T& operator() (size_t, size_t) const;
+    T& operator() (size_t, size_t);
 
     // index in row major
     const T& operator[](size_t) const;
@@ -26,15 +26,6 @@ template<size_t R, size_t C, typename T> struct Matrix
 
     bool operator == (const Matrix&) const;
     bool operator != (const Matrix&) const;
-
-    // M^T
-    Matrix<C, R, T> transpose();
-    // extract the upper (N-1)-by-(N-1) block of the input N-by-N matrix
-    Matrix<N-1, N-1, T> hproject();
-    // create an (N+1)-by-(N+1) matrix H by setting the upper N-by-N block to the
-    // input N-by-N matrix and all other entries to 0 except for the last row
-    // and last column entry which is set to 1
-    Matrix<N+1, N+1, T> hlift();
 
     void zero();
     void unit(size_t r, size_t c);
@@ -45,12 +36,12 @@ protected:
 };
 
 template<typename T>
-using Matrix2   = Matrix<2, T>;
-using Matrix2f  = Matrix<2, float>;
+using Matrix2   = Matrix<2, 2, T>;
+using Matrix2f  = Matrix<2, 2, float>;
 
 template<typename T>
-using Matrix3   = Matrix<3, T>;
-using Matrix3f  = Matrix<3, float>;
+using Matrix3   = Matrix<3, 3, T>;
+using Matrix3f  = Matrix<3, 3, float>;
 
 static const Matrix2f kMatrix2fIdentity = { 1.0f, 0.0f, 1.0f, 0.0f };
 
@@ -86,6 +77,9 @@ Matrix<R, C, T>& operator -= (Matrix<R, C, T>&, const Matrix<R, C, T>&);
 template<size_t R, size_t C, typename T>
 Matrix<R, C, T>& operator *= (Matrix<R, C, T>&, T);
 
+template<size_t R, size_t S, size_t C, typename T>
+Matrix<R, C, T>& operator *= (Matrix<R, S, T>&, const Matrix<S, C, T>&);
+
 template<size_t R, size_t C, typename T>
 Matrix<R, C, T>& operator /= (Matrix<R, C, T>&, T);
 
@@ -97,9 +91,27 @@ Vector<R, T> operator * (const Matrix<R, C, T>&, const Vector<C, T>&);
 template<size_t R, size_t C, typename T>
 Vector<C, T> operator * (const Vector<R, T>&, const Matrix<R, C, T>&);
 
+// M*(V-HLift)
+template<size_t N, typename T>
+Vector<N-1, T> operator * (const Matrix<N, N, T>& M, const Vector<N-1, T>& V);
+
 // A*B
 template<size_t R, size_t C, size_t S, typename T>
 Matrix<R, C, T> operator * (const Matrix<R, S, T>&, const Matrix<S, C, T>&);
+
+// M^T
+template<size_t R, size_t C, typename T>
+Matrix<C, R, T> transpose(const Matrix<R, C, T>&);
+
+// extract the upper (N-1)-by-(N-1) block of the input N-by-N matrix
+template<size_t R, size_t C, typename T>
+Matrix<R-1, C-1, T> hproject(const Matrix<R, C, T>&);
+
+// create an (N+1)-by-(N+1) matrix H by setting the upper N-by-N block to the
+// input N-by-N matrix and all other entries to 0 except for the last row
+// and last column entry which is set to 1
+template<size_t R, size_t C, typename T>
+Matrix<R+1, C+1, T> hlift(const Matrix<R, C, T>&);
 
 #include <flow2d/math/matrix.inl>
 NS_FLOW2D_END

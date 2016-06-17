@@ -48,7 +48,7 @@ using Rect2  = Rect<2, T>;
 using Rect2f = Rect<2, float>;
 using Rect2i = Rect<2, int>;
 
-static const Rect2f kRect2fFull = { -1, -1, 2, 2 }; // (-1, -1) ~ (1, 1)
+static const Rect2f kRect2fFull     = { -1, -1, 2, 2 }; // (-1, -1) ~ (1, 1)
 static const Rect2f kRect2fPositive = { 0, 0, 1, 1 }; // (0, 0) ~ (1, 1)
 
 template<size_t N, typename T>

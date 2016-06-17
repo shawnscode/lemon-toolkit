@@ -117,6 +117,13 @@ Vector<N, T> operator * (const Vector<N, T>& v, T scalar)
 }
 
 template<size_t N, typename T>
+Vector<N, T> operator * (T scalar, const Vector<N, T>& v)
+{
+    Vector<N, T> result = v;
+    return result *= scalar;
+}
+
+template<size_t N, typename T>
 Vector<N, T> operator / (const Vector<N, T>& v, T scalar)
 {
     Vector<N, T> result = v;
@@ -239,4 +246,23 @@ bool isinf (const Vector<N, T>& v)
     for( auto i = 0; i < N; i++ )
         if( std::isinf(v[i]) ) return true;
     return false;
+}
+
+template<size_t N, typename T>
+Vector<N+1, T> hlift(const Vector<N, T>& V, T last)
+{
+    Vector<N+1, T> result;
+    for( auto i = 0; i < N; i++ ) result[i] = V[i];
+    result[N] = last;
+    return result;
+}
+
+template<size_t N, typename T>
+Vector<N-1, T> hproject(const Vector<N, T>& V)
+{
+    static_assert( N >= 2, "invalid vector dimension." );
+
+    Vector<N-1, T> result;
+    for( auto i = 0; i< N-1; i++ ) result[i] = V[i];
+    return result;
 }

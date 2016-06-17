@@ -71,6 +71,9 @@ template<size_t N, typename T>
 Vector<N, T> operator * (const Vector<N, T>&, T);
 
 template<size_t N, typename T>
+Vector<N, T> operator * (T, const Vector<N, T>&);
+
+template<size_t N, typename T>
 Vector<N, T> operator / (const Vector<N, T>&, T);
 
 template<size_t N, typename T>
@@ -109,6 +112,13 @@ bool isnan (const Vector<N, T>&);
 
 template<size_t N, typename T>
 bool isinf (const Vector<N, T>&);
+
+// lift n-tuple v to homogeneous (n+1)-tuple (v,last).
+template<size_t N, typename T>
+Vector<N+1, T> hlift(const Vector<N, T>&, T last = (T)1);
+// project homogeneous n-tuple v = (u,v[n-1]) to (n-1)-tuple u.
+template<size_t N, typename T>
+Vector<N-1, T> hproject(const Vector<N, T>&);
 
 #include <flow2d/math/vector.inl>
 NS_FLOW2D_END
