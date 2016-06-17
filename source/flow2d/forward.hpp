@@ -33,6 +33,7 @@ static const size_t kGfxMaxUniforms         = 16;
 static const size_t kGfxMaxBatchVertices    = 1024;
 static const float  kGfxDefaultScreenWidth  = 256.f;
 static const float  kGfxDefaultScreenHeight = 256.f;
+static const float  kGfxTesselateTolerance  = 0.25f;
 
 /// FORWARD DECLARATIONS
 extern void ABORT(const char* file, int line, const char* format, ...);
@@ -81,5 +82,8 @@ struct Transform;
 struct SceneSystem;
 struct ActionSystem;
 struct TransformComponent;
+
+//- GRAPHIC RENDER SYSTEM
+using Rid = size_t;
 
 NS_FLOW2D_END

@@ -5,13 +5,36 @@
 
 #include <flow2d/forward.hpp>
 #include <flow2d/graphic/device.hpp>
-#include <flow2d/graphic/vertex.hpp>
 
 #include <flow2d/math/vector.hpp>
 #include <flow2d/math/rect.hpp>
 #include <flow2d/math/color.hpp>
 
 NS_FLOW2D_BEGIN
+
+struct Vertex2f
+{
+    Vertex2f()
+    {}
+
+    Vertex2f(std::initializer_list<float> values)
+    {
+        auto size = values.size();
+        auto cursor = values.begin();
+
+        if( size >= 1 ) position[0] = *cursor++;
+        if( size >= 2 ) position[1] = *cursor++;
+        if( size >= 3 ) texcoord[0] = *cursor++;
+        if( size >= 4 ) texcoord[1] = *cursor++;
+    }
+
+    Vertex2f(const Vector2f& position, const Vector2f& texcoord)
+    : position(position), texcoord(texcoord)
+    {}
+
+    Vector2f position;
+    Vector2f texcoord;
+};
 
 // a buffered graphic renderer with fixed input.
 struct GraphicRender

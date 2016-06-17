@@ -91,10 +91,6 @@ Vector<R, T> operator * (const Matrix<R, C, T>&, const Vector<C, T>&);
 template<size_t R, size_t C, typename T>
 Vector<C, T> operator * (const Vector<R, T>&, const Matrix<R, C, T>&);
 
-// M*(V-HLift)
-template<size_t N, typename T>
-Vector<N-1, T> operator * (const Matrix<N, N, T>& M, const Vector<N-1, T>& V);
-
 // A*B
 template<size_t R, size_t C, size_t S, typename T>
 Matrix<R, C, T> operator * (const Matrix<R, S, T>&, const Matrix<S, C, T>&);
@@ -112,6 +108,19 @@ Matrix<R-1, C-1, T> hproject(const Matrix<R, C, T>&);
 // and last column entry which is set to 1
 template<size_t R, size_t C, typename T>
 Matrix<R+1, C+1, T> hlift(const Matrix<R, C, T>&);
+
+// M*(V-HLift)
+template<size_t N, typename T>
+Vector<N-1, T> operator * (const Matrix<N, N, T>& M, const Vector<N-1, T>& V);
+
+template<size_t N, typename T>
+Matrix<N, N, T> make_scale(const Vector<N, T>&);
+
+template<size_t N, typename T>
+Matrix<N, N, T> make_rotation(const Vector<N, T>&);
+
+template<size_t N, typename T>
+Matrix<N, N, T> make_translation(const Vector<N, T>&);
 
 #include <flow2d/math/matrix.inl>
 NS_FLOW2D_END

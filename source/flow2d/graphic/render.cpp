@@ -173,6 +173,7 @@ void GraphicRender::flush()
         auto& device = GraphicDevice::instance();
         device.set_blend(m_blend_src, m_blend_dst);
         device.bind_shader(m_current_program);
+
         device.update_buffer(RenderObject::VERTEX_BUFFER, m_verts, m_vbuffer, m_vused*sizeof(VertexPack));
         device.update_buffer(RenderObject::INDEX_BUFFER, m_indices, m_ibuffer, m_iused*sizeof(uint16_t));
 

@@ -7,7 +7,7 @@
 
 NS_FLOW2D_BEGIN
 
-using Rid = uint32_t;
+using Rid = size_t;
 
 enum class RenderObject : uint8_t
 {

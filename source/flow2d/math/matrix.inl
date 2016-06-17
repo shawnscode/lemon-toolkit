@@ -282,3 +282,21 @@ Matrix<R+1, C+1, T> hlift(const Matrix<R, C, T>& M)
             result(r, c) = M(r, c);
     return result;
 }
+
+template<size_t N, typename T>
+Matrix<N, N, T> make_scale(const Vector<N-1, T>& V)
+{
+    Matrix<N, N, T> result;
+    result.zero();
+    for( auto i = 0; i < N-1; i++ ) result(i, i) = V[i];
+    return result;
+}
+
+template<size_t N, typename T>
+Matrix<N, N, T> make_translation(const Vector<N-1, T>& V)
+{
+    Matrix<N, N, T> result;
+    result.identity();
+    for( auto i = 0; i < N-1; i++ ) result(i, N-1) = V[i];
+    return result;
+}
