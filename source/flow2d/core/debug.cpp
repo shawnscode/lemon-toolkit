@@ -6,7 +6,7 @@ NS_FLOW2D_BEGIN
 static void abortx(const char* file, int line, const char* format, va_list args)
 {
     FLOW_LOGEV(format, args);
-    FLOW_LOGE("\tIn: %s:%d\n\nStacktrace:", file, line);
+    FLOW_LOGE("\n\tIn: %s:%d\n\nStacktrace:", file, line);
     Debug::traceback();
     exit(0);
 }
@@ -164,19 +164,19 @@ void Debug::traceback()
             if( status == 0 )
             {
                 funcname = ret; // use possibly realloc()-ed string
-                FLOW_LOGE("\t%s : %s+%s\n", symbollist[i], funcname, begin_offset);
+                FLOW_LOGE("\t%s : %s+%s", symbollist[i], funcname, begin_offset);
             }
             else
             {
                 // demangling failed. Output function name as a C function with
                 // no arguments.
-                FLOW_LOGE("\t%s : %s()+%s\n", symbollist[i], begin_name, begin_offset);
+                FLOW_LOGE("\t%s : %s()+%s", symbollist[i], begin_name, begin_offset);
             }
         }
         else
         {
             // couldn't parse the line? print the whole line.
-            FLOW_LOGE("\t%s\n", symbollist[i]);
+            FLOW_LOGE("\t%s", symbollist[i]);
         }
     }
 

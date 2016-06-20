@@ -8,6 +8,7 @@
 
 #include <flow2d/graphic/device.hpp>
 #include <flow2d/graphic/render.hpp>
+#include <flow2d/graphic/vg.hpp>
 
 #include <flow2d/math/vector.hpp>
 #include <flow2d/math/rect.hpp>

@@ -28,6 +28,12 @@ INLINE Color Color::operator * (float t) const
     return Color { r*t, g*t, b*t, a*t };
 }
 
+INLINE float Color::operator [] (size_t index) const
+{
+    ENSURE( index >= 0 && index < 4 );
+    return *(&r + index);
+}
+
 INLINE float Color::grayscale() const
 {
     return r * 0.299f + g * 0.587f + b * 0.114f;

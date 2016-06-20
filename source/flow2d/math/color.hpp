@@ -23,6 +23,7 @@ struct Color
     Color operator + (const Color&) const;
     Color operator - (const Color&) const;
     Color operator * (float) const;
+    float operator [] (size_t) const;
 
     // return the 'grayscale' representation of RGB values
     float grayscale() const;

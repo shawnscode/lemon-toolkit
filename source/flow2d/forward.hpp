@@ -43,7 +43,7 @@ extern void LOGE(const char* format, ...);
 
 #define ASSERT(condition, format, ...) do { \
     if( !(condition) ) { \
-        ABORT(__FILE__, __LINE__, "\nAssertion failed: %s, " format "\n", #condition, ##__VA_ARGS__);\
+        ABORT(__FILE__, __LINE__, "\nAssertion failed: %s, " format "", #condition, ##__VA_ARGS__);\
     } \
 } while(0)
 

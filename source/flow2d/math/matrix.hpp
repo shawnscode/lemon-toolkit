@@ -17,10 +17,10 @@ template<size_t R, size_t C, typename T> struct Matrix
     Matrix(const Matrix&) = default;
     Matrix& operator = (const Matrix&) = default;
 
+    // index in row major
     const T& operator() (size_t, size_t) const;
     T& operator() (size_t, size_t);
 
-    // index in row major
     const T& operator[](size_t) const;
     T& operator[](size_t);
 
@@ -42,6 +42,10 @@ using Matrix2f  = Matrix<2, 2, float>;
 template<typename T>
 using Matrix3   = Matrix<3, 3, T>;
 using Matrix3f  = Matrix<3, 3, float>;
+
+template<typename T>
+using Matrix4   = Matrix<4, 4, T>;
+using Matrix4f  = Matrix<4, 4, float>;
 
 static const Matrix2f kMatrix2fIdentity = { 1.0f, 0.0f, 1.0f, 0.0f };
 
@@ -120,7 +124,10 @@ template<size_t N, typename T>
 Matrix<N, N, T> make_rotation(const Vector<N, T>&);
 
 template<size_t N, typename T>
-Matrix<N, N, T> make_translation(const Vector<N, T>&);
+Matrix<N+1, N+1, T> make_translation(const Vector<N, T>&);
+
+template<typename T>
+Matrix3<T> make_ortho(T xmin, T xmax, T ymin, T ymax);
 
 #include <flow2d/math/matrix.inl>
 NS_FLOW2D_END

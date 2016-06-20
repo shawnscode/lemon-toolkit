@@ -14,14 +14,19 @@ NS_FLOW2D_BEGIN
 
 struct VGPaint
 {
-    float                   radius;
-    float                   feather;
-    Color                   inner, outer;
-    Matrix3f                transform;
-    // static VGPaint linear(const Vector2f&, const Vector2f&, const Color&, const Color&);
-    // static VGPaint box(const Rect2f&, float radius, float feather, const Color&, const Color&);
-    // static VGPaint radial(const Vector2f&, float, float, const Color&, const Color&);
+    float       radius;
+    float       feather;
+    Vector2f    extent;
+    Color       inner_color, outer_color;
+    Matrix3f    transform;
+
+    // creates and returns a linear gradient.
+    // parameters from-to specify the start and end coordinates
+    // of the linear gradient, icol specifies the start color and ocol the end color.
+    static VGPaint liner_gradient(const Vector2f& from, const Vector2f& to, const Color& i, const Color& o);
+    static VGPaint radial_gradient(const Vector2f& center, float inr, float outr, const Color& i, const Color& o);
 };
+
 
 enum class VGWinding : uint8_t
 {
@@ -66,7 +71,6 @@ struct VGState
     float       alpha;
     Matrix3f    transform;
 };
-
 
 struct VGContext
 {

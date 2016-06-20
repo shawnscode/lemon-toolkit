@@ -13,7 +13,7 @@ NS_FLOW2D_BEGIN
     do { \
         GLenum err = glGetError(); \
         if( err != GL_NO_ERROR && err != GL_INVALID_ENUM ) { \
-            FATAL("GL_%s - %s:%d\n", get_opengl_error(err), __FILE__, __LINE__); \
+            FATAL("GL_%s.", get_opengl_error(err)); \
         } \
     } while(false);
 
@@ -352,6 +352,7 @@ void GraphicDeviceInstance::apply_vertex_array()
     if( program == nullptr || program->handle == 0 ) return;
 
     glBindVertexArray(program->vao);
+    CHECK_GL_ERROR
     Rid last = 0;
     for( int i=0; i<program->attribute_n; i++ )
     {
@@ -365,20 +366,27 @@ void GraphicDeviceInstance::apply_vertex_array()
 
             glBindBuffer(GL_ARRAY_BUFFER, buffer->handle);
             last = layout.rid;
+            CHECK_GL_ERROR
         }
 
-        glEnableVertexAttribArray(i);
-        glVertexAttribPointer(i,
-            layout.n,
-            layout.format,
-            layout.normalized,
-            layout.stride,
-            (uint8_t*)0+layout.offset);
+        if( last != GraphicDevice::INVALID )
+        {
+            glEnableVertexAttribArray(i);
+            glVertexAttribPointer(i,
+                layout.n,
+                layout.format,
+                layout.normalized,
+                layout.stride,
+                (uint8_t*)0+layout.offset);
+        }
     }
 
-    auto index_buffer = array_get(this->buffers, this->current.index_buffer.rid);
-    if( index_buffer != nullptr && index_buffer->handle != 0 )
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer->handle);
+    if( last != GraphicDevice::INVALID )
+    {
+        auto index_buffer = array_get(this->buffers, this->current.index_buffer.rid);
+        if( index_buffer != nullptr && index_buffer->handle != 0 )
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer->handle);
+    }
     CHECK_GL_ERROR
 }
 
@@ -758,9 +766,7 @@ GLuint compile(GLenum type, const char* source)
         GLint len;
         glGetShaderInfoLog(shader, 1024, &len, buf);
 
-        printf("compile failed:%s\n"
-            "source:\n %s\n",
-            buf, source);
+        LOGW("failed to compile, %s. source:\n %s\n", buf, source);
         glDeleteShader(shader);
         return 0;
     }
@@ -818,8 +824,9 @@ Rid GraphicDevice::create_shader(
     program->uniform_n = uniform_n;
     for( int i=0; i<uniform_n; i++ )
     {
+
         program->uniforms[i] = glGetUniformLocation(prog, uniforms[i]);
-        ENSURE( program->uniforms[i] >= 0 );
+        ASSERT( program->uniforms[i] >= 0, "failed to locate uniform \"%s\".", uniforms[i] );
     }
 
     ENSURE( texture_n >= 0 && texture_n < kGfxMaxTextures );
@@ -827,7 +834,7 @@ Rid GraphicDevice::create_shader(
     for( int i=0; i<texture_n; i++ )
     {
         program->textures[i] = glGetUniformLocation(prog, textures[i]);
-        ENSURE( program->textures[i] >= 0 );
+        ASSERT( program->textures[i] >= 0, "failed to locate texture \"%s\".", textures[i] );
     }
 
     CHECK_GL_ERROR

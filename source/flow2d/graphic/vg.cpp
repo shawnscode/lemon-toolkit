@@ -3,7 +3,11 @@
 
 #include <flow2d/graphic/vg.hpp>
 #include <flow2d/graphic/device.hpp>
+#include <flow2d/graphic/vg_shader.inl>
+
+extern "C" {
 #include <tesselator.h>
+}
 
 NS_FLOW2D_BEGIN
 
@@ -11,10 +15,11 @@ NS_FLOW2D_BEGIN
 
 static void set_paint(VGPaint& paint, const Color& color)
 {
+    memset(&paint, 0, sizeof(VGPaint));
     paint.radius = 0.f;
     paint.feather = 1.f;
-    paint.inner = color;
-    paint.outer = color;
+    paint.inner_color = color;
+    paint.outer_color = color;
     paint.transform.identity();
 }
 
@@ -31,6 +36,61 @@ static void reset_state(VGState& state)
     state.transform.identity();
 }
 
+VGPaint VGPaint::liner_gradient(const Vector2f& from, const Vector2f& to, const Color& i, const Color& o)
+{
+    VGPaint paint;
+    memset(&paint, 0, sizeof(VGPaint));
+
+    Vector2f d  = to - from;
+    float len   = d.length();
+
+    paint.radius = 0.f;
+    paint.feather = std::max(len, 1.0f);
+    paint.inner_color = i;
+    paint.outer_color = o;
+
+    if( len > 0.0001f )
+    {
+        d /= len;
+    }
+    else
+    {
+        len = 1;
+        d = { 0.f, 1.f };
+    }
+
+
+    paint.transform = {
+        d[1], d[0], from[0] - d[0],
+        -d[0], d[1], from[1] - d[1],
+    };
+
+    paint.extent = { 0.f, 0.f };
+    return paint;
+}
+
+VGPaint VGPaint::radial_gradient(const Vector2f& center, float inr, float outr, const Color& i, const Color& o)
+{
+    VGPaint paint;
+    memset(&paint, 0, sizeof(VGPaint));
+
+    float r = (outr + inr) * 0.5f;
+    float f = (outr - inr);
+
+    paint.transform.identity();
+    paint.transform(0, 2) = -center[0];
+    paint.transform(1, 2) = -center[1];
+
+    paint.extent = { r, r };
+    paint.radius = r;
+    paint.feather = std::max(1.0f, f);
+
+    paint.inner_color = i;
+    paint.outer_color = o;
+
+    return paint;
+}
+
 VGContext* VGContext::create()
 {
     auto ctx = new (std::nothrow) VGContext();
@@ -43,6 +103,13 @@ bool VGContext::initialize()
 {
     m_states.resize(1);
     reset_state(m_states[m_states.size()-1]);
+
+    auto& device = GraphicDevice::instance();
+    m_program = device.create_shader(vg_vertex, vg_fragment,
+        1,
+        0, nullptr,
+        COUNTOF(vg_uniforms), vg_uniforms);
+
     return true;
 }
 
@@ -124,6 +191,9 @@ void VGContext::close_path()
 
 void VGContext::fill()
 {
+    if( m_countors.size() == 0 || m_points.size() == 0 )
+        return;
+
     auto T = tessNewTess(nullptr);
     if( !T )
     {
@@ -173,10 +243,29 @@ void VGContext::fill()
     m_index_buffer.force_update();
     m_vertex_buffer.force_update();
 
+    Matrix3f transform = make_ortho(0.f, 128.f, 0.f, 128.f) * m_states.back().transform;
+
     auto& device = GraphicDevice::instance();
     device.bind_shader(m_program);
     device.bind_vertex_buffer(0, m_vertex_buffer.id(), 2, ElementFormat::FLOAT, m_vertex_buffer.stride(), 0);
     device.bind_index_buffer(m_index_buffer.id(), ElementFormat::UNSIGNED_SHORT, m_index_buffer.stride(), 0);
+
+    auto& paint = m_states.back().fill;
+    // transform, convert to colum major
+    device.bind_uniform(0, UniformFormat::MATRIX_F33, &transpose(transform)[0]);
+    // paint transform
+    device.bind_uniform(1, UniformFormat::MATRIX_F33, &transpose(paint.transform)[0]);
+    // inner color
+    device.bind_uniform(2, UniformFormat::VECTOR_F4, (float*)&paint.inner_color);
+    // outer color
+    device.bind_uniform(3, UniformFormat::VECTOR_F4, (float*)&paint.outer_color);
+    // extent
+    device.bind_uniform(4, UniformFormat::VECTOR_F2, &paint.extent[0]);
+    // radius
+    device.bind_uniform(5, UniformFormat::FLOAT1, &paint.radius);
+    // feather
+    device.bind_uniform(6, UniformFormat::FLOAT1, &paint.feather);
+
     device.draw(DrawMode::TRIANGLE, 0, m_index_buffer.data.size());
 }
 
@@ -251,22 +340,21 @@ void VGContext::set_global_alpha(float alpha)
 
 void VGContext::scale(const Vector2f& scale)
 {
-    // m_states.back().transform *= make_scale(scale);
+    transform(hlift(make_scale(scale)));
 }
 
 void VGContext::rotate(float)
 {
-
 }
 
 void VGContext::translate(const Vector2f& translation)
 {
-    // m_states.back().transform *= make_translation(translation);
+    transform(make_translation(translation));
 }
 
 void VGContext::transform(const Matrix3f& transform)
 {
-    // m_states.back().transform *= transform;
+    m_states.back().transform = transform * m_states.back().transform;
 }
 
 void VGContext::set_transform(const Matrix3f& transform)

@@ -41,26 +41,29 @@ Matrix<R, C, T>::Matrix(std::initializer_list<T> values)
 template<size_t R, size_t C, typename T>
 INLINE const T& Matrix<R, C, T>::operator() (size_t r, size_t c) const
 {
+    ENSURE( r < R && c < C );
     return m_values[r][c];
 }
 
 template<size_t R, size_t C, typename T>
 INLINE T& Matrix<R, C, T>::operator() (size_t r, size_t c)
 {
+    ENSURE( r < R && c < C );
     return m_values[r][c];
 }
 
 template<size_t R, size_t C, typename T>
 INLINE const T& Matrix<R, C, T>::operator[] (size_t index) const
 {
-    const T* elements = &m_values;
+    ENSURE( index < R*C );
+    const T* elements = &m_values[0][0];
     return elements[index];
 }
 
 template<size_t R, size_t C, typename T>
 INLINE T& Matrix<R, C, T>::operator[] (size_t index)
 {
-    T* elements = &m_values;
+    T* elements = &m_values[0][0];
     return elements[index];
 }
 
@@ -284,19 +287,31 @@ Matrix<R+1, C+1, T> hlift(const Matrix<R, C, T>& M)
 }
 
 template<size_t N, typename T>
-Matrix<N, N, T> make_scale(const Vector<N-1, T>& V)
+Matrix<N, N, T> make_scale(const Vector<N, T>& V)
 {
     Matrix<N, N, T> result;
     result.zero();
-    for( auto i = 0; i < N-1; i++ ) result(i, i) = V[i];
+    for( auto i = 0; i < N; i++ ) result(i, i) = V[i];
     return result;
 }
 
 template<size_t N, typename T>
-Matrix<N, N, T> make_translation(const Vector<N-1, T>& V)
+Matrix<N+1, N+1, T> make_translation(const Vector<N, T>& V)
 {
-    Matrix<N, N, T> result;
+    Matrix<N+1, N+1, T> result;
     result.identity();
-    for( auto i = 0; i < N-1; i++ ) result(i, N-1) = V[i];
+    for( auto i = 0; i < N; i++ ) result(i, N) = V[i];
+    return result;
+}
+
+template<typename T>
+Matrix3<T> make_ortho(T xmin, T xmax, T ymin, T ymax)
+{
+    Matrix3<T> result;
+    result.identity();
+    result(0, 0) = static_cast<T>(2) / (xmax - xmin);
+    result(1, 1) = static_cast<T>(2) / (ymax - ymin);
+    result(0, 2) = - (xmax + xmin) / (xmax - xmin);
+    result(1, 2) = - (ymax + ymin) / (ymax - ymin);
     return result;
 }

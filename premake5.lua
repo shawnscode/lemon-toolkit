@@ -18,6 +18,19 @@ workspace("flow2d")
         sysincludedirs({ "source", "/usr/local/include", "3rd/filesystem", "3rd/libtess2/Include" })
         targetdir( "build/libs" )
 
+workspace( "dependencies" )
+configurations( "release" )
+defines({ "NDEBUG" })
+optimize( "On" )
+location( "build/3rd" )
+
+project("tess2")
+    kind( "StaticLib" )
+    language( "C" )
+    includedirs({ "3rd/libtess2/Include", "3rd/libtess2/Source" })
+    files({ "3rd/libtess2/Source/*.c" })
+    targetdir( "build/libs" )
+
 workspace("chore")
     configurations( "debug" )
     defines({ "DEBUG" })
@@ -39,6 +52,6 @@ workspace("chore")
 
     project( "example" )
         location( "build/example" )
-        links({ "glfw3", "glew", "flow2d" })
+        links({ "glfw3", "glew", "flow2d", "tess2" })
         linkoptions { "-framework OpenGL", "-framework Cocoa", "-framework IOKit", "-framework CoreVideo" }
         files({ "example/*.cpp" })
