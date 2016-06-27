@@ -19,129 +19,130 @@ INLINE bool TransformIterator::operator != (const TransformIterator& rh) const
     return cursor != rh.cursor;
 }
 
-INLINE TransformComponent* TransformIterator::operator * ()
+INLINE Transform* TransformIterator::operator * ()
 {
     return cursor;
 }
 
-INLINE const TransformComponent* TransformIterator::operator * () const
+INLINE const Transform* TransformIterator::operator * () const
 {
     return cursor;
 }
 
-INLINE Transform Transform::operator / (const Transform& rh) const
+INLINE TransformMatrix TransformMatrix::operator / (const TransformMatrix& rh) const
 {
-    return Transform(
+    return TransformMatrix(
         position - rh.position,
         { scale[0] / rh.scale[0], scale[1] / rh.scale[1] },
         rotation - rh.rotation);
 }
 
-INLINE Transform Transform::operator * (const Transform& rh) const
+INLINE TransformMatrix TransformMatrix::operator * (const TransformMatrix& rh) const
 {
-    return Transform(
+    return TransformMatrix(
         position + rh.position,
         { scale[0] * rh.scale[0], scale[1] * rh.scale[1] },
         rotation + rh.rotation);
 }
 
 // INCLUDED METHODS OF TRANSFORM
-INLINE void TransformComponent::identity()
+INLINE void Transform::identity()
 {
-    transform = Transform::IDENTITY;
+    local = TransformMatrix::IDENTITY;
+    if( parent ) world = parent->world;
     update_children();
 }
 
-INLINE Transform TransformComponent::get_transform(TransformSpace space) const
+INLINE TransformMatrix Transform::get_transform(TransformSpace space) const
 {
-    return TransformSpace::SELF == space ? transform : world_transform;
+    return TransformSpace::SELF == space ? local : world;
 }
 
-INLINE void TransformComponent::set_transform(const Transform& pose, TransformSpace space)
+INLINE void Transform::set_transform(const TransformMatrix& pose, TransformSpace space)
 {
     if( TransformSpace::SELF == space )
     {
-        transform = pose;
-        if( parent ) world_transform = parent->world_transform * transform;
+        local = pose;
+        if( parent ) world = parent->world * local;
     }
     else
     {
-        world_transform = pose;
-        if( parent ) transform = world_transform / parent->world_transform;
+        world = pose;
+        if( parent ) local = world / parent->world;
     }
 
     update_children();
 }
 
-INLINE void TransformComponent::set_scale(const Vector2f& scale, TransformSpace space)
+INLINE void Transform::set_scale(const Vector2f& scale, TransformSpace space)
 {
     if( TransformSpace::SELF == space )
     {
-        transform.scale = scale;
-        if( parent ) world_transform = parent->world_transform * transform;
+        local.scale = scale;
+        if( parent ) world = parent->world * local;
     }
     else
     {
-        world_transform.scale = scale;
-        if( parent ) transform = world_transform / parent->world_transform;
+        world.scale = scale;
+        if( parent ) local = world / parent->world;
     }
 
     update_children();
 }
 
-INLINE void TransformComponent::set_position(const Vector2f& position, TransformSpace space)
+INLINE void Transform::set_position(const Vector2f& position, TransformSpace space)
 {
     if( TransformSpace::SELF == space )
     {
-        transform.position = position;
-        if( parent ) world_transform = parent->world_transform * transform;
+        local.position = position;
+        if( parent ) world = parent->world * local;
     }
     else
     {
-        world_transform.position = position;
-        if( parent ) transform = world_transform / parent->world_transform;
+        world.position = position;
+        if( parent ) local = world / parent->world;
     }
 
     update_children();
 }
 
-INLINE void TransformComponent::set_rotation(float rotation, TransformSpace space)
+INLINE void Transform::set_rotation(float rotation, TransformSpace space)
 {
     if( TransformSpace::SELF == space )
     {
-        transform.rotation = rotation;
-        if( parent ) world_transform = parent->world_transform * transform;
+        local.rotation = rotation;
+        if( parent ) world = parent->world * local;
     }
     else
     {
-        world_transform.rotation = rotation;
-        if( parent ) transform = world_transform / parent->world_transform;
+        world.rotation = rotation;
+        if( parent ) local = world / parent->world;
     }
 
     update_children();
 }
 
-INLINE Vector2f TransformComponent::get_scale(TransformSpace space) const
+INLINE Vector2f Transform::get_scale(TransformSpace space) const
 {
-    return space == TransformSpace::SELF ? transform.scale : world_transform.scale;
+    return space == TransformSpace::SELF ? local.scale : world.scale;
 }
 
-INLINE Vector2f TransformComponent::get_position(TransformSpace space) const
+INLINE Vector2f Transform::get_position(TransformSpace space) const
 {
-    return space == TransformSpace::SELF ? transform.position : world_transform.position;
+    return space == TransformSpace::SELF ? local.position : world.position;
 }
 
-INLINE float TransformComponent::get_rotation(TransformSpace space) const
+INLINE float Transform::get_rotation(TransformSpace space) const
 {
-    return space == TransformSpace::SELF ? transform.rotation : world_transform.rotation;
+    return space == TransformSpace::SELF ? local.rotation : world.rotation;
 }
 
-INLINE TransformComponent* TransformComponent::get_parent()
+INLINE Transform* Transform::get_parent()
 {
     return parent;
 }
 
-INLINE size_t TransformComponent::get_child_count() const
+INLINE size_t Transform::get_child_count() const
 {
     size_t size = 0;
     auto cursor = first_child;
@@ -153,22 +154,12 @@ INLINE size_t TransformComponent::get_child_count() const
     return size;
 }
 
-INLINE TransformIterator TransformComponent::begin()
+INLINE TransformIterator Transform::begin()
 {
     return TransformIterator(first_child);
 }
 
-INLINE TransformIterator TransformComponent::end()
-{
-    return TransformIterator(nullptr);
-}
-
-INLINE const TransformIterator TransformComponent::begin() const
-{
-    return TransformIterator(first_child);
-}
-
-INLINE const TransformIterator TransformComponent::end() const
+INLINE TransformIterator Transform::end()
 {
     return TransformIterator(nullptr);
 }

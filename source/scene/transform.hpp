@@ -16,37 +16,36 @@ enum class TransformSpace : uint8_t
 };
 
 // an iterator over sub-transforms of the ancestor
-struct TransformIterator : public std::iterator<std::input_iterator_tag, TransformComponent*>
+struct TransformIterator : public std::iterator<std::input_iterator_tag, Transform*>
 {
-    TransformIterator(TransformComponent* current) : cursor(current) {}
+    TransformIterator(Transform* current) : cursor(current) {}
 
      TransformIterator&         operator ++ ();
      bool                       operator == (const TransformIterator&) const;
      bool                       operator != (const TransformIterator&) const;
-     TransformComponent*        operator * ();
-     const TransformComponent*  operator * () const;
+     Transform*        operator * ();
+     const Transform*  operator * () const;
 
  protected:
-     TransformComponent* cursor = nullptr;
+     Transform* cursor = nullptr;
 };
 
-struct Transform
+struct TransformMatrix
 {
     Vector2f position;
     Vector2f scale;
     float    rotation;
 
-    Transform(const Vector2f& position = kVector2fZero, const Vector2f& scale = kVector2fOne, float rotation = 0.f)
+    TransformMatrix(const Vector2f& position = kVector2fZero, const Vector2f& scale = kVector2fOne, float rotation = 0.f)
     : position(position), scale(scale), rotation(rotation)
     {}
 
-    Transform(const Transform&) = default;
-    Transform& operator = (const Transform&) = default;
+    TransformMatrix(const TransformMatrix&) = default;
+    TransformMatrix& operator = (const TransformMatrix&) = default;
 
-    Transform operator * (const Transform&) const;
-    Transform operator / (const Transform&) const;
-
-    static const Transform IDENTITY;
+    TransformMatrix operator * (const TransformMatrix&) const;
+    TransformMatrix operator / (const TransformMatrix&) const;
+    static const TransformMatrix IDENTITY;
 };
 
 // transform component is used to allow entities to be coordinated in the world.
@@ -54,20 +53,20 @@ struct Transform
 // translation. in most case, M = R, a rotation matrix, or M = R*S, where
 // R is a rotation matrix and S is a diagonal matrix whose disgonal entries
 // are positives scales.
-struct TransformComponent
+struct Transform
 {
-    TransformComponent();
-    TransformComponent(const Vector2f&, const Vector2f&, float);
+    Transform();
+    Transform(const Vector2f&, const Vector2f&, float);
 
     // non-copyable
-    TransformComponent(const TransformComponent&) = delete;
-    TransformComponent& operator = (const TransformComponent&) = delete;
+    Transform(const Transform&) = delete;
+    Transform& operator = (const Transform&) = delete;
 
     void identity();
 
     // get the matrix representation of transform in different space
-    Transform   get_transform(TransformSpace space = TransformSpace::SELF) const;
-    void        set_transform(const Transform&, TransformSpace space = TransformSpace::SELF);
+    TransformMatrix get_transform(TransformSpace space = TransformSpace::SELF) const;
+    void            set_transform(const TransformMatrix&, TransformSpace space = TransformSpace::SELF);
 
     // setters and getters of transform properties
     void        set_scale(const Vector2f&, TransformSpace space = TransformSpace::SELF);
@@ -79,28 +78,26 @@ struct TransformComponent
     Vector2f    get_position(TransformSpace space = TransformSpace::SELF) const;
 
     //
-    TransformComponent* set_parent(TransformComponent*);
-    TransformComponent* get_parent();
-    void                remove_from_parent();
-    size_t              get_child_count() const;
+    Transform*  set_parent(Transform*);
+    Transform*  get_parent();
+    void        remove_from_parent();
+    size_t      get_child_count() const;
 
     // iterators of this transform
-    TransformIterator       begin();
-    const TransformIterator begin() const;
-    TransformIterator       end();
-    const TransformIterator end() const;
+    TransformIterator begin();
+    TransformIterator end();
 
 protected:
     friend class TransformIterator;
     void update_children();
 
-    Transform transform;
-    Transform world_transform;
+    TransformMatrix local;
+    TransformMatrix world;
 
-    TransformComponent*  parent = nullptr;
-    TransformComponent*  first_child = nullptr;
-    TransformComponent*  next_sibling = nullptr;
-    TransformComponent*  prev_sibling = nullptr;
+    Transform*  parent = nullptr;
+    Transform*  first_child = nullptr;
+    Transform*  next_sibling = nullptr;
+    Transform*  prev_sibling = nullptr;
 };
 
 #include <scene/transform.inl>

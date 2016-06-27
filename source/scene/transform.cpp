@@ -5,18 +5,18 @@
 
 NS_FLOW2D_BEGIN
 
-TransformComponent::TransformComponent() {}
+Transform::Transform() {}
 
-TransformComponent::TransformComponent(const Vector2f& position, const Vector2f& scale, float rotation)
+Transform::Transform(const Vector2f& position, const Vector2f& scale, float rotation)
 {
-    transform.position = position;
-    transform.scale = scale;
-    transform.rotation = rotation;
+    local.position = position;
+    local.scale = scale;
+    local.rotation = rotation;
 }
 
-TransformComponent* TransformComponent::set_parent(TransformComponent* parent)
+Transform* Transform::set_parent(Transform* parent)
 {
-    ASSERT( parent, "[TransformComponent] parent = nullptr." );
+    ASSERT( parent, "[Transform] parent = nullptr." );
     remove_from_parent();
 
     if( parent->first_child != nullptr )
@@ -28,13 +28,13 @@ TransformComponent* TransformComponent::set_parent(TransformComponent* parent)
 
     this->parent = parent;
     parent->first_child = this;
-    this->world_transform = parent->world_transform * this->transform;
+    this->world = parent->world * this->local;
 
     update_children();
     return this;
 }
 
-void TransformComponent::remove_from_parent()
+void Transform::remove_from_parent()
 {
     if( parent )
     {
@@ -50,15 +50,15 @@ void TransformComponent::remove_from_parent()
         }
     }
 
-    transform = world_transform;
+    local = world;
 }
 
-void TransformComponent::update_children()
+void Transform::update_children()
 {
     auto cursor = first_child;
     while( cursor )
     {
-        cursor->set_transform(world_transform * cursor->transform, TransformSpace::WORLD);
+        cursor->set_transform(world * cursor->local, TransformSpace::WORLD);
         cursor = cursor->next_sibling;
     }
 }
