@@ -46,6 +46,7 @@ enum class ElementFormat : uint8_t
 enum class UniformFormat : uint8_t
 {
     INVALID = 0,
+    INT1,
     FLOAT1,
     FLOAT2,
     FLOAT3,
@@ -124,7 +125,7 @@ struct GraphicDevice
     void bind_vertex_buffer(
         int index, Rid id, size_t n, ElementFormat format, size_t stride, size_t offset, bool normalized = false);
     void bind_texture(int index, Rid id);
-    void bind_uniform(int index, UniformFormat format, const float* v);
+    void bind_uniform(int index, UniformFormat format, const void* v);
 
     void clear(uint32_t mask, uint8_t, uint8_t, uint8_t, uint8_t a = 255);
     void draw(DrawMode mode, size_t from_index, size_t number_index);

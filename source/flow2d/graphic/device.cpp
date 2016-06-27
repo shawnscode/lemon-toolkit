@@ -683,7 +683,7 @@ void GraphicDevice::bind_texture(int index, Rid id)
     m_state->change_flags |= CHANGE_TEXTURE;
 }
 
-void GraphicDevice::bind_uniform(int index, UniformFormat format, const float* v)
+void GraphicDevice::bind_uniform(int index, UniformFormat format, const void* v)
 {
     auto program = array_get(m_state->programs, m_state->current.program);
     if( program == nullptr || program->handle == 0)
@@ -697,44 +697,48 @@ void GraphicDevice::bind_uniform(int index, UniformFormat format, const float* v
 
     switch(format)
     {
+        case UniformFormat::INT1:
+            glUniform1i(uidx,((int*)v)[0]);
+            break;
+
         case UniformFormat::FLOAT1:
-            glUniform1f(uidx, v[0]);
+            glUniform1f(uidx, ((float*)v)[0]);
             break;
 
         case UniformFormat::FLOAT2:
-            glUniform2f(uidx, v[0], v[1]);
+            glUniform2f(uidx, ((float*)v)[0], ((float*)v)[1]);
             break;
 
         case UniformFormat::FLOAT3:
-            glUniform3f(uidx, v[0], v[1], v[2]);
+            glUniform3f(uidx, ((float*)v)[0], ((float*)v)[1], ((float*)v)[2]);
             break;
 
         case UniformFormat::FLOAT4:
-            glUniform4f(uidx, v[0], v[1], v[2], v[3]);
+            glUniform4f(uidx, ((float*)v)[0], ((float*)v)[1], ((float*)v)[2], ((float*)v)[3]);
             break;
 
         case UniformFormat::VECTOR_F1:
-            glUniform1fv(uidx, 1, v);
+            glUniform1fv(uidx, 1, (float*)v);
             break;
 
         case UniformFormat::VECTOR_F2:
-            glUniform2fv(uidx, 1, v);
+            glUniform2fv(uidx, 1, (float*)v);
             break;
 
         case UniformFormat::VECTOR_F3:
-            glUniform3fv(uidx, 1, v);
+            glUniform3fv(uidx, 1, (float*)v);
             break;
 
         case UniformFormat::VECTOR_F4:
-            glUniform4fv(uidx, 1, v);
+            glUniform4fv(uidx, 1, (float*)v);
             break;
 
         case UniformFormat::MATRIX_F33:
-            glUniformMatrix3fv(uidx, 1, GL_FALSE, v);
+            glUniformMatrix3fv(uidx, 1, GL_FALSE, (float*)v);
             break;
 
         case UniformFormat::MATRIX_F44:
-            glUniformMatrix4fv(uidx, 1, GL_FALSE, v);
+            glUniformMatrix4fv(uidx, 1, GL_FALSE, (float*)v);
             break;
 
         default:

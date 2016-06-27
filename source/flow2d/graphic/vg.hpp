@@ -14,17 +14,24 @@ NS_FLOW2D_BEGIN
 
 struct VGPaint
 {
+    friend class VGContext;
+
+protected:
     float       radius;
     float       feather;
     Vector2f    extent;
     Color       inner_color, outer_color;
     Matrix3f    transform;
+    int         operations;
 
-    // creates and returns a linear gradient.
+public:
+    VGPaint& as_color(const Color& i);
     // parameters from-to specify the start and end coordinates
     // of the linear gradient, icol specifies the start color and ocol the end color.
-    static VGPaint liner_gradient(const Vector2f& from, const Vector2f& to, const Color& i, const Color& o);
-    static VGPaint radial_gradient(const Vector2f& center, float inr, float outr, const Color& i, const Color& o);
+    VGPaint& as_linear_gradient(const Vector2f& from, const Vector2f& to, const Color& i, const Color& o);
+    VGPaint& as_radial_gradient(const Vector2f& center, float inr, float outr, const Color& i, const Color& o);
+    VGPaint& with_gray();
+    VGPaint& with_empty();
 };
 
 
@@ -72,12 +79,14 @@ struct VGState
     Matrix3f    transform;
 };
 
+// a vector graphic drawing utilities, which provides a similiar api and effect as html canvas.
+// its could be used for prototype development.
 struct VGContext
 {
     static VGContext* create();
 
-    // void begin_frame(size_t width, size_t height, float device_pixel_ratio);
-    // void end_frame();
+    void begin_frame(const Vector2f&);
+    void end_frame();
 
     /// PATH
     // begins a path, or resets the current path
@@ -137,6 +146,8 @@ struct VGContext
 protected:
     bool initialize();
     void tesselate_bezier(const Vector2f&, const Vector2f&, const Vector2f&, const Vector2f&, int);
+
+    Vector2f                m_screen_size;
 
     std::vector<VGState>    m_states;
     std::vector<uint16_t>   m_countors;

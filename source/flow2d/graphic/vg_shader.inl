@@ -13,21 +13,68 @@ const static char* vg_fragment =
 "uniform mat3  paint;\n"
 "uniform vec4  inner_color;\n"
 "uniform vec4  outer_color;\n"
-"uniform vec2  extent;\n"
 "uniform float radius;\n"
 "uniform float feather;\n"
+"uniform int   operations;\n"
 "in vec2 position;\n"
 "out vec4 color;\n"
 "\n"
 "void main(void)\n"
 "{\n"
-"    vec2 pt = (paint*vec3(position, 1.0f)).xy;\n"
-"    vec2 extent2 = extent - vec2(radius, radius);\n"
-"    vec2 d = abs(pt) - extent2;\n"
-"    float ratio = min(max(d.x, d.y), 0.f) + length(max(d, 0.0)) - radius;\n"
-"    color = mix( inner_color, outer_color, clamp((ratio + feather*0.5)/feather, 0, 1) );\n"
+"    int  firstPass = operations & 0xF;\n"
+"    int  secondPass = operations & 0xF0;\n"
+"\n"
+"    if ( firstPass == 0 ) // solid color\n"
+"    {\n"
+"        color = inner_color;\n"
+"    }\n"
+"    else if( firstPass == 1 ) // linear gradient\n"
+"    {\n"
+"        vec2 pt = (paint*vec3(position, 1.0f)).xy;\n"
+"        color = mix( inner_color, outer_color, clamp(dot(pt, vec2(radius, feather)), 0, 1) ); \n"
+"    }\n"
+"    else if( firstPass == 2 ) // radial gradient\n"
+"    {\n"
+"        vec2 pt = (paint*vec3(position, 1.0f)).xy;\n"
+"        float ratio = (length(pt) - radius) / feather;\n"
+"        color = mix( inner_color, outer_color, clamp(ratio, 0, 1) );\n"
+"    }\n"
+"\n"
+"    if( secondPass == 16 )\n"
+"    {\n"
+"        float gray = dot( color.rgb, vec3(0.3, 0.59, 0.11) );\n"
+"        color.rgb = vec3(gray, gray, gray);\n"
+"    }\n"
 "}\n";
 
 const static char* vg_uniforms[] = {
-    "transform", "paint", "inner_color", "outer_color", "extent", "radius", "feather"
+    "transform", "paint", "inner_color", "outer_color", "radius", "feather", "operations"
 };
+
+// void main(void)
+// {
+//     int  firstPass = operations & 0xF;
+//     int  secondPass = operations & 0xF0;
+
+//     if ( firstPass == 0 ) // solid color
+//     {
+//         color = inner_color;
+//     }
+//     else if( firstPass == 1 ) // linear gradient
+//     {
+//         vec2 pt = (paint*vec3(position, 1.0f)).xy;
+//         color = mix( inner_color, outer_color, clamp(dot(pt, vec2(radius, feather)), 0, 1) ); 
+//     }
+//     else if( firstPass == 2 ) // radial gradient
+//     {
+//         vec2 pt = (paint*vec3(position, 1.0f)).xy;
+//         float ratio = (length(pt) - radius) / feather;
+//         color = mix( inner_color, outer_color, clamp(ratio, 0, 1) );
+//     }
+
+//     if( secondPass == 1 )
+//     {
+//         float gray = dot( color.rgb, float3(0.3, 0.59, 0.11) );
+//         color.rgb = vec3(gray, gray, gray);
+//     }
+// }

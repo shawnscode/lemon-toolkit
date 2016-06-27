@@ -13,20 +13,10 @@ NS_FLOW2D_BEGIN
 
 #define COUNTOF(arr) (sizeof(arr) / sizeof(0[arr]))
 
-static void set_paint(VGPaint& paint, const Color& color)
-{
-    memset(&paint, 0, sizeof(VGPaint));
-    paint.radius = 0.f;
-    paint.feather = 1.f;
-    paint.inner_color = color;
-    paint.outer_color = color;
-    paint.transform.identity();
-}
-
 static void reset_state(VGState& state)
 {
-    set_paint(state.fill, Color::WHITE);
-    set_paint(state.stroke, Color::BLACK);
+    state.fill.as_color(Color::WHITE).with_empty();
+    state.stroke.as_color(Color::BLACK).with_empty();
 
     state.stroke_width  = 1.f;
     state.miter_limit   = 10.f;
@@ -36,59 +26,93 @@ static void reset_state(VGState& state)
     state.transform.identity();
 }
 
-VGPaint VGPaint::liner_gradient(const Vector2f& from, const Vector2f& to, const Color& i, const Color& o)
+enum PaintFirstPass
 {
-    VGPaint paint;
-    memset(&paint, 0, sizeof(VGPaint));
+    PFP_SOLID_COLOR     = 0,
+    PFP_LINEAR_GRADIENT = 1,
+    PFP_RADIAL_GRADIENT = 2,
+    PFP_TEXTURE         = 3,
+};
 
-    Vector2f d  = to - from;
-    float len   = d.length();
+enum PaintSecondPass
+{
+    PSP_EMPTY   = 0x00,
+    PSP_GRAY    = 0x10,
+};
 
-    paint.radius = 0.f;
-    paint.feather = std::max(len, 1.0f);
-    paint.inner_color = i;
-    paint.outer_color = o;
+VGPaint& VGPaint::as_color(const Color& i)
+{
+    memset(this, 0, sizeof(VGPaint));
+
+    inner_color = i;
+
+    operations = PFP_SOLID_COLOR | (operations & 0xF0);
+    return *this;
+}
+
+VGPaint& VGPaint::as_linear_gradient(const Vector2f& from, const Vector2f& to, const Color& i, const Color& o)
+{
+    memset(this, 0, sizeof(VGPaint));
+
+    Vector2f extent = to - from;
+    float len = extent.length();
 
     if( len > 0.0001f )
     {
-        d /= len;
+        extent /= len;
     }
     else
     {
         len = 1;
-        d = { 0.f, 1.f };
+        extent = { 0.f, 1.f };
     }
 
+    float inv_len = 1/len;
 
-    paint.transform = {
-        d[1], d[0], from[0] - d[0],
-        -d[0], d[1], from[1] - d[1],
+    transform = {
+        inv_len, 0, -from[0] * inv_len,
+        0, inv_len, -from[1] * inv_len,
     };
 
-    paint.extent = { 0.f, 0.f };
-    return paint;
+    radius = extent[0];
+    feather = extent[1];
+
+    inner_color = i;
+    outer_color = o;
+
+    operations = PFP_LINEAR_GRADIENT | (operations & 0xF0);
+    return *this;
 }
 
-VGPaint VGPaint::radial_gradient(const Vector2f& center, float inr, float outr, const Color& i, const Color& o)
+VGPaint& VGPaint::as_radial_gradient(const Vector2f& center, float inr, float outr, const Color& i, const Color& o)
 {
-    VGPaint paint;
-    memset(&paint, 0, sizeof(VGPaint));
+    ASSERT( outr >= inr, "invalid parameters: outr should be always greater than inr." );
+    memset(this, 0, sizeof(VGPaint));
 
-    float r = (outr + inr) * 0.5f;
-    float f = (outr - inr);
+    transform.identity();
+    transform(0, 2) = -center[0];
+    transform(1, 2) = -center[1];
 
-    paint.transform.identity();
-    paint.transform(0, 2) = -center[0];
-    paint.transform(1, 2) = -center[1];
+    radius  = inr;
+    feather = outr - inr;
 
-    paint.extent = { r, r };
-    paint.radius = r;
-    paint.feather = std::max(1.0f, f);
+    inner_color = i;
+    outer_color = o;
 
-    paint.inner_color = i;
-    paint.outer_color = o;
+    operations = PFP_RADIAL_GRADIENT | (operations & 0xF0);
+    return *this;
+}
 
-    return paint;
+VGPaint& VGPaint::with_gray()
+{
+    operations = PSP_GRAY | (operations & 0xF);
+    return *this;
+}
+
+VGPaint& VGPaint::with_empty()
+{
+    operations = PSP_EMPTY | (operations & 0xF);
+    return *this;
 }
 
 VGContext* VGContext::create()
@@ -110,7 +134,18 @@ bool VGContext::initialize()
         0, nullptr,
         COUNTOF(vg_uniforms), vg_uniforms);
 
+    m_screen_size = kVector2fZero;
+
     return true;
+}
+
+void VGContext::begin_frame(const Vector2f& screen)
+{
+    m_screen_size = screen;
+}
+
+void VGContext::end_frame()
+{
 }
 
 void VGContext::begin_path()
@@ -243,7 +278,7 @@ void VGContext::fill()
     m_index_buffer.force_update();
     m_vertex_buffer.force_update();
 
-    Matrix3f transform = make_ortho(0.f, 128.f, 0.f, 128.f) * m_states.back().transform;
+    Matrix3f transform = make_ortho(0.f, m_screen_size[0], 0.f, m_screen_size[1]) * m_states.back().transform;
 
     auto& device = GraphicDevice::instance();
     device.bind_shader(m_program);
@@ -259,19 +294,20 @@ void VGContext::fill()
     device.bind_uniform(2, UniformFormat::VECTOR_F4, (float*)&paint.inner_color);
     // outer color
     device.bind_uniform(3, UniformFormat::VECTOR_F4, (float*)&paint.outer_color);
-    // extent
-    device.bind_uniform(4, UniformFormat::VECTOR_F2, &paint.extent[0]);
     // radius
-    device.bind_uniform(5, UniformFormat::FLOAT1, &paint.radius);
+    device.bind_uniform(4, UniformFormat::FLOAT1, &paint.radius);
     // feather
-    device.bind_uniform(6, UniformFormat::FLOAT1, &paint.feather);
+    device.bind_uniform(5, UniformFormat::FLOAT1, &paint.feather);
+    // operations
+    device.bind_uniform(6, UniformFormat::INT1, (float*)&paint.operations);
+
+    LOGW("%d", paint.operations);
 
     device.draw(DrawMode::TRIANGLE, 0, m_index_buffer.data.size());
 }
 
 void VGContext::stroke()
 {
-
 }
 
 void VGContext::save()
@@ -293,7 +329,7 @@ void VGContext::reset()
 
 void VGContext::set_stroke_color(const Color& color)
 {
-    set_paint(m_states.back().stroke, color);
+    m_states.back().stroke.as_color(color).with_empty();
 }
 
 void VGContext::set_stroke_paint(const VGPaint& paint)
@@ -309,7 +345,7 @@ void VGContext::set_stroke_width(float width)
 
 void VGContext::set_fill_color(const Color& color)
 {
-    set_paint(m_states.back().fill, color);
+    m_states.back().fill.as_color(color).with_empty();
 }
 
 void VGContext::set_fill_paint(const VGPaint& paint)
