@@ -305,6 +305,15 @@ Matrix<N+1, N+1, T> make_translation(const Vector<N, T>& V)
 }
 
 template<typename T>
+Matrix2<T> make_rotation(T radians)
+{
+    T cos = std::cos(radians);
+    T sin = std::sin(radians);
+
+    return Matrix2<T> { cos, -sin, sin, cos };
+}
+
+template<typename T>
 Matrix3<T> make_ortho(T xmin, T xmax, T ymin, T ymax)
 {
     Matrix3<T> result;

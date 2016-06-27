@@ -38,8 +38,8 @@ workspace("chore")
     kind( "ConsoleApp" )
     libdirs({ "build/libs", "/usr/local/lib/" })
 
-    sysincludedirs({ "source", "/usr/local/include", "3rd/filesystem", "3rd/libtess2/Include" })
-    includedirs({ "source", "/usr/local/include", "3rd/filesystem", "3rd/libtess2/Include" })
+    sysincludedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/filesystem", "3rd/libtess2/Include" })
+    includedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/filesystem", "3rd/libtess2/Include" })
 
     language( "C++" )
     buildoptions({"-std=c++11", "-stdlib=libc++"})

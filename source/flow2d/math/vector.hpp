@@ -96,6 +96,18 @@ template<size_t N, typename T>
 T dot (const Vector<N, T>&, const Vector<N, T>&);
 
 template<size_t N, typename T>
+Vector<N, T> max(const Vector<N, T>&, T);
+
+template<size_t N, typename T>
+Vector<N, T> max(const Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
+Vector<N, T> min(const Vector<N, T>&, T);
+
+template<size_t N, typename T>
+Vector<N, T> min(const Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
 Vector<N, T> normalize (const Vector<N, T>&);
 
 template<size_t N, typename T>

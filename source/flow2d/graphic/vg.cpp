@@ -15,6 +15,8 @@ NS_FLOW2D_BEGIN
 
 static void reset_state(VGState& state)
 {
+    const float inf = std::numeric_limits<float>::infinity();
+
     state.fill.as_color(Color::WHITE).with_empty();
     state.stroke.as_color(Color::BLACK).with_empty();
 
@@ -23,6 +25,7 @@ static void reset_state(VGState& state)
     state.line_join     = VGLineJoin::MITER;
     state.line_cap      = VGLineCap::BUTT;
     state.alpha         = 1.f;
+    state.scissor       = { -inf, -inf, inf, inf };
     state.transform.identity();
 }
 
@@ -126,7 +129,7 @@ VGContext* VGContext::create()
 bool VGContext::initialize()
 {
     m_states.resize(1);
-    reset_state(m_states[m_states.size()-1]);
+    reset_state(m_states.back());
 
     auto& device = GraphicDevice::instance();
     m_program = device.create_shader(vg_vertex, vg_fragment,
@@ -142,6 +145,8 @@ bool VGContext::initialize()
 void VGContext::begin_frame(const Vector2f& screen)
 {
     m_screen_size = screen;
+    m_states.resize(1);
+    reset_state(m_states.back());
 }
 
 void VGContext::end_frame()
@@ -290,18 +295,24 @@ void VGContext::fill()
     device.bind_uniform(0, UniformFormat::MATRIX_F33, &transpose(transform)[0]);
     // paint transform
     device.bind_uniform(1, UniformFormat::MATRIX_F33, &transpose(paint.transform)[0]);
+    // scissor
+    auto& scissor = m_states.back().scissor;
+    float sdata[4] = { scissor[0], scissor[2], scissor[1], scissor[3] };
+    device.bind_uniform(2, UniformFormat::VECTOR_F4, sdata);
     // inner color
-    device.bind_uniform(2, UniformFormat::VECTOR_F4, (float*)&paint.inner_color);
+    auto inner_color = paint.inner_color;
+    inner_color.a *= m_states.back().alpha;
+    device.bind_uniform(3, UniformFormat::VECTOR_F4, (float*)&inner_color);
     // outer color
-    device.bind_uniform(3, UniformFormat::VECTOR_F4, (float*)&paint.outer_color);
+    auto outer_color = paint.outer_color;
+    outer_color.a *= m_states.back().alpha;
+    device.bind_uniform(4, UniformFormat::VECTOR_F4, (float*)&outer_color);
     // radius
-    device.bind_uniform(4, UniformFormat::FLOAT1, &paint.radius);
+    device.bind_uniform(5, UniformFormat::FLOAT1, &paint.radius);
     // feather
-    device.bind_uniform(5, UniformFormat::FLOAT1, &paint.feather);
+    device.bind_uniform(6, UniformFormat::FLOAT1, &paint.feather);
     // operations
-    device.bind_uniform(6, UniformFormat::INT1, (float*)&paint.operations);
-
-    LOGW("%d", paint.operations);
+    device.bind_uniform(7, UniformFormat::INT1, (float*)&paint.operations);
 
     device.draw(DrawMode::TRIANGLE, 0, m_index_buffer.data.size());
 }
@@ -374,13 +385,41 @@ void VGContext::set_global_alpha(float alpha)
     m_states.back().alpha = alpha;
 }
 
+void VGContext::set_scissor(const Rect2f& scissor)
+{
+    m_states.back().scissor = scissor;
+}
+
+void VGContext::intersect_scissor(const Rect2f& scissor)
+{
+    m_states.back().scissor = intersect(m_states.back().scissor, scissor);
+}
+
+void VGContext::reset_scissor()
+{
+    const float inf = std::numeric_limits<float>::infinity();
+    m_states.back().scissor = { -inf, -inf, inf, inf };
+}
+
+void VGContext::identity()
+{
+    m_states.back().transform.identity();
+}
+
 void VGContext::scale(const Vector2f& scale)
 {
     transform(hlift(make_scale(scale)));
 }
 
-void VGContext::rotate(float)
+void VGContext::rotate(float degree, const Vector2f& anchor)
 {
+    float radians = degree/180*3.1415926f;
+
+    Matrix3f t;
+    t = make_translation(anchor);
+    t *= hlift(make_rotation(radians));
+    t *= make_translation(-anchor);
+    transform(t);
 }
 
 void VGContext::translate(const Vector2f& translation)

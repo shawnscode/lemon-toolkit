@@ -127,6 +127,9 @@ template<size_t N, typename T>
 Matrix<N+1, N+1, T> make_translation(const Vector<N, T>&);
 
 template<typename T>
+Matrix2<T> make_rotation(T radians);
+
+template<typename T>
 Matrix3<T> make_ortho(T xmin, T xmax, T ymin, T ymax);
 
 #include <flow2d/math/matrix.inl>

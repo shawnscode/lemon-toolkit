@@ -34,13 +34,6 @@ public:
     VGPaint& with_empty();
 };
 
-
-enum class VGWinding : uint8_t
-{
-    CCW = 1,
-    CW  = 2,
-};
-
 enum class VGLineCap : uint8_t
 {
     BUTT    = 1,
@@ -76,6 +69,7 @@ struct VGState
     VGLineJoin  line_join;
     VGLineCap   line_cap;
     float       alpha;
+    Rect2f      scissor;
     Matrix3f    transform;
 };
 
@@ -107,7 +101,7 @@ struct VGContext
     // fills the current drawing path
     void fill();
     // actually draws the path you have defined
-    void stroke();
+    void stroke(); // todo
 
     /// STATE
     // saves the state of the current context
@@ -136,9 +130,19 @@ struct VGContext
     void set_miter_limit(float);
     void set_global_alpha(float);
 
+    /// SCISSORING
+    // scissoring allows you to clip the rendering into a rectangle.
+    // set the current scissor rectangle
+    void set_scissor(const Rect2f&);
+    // intersects current scissor rectangle with the specified rectangle.
+    void intersect_scissor(const Rect2f&);
+    // reset and disable scissoring
+    void reset_scissor();
+
     /// TRANSFORMATION
+    void identity();
     void scale(const Vector2f&);
-    void rotate(float); // in rads
+    void rotate(float radians, const Vector2f& anchor = {0.f, 0.f});
     void translate(const Vector2f&);
     void transform(const Matrix3f&);
     void set_transform(const Matrix3f&);

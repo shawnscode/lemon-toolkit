@@ -195,6 +195,38 @@ T dot (const Vector<N, T>& v0, const Vector<N, T>& v1)
 }
 
 template<size_t N, typename T>
+Vector<N, T> max (const Vector<N, T>& v0, T compare)
+{
+    Vector<N, T> result;
+    for( auto i = 0; i < N; i++ ) result[i] = std::max(v0[i], compare);
+    return result;
+}
+
+template<size_t N, typename T>
+Vector<N, T> max (const Vector<N, T>& v0, const Vector<N, T>& v1)
+{
+    Vector<N, T> result;
+    for( auto i = 0; i < N; i++ ) result[i] = std::max(v0[i], v1[i]);
+    return result;
+}
+
+template<size_t N, typename T>
+Vector<N, T> min (const Vector<N, T>& v0, T compare)
+{
+    Vector<N, T> result;
+    for( auto i = 0; i < N; i++ ) result[i] = std::min(v0[i], compare);
+    return result;
+}
+
+template<size_t N, typename T>
+Vector<N, T> min (const Vector<N, T>& v0, const Vector<N, T>& v1)
+{
+    Vector<N, T> result;
+    for( auto i = 0; i < N; i++ ) result[i] = std::min(v0[i], v1[i]);
+    return result;
+}
+
+template<size_t N, typename T>
 Vector<N, T> normalize (const Vector<N, T>& v)
 {
     Vector<N, T> result = v;
