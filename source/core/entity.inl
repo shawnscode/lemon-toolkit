@@ -210,30 +210,6 @@ Entity ComponentHandle<T>::entity()
 }
 
 template<typename T>
-EntityManager& ComponentHandle<T>::world()
-{
-    return *m_manager;
-}
-
-template<typename T>
-const EntityManager& ComponentHandle<T>::world() const
-{
-    return *m_manager;
-}
-
-template<typename T>
-EventManager& ComponentHandle<T>::dispatcher()
-{
-    return m_manager->dispatcher();
-}
-
-template<typename T>
-const EventManager& ComponentHandle<T>::dispatcher() const
-{
-    return m_manager->dispatcher();
-}
-
-template<typename T>
 T* ComponentHandle<T>::get() const
 {
     assert_valid();

@@ -9,7 +9,7 @@
 
 #include <graphic/device.hpp>
 #include <graphic/render.hpp>
-#include <graphic/vg.hpp>
+#include <graphic/canvas.hpp>
 
 #include <math/vector.hpp>
 #include <math/rect.hpp>

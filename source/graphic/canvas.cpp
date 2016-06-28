@@ -1,9 +1,9 @@
 // @date 2016/06/16
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <graphic/vg.hpp>
+#include <graphic/canvas.hpp>
 #include <graphic/device.hpp>
-#include <graphic/vg_shader.inl>
+#include <graphic/canvas.inl>
 
 extern "C" {
 #include <tesselator.h>
@@ -43,9 +43,9 @@ enum PaintSecondPass
     PSP_GRAY    = 0x10,
 };
 
-VGPaint& VGPaint::as_color(const Color& i)
+CanvasPaint& CanvasPaint::as_color(const Color& i)
 {
-    memset(this, 0, sizeof(VGPaint));
+    memset(this, 0, sizeof(CanvasPaint));
 
     inner_color = i;
 
@@ -53,9 +53,9 @@ VGPaint& VGPaint::as_color(const Color& i)
     return *this;
 }
 
-VGPaint& VGPaint::as_linear_gradient(const Vector2f& from, const Vector2f& to, const Color& i, const Color& o)
+CanvasPaint& CanvasPaint::as_linear_gradient(const Vector2f& from, const Vector2f& to, const Color& i, const Color& o)
 {
-    memset(this, 0, sizeof(VGPaint));
+    memset(this, 0, sizeof(CanvasPaint));
 
     Vector2f extent = to - from;
     float len = extent.length();
@@ -87,10 +87,10 @@ VGPaint& VGPaint::as_linear_gradient(const Vector2f& from, const Vector2f& to, c
     return *this;
 }
 
-VGPaint& VGPaint::as_radial_gradient(const Vector2f& center, float inr, float outr, const Color& i, const Color& o)
+CanvasPaint& CanvasPaint::as_radial_gradient(const Vector2f& center, float inr, float outr, const Color& i, const Color& o)
 {
     ASSERT( outr >= inr, "invalid parameters: outr should be always greater than inr." );
-    memset(this, 0, sizeof(VGPaint));
+    memset(this, 0, sizeof(CanvasPaint));
 
     transform.identity();
     transform(0, 2) = -center[0];
@@ -106,27 +106,27 @@ VGPaint& VGPaint::as_radial_gradient(const Vector2f& center, float inr, float ou
     return *this;
 }
 
-VGPaint& VGPaint::with_gray()
+CanvasPaint& CanvasPaint::with_gray()
 {
     operations = PSP_GRAY | (operations & 0xF);
     return *this;
 }
 
-VGPaint& VGPaint::with_empty()
+CanvasPaint& CanvasPaint::with_empty()
 {
     operations = PSP_EMPTY | (operations & 0xF);
     return *this;
 }
 
-VGContext* VGContext::create()
+Canvas* Canvas::create()
 {
-    auto ctx = new (std::nothrow) VGContext();
+    auto ctx = new (std::nothrow) Canvas();
     if( ctx && ctx->initialize() ) return ctx;
     if( ctx ) delete ctx;
     return ctx;
 }
 
-bool VGContext::initialize()
+bool Canvas::initialize()
 {
     m_states.resize(1);
     reset_state(m_states.back());
@@ -142,30 +142,30 @@ bool VGContext::initialize()
     return true;
 }
 
-void VGContext::begin_frame(const Vector2f& screen)
+void Canvas::begin_frame(const Vector2f& screen)
 {
     m_screen_size = screen;
     m_states.resize(1);
     reset_state(m_states.back());
 }
 
-void VGContext::end_frame()
+void Canvas::end_frame()
 {
 }
 
-void VGContext::begin_path()
+void Canvas::begin_path()
 {
     m_points.clear();
     m_countors.clear();
 }
 
-void VGContext::move_to(const Vector2f& position)
+void Canvas::move_to(const Vector2f& position)
 {
     m_countors.push_back(m_points.size());
     m_points.push_back(position);
 }
 
-void VGContext::line_to(const Vector2f& position)
+void Canvas::line_to(const Vector2f& position)
 {
     if( m_countors.size() == 0 )
         return;
@@ -174,7 +174,7 @@ void VGContext::line_to(const Vector2f& position)
 }
 
 // reference: http://antigrain.com/research/adaptive_bezier/
-void VGContext::tesselate_bezier(const Vector2f& from, const Vector2f& c1, const Vector2f& c2, const Vector2f& to, int level)
+void Canvas::tesselate_bezier(const Vector2f& from, const Vector2f& c1, const Vector2f& c2, const Vector2f& to, int level)
 {
     if( level > 10 )
         return;
@@ -202,7 +202,7 @@ void VGContext::tesselate_bezier(const Vector2f& from, const Vector2f& c1, const
     tesselate_bezier(p1234, p234, p34, to, level+1);
 }
 
-void VGContext::bezier_curve_to(const Vector2f& to, const Vector2f& c1, const Vector2f& c2)
+void Canvas::bezier_curve_to(const Vector2f& to, const Vector2f& c1, const Vector2f& c2)
 {
     if( m_countors.size() == 0 )
         return;
@@ -210,7 +210,7 @@ void VGContext::bezier_curve_to(const Vector2f& to, const Vector2f& c1, const Ve
     tesselate_bezier(m_points.back(), c1, c2, to, 0);
 }
 
-void VGContext::quadratic_curve_to(const Vector2f& to, const Vector2f& c)
+void Canvas::quadratic_curve_to(const Vector2f& to, const Vector2f& c)
 {
     if( m_countors.size() == 0 )
         return;
@@ -221,7 +221,7 @@ void VGContext::quadratic_curve_to(const Vector2f& to, const Vector2f& c)
     bezier_curve_to(to, c1, c2);
 }
 
-void VGContext::close_path()
+void Canvas::close_path()
 {
     if( m_countors.size() == 0 )
         return;
@@ -229,7 +229,7 @@ void VGContext::close_path()
     move_to(m_points[m_countors.back()]);
 }
 
-void VGContext::fill()
+void Canvas::fill()
 {
     if( m_countors.size() == 0 || m_points.size() == 0 )
         return;
@@ -317,101 +317,101 @@ void VGContext::fill()
     device.draw(DrawMode::TRIANGLE, 0, m_index_buffer.data.size());
 }
 
-void VGContext::stroke()
+void Canvas::stroke()
 {
 }
 
-void VGContext::save()
+void Canvas::save()
 {
     m_states.resize(m_states.size()+1);
     m_states[m_states.size()-1] = m_states[m_states.size()-2];
 }
 
-void VGContext::restore()
+void Canvas::restore()
 {
     if( m_states.size() > 1 ) m_states.pop_back();
     else reset_state(m_states[0]);
 }
 
-void VGContext::reset()
+void Canvas::reset()
 {
     reset_state(m_states.back());
 }
 
-void VGContext::set_stroke_color(const Color& color)
+void Canvas::set_stroke_color(const Color& color)
 {
     m_states.back().stroke.as_color(color).with_empty();
 }
 
-void VGContext::set_stroke_paint(const VGPaint& paint)
+void Canvas::set_stroke_paint(const CanvasPaint& paint)
 {
     m_states.back().stroke = paint;
     m_states.back().stroke.transform *= m_states.back().transform;
 }
 
-void VGContext::set_stroke_width(float width)
+void Canvas::set_stroke_width(float width)
 {
     m_states.back().stroke_width = width;
 }
 
-void VGContext::set_fill_color(const Color& color)
+void Canvas::set_fill_color(const Color& color)
 {
     m_states.back().fill.as_color(color).with_empty();
 }
 
-void VGContext::set_fill_paint(const VGPaint& paint)
+void Canvas::set_fill_paint(const CanvasPaint& paint)
 {
     m_states.back().fill = paint;
     m_states.back().fill.transform *= m_states.back().transform;
 }
 
-void VGContext::set_line_cap(VGLineCap cap)
+void Canvas::set_line_cap(VGLineCap cap)
 {
     m_states.back().line_cap = cap;
 }
 
-void VGContext::set_line_join(VGLineJoin join)
+void Canvas::set_line_join(VGLineJoin join)
 {
     m_states.back().line_join = join;
 }
 
-void VGContext::set_miter_limit(float miter)
+void Canvas::set_miter_limit(float miter)
 {
     m_states.back().miter_limit = miter;
 }
 
-void VGContext::set_global_alpha(float alpha)
+void Canvas::set_global_alpha(float alpha)
 {
     m_states.back().alpha = alpha;
 }
 
-void VGContext::set_scissor(const Rect2f& scissor)
+void Canvas::set_scissor(const Rect2f& scissor)
 {
     m_states.back().scissor = scissor;
 }
 
-void VGContext::intersect_scissor(const Rect2f& scissor)
+void Canvas::intersect_scissor(const Rect2f& scissor)
 {
     m_states.back().scissor = intersect(m_states.back().scissor, scissor);
 }
 
-void VGContext::reset_scissor()
+void Canvas::reset_scissor()
 {
     const float inf = std::numeric_limits<float>::infinity();
     m_states.back().scissor = { -inf, -inf, inf, inf };
 }
 
-void VGContext::identity()
+void Canvas::identity()
 {
     m_states.back().transform.identity();
 }
 
-void VGContext::scale(const Vector2f& scale)
+void Canvas::scale(const Vector2f& scale)
 {
     transform(hlift(make_scale(scale)));
 }
 
-void VGContext::rotate(float degree, const Vector2f& anchor)
+void Canvas::rotate(float degree, const Vector2f& anchor)
 {
     float radians = degree/180*3.1415926f;
 
@@ -422,17 +422,17 @@ void VGContext::rotate(float degree, const Vector2f& anchor)
     transform(t);
 }
 
-void VGContext::translate(const Vector2f& translation)
+void Canvas::translate(const Vector2f& translation)
 {
     transform(make_translation(translation));
 }
 
-void VGContext::transform(const Matrix3f& transform)
+void Canvas::transform(const Matrix3f& transform)
 {
     m_states.back().transform = transform * m_states.back().transform;
 }
 
-void VGContext::set_transform(const Matrix3f& transform)
+void Canvas::set_transform(const Matrix3f& transform)
 {
     m_states.back().transform = transform;
 }

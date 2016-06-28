@@ -12,6 +12,8 @@
 
 NS_FLOW2D_BEGIN
 
+// REFACTOR THIS TO SUPPORT MATERIAL BASED BATCHING
+
 struct Vertex2f
 {
     Vertex2f()

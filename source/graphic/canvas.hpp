@@ -12,9 +12,9 @@
 
 NS_FLOW2D_BEGIN
 
-struct VGPaint
+struct CanvasPaint
 {
-    friend class VGContext;
+    friend class Canvas;
 
 protected:
     float       radius;
@@ -25,13 +25,13 @@ protected:
     int         operations;
 
 public:
-    VGPaint& as_color(const Color& i);
+    CanvasPaint& as_color(const Color& i);
     // parameters from-to specify the start and end coordinates
     // of the linear gradient, icol specifies the start color and ocol the end color.
-    VGPaint& as_linear_gradient(const Vector2f& from, const Vector2f& to, const Color& i, const Color& o);
-    VGPaint& as_radial_gradient(const Vector2f& center, float inr, float outr, const Color& i, const Color& o);
-    VGPaint& with_gray();
-    VGPaint& with_empty();
+    CanvasPaint& as_linear_gradient(const Vector2f& from, const Vector2f& to, const Color& i, const Color& o);
+    CanvasPaint& as_radial_gradient(const Vector2f& center, float inr, float outr, const Color& i, const Color& o);
+    CanvasPaint& with_gray();
+    CanvasPaint& with_empty();
 };
 
 enum class VGLineCap : uint8_t
@@ -62,8 +62,8 @@ enum VGAlign
 
 struct VGState
 {
-    VGPaint     fill;
-    VGPaint     stroke;
+    CanvasPaint     fill;
+    CanvasPaint     stroke;
     float       stroke_width;
     float       miter_limit;
     VGLineJoin  line_join;
@@ -75,9 +75,9 @@ struct VGState
 
 // a vector graphic drawing utilities, which provides a similiar api and effect as html canvas.
 // its could be used for prototype development.
-struct VGContext
+struct Canvas
 {
-    static VGContext* create();
+    static Canvas* create();
 
     void begin_frame(const Vector2f&);
     void end_frame();
@@ -115,10 +115,10 @@ struct VGContext
     // paint which is a gradient or a pattern. solid color is simply
     // defined as a color value, different kinds of paints can be created
     void set_fill_color(const Color&);
-    void set_fill_paint(const VGPaint&);
+    void set_fill_paint(const CanvasPaint&);
 
     void set_stroke_color(const Color&);
-    void set_stroke_paint(const VGPaint&);
+    void set_stroke_paint(const CanvasPaint&);
     void set_stroke_width(float);
 
     // sets how the end of the line (cap) is drawn

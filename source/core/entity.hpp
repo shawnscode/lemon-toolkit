@@ -147,10 +147,6 @@ template<typename T> struct ComponentHandle
 
     // returns the entity associated with the component.
     Entity                  entity();
-    EntityManager&          world();
-    const EntityManager&    world() const;
-    EventManager&           dispatcher();
-    const EventManager&     dispatcher() const;
 
     //
     T* get() const;
