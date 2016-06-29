@@ -129,7 +129,7 @@ TEST_CASE("TestRectOperations")
 
     REQUIRE( intersect( Rect2f{0.f, 0.f, 5.f, 5.f}, Rect2f{1.f, 1.f, 2.f, 2.f} ) == (Rect2f{1.f, 1.f, 2.f, 2.f}) );
     REQUIRE( intersect( Rect2f{0.f, 0.f, 2.f, 2.f}, Rect2f{1.f, 1.f, 3.f, 3.f} ) == (Rect2f{1.f, 1.f, 2.f, 2.f}) );
-    REQUIRE( intersect( Rect2f{0.f, 0.f, 2.f, 2.f}, Rect2f{3.f, 3.f, 4.f, 4.f} ) == (Rect2f{3.f, 3.f, 2.f, 2.f}) );
+    REQUIRE( intersect( Rect2f{0.f, 0.f, 2.f, 2.f}, Rect2f{3.f, 3.f, 4.f, 4.f} ) == (Rect2f{0.f, 0.f, 0.f, 0.f}) );
 }
 
 TEST_CASE("TestColor")

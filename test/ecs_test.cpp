@@ -19,7 +19,7 @@ template<typename T> int size(const T& t)
     return n;
 }
 
-struct Position
+struct Position : public Component
 {
     Position(float x = 0.0f, float y = 0.0f) : x(x), y(y) {}
 
@@ -31,7 +31,7 @@ struct Position
     float x, y;
 };
 
-struct Direction
+struct Direction : public Component
 {
     Direction(float x = 0.0f, float y = 0.0f) : x(x), y(y) {}
 
@@ -55,23 +55,20 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestCreateEntity")
 {
     REQUIRE( em.size() == 0UL );
 
-    Entity e1;
-    REQUIRE( !e1.is_valid() );
-
-    auto e2 = em.create();
-    REQUIRE( e2.is_valid() );
+    auto e2 = em.spawn();
+    REQUIRE( e2.is_alive() );
     REQUIRE( em.size() == 1UL );
 
-    e1 = e2;
-    REQUIRE( e1.is_valid() );
+    Entity e1 = e2;
+    REQUIRE( e1.is_alive() );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestEntityCreateFromCopy")
 {
-    auto e = em.create();
+    auto e = em.spawn();
     auto ep = e.add_component<Position>(1, 2);
 
-    auto f = em.create_from(e);
+    auto f = em.clone(e);
     auto fp = f.get_component<Position>();
 
     REQUIRE( ep != fp );
@@ -88,35 +85,33 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityAsBoolean")
 {
     REQUIRE( em.size() == 0UL );
 
-    auto e = em.create();
-    REQUIRE( e.is_valid() );
+    auto e = em.spawn();
+    REQUIRE( e.is_alive() );
     REQUIRE( em.size() == 1UL );
     REQUIRE( !(!e) );
 
     e.dispose();
     REQUIRE( em.size() == 0UL );
     REQUIRE( !e );
-
-    Entity e2;  // not initialized
-    REQUIRE( !e2 );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestEntityReuse")
 {
-    auto e1 = em.create();
+    auto e1 = em.spawn();
     auto e2 = e1;
-    auto id = e1.get_uid();
-    REQUIRE( e1.is_valid() );
-    REQUIRE( e2.is_valid() );
+    auto index = e1.get_index();
+    auto version = e1.get_version();
+    REQUIRE( e1.is_alive() );
+    REQUIRE( e2.is_alive() );
 
     e1.add_component<Position>();
     e1.dispose();
-    REQUIRE( !e1.is_valid() );
-    REQUIRE( !e2.is_valid() );
+    REQUIRE( !e1.is_alive() );
+    REQUIRE( !e2.is_alive() );
 
-    auto e3 = em.create();
-    REQUIRE( e3.get_uid() != id );
-    REQUIRE( e3.get_uid().index() == id.index() );
+    auto e3 = em.spawn();
+    REQUIRE( e3.get_index() == index );
+    REQUIRE( e3.get_version() != version );
     REQUIRE( !e3.has_component<Position>() );
 
     e3.add_component<Position>();
@@ -125,18 +120,20 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityReuse")
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestEntityAssignment")
 {
-    Entity a, b;
-    a = em.create();
-    REQUIRE( a != b );
-    b = a;
+    Entity a = em.spawn();
+    Entity b = a;
     REQUIRE( a == b );
+
     a.invalidate();
     REQUIRE( a != b );
+
+    REQUIRE( !a );
+    REQUIRE( b );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentConstruction")
 {
-    auto e = em.create();
+    auto e = em.spawn();
     auto p = e.add_component<Position>(1, 2);
 
     auto cp = e.get_component<Position>();
@@ -147,23 +144,23 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentConstruction")
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentIdsDiffer")
 {
-    REQUIRE( ComponentTrait<Position>::type() != ComponentTrait<Direction>::type() );
+    REQUIRE( ComponentTraitInfo<Position>::id() != ComponentTraitInfo<Direction>::id() );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentHandleInvalidatedWhenEntityDestroyed") {
-    auto a = em.create();
+    auto a = em.spawn();
     auto position = a.add_component<Position>(1, 2);
     REQUIRE(position);
     REQUIRE(position->x == 1);
     REQUIRE(position->y == 2);
 
     a.dispose();
-    REQUIRE(!position);
+    REQUIRE( !a.has_component<Position>() );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentAssignmentFromCopy")
 {
-    auto e = em.create();
+    auto e = em.spawn();
     auto p = Position(1, 2);
     auto h = e.add_component<Position>(p);
 
@@ -172,13 +169,13 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentAssignmentFromCopy")
     REQUIRE( h->y == p.y );
 
     e.dispose();
-    REQUIRE( !h );
+    REQUIRE( !e.has_component<Position>() );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestDestroyEntity")
 {
-    auto e = em.create();
-    auto f = em.create();
+    auto e = em.spawn();
+    auto f = em.spawn();
 
     e.add_component<Position>();
     f.add_component<Position>();
@@ -188,56 +185,57 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestDestroyEntity")
 
     REQUIRE( e );
     REQUIRE( f );
-    REQUIRE( e.get_component<Position>().is_valid() );
-    REQUIRE( e.get_component<Direction>().is_valid() );
-    REQUIRE( f.get_component<Position>().is_valid() );
-    REQUIRE( f.get_component<Direction>().is_valid() );
+    REQUIRE( e.get_component<Position>() != nullptr );
+    REQUIRE( e.get_component<Direction>() != nullptr );
+    REQUIRE( f.get_component<Position>() != nullptr );
+    REQUIRE( f.get_component<Direction>() != nullptr );
     REQUIRE( e.has_component<Position>() );
     REQUIRE( f.has_component<Position>() );
 
     e.dispose();
     REQUIRE( !e );
     REQUIRE( f );
-    REQUIRE( f.get_component<Position>().is_valid() );
-    REQUIRE( f.get_component<Direction>().is_valid() );
+    REQUIRE( f.get_component<Position>() != nullptr );
+    REQUIRE( f.get_component<Direction>() != nullptr );
     REQUIRE( f.has_component<Position>() );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestEntityDestroyAll")
 {
-    auto e = em.create();
-    auto f = em.create();
+    auto e = em.spawn();
+    auto f = em.spawn();
     em.reset();
     REQUIRE( !e );
     REQUIRE( !f );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestEntityDestroyHole") {
-  std::vector<Entity> entities;
+    std::vector<Entity> entities;
 
-  auto count = [this]()->int {
-    auto e = em.find_entities_with<Position>();
-    return std::count_if(e.begin(), e.end(), [](const Entity &) { return true; });
-  };
+    auto count = [this]()->int {
+        auto e = em.find_entities_with<Position>();
+        auto cursor = e.begin();
+        return std::count_if(e.begin(), e.end(), [](const Entity &) { return true; });
+    };
 
-  for (int i = 0; i < 5000; i++) {
-    auto e = em.create();
-    e.add_component<Position>();
-    entities.push_back(e);
-  }
+    for (int i = 0; i < 5000; i++) {
+        auto e = em.spawn();
+        e.add_component<Position>();
+        entities.push_back(e);
+    }
 
-  REQUIRE(count() ==  5000);
-
-  entities[2500].dispose();
-  REQUIRE(count() ==  4999);
+    REQUIRE(count() ==  5000);
+    entities[2500].dispose();
+    REQUIRE(count() ==  4999);
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestEntityInStdSet")
 {
-    auto a = em.create();
-    auto b = em.create();
-    auto c = em.create();
+    auto a = em.spawn();
+    auto b = em.spawn();
+    auto c = em.spawn();
     set<Entity> entitySet;
+    
     REQUIRE( entitySet.insert(a).second );
     REQUIRE( entitySet.insert(b).second );
     REQUIRE( entitySet.insert(c).second );
@@ -245,9 +243,9 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityInStdSet")
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestEntityInStdMap")
 {
-    auto a = em.create();
-    auto b = em.create();
-    auto c = em.create();
+    auto a = em.spawn();
+    auto b = em.spawn();
+    auto c = em.spawn();
     map<Entity, int> entityMap;
     REQUIRE( entityMap.insert(pair<Entity, int>(a, 1)).second );
     REQUIRE( entityMap.insert(pair<Entity, int>(b, 2)).second );
@@ -259,9 +257,9 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityInStdMap")
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestGetEntitiesWithComponent")
 {
-    auto e = em.create();
-    auto f = em.create();
-    auto g = em.create();
+    auto e = em.spawn();
+    auto f = em.spawn();
+    auto g = em.spawn();
 
     e.add_component<Position>(1, 2);
     e.add_component<Direction>();
@@ -276,7 +274,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestGetEntitiesWithComponent")
 
     for( auto i=0; i<150; i++ )
     {
-        auto h = em.create();
+        auto h = em.spawn();
         if( i % 2 == 0 ) h.add_component<Position>();
         if( i % 3 == 0 ) h.add_component<Direction>();
     }
@@ -287,7 +285,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestGetEntitiesWithComponent")
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestGetComponentsAsTuple") {
-  auto e = em.create();
+  auto e = em.spawn();
   e.add_component<Position>(1, 2);
   e.add_component<Direction>(3, 4);
 
@@ -300,8 +298,8 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestGetComponentsAsTuple") {
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestEntityIteration")
 {
-    auto e = em.create();
-    auto f = em.create();
+    auto e = em.spawn();
+    auto f = em.spawn();
 
     e.add_component<Position>(1, 2);
 
@@ -322,37 +320,36 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityIteration")
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestIterateAllEntitiesSkipsDestroyed") {
-    auto e = em.create();
-    auto f = em.create();
-    auto g = em.create();
+    auto e = em.spawn();
+    auto f = em.spawn();
+    auto g = em.spawn();
 
     f.dispose();
-    auto it = em.get_entities().begin();
+    auto it = em.find_entities().begin();
 
     REQUIRE( *it == e );
     ++it;
     REQUIRE( *it == g );
     ++it;
 
-    REQUIRE( it == em.get_entities().end() );
+    REQUIRE( it == em.find_entities().end() );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentsRemovedFromReusedEntities")
 {
-  auto e = em.create();
-  auto eid = e.get_uid();
+  auto e = em.spawn();
+  auto eversion = e.get_version();
+  auto eindex = e.get_index();
   e.add_component<Position>(1, 2);
   e.dispose();
 
-  auto f = em.create();
-  auto fid = f.get_uid();
-
-  REQUIRE( eid.index() == fid.index() );
-  REQUIRE( eid.version() < fid.version() );
+  auto f = em.spawn();
+  REQUIRE( eindex == f.get_index() );
+  REQUIRE( eversion < f.get_version() );
   REQUIRE( !f.has_component<Position>() );
 }
 
-struct FreedSentinel
+struct FreedSentinel : public Component
 {
   explicit FreedSentinel(bool &yes) : yes(yes) {}
   ~FreedSentinel() { yes = true; }
@@ -365,7 +362,7 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
     {
         EventManager es;
         EntityManager em(es);
-        auto e = em.create();
+        auto e = em.spawn();
         e.add_component<FreedSentinel>(freed);
         REQUIRE( !freed );
     }
@@ -374,7 +371,7 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentDestructorCalledWhenEntityDestroyed")
 {
-    auto e = em.create();
+    auto e = em.spawn();
     bool freed = false;
     e.add_component<FreedSentinel>(freed);
     REQUIRE( !freed );
@@ -382,7 +379,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentDestructorCalledWhenEntityD
     REQUIRE( freed );
 }
 
-struct Counter
+struct Counter : public Component
 {
     explicit Counter(int counter = 0) : counter(counter) {}
     int counter;
@@ -428,7 +425,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestApplySystem")
     std::vector<Entity> created_entities;
     for (int i = 0; i < 150; ++i)
     {
-        auto e = em.create();
+        auto e = em.spawn();
         created_entities.push_back(e);
         if (i % 2 == 0) e.add_component<Position>(1, 2);
         if (i % 3 == 0) e.add_component<Direction>(1, 1);
@@ -459,7 +456,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestApplyAllSystems")
 {
     std::vector<Entity> created_entities;
     for (int i = 0; i < 150; ++i) {
-        auto e = em.create();
+        auto e = em.spawn();
         created_entities.push_back(e);
         if (i % 2 == 0) e.add_component<Position>(1, 2);
         if (i % 3 == 0) e.add_component<Direction>(1, 1);
