@@ -7,6 +7,10 @@
 
 NS_FLOW2D_BEGIN
 
+// represents a component pool where the number of components
+// is significantly less than the number of entities with those components.
+// Uses less space and will be faster to iterate under these conditions.
+
 struct MemoryChunk
 {
     uint16_t        size;               // total size of blocks in this chunk, related to number of blocks

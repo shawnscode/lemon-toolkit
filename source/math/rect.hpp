@@ -35,9 +35,7 @@ template<size_t N, typename T> struct Rect
     Vector<N, T>    corner() const;
     Vector<N, T>    center() const;
     Vector<N, T>    size() const;
-    Vector<N, T>    half_size() const;
-    T               width() const;
-    T               height() const;
+    T               area() const;
 
 protected:
     Vector<N, T> m_position, m_corner;

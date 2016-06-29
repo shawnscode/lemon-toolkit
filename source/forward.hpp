@@ -25,7 +25,7 @@ static const size_t kDbgMaxTracebackFrames  = 63;
 static const size_t kCacheDefaultThreshold  = 1024;
 static const size_t kEntFirstChunksSize     = 1024;
 static const size_t kEntGrowChunkSize       = 1024;
-static const size_t kEntMaxComponents       = 512;
+static const size_t kEntMaxComponents       = 128;
 static const size_t kGfxMaxTextures         = 8;
 static const size_t kGfxMaxPrograms         = 8;
 static const size_t kGfxMaxAttributes       = 8;
@@ -53,11 +53,10 @@ extern void LOGE(const char* format, ...);
 #define NOTUSED(v) for(;;) { (void)(1 ? (void)0 : ((void)v)); break; }
 
 //- ENTITY COMPONENT SYSTEM
-template<typename T> struct ComponentHandle;
-
 struct Entity;
 struct EntityIterator;
 struct EntityView;
+struct Component;
 template<typename ...T> struct EntityViewTrait;
 struct EntityManager;
 

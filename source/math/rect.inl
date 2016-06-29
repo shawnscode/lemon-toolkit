@@ -127,21 +127,12 @@ INLINE Vector<N, T> Rect<N, T>::size() const
 }
 
 template<size_t N, typename T>
-INLINE Vector<N, T> Rect<N, T>::half_size() const
+INLINE T Rect<N, T>::area() const
 {
-    return size() * 0.5;
-}
-
-template<size_t N, typename T>
-INLINE T Rect<N, T>::width() const
-{
-    return std::max(m_corner[0]-m_position[0], (T)0);
-}
-
-template<size_t N, typename T>
-INLINE T Rect<N, T>::height() const
-{
-    return std::max(m_corner[1]-m_position[1], (T)0);
+    T result = (T)1;
+    for( size_t i = 0; i < N; i++ )
+        result *= std::max(m_corner[i] - m_position[i], (T)0);
+    return result;
 }
 
 template<size_t N, typename T>
@@ -155,5 +146,10 @@ INLINE bool equals(const Rect<N, T>& lh, const Rect<N, T>& rh, T epslion)
 template<size_t N, typename T>
 INLINE Rect<N, T> intersect(const Rect<N, T>& lh, const Rect<N, T>& rh)
 {
-    return Rect<N, T> { max(lh.position(), rh.position()), min(lh.corner(), rh.corner()) } ;
+    Vector<N, T> position = max(lh.position(), rh.position());
+    Vector<N, T> corner = min(lh.corner(), rh.corner());
+
+    if( corner[0] >= position[0] && corner[1] >= position[1] )
+        return Rect<N, T> {position, corner};
+    return {(T)0, (T)0, (T)0, (T)0};
 }

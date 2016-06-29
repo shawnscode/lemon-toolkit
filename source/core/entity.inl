@@ -2,455 +2,284 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 // INCLUDED METHODS OF ENTITY
-INLINE bool Entity::is_valid() const
+INLINE bool Entity::is_alive() const
 {
-    return m_manager && m_manager->is_valid(m_identifier);
+    return _world.is_alive(*this);
 }
 
-INLINE void Entity::assert_valid() const
+INLINE Entity::operator bool () const
 {
-    ASSERT( is_valid(), "[ECS] trying to access invalid Entity." );
-}
-
-INLINE Entity::operator bool() const
-{
-    return is_valid();
+    return is_alive();
 }
 
 INLINE bool Entity::operator == (const Entity& rh) const
 {
-    return m_manager == rh.m_manager && m_identifier == rh.m_identifier;
+    return &_world == &rh._world && _index == rh._index && _version == rh._version;
 }
 
 INLINE bool Entity::operator != (const Entity& rh) const
 {
-    return !(rh == *this);
+    return !(*this == rh);
 }
 
 INLINE bool Entity::operator < (const Entity& rh) const
 {
-    return m_identifier < rh.m_identifier;
+    return _version == rh._version ? _index < rh._index : _version < rh._version;
+}
+
+INLINE Entity::index_type Entity::get_index() const
+{
+    return _index;
+}
+
+INLINE Entity::index_type Entity::get_version() const
+{
+    return _version;
 }
 
 template<typename T, typename ... Args>
-ComponentHandle<T> Entity::add_component(Args && ... args)
+INLINE T* Entity::add_component(Args && ... args)
 {
-    assert_valid();
-    return m_manager->add_component<T>(m_identifier, std::forward<Args>(args)...);
+    return _world.add_component<T>(*this, std::forward<Args>(args)...);
 }
 
 template<typename T>
-ComponentHandle<T> Entity::add_component(const T& rh)
+INLINE T* Entity::add_component(const T& rh)
 {
-    assert_valid();
-    return m_manager->add_component<T>(m_identifier, std::forward<const T&>(rh));
+    return _world.add_component<T>(*this, std::forward<const T&>(rh));
 }
 
 template<typename T>
-bool Entity::has_component() const
+INLINE T* Entity::get_component()
 {
-    assert_valid();
-    return m_manager->has_component<T>(m_identifier);
-}
-
-template<typename T>
-ComponentHandle<T> Entity::get_component()
-{
-    assert_valid();
-    return m_manager->get_component<T>(m_identifier);
+    return _world.get_component<T>(*this);
 }
 
 template<typename ... T>
-std::tuple<ComponentHandle<T> ...> Entity::get_components()
+INLINE std::tuple<T*...> Entity::get_components()
 {
-    assert_valid();
-    return m_manager->get_components<T...>(m_identifier);
+    return _world.get_components<T...>(*this);
 }
 
 template<typename T>
-void Entity::remove_component()
+INLINE bool Entity::has_component() const
 {
-    assert_valid();
-    m_manager->remove_component<T>(m_identifier);
+    return _world.has_component<T>(*this);
 }
 
-INLINE Entity::Uid Entity::get_uid() const
+template<typename T>
+INLINE void Entity::remove_component()
 {
-    return m_identifier;
+    _world.remove_component<T>(*this);
 }
 
 INLINE ComponentMask Entity::get_components_mask() const
 {
-    assert_valid();
-    return m_manager->get_components_mask(m_identifier);
+    return _world.get_components_mask(*this);
 }
 
 INLINE void Entity::invalidate()
 {
-    m_identifier = INVALID;
-    m_manager = nullptr;
+    _index = invalid;
+    _version = invalid;
 }
 
 INLINE void Entity::dispose()
 {
-    assert_valid();
-    m_manager->erase(m_identifier);
+    _world.dispose(*this);
     invalidate();
 }
 
-// INCLUDED METHODS OF ENTITY VIEW AND ITERATOR
-INLINE void EntityIterator::next()
-{
-    while( m_current_cursor < m_capacity && !predicate() )
-        m_current_cursor++;
-
-    if( m_current_cursor >= m_capacity )
-        m_current_cursor = m_capacity;
-}
-
-INLINE bool EntityIterator::predicate() const
-{
-    return m_manager->is_valid(m_manager->make_uid(m_current_cursor), m_mask);
-}
-
-INLINE bool EntityIterator::is_finished() const
-{
-    return m_current_cursor >= m_capacity;
-}
-
-INLINE EntityIterator& EntityIterator::operator ++ ()
-{
-    m_current_cursor ++;
-    next();
-    return *this;
-}
-
-INLINE bool EntityIterator::operator == (const EntityIterator& rh) const
-{
-    return m_current_cursor == rh.m_current_cursor;
-}
-
-INLINE bool EntityIterator::operator != (const EntityIterator& rh) const
-{
-    return m_current_cursor != rh.m_current_cursor;
-}
-
-INLINE Entity EntityIterator::operator * ()
-{
-    return Entity(m_manager, m_manager->make_uid(m_current_cursor));
-}
-
-INLINE EntityIterator EntityView::begin()
-{
-    return EntityIterator(m_manager, m_mask, 0);
-}
-
-INLINE EntityIterator EntityView::end()
-{
-    return EntityIterator(m_manager, m_mask, uint32_t(m_manager->capacity()));
-}
-
-INLINE const EntityIterator EntityView::begin() const
-{
-    return EntityIterator(m_manager, m_mask, 0);
-}
-
-INLINE const EntityIterator EntityView::end() const
-{
-    return EntityIterator(m_manager, m_mask, uint32_t(m_manager->capacity()));
-}
-
-template<typename ... T>
-void EntityViewTrait<T...>::each(std::function<void(Entity, T& ...)> closure)
-{
-    for(auto cursor : *this)
-        closure(cursor, *(cursor.template get_component<T>().get())...);
-}
-
-template<typename ... T>
-EntityViewTrait<T...>::EntityViewTrait(EntityManager* manager)
-: EntityView(manager, manager->get_components_mask<T...>())
-{}
-
-// INCLUDED METHODS OF COMPONENT HANDLE
-template<typename T>
-ComponentHandle<T>::ComponentHandle(EntityManager* manager, Entity::Uid uid)
-: m_manager(manager), m_identifier(uid){}
-
-template<typename T>
-bool ComponentHandle<T>::is_valid() const
-{
-    return m_manager && m_manager->is_valid(m_identifier) && m_manager->has_component<T>(m_identifier);
-}
-
-template<typename T>
-void ComponentHandle<T>::assert_valid() const
-{
-    ENSURE( is_valid() );
-}
-
-template<typename T>
-ComponentHandle<T>::operator bool() const
-{
-    return is_valid();
-}
-
-template<typename T>
-void ComponentHandle<T>::dispose()
-{
-    assert_valid();
-    m_manager->remove_component<T>(m_identifier);
-}
-
-template<typename T>
-Entity ComponentHandle<T>::entity()
-{
-    assert_valid();
-    return m_manager->get(m_identifier);
-}
-
-template<typename T>
-T* ComponentHandle<T>::get() const
-{
-    assert_valid();
-    return m_manager->get_component_ptr<T>(m_identifier);
-}
-
-template<typename T>
-template<typename T1, typename ... Args>
-ComponentHandle<T1> ComponentHandle<T>::add_component(Args && ... args)
-{
-    assert_valid();
-    return m_manager->add_component<T1>(m_identifier, std::forward<Args>(args)...);
-}
-
-template<typename T>
-template<typename T1>
-ComponentHandle<T1> ComponentHandle<T>::add_component(const T& rh)
-{
-    assert_valid();
-    return m_manager->add_component<T1>(m_identifier, std::forward<const T&>(rh));
-}
-
-template<typename T>
-template<typename T1>
-ComponentHandle<T1> ComponentHandle<T>::get_component()
-{
-    assert_valid();
-    return m_manager->get_component<T1>(m_identifier);
-}
-
-template<typename T>
-T* ComponentHandle<T>::operator -> () const
-{
-    assert_valid();
-    return m_manager->get_component_ptr<T>(m_identifier);
-}
-
-template<typename T>
-bool ComponentHandle<T>::operator == (const ComponentHandle<T>& rh) const
-{
-    return m_manager == rh.m_manager && m_identifier == rh.m_identifier;
-}
-
-template<typename T>
-bool ComponentHandle<T>::operator != (const ComponentHandle<T>& rh) const
-{
-    return !(*this == rh);
-}
-
-// INCLUDED METHODS OF COMPONENT TRAITS
-template<typename T>
-Component::Type ComponentTrait<T>::type()
-{
-    static Type cls = s_class_counter ++;
-    ENSURE( cls < kEntMaxComponents );
-    return cls;
-}
-
 // INCLUDED METHODS OF ENTITY MANAGER
+INLINE size_t EntityManager::size() const
+{
+    return _versions.size() - _freeslots.size();
+}
+
+INLINE size_t EntityManager::capacity() const
+{
+    return _versions.size();
+}
+
+INLINE bool EntityManager::is_alive(Entity object) const
+{
+    return
+        object._index < _versions.size() &&
+        object._version == _versions[object._index];
+}
+
+template<typename T, typename ... Args>
+T* EntityManager::add_component(Entity object, Args&& ... args)
+{
+    ASSERT( is_alive(object),
+        "invalid operation(add_component) on a nonexistent entity.");
+
+    const auto id = ComponentTraitInfo<T>::id();
+    ASSERT( !_components_mask[object._index].test(id),
+        "invalid operation(duplicated component) on entity." );
+
+    // placement new into the component pool
+    T* component = get_chunks<T>()->construct(object._index, std::forward<Args>(args) ...);
+    // set the bit mask for this component
+    _components_mask[object._index].set(id);
+
+    _dispatcher.emit<EvtComponentAdded<T>>(object, *component);
+    return component;
+}
+
+template<typename T>
+T* EntityManager::get_component(Entity object)
+{
+    ASSERT( is_alive(object),
+        "invalid operation(get_component) on a nonexistent entity.");
+
+    const auto id = ComponentTraitInfo<T>::id();
+    if( id >= _components_pool.size() )
+        return nullptr;
+    return static_cast<ObjectChunksTrait<T>*>(_components_pool[id])->get(object._index);
+}
+
+template<typename ... T>
+INLINE std::tuple<T*...> EntityManager::get_components(Entity object)
+{
+    return std::make_tuple(get_component<T>(object)...);
+}
+
+template<typename T>
+void EntityManager::remove_component(Entity object)
+{
+    ASSERT( is_alive(object),
+        "invalid operation(add_component) on a nonexistent entity.");
+
+    const auto id = ComponentTraitInfo<T>::id();
+    if( _components_mask[object._index].test(id) )
+    {
+        T* component = get_component<T>(object);
+        _dispatcher.emit<EvtComponentRemoved<T>>(object, *component);
+        // remove the bit mask for this component
+        _components_mask[object._index].reset(id);
+        // call destructor
+        get_chunks<T>()->destruct(object._index);
+    }
+}
+
+template<typename T>
+INLINE bool EntityManager::has_component(Entity object) const
+{
+    const auto id = ComponentTraitInfo<T>::id();
+    return is_alive(object) && _components_mask[object._index].test(id);
+}
+
+INLINE ComponentMask EntityManager::get_components_mask(Entity object) const
+{
+    if( !is_alive(object) )
+        return ComponentMask();
+
+    return _components_mask[object._index];
+}
+
+template<typename T>
+INLINE ComponentMask EntityManager::get_components_mask() const
+{
+    ComponentMask mask;
+    mask.set(ComponentTraitInfo<T>::id());
+    return mask;
+}
+
+template<typename T1, typename T2, typename ... Args>
+INLINE ComponentMask EntityManager::get_components_mask() const
+{
+    return get_components_mask<T1>() | get_components_mask<T2, Args ...>();
+}
+
+template<typename ... T>
+INLINE EntityManager::view_trait<T...> EntityManager::find_entities_with()
+{
+    return EntityManager::view_trait<T...>(*this);
+}
+
+INLINE EntityManager::view EntityManager::find_entities()
+{
+    return EntityManager::view(*this, ComponentMask());
+}
+
 INLINE void EntityManager::accomodate_entity(uint32_t index)
 {
-    if( m_components_mask.size() < (index+1) )
+    if( _components_mask.size() < (index+1) )
     {
-        m_components_mask.resize(index+1);
-        m_versions.resize(index+1);
-        m_usages.resize(index+1);
+        _components_mask.resize(index+1);
+        _versions.resize(index+1);
     }
 }
 
 template<typename T>
 ObjectChunksTrait<T>* EntityManager::get_chunks()
 {
-    const auto cls = ComponentTrait<T>::type();
-    if( m_components_pool.size() < (cls+1) )
-        m_components_pool.resize((cls+1), nullptr);
+    const auto id = ComponentTraitInfo<T>::id();
+    if( _components_pool.size() < (id+1) )
+        _components_pool.resize((id+1), nullptr);
 
-    if( m_components_pool[cls] == nullptr )
+    if( _components_pool[id] == nullptr )
     {
         auto chunks = new ObjectChunksTrait<T>(kEntFirstChunksSize, kEntGrowChunkSize);
-        m_components_pool[cls] = chunks;
+        _components_pool[id] = chunks;
     }
 
-    return static_cast<ObjectChunksTrait<T>*>(m_components_pool[cls]);
+    return static_cast<ObjectChunksTrait<T>*>(_components_pool[id]);
 }
 
-INLINE bool EntityManager::is_valid(Entity::Uid id) const
+// INCLUDED METHODS OF ENTITY VIEW AND ITERATOR
+INLINE void EntityManager::Iterator::find_next_available()
 {
-    return
-        id.index() < m_versions.size() &&
-        m_usages[id.index()] &&
-        m_versions[id.index()] == id.version();
-}
-
-INLINE bool EntityManager::is_valid(Entity::Uid id, const ComponentMask mask) const
-{
-    return is_valid(id) && (m_components_mask[id.index()] & mask) == mask;
-}
-
-INLINE void EntityManager::assert_valid(Entity::Uid id) const
-{
-    ASSERT( id.index() < m_components_mask.size(), "[ECS] Entity::Uid ID outside entity vector range." );
-    ASSERT( m_usages[id.index()], "[ECS] attempt to access a invalid Entity." );
-    ASSERT( m_versions[id.index()] == id.version(), "[ECS] attempt to access Entity via a stale Entity::Uid." );
-}
-
-INLINE Entity EntityManager::get(Entity::Uid id)
-{
-    return Entity(this, id);
-}
-
-INLINE size_t EntityManager::size() const
-{
-    return m_versions.size() - m_freeslots.size();
-}
-
-INLINE size_t EntityManager::capacity() const
-{
-    return m_versions.size();
-}
-
-INLINE Entity::Uid EntityManager::make_uid(uint32_t index)
-{
-    return Entity::Uid(index, m_versions[index]);
-}
-
-template<typename T, typename ... Args>
-ComponentHandle<T> EntityManager::add_component(Entity::Uid id, Args&& ... args)
-{
-    assert_valid(id);
-
-    const auto cls = ComponentTrait<T>::type();
-    ASSERT( !m_components_mask[id.index()].test(cls), "[ECS] duplicated component to Entity." );
-
-    // placement new into the component pool
-    get_chunks<T>()->construct(id.index(), std::forward<Args>(args) ...);
-    // set the bit mask for this component
-    m_components_mask[id.index()].set(cls);
-
-    auto handle = ComponentHandle<T>(this, id);
-    m_event_manager.emit<EvtComponentAdded<T>>(Entity(this, id), handle);
-    return handle;
-}
-
-template<typename T>
-void EntityManager::remove_component(Entity::Uid id)
-{
-    assert_valid(id);
-
-    const auto cls = ComponentTrait<T>::type();
-    const uint32_t index = id.index();
-
-    if( m_components_mask[id.index()].test(cls) )
+    while(
+        _index < _manager._versions.size() &&
+        ((_manager._versions[_index] & 0x1) == 0 ||
+         (_manager._components_mask[_index] & _mask) != _mask))
     {
-        m_event_manager.emit<EvtComponentRemoved<T>>(Entity(this, id), ComponentHandle<T>(this, id));
-        // remove the bit mask for this component
-        m_components_mask[id.index()].reset(cls);
-        // call destructor
-        get_chunks<T>()->destruct(id.index());
+        _index ++;
     }
+
+    if( _index == _manager._versions.size() )
+        _index = Entity::invalid;
 }
 
-template<typename T>
-bool EntityManager::has_component(Entity::Uid id) const
+INLINE EntityManager::Iterator& EntityManager::Iterator::operator ++ ()
 {
-    assert_valid(id);
+    ENSURE( _index != Entity::invalid );
 
-    const auto cls = ComponentTrait<T>::type();
-    return m_components_mask[id.index()].test(cls);
+    _index ++;
+    find_next_available();
+    return *this;
 }
 
-template<typename T>
-ComponentHandle<T> EntityManager::get_component(Entity::Uid id)
+INLINE bool EntityManager::Iterator::operator == (const EntityManager::Iterator& rh) const
 {
-    assert_valid(id);
-
-    const auto cls = ComponentTrait<T>::type();
-
-    if( cls >= m_components_pool.size() )
-        return ComponentHandle<T>();
-
-    return ComponentHandle<T>(this, id);
+    return &_manager == &rh._manager && _index == rh._index;
 }
 
-template<typename ... T>
-std::tuple<ComponentHandle<T>...> EntityManager::get_components(Entity::Uid id)
+INLINE bool EntityManager::Iterator::operator != (const EntityManager::Iterator& rh) const
 {
-    return std::make_tuple(get_component<T>(id)...);
+    return &_manager != &rh._manager || _index != rh._index;
 }
 
-template<typename T>
-T* EntityManager::get_component_ptr(Entity::Uid id)
+INLINE Entity EntityManager::Iterator::operator * () const
 {
-    assert_valid(id);
-
-    const auto cls = ComponentTrait<T>::type();
-    if( cls >= m_components_pool.size() )
-        return nullptr;
-
-    return static_cast<ObjectChunksTrait<T>*>(m_components_pool[cls])->get(id.index());
+    return Entity(_manager, _index, _manager._versions[_index]);
 }
 
-template<typename T>
-const T* EntityManager::get_component_ptr(Entity::Uid id) const
+INLINE EntityManager::iterator EntityManager::View::begin() const
 {
-    assert_valid(id);
-
-    const auto cls = ComponentTrait<T>::type();
-    if( cls >= m_components_pool.size() )
-        return nullptr;
-
-    return static_cast<ObjectChunksTrait<T>*>(m_components_pool[cls])->get(id.index());
+    return EntityManager::iterator(_manager, 0, _mask);
 }
 
-INLINE ComponentMask EntityManager::get_components_mask(Entity::Uid id) const
+INLINE EntityManager::iterator EntityManager::View::end() const
 {
-    assert_valid(id);
-
-    return m_components_mask[id.index()];
+    return EntityManager::iterator(_manager, Entity::invalid, _mask);
 }
 
-template<typename T>
-ComponentMask EntityManager::get_components_mask() const
+template<typename ...T>
+INLINE void EntityManager::ViewTrait<T...>::each(callback cb)
 {
-    ComponentMask mask;
-    mask.set(ComponentTrait<T>::type());
-    return mask;
-}
-
-template<typename T1, typename T2, typename ... Args>
-ComponentMask EntityManager::get_components_mask() const
-{
-    return get_components_mask<T1>() | get_components_mask<T2, Args ...>();
-}
-
-template<typename ... T>
-EntityViewTrait<T...> EntityManager::find_entities_with()
-{
-    return EntityViewTrait<T...>(this);
-}
-
-INLINE EntityView EntityManager::get_entities()
-{
-    return EntityView(this);
+    for( auto cursor : *this )
+        cb(cursor, *(cursor.template get_component<T>()) ...);
 }

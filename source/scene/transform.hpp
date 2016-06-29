@@ -20,11 +20,11 @@ struct TransformIterator : public std::iterator<std::input_iterator_tag, Transfo
 {
     TransformIterator(Transform* current) : cursor(current) {}
 
-     TransformIterator&         operator ++ ();
-     bool                       operator == (const TransformIterator&) const;
-     bool                       operator != (const TransformIterator&) const;
-     Transform*        operator * ();
-     const Transform*  operator * () const;
+     TransformIterator& operator ++ ();
+     bool               operator == (const TransformIterator&) const;
+     bool               operator != (const TransformIterator&) const;
+     Transform*         operator * ();
+     const Transform*   operator * () const;
 
  protected:
      Transform* cursor = nullptr;
