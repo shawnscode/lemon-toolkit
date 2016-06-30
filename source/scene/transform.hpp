@@ -4,6 +4,7 @@
 #pragma once
 
 #include <forward.hpp>
+#include <core/entity.hpp>
 #include <math/vector.hpp>
 
 NS_FLOW2D_BEGIN
@@ -15,28 +16,13 @@ enum class TransformSpace : uint8_t
     WORLD
 };
 
-// an iterator over sub-transforms of the ancestor
-struct TransformIterator : public std::iterator<std::input_iterator_tag, Transform*>
-{
-    TransformIterator(Transform* current) : cursor(current) {}
-
-     TransformIterator& operator ++ ();
-     bool               operator == (const TransformIterator&) const;
-     bool               operator != (const TransformIterator&) const;
-     Transform*         operator * ();
-     const Transform*   operator * () const;
-
- protected:
-     Transform* cursor = nullptr;
-};
-
 struct TransformMatrix
 {
     Vector2f position;
     Vector2f scale;
     float    rotation;
 
-    TransformMatrix(const Vector2f& position = kVector2fZero, const Vector2f& scale = kVector2fOne, float rotation = 0.f)
+    TransformMatrix(const Vector2f& position = {0.f, 0.f}, const Vector2f& scale = {1.f, 1.f}, float rotation = 0.f)
     : position(position), scale(scale), rotation(rotation)
     {}
 
@@ -49,56 +35,56 @@ struct TransformMatrix
 };
 
 // transform component is used to allow entities to be coordinated in the world.
-// the transformation is Y = M*X+T, where M is a 2-by-2 matrix and T is a 1x2
-// translation. in most case, M = R, a rotation matrix, or M = R*S, where
-// R is a rotation matrix and S is a diagonal matrix whose disgonal entries
-// are positives scales.
-struct Transform
+struct Transform : public Component
 {
-    Transform();
-    Transform(const Vector2f&, const Vector2f&, float);
+    // setters and getters of transform properties
+    static void set_scale(EntityManager&, Transform&, const Vector2f&, TransformSpace space = TransformSpace::SELF);
+    static void set_position(EntityManager&, Transform&, const Vector2f&, TransformSpace space = TransformSpace::SELF);
+    static void set_rotation(EntityManager&, Transform&, float, TransformSpace space = TransformSpace::SELF);
 
-    // non-copyable
+    static Vector2f get_scale(EntityManager&, const Transform&, TransformSpace space = TransformSpace::SELF);
+    static Vector2f get_position(EntityManager&, const Transform&, TransformSpace space = TransformSpace::SELF);
+    static float    get_rotation(EntityManager&, const Transform&, TransformSpace space = TransformSpace::SELF);
+
+    // visit all of this components' ancestors,
+    // in depth-first order if works with recursive mode.
+    using visitor = std::function<void(const Transform&, Transform&)>;
+    static void visit_children(EntityManager&, Transform&, const visitor&, bool recursive = false);
+    static void update_children(EntityManager&, Transform&);
+
+    // appends an entity to this hierarchy
+    static void append_child(EntityManager&, Transform&, Transform&, bool keep_world_pose = false);
+    // remove this branch from its parent hierarchy
+    static void remove_from_parent(EntityManager&, Transform&);
+    // returns true if this is the root of a hierarchy, aka. has no parent
+    static bool is_root(EntityManager&, const Transform&);
+    // returns true if this is the leaf of a hierarchy, aka. has no children
+    static bool is_leaf(EntityManager&, const Transform&);
+    // returns parent entity
+    static Entity get_parent(EntityManager&, const Transform&);
+    // returns the number of direct _children in this hierarchy
+    static size_t get_children_count(EntityManager&, const Transform&, bool recursive = false);
+
+    Transform() = default;
     Transform(const Transform&) = delete;
     Transform& operator = (const Transform&) = delete;
 
-    void identity();
+    Transform(const Vector2f& position = {0.f, 0.f}, const Vector2f& scale = {1.0f, 1.0f}, float rotation = 0.f)
+    : _localspace(position, scale, rotation)
+    {}
 
-    // get the matrix representation of transform in different space
-    TransformMatrix get_transform(TransformSpace space = TransformSpace::SELF) const;
-    void            set_transform(const TransformMatrix&, TransformSpace space = TransformSpace::SELF);
-
-    // setters and getters of transform properties
-    void        set_scale(const Vector2f&, TransformSpace space = TransformSpace::SELF);
-    void        set_position(const Vector2f&, TransformSpace space = TransformSpace::SELF);
-    void        set_rotation(float, TransformSpace space = TransformSpace::SELF);
-
-    Vector2f    get_scale(TransformSpace space = TransformSpace::SELF) const;
-    float       get_rotation(TransformSpace space = TransformSpace::SELF) const;
-    Vector2f    get_position(TransformSpace space = TransformSpace::SELF) const;
-
-    //
-    Transform*  set_parent(Transform*);
-    Transform*  get_parent();
-    void        remove_from_parent();
-    size_t      get_child_count() const;
-
-    // iterators of this transform
-    TransformIterator begin();
-    TransformIterator end();
+    void on_spawn(EntityManager&, Entity) override;
+    void on_dispose(EntityManager&, Entity) override;
 
 protected:
-    friend class TransformIterator;
-    void update_children();
+    TransformMatrix _localspace;
+    TransformMatrix _worldspace;
 
-    TransformMatrix local;
-    TransformMatrix world;
-
-    Transform*  parent = nullptr;
-    Transform*  first_child = nullptr;
-    Transform*  next_sibling = nullptr;
-    Transform*  prev_sibling = nullptr;
+    Entity      _handle;
+    Transform*  _parent         = nullptr;
+    Transform*  _first_child    = nullptr;
+    Transform*  _next_sibling   = nullptr;
+    Transform*  _prev_sibling   = nullptr;
 };
 
-#include <scene/transform.inl>
 NS_FLOW2D_END

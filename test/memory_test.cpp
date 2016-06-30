@@ -116,11 +116,24 @@ struct Position : public Component
     int x, y;
 };
 
-struct ObjectChunksFixture : ObjectChunksTrait<Position, size_t>
+struct ObjectChunksFixture : ComponentChunksTrait<Position>
 {
+    EntityManager   world;
+    EventManager    dispatcher;
+    size_t          spawn_count = 0;
+    size_t          dispose_count = 0;
+
     ObjectChunksFixture()
-    : ObjectChunksTrait<Position>(kChunkSize)
-    {}
+    : ComponentChunksTrait<Position>(kChunkSize), world(dispatcher)
+    {
+        when_spawn = [&](Entity, Position&) { spawn_count ++; };
+        when_dispose = [&](Entity, Position&) { dispose_count ++; };
+    }
+
+    size_t capacity() const
+    {
+        return _memory_indices.capacity();
+    }
 
     size_t get_plain_index(size_t index) const
     {
@@ -145,6 +158,10 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     REQUIRE( get_memory_chunks() == 0 );
     REQUIRE( get_memory_capacity() == 0 );
 
+    std::vector<Entity> entities;
+    for( size_t i = 0; i < kChunkSize*3; i++ )
+        entities.push_back(world.spawn());
+
     resize(kChunkSize*3); // this will changes nothing but the capacity of _memory_indices
     REQUIRE( capacity() == kChunkSize*3 );
     REQUIRE( size() == 0 );
@@ -153,32 +170,36 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
 
     for( size_t i = 0; i < kChunkSize-1; i++ )
     {
-        auto p = spawn(i, i, i*2);
+        auto p = (Position*)spawn(world, entities[i], i, i*2);
         REQUIRE( p->x == i );
         REQUIRE( p->y == i*2 );
     }
 
     for( size_t i = 0; i < kChunkSize-1; i++ )
     {
-        auto p = get_object(i);
+        auto p = get(entities[i]);
         REQUIRE( p->x == i );
         REQUIRE( p->y == i*2 );
     }
 
     REQUIRE( size() == (kChunkSize-1) );
+    REQUIRE( spawn_count == size() );
+    REQUIRE( dispose_count == 0 );
     REQUIRE( get_memory_chunks() == 1 );
     REQUIRE( get_memory_capacity() == kChunkSize );
 
     for( size_t i = kChunkSize-1; i < kChunkSize*2; i++ )
-        spawn(i, i, i*2);
+        spawn(world, entities[i], i, i*2);
 
     for( size_t i = 0; i < kChunkSize*2; i++ )
     {
-        auto p = get_object(i);
+        auto p = get(entities[i]);
         REQUIRE( p->x == i );
         REQUIRE( p->y == i*2 );
     }
 
+    REQUIRE( spawn_count == size() );
+    REQUIRE( dispose_count == 0 );
     REQUIRE( size() == kChunkSize*2 );
     REQUIRE( get_memory_chunks() == 2 );
     REQUIRE( get_memory_capacity() == kChunkSize*2 );
@@ -189,12 +210,13 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     {
         if( i % 2 == 0 || i % 3 == 0 || i % 7 == 0 )
         {
-            dispose(i);
+            dispose(world, entities[i]);
             removed.insert(i);
             holes ++;
         }
     }
 
+    REQUIRE( dispose_count == holes );
     REQUIRE( size() == (kChunkSize*2 - holes) );
     REQUIRE( get_memory_chunks() == 2 );
     REQUIRE( get_memory_capacity() == kChunkSize*2 );
@@ -204,7 +226,7 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     {
         if( *cursor % 7 == 0 && *cursor % 2 != 0 && *cursor % 3 != 0 )
         {
-            spawn(*cursor, 0, 0);
+            spawn(world, entities[*cursor], 0, 0);
             holes --;
         }
     }
@@ -217,7 +239,7 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     {
         if( *cursor % 3 == 0 && *cursor % 7 != 0 && *cursor % 2 != 0 )
         {
-            spawn(*cursor, 0, 0);
+            spawn(world, entities[*cursor], 0, 0);
             holes --;
         }
     }

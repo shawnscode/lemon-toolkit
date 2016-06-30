@@ -67,20 +67,17 @@ Entity EntityManager::clone(Entity source)
         return spawn();
     }
 
-    auto copy   = spawn();
+    auto dest   = spawn();
     auto mask   = get_components_mask(source);
 
     for( auto i=0; i<_components_pool.size(); i++ )
     {
         auto p = _components_pool[i];
         if( p != nullptr && mask.test(i) )
-        {
-            p->clone(copy._index, source._index);
-            _components_mask[copy._index].set(i);
-        }
+            p->clone(*this, dest, source);
     }
 
-    return copy;
+    return dest;
 }
 
 void EntityManager::dispose(Entity object)
@@ -98,7 +95,7 @@ void EntityManager::dispose(Entity object)
     {
         auto p = _components_pool[i];
         if( p != nullptr && mask.test(i) )
-            p->dispose(object._index);
+            p->dispose(*this, object);
     }
 
     _components_mask[object._index].reset();

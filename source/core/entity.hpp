@@ -50,11 +50,49 @@ struct Component
     // component memory is always managed by entity manager.
     void operator delete(void*);
     void operator delete[](void*);
+
+    virtual void on_dispose(EntityManager&, Entity) {}
+    virtual void on_spawn(EntityManager&, Entity) {}
 };
 
 template<typename T> struct ComponentTraitInfo
 {
     static TypeID::index_type id() { return TypeID::value<Component, T>(); }
+};
+
+struct ComponentChunks : public MemoryChunks<Entity::index_type>
+{
+    ComponentChunks(Entity::index_type element_size, Entity::index_type chunk_size)
+    : MemoryChunks<Entity::index_type>(element_size, chunk_size) {}
+    virtual ~ComponentChunks() = default;
+
+    virtual void* clone(EntityManager&, Entity, Entity) = 0;
+    virtual void dispose(EntityManager&, Entity) = 0;
+    virtual void resize(Entity::index_type) = 0;
+};
+
+template<typename T> struct ComponentChunksTrait : public ComponentChunks
+{
+    using chunks_type = MemoryChunks<Entity::index_type>;
+    using callback = std::function<void(Entity, T&)>;
+
+    ComponentChunksTrait(Entity::index_type chunk_size)
+    : ComponentChunks(sizeof(T), chunk_size) {}
+    virtual ~ComponentChunksTrait();
+
+    template<typename ... Args> void* spawn(EntityManager&, Entity, Args && ...);
+
+    void* clone(EntityManager&, Entity, Entity) override;
+    void  dispose(EntityManager&, Entity) override;
+    void  resize(Entity::index_type) override;
+
+    T* get(Entity);
+
+    callback when_spawn;
+    callback when_dispose;
+
+protected:
+    std::vector<Entity::index_type> _memory_indices;
 };
 
 // entity life-circle management and component assignments
@@ -147,8 +185,8 @@ struct EntityManager
     template<typename T1, typename T2, typename ...Args> ComponentMask get_components_mask() const;
 
 private:
-    using object_chunks = ObjectChunks<Entity::index_type>;
-    template<typename T> using object_chunks_trait = ObjectChunksTrait<T, Entity::index_type>;
+    using object_chunks = ComponentChunks;
+    template<typename T> using object_chunks_trait = ComponentChunksTrait<T>;
 
     void accomodate_entity(uint32_t);
     template<typename T> object_chunks_trait<T>* get_chunks();
