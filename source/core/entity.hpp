@@ -67,9 +67,9 @@ struct Component
     void operator delete[](void*);
 };
 
-template<typename Derived> struct ComponentTraitInfo
+template<typename T> struct ComponentTraitInfo
 {
-    static TypeID::index_type id() { return TypeID::value<Component, Derived>(); }
+    static TypeID::index_type id() { return TypeID::value<Component, T>(); }
 };
 
 // entity life-circle management and component assignments
@@ -162,8 +162,11 @@ struct EntityManager
     template<typename T1, typename T2, typename ...Args> ComponentMask get_components_mask() const;
 
 private:
+    using object_chunks = ObjectChunks<Entity::index_type>;
+    template<typename T> using object_chunks_trait = ObjectChunksTrait<T, Entity::index_type>;
+
     void accomodate_entity(uint32_t);
-    template<typename T> ObjectChunksTrait<T>* get_chunks();
+    template<typename T> object_chunks_trait<T>* get_chunks();
 
     EventManager& _dispatcher;
 
@@ -171,7 +174,7 @@ private:
     Entity::index_type _incremental_index = 0;
     // each element in componets_pool corresponds to a Pool for a Component
     // the index into the vector is the Component::type();
-    std::vector<ObjectChunks*> _components_pool;
+    std::vector<object_chunks*> _components_pool;
     // bitmask of components associated with each entity
     // the index into the vector is the Entity::Uid
     std::vector<ComponentMask> _components_mask;

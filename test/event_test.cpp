@@ -26,11 +26,11 @@ struct ExplosionSystem
         received_count ++;
     }
 
-   void receive(const Collision& collision)
-   {
-       damage_received += collision.damage;
-       received_count ++;
-   }
+    void receive(const Collision& collision)
+    {
+        damage_received += collision.damage;
+        received_count ++;
+    }
 
     int received_count = 0;
     int damage_received = 0;

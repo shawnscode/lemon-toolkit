@@ -23,8 +23,7 @@ NS_FLOW2D_BEGIN
 /// GLOBAL CONFIGS
 static const size_t kDbgMaxTracebackFrames  = 63;
 static const size_t kCacheDefaultThreshold  = 1024;
-static const size_t kEntFirstChunksSize     = 1024;
-static const size_t kEntGrowChunkSize       = 1024;
+static const size_t kEntPoolChunkSize       = 1024;
 static const size_t kEntMaxComponents       = 128;
 static const size_t kGfxMaxTextures         = 8;
 static const size_t kGfxMaxPrograms         = 8;

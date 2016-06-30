@@ -22,20 +22,10 @@ EntityManager::~EntityManager()
 
 void EntityManager::reset()
 {
-    // free components with destructor
-    for( auto i=0; i<_components_mask.size(); i++ )
-    {
-        const auto mask = _components_mask[i];
-        for( auto j=0; j<_components_pool.size(); j++ )
-        {
-            auto p = _components_pool[j];
-            if( p != nullptr && mask.test(j) ) p->destruct(i);
-        }
-    }
-
     // free memory usages
     for( auto p : _components_pool )
-        if(p != nullptr) delete p;
+        if( p != nullptr )
+            delete p;
 
     _incremental_index = 0;
     _components_pool.clear();
@@ -83,9 +73,9 @@ Entity EntityManager::clone(Entity source)
     for( auto i=0; i<_components_pool.size(); i++ )
     {
         auto p = _components_pool[i];
-        if( p && mask.test(i) )
+        if( p != nullptr && mask.test(i) )
         {
-            p->construct_from(copy._index, source._index);
+            p->clone(copy._index, source._index);
             _components_mask[copy._index].set(i);
         }
     }
@@ -107,7 +97,8 @@ void EntityManager::dispose(Entity object)
     for( auto i=0; i<_components_pool.size(); i++ )
     {
         auto p = _components_pool[i];
-        if( p && mask.test(i) ) p->destruct(object._index);
+        if( p != nullptr && mask.test(i) )
+            p->dispose(object._index);
     }
 
     _components_mask[object._index].reset();

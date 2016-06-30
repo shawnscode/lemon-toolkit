@@ -2,109 +2,170 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 // INCLUDED METHODS OF POOL
+template<typename T>
+const T MemoryChunks<T>::invalid = std::numeric_limits<index_type>::max();
 
-INLINE size_t MemoryPool::available() const
+template<typename T>
+MemoryChunks<T>::MemoryChunks(T element_size, T chunk_size)
+: _chunk_size(chunk_size), _first_free_block(invalid), _available(0), _total_elements(0)
 {
-    size_t available = 0;
-    for( auto cursor = m_first_chunk; cursor; cursor = cursor->next )
-        available += cursor->available;
-    return available;
-}
+    static_assert( std::numeric_limits<T>::is_integer,
+        "index type of MemoryChunks should be integer." );
 
-INLINE size_t MemoryPool::capacity() const
-{
-    size_t capacity = 0;
-    for( auto cursor = m_first_chunk; cursor; cursor = cursor->next )
-        capacity += cursor->size;
-    return capacity;
-}
-
-INLINE size_t MemoryPool::chunks() const
-{
-    size_t chunks = 0;
-    for( auto cursor = m_first_chunk; cursor; cursor = cursor->next )
-        chunks ++;
-    return chunks;
-}
-
-INLINE void* MemoryPool::get_first_block_of_chunk(MemoryChunk* chunk)
-{
-    return (void*)((uint8_t*)chunk + sizeof(MemoryChunk));
-}
-
-INLINE void* MemoryPool::get_end_of_chunk(MemoryChunk* chunk)
-{
-    return (void*)((uint8_t*)get_first_block_of_chunk(chunk) + m_element_size * chunk->size);
-}
-
-INLINE bool MemoryPool::is_block_in_chunk(MemoryChunk* chunk, void* block)
-{
-    return
-        ((unsigned long)block >= (unsigned long)get_first_block_of_chunk(chunk)) &&
-        ((unsigned long)block < (unsigned long)get_end_of_chunk(chunk));
+    _element_size = element_size;
+    if( _element_size < sizeof(T) )
+        _element_size = sizeof(T);
 }
 
 template<typename T>
-ObjectChunksTrait<T>::ObjectChunksTrait(size_t chunk_size, size_t grow_chunk_size)
-: ObjectChunks(sizeof(T), chunk_size, grow_chunk_size)
-{}
-
-template<typename T>
-ObjectChunksTrait<T>::~ObjectChunksTrait()
+MemoryChunks<T>::~MemoryChunks()
 {
-    for( auto cursor : m_slots )
-        cursor.second->~T();
+    for( auto blocks : _chunks )
+        ::free(blocks);
+    _chunks.clear();
 }
 
 template<typename T>
-template<typename ... Args>
-INLINE T* ObjectChunksTrait<T>::construct(size_t index, Args && ... args)
+INLINE T MemoryChunks<T>::size() const
 {
-    ENSURE( m_slots.find(index) == m_slots.end() );
-
-    auto block = malloc();
-    ::new(block) T(std::forward<Args>(args) ...);
-
-    m_slots[index] = static_cast<T*>(block);
-    return static_cast<T*>(block);
+    return _total_elements - _available;
 }
 
 template<typename T>
-void ObjectChunksTrait<T>::construct_from(size_t to, size_t from)
+INLINE void* MemoryChunks<T>::get_element(T index)
 {
-    ENSURE( m_slots.find(from) != m_slots.end() );
-    construct( to, std::forward<const T&>(*get(from)) );
+    if( index >= _total_elements )
+        return nullptr;
+
+    return static_cast<void*>(_chunks[index/_chunk_size] + (index%_chunk_size)*_element_size);
 }
 
 template<typename T>
-void ObjectChunksTrait<T>::destruct(size_t index)
+INLINE const void* MemoryChunks<T>::get_element(T index) const
 {
-    auto cursor = m_slots.find(index);
-    if( cursor == m_slots.end() )
+    if( index >= _total_elements )
+        return nullptr;
+
+    return static_cast<void*>(_chunks[index/_chunk_size] + (index%_chunk_size)*_element_size);
+}
+
+template<typename T>
+T MemoryChunks<T>::malloc()
+{
+    if( _first_free_block == invalid )
     {
-        LOGW("try to destruct a non-exist object.");
-        return;
+        ENSURE( _available == 0 );
+        ENSURE( _total_elements < std::numeric_limits<T>::max() - _chunk_size);
+
+        uint8_t* chunk = static_cast<uint8_t*>(::malloc(_chunk_size*_element_size));
+        if( chunk == nullptr )
+        {
+            LOGW("failed to allocate memory[%d byte(s)] from system to initialize pool",
+                _element_size*_chunk_size);
+            return invalid;
+        }
+
+        uint8_t* cursor = chunk;
+        T offset = _chunk_size * _chunks.size();
+        for( T i=1; i<_chunk_size; i++, cursor += _element_size )
+            *(T*)cursor = offset + i;
+        *(T*)cursor = invalid;
+
+        _total_elements += _chunk_size;
+        _available += _chunk_size;
+        _first_free_block = offset;
+        _chunks.push_back(chunk);
     }
 
-    cursor->second->~T();
-    free(cursor->second);
-    m_slots.erase(cursor);
+    void* element = get_element(_first_free_block);
+    ENSURE( element != nullptr );
+
+    T result = _first_free_block;
+    _first_free_block = *(T*)element;
+    _available --;
+    return result;
 }
 
 template<typename T>
-INLINE T* ObjectChunksTrait<T>::get(size_t index)
+void MemoryChunks<T>::free(T index)
 {
-    auto cursor = m_slots.find(index);
-    if( cursor == m_slots.end() ) return nullptr;
+    void* element = get_element(index);
+    if( element == nullptr )
+        return;
 
-    return cursor->second;
+    *(T*)element = _first_free_block;
+    _first_free_block = index;
+    _available ++;
 }
 
-template<typename T>
-INLINE const T* ObjectChunksTrait<T>::get(size_t index) const
+/// INCLUDED METHODS OF OBJECT CHUNKS
+template<typename T, typename I>
+ObjectChunksTrait<T, I>::~ObjectChunksTrait<T, I>()
 {
-    auto cursor = m_slots.find(index);
-    if( cursor == m_slots.end() ) return nullptr;
+    for( index_type i = 0; i < _memory_indices.size(); i++ )
+        dispose(i);
+}
 
-    return cursor->second;
+
+template<typename T, typename I>
+INLINE void ObjectChunksTrait<T, I>::resize(I size)
+{
+    _memory_indices.resize(size, MemoryChunks<I>::invalid);
+}
+
+template<typename T, typename I>
+INLINE I ObjectChunksTrait<T, I>::capacity() const
+{
+    return _memory_indices.size();
+}
+
+template<typename T, typename I>
+template<typename ... Args>
+T* ObjectChunksTrait<T, I>::spawn(I index, Args&& ... args)
+{
+    ENSURE( _memory_indices[index] == MemoryChunks<I>::invalid );
+
+    I position = MemoryChunks<I>::malloc();
+    if( position == MemoryChunks<I>::invalid )
+        return nullptr;
+
+    void* object = MemoryChunks<I>::get_element(position);
+    ::new(object) T(std::forward<Args>(args)...);
+
+    _memory_indices[index] = position;
+    return static_cast<T*>(object);
+}
+
+template<typename T, typename I>
+void ObjectChunksTrait<T, I>::clone(I dest, I source)
+{
+    ENSURE( source < _memory_indices.size() && dest < _memory_indices.size() );
+
+    T* object = get_object(_memory_indices[source]);
+    if( object == nullptr )
+        return;
+
+    spawn( dest, std::forward<const T&>(*object) );
+}
+
+template<typename T, typename I>
+void ObjectChunksTrait<T, I>::dispose(I index)
+{
+    ENSURE(index < _memory_indices.size());
+    if( _memory_indices[index] == MemoryChunks<I>::invalid )
+        return;
+
+    T* object = static_cast<T*>(MemoryChunks<I>::get_element(_memory_indices[index]));
+    if( object ) object->~T();
+    MemoryChunks<I>::free(_memory_indices[index]);
+    _memory_indices[index] = MemoryChunks<I>::invalid;
+}
+
+template<typename T, typename I>
+INLINE T* ObjectChunksTrait<T, I>::get_object(I index)
+{
+    ENSURE(index < _memory_indices.size());
+    return _memory_indices[index] == MemoryChunks<I>::invalid ?
+        nullptr :
+        static_cast<T*>(MemoryChunks<I>::get_element(_memory_indices[index]));
 }

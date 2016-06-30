@@ -119,7 +119,7 @@ T* EntityManager::add_component(Entity object, Args&& ... args)
         "invalid operation(duplicated component) on entity." );
 
     // placement new into the component pool
-    T* component = get_chunks<T>()->construct(object._index, std::forward<Args>(args) ...);
+    T* component = get_chunks<T>()->spawn(object._index, std::forward<Args>(args) ...);
     // set the bit mask for this component
     _components_mask[object._index].set(id);
 
@@ -136,7 +136,8 @@ T* EntityManager::get_component(Entity object)
     const auto id = ComponentTraitInfo<T>::id();
     if( id >= _components_pool.size() )
         return nullptr;
-    return static_cast<ObjectChunksTrait<T>*>(_components_pool[id])->get(object._index);
+
+    return static_cast<object_chunks_trait<T>*>(_components_pool[id])->get_object(object._index);
 }
 
 template<typename ... T>
@@ -159,7 +160,7 @@ void EntityManager::remove_component(Entity object)
         // remove the bit mask for this component
         _components_mask[object._index].reset(id);
         // call destructor
-        get_chunks<T>()->destruct(object._index);
+        get_chunks<T>()->dispose(object._index);
     }
 }
 
@@ -209,11 +210,14 @@ INLINE void EntityManager::accomodate_entity(uint32_t index)
     {
         _components_mask.resize(index+1);
         _versions.resize(index+1);
+        for( auto p : _components_pool)
+            if( p != nullptr )
+                p->resize(index+1);
     }
 }
 
 template<typename T>
-ObjectChunksTrait<T>* EntityManager::get_chunks()
+EntityManager::object_chunks_trait<T>* EntityManager::get_chunks()
 {
     const auto id = ComponentTraitInfo<T>::id();
     if( _components_pool.size() < (id+1) )
@@ -221,11 +225,12 @@ ObjectChunksTrait<T>* EntityManager::get_chunks()
 
     if( _components_pool[id] == nullptr )
     {
-        auto chunks = new ObjectChunksTrait<T>(kEntFirstChunksSize, kEntGrowChunkSize);
+        auto chunks = new object_chunks_trait<T>(kEntPoolChunkSize);
+        chunks->resize(_components_mask.size());
         _components_pool[id] = chunks;
     }
 
-    return static_cast<ObjectChunksTrait<T>*>(_components_pool[id]);
+    return static_cast<EntityManager::object_chunks_trait<T>*>(_components_pool[id]);
 }
 
 // INCLUDED METHODS OF ENTITY VIEW AND ITERATOR

@@ -4,70 +4,73 @@
 #pragma once
 
 #include <forward.hpp>
+#include <cstdlib>
 
 NS_FLOW2D_BEGIN
 
-// represents a component pool where the number of components
-// is significantly less than the number of entities with those components.
-// Uses less space and will be faster to iterate under these conditions.
-
-struct MemoryChunk
+// provides a resizable, semi-contiguous pool of memory for constructing
+// objects in, which aims to provide cache-friendly iteration.
+// lookups are O(1), appends are amortized O(1).
+template<typename IndexType> struct MemoryChunks
 {
-    uint16_t        size;               // total size of blocks in this chunk, related to number of blocks
-    uint16_t        available;          // how many blocks available in this chunk
-    uint16_t        first_free_block;   // the index of first available chunk
-    MemoryChunk*    next;
-};
+    using index_type = IndexType;
+    const static index_type invalid;
 
-struct MemoryPool
-{
-    explicit MemoryPool(size_t element_size, size_t chunk_size, size_t grow_chunk_size);
-    virtual ~MemoryPool();
+    explicit MemoryChunks(index_type element_size, index_type chunk_size);
+    virtual ~MemoryChunks();
 
-    size_t  available() const;
-    size_t  capacity() const;
-    size_t  chunks() const;
+    index_type  size() const;
 
-    void*   malloc();
-    void    free(void*);
+    index_type  malloc();
+    void        free(index_type);
+
+    void*       get_element(index_type);
+    const void* get_element(index_type) const;
 
 protected:
-    MemoryChunk*    allocate_new_chunk(size_t);
-    void*           get_first_block_of_chunk(MemoryChunk*);
-    void*           get_end_of_chunk(MemoryChunk*);
-    bool            is_block_in_chunk(MemoryChunk*, void*);
-
-    uint16_t        m_element_size;     // size of each block in pool
-    uint16_t        m_chunk_size;       // number of blocks in first chunk
-    uint16_t        m_grow_chunk_size;  // when first chunk is full, extend a new chunk have such blocks
-    MemoryChunk*    m_first_chunk;      // pointer to first chunk
+    std::vector<uint8_t*>   _chunks;
+    index_type              _total_elements;
+    index_type              _available;
+    index_type              _element_size;      // size of each element block
+    index_type              _chunk_size;        // number of blocks in every chunk
+    index_type              _first_free_block;  // the index of first available chunk
 };
 
-struct ObjectChunks : public MemoryPool
+template<typename IndexType>
+struct ObjectChunks : public MemoryChunks<IndexType>
 {
-    explicit ObjectChunks(size_t element_size, size_t chunk_size, size_t grow_chunk_size)
-    : MemoryPool(element_size, chunk_size, grow_chunk_size) {}
+    using index_type = IndexType;
 
+    ObjectChunks(index_type element_size, index_type chunk_size)
+    : MemoryChunks<IndexType>(element_size, chunk_size) {}
     virtual ~ObjectChunks() {}
-    virtual void construct_from(size_t, size_t) = 0;
-    virtual void destruct(size_t) = 0;
+    virtual void clone(index_type, index_type) = 0;
+    virtual void dispose(index_type) = 0;
+    virtual void resize(index_type) = 0;
+    virtual index_type capacity() const = 0;
 };
 
-template<typename T>
-struct ObjectChunksTrait : public ObjectChunks
+template<typename T, typename IndexType = size_t>
+struct ObjectChunksTrait : public ObjectChunks<IndexType>
 {
-    explicit ObjectChunksTrait(size_t chunk_size, size_t grow_chunk_size);
+    using index_type = IndexType;
+    using value_type = T;
+
+    explicit ObjectChunksTrait(index_type chunk_size)
+    : ObjectChunks<IndexType>(sizeof(T), chunk_size) {};
     virtual ~ObjectChunksTrait();
 
-    template<typename ... Args> T* construct(size_t, Args && ... args);
-    void construct_from(size_t, size_t) override;
-    void destruct(size_t) override;
+    template<typename ... Args>
+    value_type* spawn(index_type index, Args&& ... args);
+    value_type* get_object(index_type index);
 
-    T*          get(size_t);
-    const T*    get(size_t) const;
+    void clone(index_type dest, index_type source) override;
+    void dispose(index_type index) override;
+    void resize(index_type) override;
+    index_type capacity() const override;
 
 protected:
-    std::unordered_map<size_t, T*> m_slots;
+    std::vector<index_type> _memory_indices;
 };
 
 #include <core/memory.inl>
