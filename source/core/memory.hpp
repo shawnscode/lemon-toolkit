@@ -11,7 +11,7 @@ NS_FLOW2D_BEGIN
 // provides a resizable, semi-contiguous pool of memory for constructing
 // objects in, which aims to provide cache-friendly iteration.
 // lookups are O(1), appends are amortized O(1).
-template<typename IndexType> struct MemoryChunks
+template<typename IndexType = size_t> struct MemoryChunks
 {
     using index_type = IndexType;
     const static index_type invalid;

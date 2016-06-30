@@ -14,15 +14,16 @@ NS_FLOW2D_BEGIN
 
 typedef std::bitset<kEntMaxComponents> ComponentMask;
 
-// represents an entity which is made up of components.
+// represents an entity handle which is made up of components.
 struct Entity
 {
     using index_type = uint16_t; // supports 60k+ entities and versions.
     const static index_type invalid = std::numeric_limits<index_type>::max();
 
-    // check if entity handle is invalid
-    bool is_alive() const;
-    operator bool () const;
+    Entity() = default;
+    Entity(const Entity&) = default;
+    Entity& operator = (const Entity&) = default;
+
     bool operator == (const Entity&) const;
     bool operator != (const Entity&) const;
     bool operator <  (const Entity&) const;
@@ -30,32 +31,16 @@ struct Entity
     index_type get_index() const;
     index_type get_version() const;
 
-    // assign a component to an Entity::Uid, passing through component constructor arguments.
-    template<typename T, typename ... Args> T* add_component(Args && ... args);
-    template<typename T> T* add_component(const T&);
-    // retrieve a component assigned to this collection
-    template<typename T> T* get_component();
-    template<typename ...T> std::tuple<T* ...> get_components();
-    // check if an collection has a component.
-    template<typename T> bool has_component() const;
-    // remove a component from this collection
-    template<typename T> void remove_component();
-    // get bitmask representation of components
-    ComponentMask   get_components_mask() const;
-
     // invalidate entity handle, disassociating it from entity manager.
     void invalidate();
-    // destroy and invalidate this entity.
-    void dispose();
 
 private:
     friend class EntityManager;
 
-    Entity(EntityManager& world, index_type index, index_type version)
-    : _world(world), _index(index), _version(version)
+    Entity(index_type index, index_type version)
+    : _index(index), _version(version)
     {}
 
-    EntityManager&  _world;
     index_type      _index      = invalid;
     index_type      _version    = invalid;
 };
@@ -79,7 +64,7 @@ struct EntityManager
     struct Iterator : public std::iterator<std::forward_iterator_tag, Entity>
     {
         Iterator(EntityManager& manager, Entity::index_type index = Entity::invalid, ComponentMask mask = ComponentMask())
-        : _manager(manager), _index(index), _mask(mask)
+        : _world(manager), _index(index), _mask(mask)
         {
             find_next_available();
         }
@@ -92,7 +77,7 @@ struct EntityManager
     protected:
         void find_next_available();
 
-        EntityManager&      _manager;
+        EntityManager&      _world;
         ComponentMask       _mask;
         Entity::index_type  _index;
     };
@@ -100,13 +85,13 @@ struct EntityManager
     struct View
     {
         View(EntityManager& manager, ComponentMask mask)
-        : _manager(manager), _mask(mask) {}
+        : _world(manager), _mask(mask) {}
 
         Iterator begin() const;
         Iterator end() const;
 
     protected:
-        EntityManager&  _manager;
+        EntityManager&  _world;
         ComponentMask   _mask;
     };
 

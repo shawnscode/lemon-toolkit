@@ -2,19 +2,9 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 // INCLUDED METHODS OF ENTITY
-INLINE bool Entity::is_alive() const
-{
-    return _world.is_alive(*this);
-}
-
-INLINE Entity::operator bool () const
-{
-    return is_alive();
-}
-
 INLINE bool Entity::operator == (const Entity& rh) const
 {
-    return &_world == &rh._world && _index == rh._index && _version == rh._version;
+    return _index == rh._index && _version == rh._version;
 }
 
 INLINE bool Entity::operator != (const Entity& rh) const
@@ -37,57 +27,10 @@ INLINE Entity::index_type Entity::get_version() const
     return _version;
 }
 
-template<typename T, typename ... Args>
-INLINE T* Entity::add_component(Args && ... args)
-{
-    return _world.add_component<T>(*this, std::forward<Args>(args)...);
-}
-
-template<typename T>
-INLINE T* Entity::add_component(const T& rh)
-{
-    return _world.add_component<T>(*this, std::forward<const T&>(rh));
-}
-
-template<typename T>
-INLINE T* Entity::get_component()
-{
-    return _world.get_component<T>(*this);
-}
-
-template<typename ... T>
-INLINE std::tuple<T*...> Entity::get_components()
-{
-    return _world.get_components<T...>(*this);
-}
-
-template<typename T>
-INLINE bool Entity::has_component() const
-{
-    return _world.has_component<T>(*this);
-}
-
-template<typename T>
-INLINE void Entity::remove_component()
-{
-    _world.remove_component<T>(*this);
-}
-
-INLINE ComponentMask Entity::get_components_mask() const
-{
-    return _world.get_components_mask(*this);
-}
-
 INLINE void Entity::invalidate()
 {
     _index = invalid;
     _version = invalid;
-}
-
-INLINE void Entity::dispose()
-{
-    _world.dispose(*this);
-    invalidate();
 }
 
 // INCLUDED METHODS OF ENTITY MANAGER
@@ -237,14 +180,14 @@ EntityManager::object_chunks_trait<T>* EntityManager::get_chunks()
 INLINE void EntityManager::Iterator::find_next_available()
 {
     while(
-        _index < _manager._versions.size() &&
-        ((_manager._versions[_index] & 0x1) == 0 ||
-         (_manager._components_mask[_index] & _mask) != _mask))
+        _index < _world._versions.size() &&
+        ((_world._versions[_index] & 0x1) == 0 ||
+         (_world._components_mask[_index] & _mask) != _mask))
     {
         _index ++;
     }
 
-    if( _index == _manager._versions.size() )
+    if( _index == _world._versions.size() )
         _index = Entity::invalid;
 }
 
@@ -259,32 +202,32 @@ INLINE EntityManager::Iterator& EntityManager::Iterator::operator ++ ()
 
 INLINE bool EntityManager::Iterator::operator == (const EntityManager::Iterator& rh) const
 {
-    return &_manager == &rh._manager && _index == rh._index;
+    return &_world == &rh._world && _index == rh._index;
 }
 
 INLINE bool EntityManager::Iterator::operator != (const EntityManager::Iterator& rh) const
 {
-    return &_manager != &rh._manager || _index != rh._index;
+    return &_world != &rh._world || _index != rh._index;
 }
 
 INLINE Entity EntityManager::Iterator::operator * () const
 {
-    return Entity(_manager, _index, _manager._versions[_index]);
+    return Entity(_index, _world._versions[_index]);
 }
 
 INLINE EntityManager::iterator EntityManager::View::begin() const
 {
-    return EntityManager::iterator(_manager, 0, _mask);
+    return EntityManager::iterator(_world, 0, _mask);
 }
 
 INLINE EntityManager::iterator EntityManager::View::end() const
 {
-    return EntityManager::iterator(_manager, Entity::invalid, _mask);
+    return EntityManager::iterator(_world, Entity::invalid, _mask);
 }
 
 template<typename ...T>
 INLINE void EntityManager::ViewTrait<T...>::each(callback cb)
 {
     for( auto cursor : *this )
-        cb(cursor, *(cursor.template get_component<T>()) ...);
+        cb(cursor, *_world.get_component<T>(cursor) ...);
 }

@@ -54,7 +54,7 @@ Entity EntityManager::spawn()
     }
 
     version = _versions[index];
-    auto object = Entity(*this, index, version);
+    auto object = Entity(index, version);
     _dispatcher.emit<EvtEntityCreated>(object);
     return object;
 }

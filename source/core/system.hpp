@@ -25,10 +25,9 @@ protected:
     friend class SystemManager;
     static Type s_type_counter;
 
-private:
-    EntityManager*  m_world         = nullptr;
-    EventManager*   m_dispatcher    = nullptr;
-    SystemManager*  m_systems       = nullptr;
+    EntityManager*  _world         = nullptr;
+    EventManager*   _dispatcher    = nullptr;
+    SystemManager*  _systems       = nullptr;
 };
 
 template<typename T> struct SystemTrait : public System
@@ -70,10 +69,9 @@ struct SystemManager
     template<typename S> S* get();
 
 protected:
-    bool                                        m_configured;
-    EntityManager&                              m_world;
-    EventManager&                               m_dispatcher;
-    std::unordered_map<System::Type, System*>   m_systems;
+    EntityManager&                              _world;
+    EventManager&                               _dispatcher;
+    std::unordered_map<System::Type, System*>   _systems;
 };
 
 #include <core/system.inl>

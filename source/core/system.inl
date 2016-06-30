@@ -4,17 +4,17 @@
 // INCLUDED METHODS OF SYSTEM MANAGER
 INLINE EntityManager& System::world()
 {
-    return *m_world;
+    return *_world;
 }
 
 INLINE EventManager& System::dispatcher()
 {
-    return *m_dispatcher;
+    return *_dispatcher;
 }
 
 INLINE SystemManager& System::systems()
 {
-    return *m_systems;
+    return *_systems;
 }
 
 template<typename T>
@@ -46,8 +46,8 @@ template<typename C, typename ... Args>
 template<typename D>
 void RequireComponents<C, Args...>::add_component(Entity ent)
 {
-    if( !ent.has_component<D>() )
-        ent.add_component<D>();
+    if( !System::_world->template has_component<D>(ent) )
+        System::_world->template add_component<D>(ent);
 }
 
 template<typename C, typename ... Args>
@@ -60,22 +60,22 @@ void RequireComponents<C, Args...>::add_component(Entity ent)
 
 INLINE EventManager& SystemManager::dispatcher()
 {
-    return m_dispatcher;
+    return _dispatcher;
 }
 
 INLINE EntityManager& SystemManager::world()
 {
-    return m_world;
+    return _world;
 }
 
 template<typename S, typename ... Args>
 S* SystemManager::ensure(Args && ... args)
 {
-    auto found = m_systems.find(S::type());
-    if( found == m_systems.end() )
+    auto found = _systems.find(S::type());
+    if( found == _systems.end() )
     {
         auto sys = new (std::nothrow) S(std::forward<Args>(args) ...);
-        m_systems.insert(std::make_pair(S::type(), sys));
+        _systems.insert(std::make_pair(S::type(), sys));
         return sys;
     }
 
@@ -86,34 +86,34 @@ S* SystemManager::ensure(Args && ... args)
 template<typename S, typename ... Args>
 S* SystemManager::add(Args && ... args)
 {
-    auto found = m_systems.find(S::type());
-    ASSERT( found == m_systems.end(), "[ECS] duplicated system.");
+    auto found = _systems.find(S::type());
+    ASSERT( found == _systems.end(), "[ECS] duplicated system.");
 
     auto sys = new (std::nothrow) S(std::forward<Args>(args) ...);
-    sys->m_world = &m_world;
-    sys->m_dispatcher = &m_dispatcher;
-    sys->m_systems = this;
+    sys->_world = &_world;
+    sys->_dispatcher = &_dispatcher;
+    sys->_systems = this;
 
-    m_systems.insert(std::make_pair(S::type(), sys));
+    _systems.insert(std::make_pair(S::type(), sys));
     return sys;
 }
 
 template<typename S>
 void SystemManager::remove()
 {
-    auto found = m_systems.find(S::type());
-    if( found != m_systems.end() )
+    auto found = _systems.find(S::type());
+    if( found != _systems.end() )
     {
         delete found->second;
-        m_systems.erase(found);
+        _systems.erase(found);
     }
 }
 
 template<typename S>
 S* SystemManager::get()
 {
-    auto found = m_systems.find(S::type());
-    if( found != m_systems.end() )
+    auto found = _systems.find(S::type());
+    if( found != _systems.end() )
         return static_cast<S*>(found->second);
     return nullptr;
 }

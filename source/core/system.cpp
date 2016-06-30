@@ -8,19 +8,19 @@ NS_FLOW2D_BEGIN
 System::Type System::s_type_counter = 0;
 
 SystemManager::SystemManager(EntityManager& ent, EventManager& evt)
-: m_world(ent), m_dispatcher(evt)
+: _world(ent), _dispatcher(evt)
 {}
 
 SystemManager::~SystemManager()
 {
-    for( auto pair : m_systems )
+    for( auto pair : _systems )
         delete pair.second;
-    m_systems.clear();
+    _systems.clear();
 }
 
 void SystemManager::update(float dt)
 {
-    for( auto pair : m_systems )
+    for( auto pair : _systems )
         pair.second->update(dt);
 }
 
