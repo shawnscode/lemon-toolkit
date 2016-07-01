@@ -18,5 +18,5 @@ script:
     - cd test
     - make
     - cd ../bin
-    - echo 'hahaha' > resource.txt
+    - echo -n 'hahaha' > resource.txt
     - ./test
