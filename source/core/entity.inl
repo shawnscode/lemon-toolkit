@@ -247,8 +247,15 @@ EntityManager::object_chunks_trait<T>* EntityManager::get_chunks()
     {
         auto chunks = new object_chunks_trait<T>(kEntPoolChunkSize);
         chunks->resize(_components_mask.size());
-        chunks->when_spawn = [&](Entity o, T& c) { c.on_spawn(*this, o); };
-        chunks->when_dispose = [&](Entity o, T& c) { c.on_dispose(*this, o); };
+        chunks->when_spawn = [&](Entity o, T& c)
+        {
+            c._object = o;
+            c.on_spawn(*this, o);
+        };
+        chunks->when_dispose = [&](Entity o, T& c)
+        {
+            c.on_dispose(*this, o);
+        };
         _components_pool[id] = chunks;
     }
 

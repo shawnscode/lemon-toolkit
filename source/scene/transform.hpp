@@ -44,8 +44,6 @@ struct TransformMatrix
             { scale[0] / rh.scale[0], scale[1] / rh.scale[1] },
             rotation - rh.rotation);
     }
-
-    static const TransformMatrix IDENTITY;
 };
 
 // transform component is used to allow entities to be coordinated in the world.
@@ -62,13 +60,40 @@ struct Transform : public Component<Transform>
     void on_spawn(EntityManager&, Entity) override;
     void on_dispose(EntityManager&, Entity) override;
 
-protected:
-    friend class NSScene;
+    // setters and getters of transform properties
+    void set_scale(const Vector2f&, TransformSpace space = TransformSpace::SELF);
+    void set_position(const Vector2f&, TransformSpace space = TransformSpace::SELF);
+    void set_rotation(float, TransformSpace space = TransformSpace::SELF);
 
+    Vector2f get_scale(TransformSpace space = TransformSpace::SELF) const;
+    Vector2f get_position(TransformSpace space = TransformSpace::SELF) const;
+    float    get_rotation(TransformSpace space = TransformSpace::SELF) const;
+
+    // visit all of this components' children,
+    // in depth-first order if works with recursive mode.
+    using visitor = std::function<void(const Transform&, Transform&)>;
+    void visit_children(const visitor&, bool recursive = false);
+    void update_children();
+    // visit all of this components' ancestors
+    void visit_ancestors(const visitor&);
+
+    // appends an entity to this hierarchy
+    void append_child(Transform&, bool keep_world_pose = false);
+    // remove this branch from its parent hierarchy
+    void remove_from_parent();
+    // returns true if this is the root of a hierarchy, aka. has no parent
+    bool is_root() const;
+    // returns true if this is the leaf of a hierarchy, aka. has no children
+    bool is_leaf() const;
+    // returns parent entity
+    Transform* get_parent();
+    // returns the number of direct _children in this hierarchy
+    size_t get_children_count(bool recursive = false); // const
+
+protected:
     TransformMatrix _localspace;
     TransformMatrix _worldspace;
 
-    Entity      _object;
     Transform*  _parent         = nullptr;
     Transform*  _first_child    = nullptr;
     Transform*  _next_sibling   = nullptr;

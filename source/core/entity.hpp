@@ -53,6 +53,12 @@ struct ComponentBase
 
     virtual void on_dispose(EntityManager&, Entity) {}
     virtual void on_spawn(EntityManager&, Entity) {}
+
+    Entity get_object() const { return _object; }
+
+protected:
+    friend class EntityManager;
+    Entity _object;
 };
 
 template<typename T> struct Component : ComponentBase
