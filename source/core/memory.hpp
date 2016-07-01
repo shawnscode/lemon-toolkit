@@ -20,6 +20,7 @@ template<typename IndexType = size_t> struct MemoryChunks
     virtual ~MemoryChunks();
 
     index_type  size() const;
+    index_type  chunk_size() const;
 
     index_type  malloc();
     void        free(index_type);

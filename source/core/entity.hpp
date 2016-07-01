@@ -61,9 +61,18 @@ protected:
     Entity _object;
 };
 
-template<typename T> struct Component : ComponentBase
+template<typename T, size_t s = kEntPoolChunkSize> struct Component : ComponentBase
+{
+    static const size_t chunk_size = s;
+    static TypeID::index_type base_id() { return TypeID::value<ComponentBase, T>(); }
+};
+
+template<typename T> struct ComponentTraitInfo
 {
     static TypeID::index_type id() { return TypeID::value<ComponentBase, T>(); }
+    static TypeID::index_type base_id() { return T::base_id(); }
+    static bool     is_base_class() { return base_id() == id(); }
+    static size_t   get_chunk_size() { return T::chunk_size; }
 };
 
 struct ComponentChunks : public MemoryChunks<Entity::index_type>
@@ -102,17 +111,17 @@ protected:
 struct EntityManager
 {
     // an iterator over a specified view with components of the entites in an EntityManager.
-    struct Iterator : public std::iterator<std::forward_iterator_tag, Entity>
+    struct iterator : public std::iterator<std::forward_iterator_tag, Entity>
     {
-        Iterator(EntityManager& manager, Entity::index_type index = Entity::invalid, ComponentMask mask = ComponentMask())
+        iterator(EntityManager& manager, Entity::index_type index = Entity::invalid, ComponentMask mask = ComponentMask())
         : _world(manager), _index(index), _mask(mask)
         {
             find_next_available();
         }
 
-        Iterator&   operator ++ ();
-        bool        operator == (const Iterator&) const;
-        bool        operator != (const Iterator&) const;
+        iterator&   operator ++ ();
+        bool        operator == (const iterator&) const;
+        bool        operator != (const iterator&) const;
         Entity      operator * () const;
 
     protected:
@@ -123,32 +132,27 @@ struct EntityManager
         Entity::index_type  _index;
     };
 
-    struct View
+    struct view
     {
-        View(EntityManager& manager, ComponentMask mask)
+        view(EntityManager& manager, ComponentMask mask)
         : _world(manager), _mask(mask) {}
 
-        Iterator begin() const;
-        Iterator end() const;
+        iterator begin() const;
+        iterator end() const;
 
     protected:
         EntityManager&  _world;
         ComponentMask   _mask;
     };
 
-    template<typename ...T> struct ViewTrait : public View
+    template<typename ...T> struct view_trait : public view
     {
-        using callback = std::function<void(Entity, T& ...)>;
+        view_trait(EntityManager& manager)
+        : view(manager, manager.get_components_mask<T...>()) {}
 
-        ViewTrait(EntityManager& manager)
-        : View(manager, manager.get_components_mask<T...>()) {}
-
-        void each(callback);
+        using visitor = std::function<void(Entity, T& ...)>;
+        void visit(const visitor&);
     };
-
-    using iterator = Iterator;
-    using view = View;
-    template<typename ...T> using view_trait = ViewTrait<T...>;
 
     EntityManager(EventManager& manager) : _dispatcher(manager) {}
     ~EntityManager();
@@ -182,12 +186,15 @@ struct EntityManager
     // find entities that have all of the specified components, returns a incremental iterator
     template<typename ... T> view_trait<T...> find_entities_with();
     view find_entities();
+    // find specified components
+    // cview find_components();
+    // template<typename T> cview get_components_derived(Entity);
 
     // utils of iterators
     template<typename T> ComponentMask get_components_mask() const;
     template<typename T1, typename T2, typename ...Args> ComponentMask get_components_mask() const;
 
-private:
+protected:
     using object_chunks = ComponentChunks;
     template<typename T> using object_chunks_trait = ComponentChunksTrait<T>;
 

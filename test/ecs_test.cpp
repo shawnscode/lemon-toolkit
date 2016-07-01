@@ -143,7 +143,26 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentConstruction")
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentIdsDiffer")
 {
-    REQUIRE( Component<Position>::id() != Component<Direction>::id() );
+    REQUIRE( ComponentTraitInfo<Position>::id() != ComponentTraitInfo<Direction>::id() );
+}
+
+struct Base : public Component<Base, 8>
+{};
+
+struct Derived : public Base
+{};
+
+struct C1 : public Component<C1, 16> {};
+struct C2 : public Component<C2, 32> {};
+struct C4 : public Component<C4, 64> {};
+
+TEST_CASE_METHOD(EntityManagerFixture, "TextComponentTraitInfo")
+{
+    REQUIRE( ComponentTraitInfo<Base>::is_base_class() );
+    REQUIRE( !ComponentTraitInfo<Derived>::is_base_class() );
+    REQUIRE( ComponentTraitInfo<C1>::get_chunk_size() == 16 );
+    REQUIRE( ComponentTraitInfo<C2>::get_chunk_size() == 32 );
+    REQUIRE( ComponentTraitInfo<C4>::get_chunk_size() == 64 );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentHandleInvalidatedWhenEntityDestroyed") {
@@ -303,7 +322,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityIteration")
     _world.add_component<Position>(e, 1, 2);
 
     auto count = 0;
-    _world.find_entities_with<Position>().each([&](Entity entity, Position& position)
+    _world.find_entities_with<Position>().visit([&](Entity entity, Position& position)
     {
         count ++;
         REQUIRE( position.x == 1 );
@@ -391,7 +410,7 @@ struct MovementSystem : public SystemTrait<MovementSystem>
     void update(float dt) override
     {
         world().find_entities_with<Position, Direction>()
-            .each([&](Entity ent, Position& pos, Direction& dir)
+            .visit([&](Entity ent, Position& pos, Direction& dir)
             {
                 pos.x += dir.x;
                 pos.y += dir.y;
@@ -406,7 +425,7 @@ struct CounterSystem : public SystemTrait<CounterSystem>
     void update(float dt) override
     {
         world().find_entities_with<Counter>()
-            .each([&](Entity ent, Counter& c)
+            .visit([&](Entity ent, Counter& c)
             {
                 c.counter ++;
             });

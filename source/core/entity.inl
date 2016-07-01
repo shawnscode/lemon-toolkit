@@ -125,12 +125,12 @@ Entity EntityManager::spawn_with(Args&& ... args)
 template<typename T, typename ... Args>
 T* EntityManager::add_component(Entity object, Args&& ... args)
 {
-    static_assert( std::is_base_of<Component<T>, T>::value, "T is not component." );
+    static_assert( std::is_base_of<Component<T, T::chunk_size>, T>::value, "T is not component." );
 
     if( !is_alive(object) )
         return nullptr;
 
-    const auto id = T::id();
+    const auto id = ComponentTraitInfo<T>::id();
     ASSERT( !_components_mask[object._index].test(id),
         "invalid operation(duplicated component) on entity." );
 
@@ -146,7 +146,7 @@ T* EntityManager::add_component(Entity object, Args&& ... args)
 template<typename T>
 T* EntityManager::get_component(Entity object)
 {
-    static_assert( std::is_base_of<Component<T>, T>::value, "T is not component." );
+    static_assert( std::is_base_of<Component<T, T::chunk_size>, T>::value, "T is not component." );
 
     if( !is_alive(object) )
         return nullptr;
@@ -162,12 +162,12 @@ INLINE std::tuple<T*...> EntityManager::get_components(Entity object)
 template<typename T>
 void EntityManager::remove_component(Entity object)
 {
-    static_assert( std::is_base_of<Component<T>, T>::value, "T is not component." );
+    static_assert( std::is_base_of<Component<T, T::chunk_size>, T>::value, "T is not component." );
 
     if( !is_alive(object) )
         return;
 
-    const auto id = T::id();
+    const auto id = ComponentTraitInfo<T>::id();
     if( _components_mask[object._index].test(id) )
     {
         T* component = get_component<T>(object);
@@ -183,9 +183,9 @@ void EntityManager::remove_component(Entity object)
 template<typename T>
 INLINE bool EntityManager::has_component(Entity object) const
 {
-    static_assert( std::is_base_of<Component<T>, T>::value, "T is not component." );
+    static_assert( std::is_base_of<Component<T, T::chunk_size>, T>::value, "T is not component." );
 
-    const auto id = T::id();
+    const auto id = ComponentTraitInfo<T>::id();
     return is_alive(object) && _components_mask[object._index].test(id);
 }
 
@@ -200,10 +200,10 @@ INLINE ComponentMask EntityManager::get_components_mask(Entity object) const
 template<typename T>
 INLINE ComponentMask EntityManager::get_components_mask() const
 {
-    static_assert( std::is_base_of<Component<T>, T>::value, "T is not component." );
+    static_assert( std::is_base_of<Component<T, T::chunk_size>, T>::value, "T is not component." );
 
     ComponentMask mask;
-    mask.set(T::id());
+    mask.set(ComponentTraitInfo<T>::id());
     return mask;
 }
 
@@ -239,13 +239,13 @@ INLINE void EntityManager::accomodate_entity(uint32_t index)
 template<typename T>
 EntityManager::object_chunks_trait<T>* EntityManager::get_chunks()
 {
-    const auto id = T::id();
+    const auto id = ComponentTraitInfo<T>::id();
     if( _components_pool.size() < (id+1) )
         _components_pool.resize((id+1), nullptr);
 
     if( _components_pool[id] == nullptr )
     {
-        auto chunks = new object_chunks_trait<T>(kEntPoolChunkSize);
+        auto chunks = new object_chunks_trait<T>(T::chunk_size);
         chunks->resize(_components_mask.size());
         chunks->when_spawn = [&](Entity o, T& c)
         {
@@ -263,7 +263,7 @@ EntityManager::object_chunks_trait<T>* EntityManager::get_chunks()
 }
 
 // INCLUDED METHODS OF ENTITY VIEW AND ITERATOR
-INLINE void EntityManager::Iterator::find_next_available()
+INLINE void EntityManager::iterator::find_next_available()
 {
     while(
         _index < _world._versions.size() &&
@@ -277,7 +277,7 @@ INLINE void EntityManager::Iterator::find_next_available()
         _index = Entity::invalid;
 }
 
-INLINE EntityManager::Iterator& EntityManager::Iterator::operator ++ ()
+INLINE EntityManager::iterator& EntityManager::iterator::operator ++ ()
 {
     ENSURE( _index != Entity::invalid );
 
@@ -286,33 +286,33 @@ INLINE EntityManager::Iterator& EntityManager::Iterator::operator ++ ()
     return *this;
 }
 
-INLINE bool EntityManager::Iterator::operator == (const EntityManager::Iterator& rh) const
+INLINE bool EntityManager::iterator::operator == (const EntityManager::iterator& rh) const
 {
     return &_world == &rh._world && _index == rh._index;
 }
 
-INLINE bool EntityManager::Iterator::operator != (const EntityManager::Iterator& rh) const
+INLINE bool EntityManager::iterator::operator != (const EntityManager::iterator& rh) const
 {
     return &_world != &rh._world || _index != rh._index;
 }
 
-INLINE Entity EntityManager::Iterator::operator * () const
+INLINE Entity EntityManager::iterator::operator * () const
 {
     return Entity(_index, _world._versions[_index]);
 }
 
-INLINE EntityManager::iterator EntityManager::View::begin() const
+INLINE EntityManager::iterator EntityManager::view::begin() const
 {
     return EntityManager::iterator(_world, 0, _mask);
 }
 
-INLINE EntityManager::iterator EntityManager::View::end() const
+INLINE EntityManager::iterator EntityManager::view::end() const
 {
     return EntityManager::iterator(_world, Entity::invalid, _mask);
 }
 
 template<typename ...T>
-INLINE void EntityManager::ViewTrait<T...>::each(callback cb)
+INLINE void EntityManager::view_trait<T...>::visit(const visitor& cb)
 {
     for( auto cursor : *this )
         cb(cursor, *_world.get_component<T>(cursor) ...);

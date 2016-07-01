@@ -32,6 +32,12 @@ INLINE T MemoryChunks<T>::size() const
 }
 
 template<typename T>
+INLINE T MemoryChunks<T>::chunk_size() const
+{
+    return _chunk_size;
+}
+
+template<typename T>
 INLINE void* MemoryChunks<T>::get_element(T index)
 {
     if( index >= _total_elements )
