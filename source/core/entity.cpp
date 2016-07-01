@@ -5,12 +5,12 @@
 
 NS_FLOW2D_BEGIN
 
-void Component::operator delete(void *)
+void ComponentBase::operator delete(void *)
 {
     ASSERT(false, "[ECS] component memory is always managed by the EntityManager.");
 }
 
-void Component::operator delete[](void *)
+void ComponentBase::operator delete[](void *)
 {
     ASSERT(false, "[ECS] component memory is always managed by the EntityManager.");
 }

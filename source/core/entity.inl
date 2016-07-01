@@ -125,10 +125,12 @@ Entity EntityManager::spawn_with(Args&& ... args)
 template<typename T, typename ... Args>
 T* EntityManager::add_component(Entity object, Args&& ... args)
 {
+    static_assert( std::is_base_of<Component<T>, T>::value, "T is not component." );
+
     if( !is_alive(object) )
         return nullptr;
 
-    const auto id = ComponentTraitInfo<T>::id();
+    const auto id = T::id();
     ASSERT( !_components_mask[object._index].test(id),
         "invalid operation(duplicated component) on entity." );
 
@@ -144,6 +146,8 @@ T* EntityManager::add_component(Entity object, Args&& ... args)
 template<typename T>
 T* EntityManager::get_component(Entity object)
 {
+    static_assert( std::is_base_of<Component<T>, T>::value, "T is not component." );
+
     if( !is_alive(object) )
         return nullptr;
     return get_chunks<T>()->get(object);
@@ -158,10 +162,12 @@ INLINE std::tuple<T*...> EntityManager::get_components(Entity object)
 template<typename T>
 void EntityManager::remove_component(Entity object)
 {
+    static_assert( std::is_base_of<Component<T>, T>::value, "T is not component." );
+
     if( !is_alive(object) )
         return;
 
-    const auto id = ComponentTraitInfo<T>::id();
+    const auto id = T::id();
     if( _components_mask[object._index].test(id) )
     {
         T* component = get_component<T>(object);
@@ -177,7 +183,9 @@ void EntityManager::remove_component(Entity object)
 template<typename T>
 INLINE bool EntityManager::has_component(Entity object) const
 {
-    const auto id = ComponentTraitInfo<T>::id();
+    static_assert( std::is_base_of<Component<T>, T>::value, "T is not component." );
+
+    const auto id = T::id();
     return is_alive(object) && _components_mask[object._index].test(id);
 }
 
@@ -192,8 +200,10 @@ INLINE ComponentMask EntityManager::get_components_mask(Entity object) const
 template<typename T>
 INLINE ComponentMask EntityManager::get_components_mask() const
 {
+    static_assert( std::is_base_of<Component<T>, T>::value, "T is not component." );
+
     ComponentMask mask;
-    mask.set(ComponentTraitInfo<T>::id());
+    mask.set(T::id());
     return mask;
 }
 
@@ -229,7 +239,7 @@ INLINE void EntityManager::accomodate_entity(uint32_t index)
 template<typename T>
 EntityManager::object_chunks_trait<T>* EntityManager::get_chunks()
 {
-    const auto id = ComponentTraitInfo<T>::id();
+    const auto id = T::id();
     if( _components_pool.size() < (id+1) )
         _components_pool.resize((id+1), nullptr);
 

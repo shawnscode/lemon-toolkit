@@ -158,10 +158,15 @@ bool Transform::is_leaf(EntityManager& world, const Transform& t)
     return t._first_child == nullptr;
 }
 
+Entity Transform::get_object(EntityManager& world, const Transform& t)
+{
+    return t._object;
+}
+
 Entity Transform::get_parent(EntityManager& world, const Transform& t)
 {
     if( t._parent )
-        return t._parent->_handle;
+        return t._parent->_object;
     return Entity();
 }
 
@@ -175,7 +180,7 @@ size_t Transform::get_children_count(EntityManager& world, const Transform& t, b
 /// MEMBER METHODS
 void Transform::on_spawn(EntityManager& world, Entity object)
 {
-    _handle = object;
+    _object = object;
 }
 
 void Transform::on_dispose(EntityManager& world, Entity object)

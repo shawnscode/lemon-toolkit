@@ -53,10 +53,7 @@ extern void LOGE(const char* format, ...);
 
 //- ENTITY COMPONENT SYSTEM
 struct Entity;
-struct EntityIterator;
-struct EntityView;
-struct Component;
-template<typename ...T> struct EntityViewTrait;
+template<typename T> struct Component;
 struct EntityManager;
 
 struct System;
@@ -77,9 +74,22 @@ struct ResourceCacheManager;
 
 //- SCENE GRAPH SYSTEM
 struct Transform;
-struct SceneSystem;
-struct ActionSystem;
-struct TransformComponent;
+struct UIElement;
+
+struct UIVisual;
+struct UIText;
+struct UIImage;
+struct UIMask;
+
+struct UIInteraction;
+struct UIButton;
+struct UISlider;
+struct UIScrollView;
+
+struct UILayout;
+struct UIBoxLayout;
+struct UIGroupLayout;
+struct UIGridLayout;
 
 //- GRAPHIC RENDER SYSTEM
 using Rid = size_t;

@@ -45,7 +45,7 @@ private:
     index_type      _version    = invalid;
 };
 
-struct Component
+struct ComponentBase
 {
     // component memory is always managed by entity manager.
     void operator delete(void*);
@@ -55,9 +55,9 @@ struct Component
     virtual void on_spawn(EntityManager&, Entity) {}
 };
 
-template<typename T> struct ComponentTraitInfo
+template<typename T> struct Component : ComponentBase
 {
-    static TypeID::index_type id() { return TypeID::value<Component, T>(); }
+    static TypeID::index_type id() { return TypeID::value<ComponentBase, T>(); }
 };
 
 struct ComponentChunks : public MemoryChunks<Entity::index_type>

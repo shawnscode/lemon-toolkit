@@ -17,7 +17,7 @@ template<typename T> int size(const T& t)
     return n;
 }
 
-struct Position : public Component
+struct Position : public Component<Position>
 {
     Position(float x = 0.0f, float y = 0.0f) : x(x), y(y) {}
 
@@ -29,7 +29,7 @@ struct Position : public Component
     float x, y;
 };
 
-struct Direction : public Component
+struct Direction : public Component<Direction>
 {
     Direction(float x = 0.0f, float y = 0.0f) : x(x), y(y) {}
 
@@ -143,7 +143,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentConstruction")
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentIdsDiffer")
 {
-    REQUIRE( ComponentTraitInfo<Position>::id() != ComponentTraitInfo<Direction>::id() );
+    REQUIRE( Component<Position>::id() != Component<Direction>::id() );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentHandleInvalidatedWhenEntityDestroyed") {
@@ -348,7 +348,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentsRemovedFromReusedEntities"
   REQUIRE( !_world.has_component<Position>(f) );
 }
 
-struct FreedSentinel : public Component
+struct FreedSentinel : public Component<FreedSentinel>
 {
   explicit FreedSentinel(bool &yes) : yes(yes) {}
   ~FreedSentinel() { yes = true; }
@@ -378,7 +378,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentDestructorCalledWhenEntityD
     REQUIRE( freed );
 }
 
-struct Counter : public Component
+struct Counter : public Component<Counter>
 {
     explicit Counter(int counter = 0) : counter(counter) {}
     int counter;

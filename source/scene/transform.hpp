@@ -49,7 +49,7 @@ struct TransformMatrix
 };
 
 // transform component is used to allow entities to be coordinated in the world.
-struct Transform : public Component
+struct Transform : public Component<Transform>
 {
     // setters and getters of transform properties
     static void set_scale(EntityManager&, Transform&, const Vector2f&, TransformSpace space = TransformSpace::SELF);
@@ -74,6 +74,8 @@ struct Transform : public Component
     static bool is_root(EntityManager&, const Transform&);
     // returns true if this is the leaf of a hierarchy, aka. has no children
     static bool is_leaf(EntityManager&, const Transform&);
+    // returns self entity
+    static Entity get_object(EntityManager&, const Transform&);
     // returns parent entity
     static Entity get_parent(EntityManager&, const Transform&);
     // returns the number of direct _children in this hierarchy
@@ -94,7 +96,7 @@ protected:
     TransformMatrix _localspace;
     TransformMatrix _worldspace;
 
-    Entity      _handle;
+    Entity      _object;
     Transform*  _parent         = nullptr;
     Transform*  _first_child    = nullptr;
     Transform*  _next_sibling   = nullptr;
