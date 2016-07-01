@@ -59,27 +59,6 @@ Entity EntityManager::spawn()
     return object;
 }
 
-Entity EntityManager::clone(Entity source)
-{
-    if( !is_alive(source) )
-    {
-        LOGW("cloned from a non-alive entity.");
-        return spawn();
-    }
-
-    auto dest   = spawn();
-    auto mask   = get_components_mask(source);
-
-    for( auto i=0; i<_components_pool.size(); i++ )
-    {
-        auto p = _components_pool[i];
-        if( p != nullptr && mask.test(i) )
-            p->clone(*this, dest, source);
-    }
-
-    return dest;
-}
-
 void EntityManager::dispose(Entity object)
 {
     if( !is_alive(object) )

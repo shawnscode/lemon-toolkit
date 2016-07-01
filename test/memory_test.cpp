@@ -81,7 +81,7 @@ TEST_CASE_METHOD(MemoryChunksFixture, "TestMemoryChunksReuse")
     for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
     {
         int chunks = std::rand()%3+1;
-        int holes = std::rand()%kChunkSize+1;
+        int holes = std::rand()%kChunkSize;
         max_chunks = std::max(chunks, max_chunks);
 
         std::vector<size_t> indices;

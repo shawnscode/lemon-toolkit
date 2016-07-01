@@ -63,13 +63,6 @@ void* ComponentChunksTrait<T>::spawn(EntityManager& world, Entity object, Args &
 }
 
 template<typename T>
-void* ComponentChunksTrait<T>::clone(EntityManager& world, Entity dest, Entity src)
-{
-    T* component = world.get_component<T>(src);
-    return world.add_component<T>(dest, std::forward<const T&>(*component));
-}
-
-template<typename T>
 void ComponentChunksTrait<T>::dispose(EntityManager& world, Entity object)
 {
     ENSURE( object.get_index() < _memory_indices.size() );
@@ -119,6 +112,14 @@ INLINE bool EntityManager::is_alive(Entity object) const
     return
         object._index < _versions.size() &&
         object._version == _versions[object._index];
+}
+
+template<typename T, typename ... Args>
+Entity EntityManager::spawn_with(Args&& ... args)
+{
+    Entity object = spawn();
+    add_component<T>(object, std::forward<Args>(args)...);
+    return object;
 }
 
 template<typename T, typename ... Args>

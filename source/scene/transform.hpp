@@ -29,8 +29,22 @@ struct TransformMatrix
     TransformMatrix(const TransformMatrix&) = default;
     TransformMatrix& operator = (const TransformMatrix&) = default;
 
-    TransformMatrix operator * (const TransformMatrix&) const;
-    TransformMatrix operator / (const TransformMatrix&) const;
+    INLINE TransformMatrix operator * (const TransformMatrix& rh) const
+    {
+        return TransformMatrix(
+            position + rh.position,
+            { scale[0] * rh.scale[0], scale[1] * rh.scale[1] },
+            rotation + rh.rotation);
+    }
+
+    INLINE TransformMatrix operator / (const TransformMatrix& rh) const
+    {
+        return TransformMatrix(
+            position - rh.position,
+            { scale[0] / rh.scale[0], scale[1] / rh.scale[1] },
+            rotation - rh.rotation);
+    }
+
     static const TransformMatrix IDENTITY;
 };
 
@@ -69,8 +83,8 @@ struct Transform : public Component
     Transform(const Transform&) = delete;
     Transform& operator = (const Transform&) = delete;
 
-    Transform(const Vector2f& position = {0.f, 0.f}, const Vector2f& scale = {1.0f, 1.0f}, float rotation = 0.f)
-    : _localspace(position, scale, rotation)
+    Transform(const Vector2f& position, const Vector2f& scale = {1.0f, 1.0f}, float rotation = 0.f)
+    : _localspace(position, scale, rotation), _worldspace(position, scale, rotation)
     {}
 
     void on_spawn(EntityManager&, Entity) override;

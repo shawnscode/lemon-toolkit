@@ -66,7 +66,6 @@ struct ComponentChunks : public MemoryChunks<Entity::index_type>
     : MemoryChunks<Entity::index_type>(element_size, chunk_size) {}
     virtual ~ComponentChunks() = default;
 
-    virtual void* clone(EntityManager&, Entity, Entity) = 0;
     virtual void dispose(EntityManager&, Entity) = 0;
     virtual void resize(Entity::index_type) = 0;
 };
@@ -81,8 +80,6 @@ template<typename T> struct ComponentChunksTrait : public ComponentChunks
     virtual ~ComponentChunksTrait();
 
     template<typename ... Args> void* spawn(EntityManager&, Entity, Args && ...);
-
-    void* clone(EntityManager&, Entity, Entity) override;
     void  dispose(EntityManager&, Entity) override;
     void  resize(Entity::index_type) override;
 
@@ -160,9 +157,9 @@ struct EntityManager
 
     /// lifetime operations of Entity
     Entity  spawn();
-    Entity  clone(Entity);
     void    dispose(Entity);
     bool    is_alive(Entity) const;
+    template<typename T, typename ... Args> Entity spawn_with(Args && ...args);
 
     // assign a component to an Entity::Uid, passing through component constructor arguments
     template<typename T, typename ... Args> T* add_component(Entity, Args && ... args);
