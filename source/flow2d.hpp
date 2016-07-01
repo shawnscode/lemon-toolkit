@@ -14,6 +14,6 @@
 #include <math/vector.hpp>
 #include <math/rect.hpp>
 
-#include <scene/transform.hpp>
+#include <scene/scene.hpp>
 
 #define USING_NS_FLOW2D using namespace flow2d;

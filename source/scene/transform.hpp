@@ -51,36 +51,6 @@ struct TransformMatrix
 // transform component is used to allow entities to be coordinated in the world.
 struct Transform : public Component<Transform>
 {
-    // setters and getters of transform properties
-    static void set_scale(EntityManager&, Transform&, const Vector2f&, TransformSpace space = TransformSpace::SELF);
-    static void set_position(EntityManager&, Transform&, const Vector2f&, TransformSpace space = TransformSpace::SELF);
-    static void set_rotation(EntityManager&, Transform&, float, TransformSpace space = TransformSpace::SELF);
-
-    static Vector2f get_scale(EntityManager&, const Transform&, TransformSpace space = TransformSpace::SELF);
-    static Vector2f get_position(EntityManager&, const Transform&, TransformSpace space = TransformSpace::SELF);
-    static float    get_rotation(EntityManager&, const Transform&, TransformSpace space = TransformSpace::SELF);
-
-    // visit all of this components' ancestors,
-    // in depth-first order if works with recursive mode.
-    using visitor = std::function<void(const Transform&, Transform&)>;
-    static void visit_children(EntityManager&, Transform&, const visitor&, bool recursive = false);
-    static void update_children(EntityManager&, Transform&);
-
-    // appends an entity to this hierarchy
-    static void append_child(EntityManager&, Transform&, Transform&, bool keep_world_pose = false);
-    // remove this branch from its parent hierarchy
-    static void remove_from_parent(EntityManager&, Transform&);
-    // returns true if this is the root of a hierarchy, aka. has no parent
-    static bool is_root(EntityManager&, const Transform&);
-    // returns true if this is the leaf of a hierarchy, aka. has no children
-    static bool is_leaf(EntityManager&, const Transform&);
-    // returns self entity
-    static Entity get_object(EntityManager&, const Transform&);
-    // returns parent entity
-    static Entity get_parent(EntityManager&, const Transform&);
-    // returns the number of direct _children in this hierarchy
-    static size_t get_children_count(EntityManager&, const Transform&, bool recursive = false);
-
     Transform() = default;
     Transform(const Transform&) = delete;
     Transform& operator = (const Transform&) = delete;
@@ -93,6 +63,8 @@ struct Transform : public Component<Transform>
     void on_dispose(EntityManager&, Entity) override;
 
 protected:
+    friend class NSScene;
+
     TransformMatrix _localspace;
     TransformMatrix _worldspace;
 

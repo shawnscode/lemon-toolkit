@@ -73,7 +73,10 @@ struct ArchiveManager;
 struct ResourceCacheManager;
 
 //- SCENE GRAPH SYSTEM
+struct NSScene;
 struct Transform;
+
+struct NSUserInterface;
 struct UIElement;
 
 struct UIVisual;

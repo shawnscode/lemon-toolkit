@@ -2,28 +2,29 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <scene/transform.hpp>
+#include <scene/scene.hpp>
 
 NS_FLOW2D_BEGIN
 
-void Transform::visit_children(EntityManager& world, Transform& t, const visitor& cb, bool recursive)
+void NSScene::visit_children(EntityManager& world, Transform& t, const visitor& cb, bool recursive)
 {
     for( auto cursor = t._first_child; cursor != nullptr; cursor = cursor->_next_sibling )
     {
         cb(t, *cursor);
         if( recursive )
-            Transform::visit_children(world, *cursor, cb, recursive);
+            NSScene::visit_children(world, *cursor, cb, recursive);
     }
 }
 
-void Transform::update_children(EntityManager& world, Transform& t)
+void NSScene::update_children(EntityManager& world, Transform& t)
 {
-    Transform::visit_children(world, t, [](const Transform& parent, Transform& c)
+    NSScene::visit_children(world, t, [](const Transform& parent, Transform& c)
     {
         c._worldspace = parent._worldspace * c._localspace;
     }, true);
 }
 
-void Transform::set_scale(EntityManager& world, Transform& t, const Vector2f& scale, TransformSpace space)
+void NSScene::set_scale(EntityManager& world, Transform& t, const Vector2f& scale, TransformSpace space)
 {
     if( TransformSpace::SELF == space )
     {
@@ -38,10 +39,10 @@ void Transform::set_scale(EntityManager& world, Transform& t, const Vector2f& sc
             t._localspace = t._worldspace / t._parent->_worldspace;
     }
 
-    Transform::update_children(world, t);
+    NSScene::update_children(world, t);
 }
 
-void Transform::set_position(EntityManager& world, Transform& t, const Vector2f& position, TransformSpace space)
+void NSScene::set_position(EntityManager& world, Transform& t, const Vector2f& position, TransformSpace space)
 {
     if( TransformSpace::SELF == space )
     {
@@ -56,10 +57,10 @@ void Transform::set_position(EntityManager& world, Transform& t, const Vector2f&
             t._localspace = t._worldspace / t._parent->_worldspace;
     }
 
-    Transform::update_children(world, t);
+    NSScene::update_children(world, t);
 }
 
-void Transform::set_rotation(EntityManager& world, Transform& t, float rotation, TransformSpace space)
+void NSScene::set_rotation(EntityManager& world, Transform& t, float rotation, TransformSpace space)
 {
     if( TransformSpace::SELF == space )
     {
@@ -74,10 +75,10 @@ void Transform::set_rotation(EntityManager& world, Transform& t, float rotation,
             t._localspace = t._worldspace / t._parent->_worldspace;
     }
 
-    Transform::update_children(world, t);
+    NSScene::update_children(world, t);
 }
 
-Vector2f Transform::get_scale(EntityManager& world, const Transform& t, TransformSpace space)
+Vector2f NSScene::get_scale(EntityManager& world, const Transform& t, TransformSpace space)
 {
     if( TransformSpace::SELF == space )
         return t._localspace.scale;
@@ -85,7 +86,7 @@ Vector2f Transform::get_scale(EntityManager& world, const Transform& t, Transfor
         return t._worldspace.scale;
 }
 
-Vector2f Transform::get_position(EntityManager& world, const Transform& t, TransformSpace space)
+Vector2f NSScene::get_position(EntityManager& world, const Transform& t, TransformSpace space)
 {
     if( TransformSpace::SELF == space )
         return t._localspace.position;
@@ -93,7 +94,7 @@ Vector2f Transform::get_position(EntityManager& world, const Transform& t, Trans
         return t._worldspace.position;
 }
 
-float Transform::get_rotation(EntityManager& world, const Transform& t, TransformSpace space)
+float NSScene::get_rotation(EntityManager& world, const Transform& t, TransformSpace space)
 {
     if( TransformSpace::SELF == space )
         return t._localspace.rotation;
@@ -101,10 +102,10 @@ float Transform::get_rotation(EntityManager& world, const Transform& t, Transfor
         return t._worldspace.rotation;
 }
 
-void Transform::append_child(EntityManager& world, Transform& pt, Transform& ct, bool keep_world_pose)
+void NSScene::append_child(EntityManager& world, Transform& pt, Transform& ct, bool keep_world_pose)
 {
     if( ct._parent != nullptr )
-        Transform::remove_from_parent(world, ct);
+        NSScene::remove_from_parent(world, ct);
 
     if( pt._first_child != nullptr )
     {
@@ -121,10 +122,10 @@ void Transform::append_child(EntityManager& world, Transform& pt, Transform& ct,
     else
         ct._localspace = ct._worldspace / pt._worldspace;
 
-    Transform::update_children(world, ct);
+    NSScene::update_children(world, ct);
 }
 
-void Transform::remove_from_parent(EntityManager& world, Transform& t)
+void NSScene::remove_from_parent(EntityManager& world, Transform& t)
 {
     if( t._parent == nullptr )
         return;
@@ -148,32 +149,32 @@ void Transform::remove_from_parent(EntityManager& world, Transform& t)
     t._next_sibling = nullptr;
 }
 
-bool Transform::is_root(EntityManager& world, const Transform& t)
+bool NSScene::is_root(EntityManager& world, const Transform& t)
 {
     return t._parent == nullptr;
 }
 
-bool Transform::is_leaf(EntityManager& world, const Transform& t)
+bool NSScene::is_leaf(EntityManager& world, const Transform& t)
 {
     return t._first_child == nullptr;
 }
 
-Entity Transform::get_object(EntityManager& world, const Transform& t)
+Entity NSScene::get_object(EntityManager& world, const Transform& t)
 {
     return t._object;
 }
 
-Entity Transform::get_parent(EntityManager& world, const Transform& t)
+Entity NSScene::get_parent(EntityManager& world, const Transform& t)
 {
     if( t._parent )
         return t._parent->_object;
     return Entity();
 }
 
-size_t Transform::get_children_count(EntityManager& world, const Transform& t, bool recursive)
+size_t NSScene::get_children_count(EntityManager& world, const Transform& t, bool recursive)
 {
     size_t result = 0;
-    Transform::visit_children(world, const_cast<Transform&>(t), [&](const Transform&, Transform&) { result ++; }, recursive);
+    NSScene::visit_children(world, const_cast<Transform&>(t), [&](const Transform&, Transform&) { result ++; }, recursive);
     return result;
 }
 
@@ -186,7 +187,7 @@ void Transform::on_spawn(EntityManager& world, Entity object)
 void Transform::on_dispose(EntityManager& world, Entity object)
 {
     if( _parent )
-        Transform::remove_from_parent(world, *this);
+        NSScene::remove_from_parent(world, *this);
 }
 
 NS_FLOW2D_END
