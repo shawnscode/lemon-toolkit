@@ -49,6 +49,44 @@ struct TransformMatrix
 // transform component is used to allow entities to be coordinated in the world.
 struct Transform : public Component<Transform>
 {
+protected:
+    enum class iterator_mode : uint8_t
+    {
+        ANCESTORS,
+        CHILDREN,
+        CHILDREN_RECURSIVE
+    };
+
+    struct iterator : public std::iterator<std::forward_iterator_tag, int>
+    {
+        iterator(Transform* t, iterator_mode m);
+
+        iterator&   operator ++ ();
+        bool        operator == (const iterator&) const;
+        bool        operator != (const iterator&) const;
+        Transform&  operator * () const;
+
+    protected:
+        Transform*      _cusor, *_start;
+        iterator_mode   _mode;
+    };
+
+    struct view
+    {
+        view(Transform* t, iterator_mode m) : _start(t), _mode(m) {}
+
+        iterator begin() const;
+        iterator end() const;
+
+        using visitor = std::function<void(Transform&)>;
+        void visit(const visitor&);
+
+    protected:
+        Transform*      _start;
+        iterator_mode   _mode;
+    };
+
+public:
     Transform() = default;
     Transform(const Transform&) = delete;
     Transform& operator = (const Transform&) = delete;
@@ -69,13 +107,13 @@ struct Transform : public Component<Transform>
     Vector2f get_position(TransformSpace space = TransformSpace::SELF) const;
     float    get_rotation(TransformSpace space = TransformSpace::SELF) const;
 
-    // visit all of this components' children,
+    // update the world pose of children
+    void     update_children();
+
+    // visit all of this object's ancestors/decenster,
     // in depth-first order if works with recursive mode.
-    using visitor = std::function<void(const Transform&, Transform&)>;
-    void visit_children(const visitor&, bool recursive = false);
-    void update_children();
-    // visit all of this components' ancestors
-    void visit_ancestors(const visitor&);
+    view get_children(bool recursive = false);
+    view get_ancestors();
 
     // appends an entity to this hierarchy
     void append_child(Transform&, bool keep_world_pose = false);
@@ -100,4 +138,5 @@ protected:
     Transform*  _prev_sibling   = nullptr;
 };
 
+#include <scene/transform.inl>
 NS_FLOW2D_END

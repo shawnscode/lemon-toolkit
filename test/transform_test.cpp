@@ -11,7 +11,7 @@ struct TransformFixture
     TransformFixture() : _world(_dispatcher) {}
 };
 
-TEST_CASE_METHOD(TransformFixture, "TestTransformConstructor")
+TEST_CASE_METHOD(TransformFixture, "TestConstructor")
 {
     Entity e1 = _world.spawn();
     Transform* t1 = _world.add_component<Transform>(e1, Vector2f{10.f, 10.f});
@@ -109,4 +109,73 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachyReconstructWhenDispose")
 
     REQUIRE( t1->get_children_count() == 1 );
     REQUIRE( t1->get_children_count(true) == 1 );
+}
+
+static void dump_heriachy(Transform* t, int index = 1, int level = 0)
+{
+    if( t->get_children_count() == 0 )
+        return;
+
+    for( size_t i = 0; i < level; i++ )
+        printf("\t");
+    printf("[%d]", index);
+    for( auto& transform : t->get_children() )
+        printf("%d ", transform.get_object().get_index() );
+    printf("\n");
+
+    size_t count = 0;
+    for( auto& transform : t->get_children() )
+        dump_heriachy(&transform, ++count, level+1);
+}
+
+TEST_CASE_METHOD(TransformFixture, "TestIteration")
+{
+    std::vector<Transform*> transforms;
+    for( size_t i = 0; i < 255; i++ )
+    {
+        auto e = _world.spawn_with<Transform>();
+        transforms.push_back(_world.get_component<Transform>(e));
+    }
+
+    std::srand(std::time(0));
+    std::vector<Transform*> constructed;
+    constructed.push_back(transforms.back());
+    transforms.pop_back();
+
+    size_t count = 0;
+    for( size_t i = 0; i < 255-1; i++ )
+    {
+        size_t index = std::rand() % transforms.size();
+        size_t pindex = std::rand() % constructed.size();
+
+        if( pindex == 0 ) count ++;
+        constructed[pindex]->append_child(*transforms[index]);
+
+        // if( constructed[0]->get_children_count(true) != i+ 1)
+        //     dump_heriachy(constructed[0]);
+        REQUIRE( constructed[0]->get_children_count(true) == i+1 );
+
+        constructed.push_back(transforms[index]);
+        transforms.erase(transforms.begin()+index);
+    }
+
+    size_t direct = 0;
+    constructed[0]->get_children().visit([&](Transform& t)
+    {
+        direct ++;
+    });
+
+    REQUIRE( direct == count );
+
+    direct = 0;
+    for( auto& transform : constructed[0]->get_children() )
+        direct ++;
+
+    REQUIRE( direct == count );
+
+    size_t total = 0;
+    for( auto& transform : constructed[0]->get_children(true) )
+        total ++;
+
+    REQUIRE( total == 254 );
 }

@@ -21,9 +21,7 @@ NS_FLOW2D_BEGIN
 #define INLINE inline
 
 /// GLOBAL CONFIGS
-static const size_t kDbgMaxTracebackFrames  = 63;
-static const size_t kCacheDefaultThreshold  = 1024;
-static const size_t kEntPoolChunkSize       = 1024;
+static const size_t kEntPoolChunkSize       = 512;
 static const size_t kEntMaxComponents       = 128;
 static const size_t kGfxMaxTextures         = 8;
 static const size_t kGfxMaxPrograms         = 8;
@@ -33,6 +31,8 @@ static const size_t kGfxMaxBatchVertices    = 1024;
 static const float  kGfxDefaultScreenWidth  = 256.f;
 static const float  kGfxDefaultScreenHeight = 256.f;
 static const float  kGfxTesselateTolerance  = 0.25f;
+static const size_t kDbgMaxTracebackFrames  = 63;
+static const size_t kCacheDefaultThreshold  = 1024;
 
 /// FORWARD DECLARATIONS
 extern void ABORT(const char* file, int line, const char* format, ...);

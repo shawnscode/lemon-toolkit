@@ -6,30 +6,40 @@
 
 NS_FLOW2D_BEGIN
 
-void Transform::visit_children(const visitor& cb, bool recursive)
+Transform::iterator::iterator(Transform* t, iterator_mode m)
+: _mode(m)
 {
-    for( auto cursor = _first_child; cursor != nullptr; cursor = cursor->_next_sibling )
+    if( t != nullptr )
     {
-        cb(*this, *cursor);
-        if( recursive )
-            cursor->visit_children(cb, recursive);
+        _start = t;
+        _cusor = t->_first_child;
     }
+    else
+        _start = _cusor = nullptr;
+}
+
+void Transform::view::visit(const visitor& cb)
+{
+    for( auto iter = begin(); iter != end(); ++iter )
+        cb(*iter);
+}
+
+Transform::view Transform::get_children(bool recursive)
+{
+    return view(this, recursive ? iterator_mode::CHILDREN_RECURSIVE : iterator_mode::CHILDREN);
+}
+
+Transform::view Transform::get_ancestors()
+{
+    return view(_parent, iterator_mode::ANCESTORS);
 }
 
 void Transform::update_children()
 {
-    visit_children([](const Transform& parent, Transform& c)
+    get_children(true).visit([](Transform& t)
     {
-        c._worldspace = parent._worldspace * c._localspace;
-    }, true);
-}
-
-void Transform::visit_ancestors(const visitor& cb)
-{
-    auto cursor = _parent;
-
-    for( auto cursor = _parent; cursor != nullptr; cursor = cursor->_parent)
-        cb(*this, *cursor);
+        t._worldspace = t._parent->_worldspace * t._localspace;
+    });
 }
 
 void Transform::set_scale(const Vector2f& scale, TransformSpace space)
@@ -175,7 +185,7 @@ Transform* Transform::get_parent()
 size_t Transform::get_children_count(bool recursive)
 {
     size_t result = 0;
-    visit_children([&](const Transform&, Transform&) { result ++; }, recursive);
+    get_children(recursive).visit([&](Transform&) { result ++; });
     return result;
 }
 
