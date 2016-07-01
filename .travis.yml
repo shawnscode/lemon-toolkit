@@ -19,4 +19,6 @@ script:
     - make
     - cd ../bin
     - echo -n 'hahaha' > resource.txt
+    - cp resource.txt resource2.txt
+    - cp resource.txt resource3.txt
     - ./test
