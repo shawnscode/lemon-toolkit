@@ -72,6 +72,9 @@ struct FilesystemArchive;
 struct ArchiveManager;
 struct ResourceCacheManager;
 
+//- RENDER SYSTEM
+struct Canvas;
+
 //- SCENE GRAPH SYSTEM
 struct NSScene;
 struct Transform;
@@ -79,12 +82,17 @@ struct Transform;
 struct NSUserInterface;
 struct UIElement;
 
-struct UIVisual;
+struct ILayout;
+struct UIBoxLayout;
+struct UIGroupLayout;
+struct UIGridLayout;
+
+struct IVisual;
 struct UIText;
 struct UIImage;
 struct UIMask;
 
-struct UIInteraction;
+struct IInteraction;
 struct UIButton;
 struct UISlider;
 struct UIScrollView;

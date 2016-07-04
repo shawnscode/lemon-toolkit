@@ -86,6 +86,18 @@ protected:
         iterator_mode   _mode;
     };
 
+    template<typename ... T> struct view_trait : public view
+    {
+        view_trait(Transform* t, iterator_mode m)
+        : view(t, m), _mask(t->_world->get_components_mask<T...>()) {};
+
+        using visitor = std::function<void(Transform&, T& ...)>;
+        void visit(const visitor&);
+
+    protected:
+        ComponentMask _mask;
+    };
+
 public:
     Transform() = default;
     Transform(const Transform&) = delete;
@@ -114,6 +126,7 @@ public:
     // in depth-first order if works with recursive mode.
     view get_children(bool recursive = false);
     view get_ancestors();
+    template<typename ... T> view_trait<T...> get_children_with();
 
     // appends an entity to this hierarchy
     void append_child(Transform&, bool keep_world_pose = false);
@@ -128,7 +141,17 @@ public:
     // returns the number of direct _children in this hierarchy
     size_t get_children_count(bool recursive = false); // const
 
+    ////
+    Entity get_object() const;
+    template<typename T, typename ... Args> T* add_component(Args && ... args);
+    template<typename T> T* get_component();
+    template<typename T> void remove_component();
+    template<typename T> bool has_component() const;
+
 protected:
+    Entity          _object;
+    EntityManager*  _world = nullptr;
+
     TransformMatrix _localspace;
     TransformMatrix _worldspace;
 

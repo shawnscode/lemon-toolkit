@@ -47,11 +47,13 @@ using Vector2i  = Vector<2, int>;
 
 static const Vector2f kVector2fZero = { 0.f, 0.f };
 static const Vector2f kVector2fInfinity = { std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity() };
+static const Vector2f kVector2fNan = { std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::quiet_NaN() };
 static const Vector2f kVector2fOne  = { 1.f, 1.f };
 static const Vector2f kVector2fLeft = { -1.f, 0.f };
 static const Vector2f kVector2fRight = { 1.f, 0.f };
 static const Vector2f kVector2fUp = { 0.f, 1.f };
 static const Vector2f kVector2fDown = { 0.f, -1.f };
+
 
 // unary operations
 template<size_t N, typename T>

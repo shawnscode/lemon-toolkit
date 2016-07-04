@@ -17,12 +17,6 @@ Transform::iterator::iterator(Transform* t, iterator_mode m)
         _start = _cusor = nullptr;
 }
 
-void Transform::view::visit(const visitor& cb)
-{
-    for( auto iter = begin(); iter != end(); ++iter )
-        cb(*iter);
-}
-
 Transform::view Transform::get_children(bool recursive)
 {
     return view(this, recursive ? iterator_mode::CHILDREN_RECURSIVE : iterator_mode::CHILDREN);
@@ -189,7 +183,11 @@ size_t Transform::get_children_count(bool recursive)
 }
 
 /// MEMBER METHODS
-void Transform::on_spawn(EntityManager& world, Entity object) {}
+void Transform::on_spawn(EntityManager& world, Entity object)
+{
+    _world = &world;
+    _object = object;
+}
 
 void Transform::on_dispose(EntityManager& world, Entity object)
 {

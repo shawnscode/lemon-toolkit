@@ -249,7 +249,6 @@ EntityManager::object_chunks_trait<T>* EntityManager::get_chunks()
         chunks->resize(_components_mask.size());
         chunks->when_spawn = [&](Entity o, T& c)
         {
-            c._object = o;
             c.on_spawn(*this, o);
         };
         chunks->when_dispose = [&](Entity o, T& c)

@@ -67,3 +67,49 @@ INLINE Transform::iterator Transform::view::end() const
 {
     return Transform::iterator(nullptr, _mode);
 }
+
+INLINE void Transform::view::visit(const visitor& cb)
+{
+    for( auto iter = begin(); iter != end(); ++iter )
+        cb(*iter);
+}
+
+template<typename ... T>
+INLINE void Transform::view_trait<T...>::visit(const visitor& cb)
+{
+    for( auto iter = begin(); iter != end(); ++ iter )
+    {
+        auto mask = _start->_world->get_components_mask(_start->_object);
+        if( (mask & _mask) == _mask )
+            cb(*iter, *((*iter).template get_component<T>()) ...);
+    }
+}
+
+INLINE Entity Transform::get_object() const
+{
+    return _object;
+}
+
+template<typename T, typename ... Args>
+INLINE T* Transform::add_component(Args && ... args)
+{
+    return _world->add_component(_object, std::forward<Args>(args)...);
+}
+
+template<typename T>
+INLINE T* Transform::get_component()
+{
+    return _world->get_component<T>(_object);
+}
+
+template<typename T>
+INLINE void Transform::remove_component()
+{
+    _world->remove_component<T>(_object);
+}
+
+template<typename T>
+INLINE bool Transform::has_component() const
+{
+    return _world->has_component<T>(_object);
+}
