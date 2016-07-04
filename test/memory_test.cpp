@@ -110,7 +110,7 @@ TEST_CASE_METHOD(MemoryChunksFixture, "TestMemoryChunksReuse")
     }
 }
 
-struct Position : public Component<Position>
+struct Position : public Component<>
 {
     Position(int x, int y) : x(x), y(y) {}
     int x, y;

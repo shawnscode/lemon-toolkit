@@ -47,7 +47,7 @@ struct TransformMatrix
 };
 
 // transform component is used to allow entities to be coordinated in the world.
-struct Transform : public Component<Transform>
+struct Transform : public Component<>
 {
 protected:
     enum class iterator_mode : uint8_t

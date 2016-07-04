@@ -53,7 +53,7 @@ extern void LOGE(const char* format, ...);
 
 //- ENTITY COMPONENT SYSTEM
 struct Entity;
-template<typename T, size_t s> struct Component;
+template<size_t s> struct Component;
 struct EntityManager;
 
 struct System;

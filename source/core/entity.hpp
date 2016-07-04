@@ -61,17 +61,14 @@ protected:
     Entity _object;
 };
 
-template<typename T, size_t s = kEntPoolChunkSize> struct Component : ComponentBase
+template<size_t s = kEntPoolChunkSize> struct Component : ComponentBase
 {
     static const size_t chunk_size = s;
-    static TypeID::index_type base_id() { return TypeID::value<ComponentBase, T>(); }
 };
 
 template<typename T> struct ComponentTraitInfo
 {
     static TypeID::index_type id() { return TypeID::value<ComponentBase, T>(); }
-    static TypeID::index_type base_id() { return T::base_id(); }
-    static bool     is_base_class() { return base_id() == id(); }
     static size_t   get_chunk_size() { return T::chunk_size; }
 };
 

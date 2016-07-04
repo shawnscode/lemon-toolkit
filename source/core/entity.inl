@@ -125,7 +125,7 @@ Entity EntityManager::spawn_with(Args&& ... args)
 template<typename T, typename ... Args>
 T* EntityManager::add_component(Entity object, Args&& ... args)
 {
-    static_assert( std::is_base_of<Component<T, T::chunk_size>, T>::value, "T is not component." );
+    static_assert( std::is_base_of<ComponentBase, T>::value, "T is not component." );
 
     if( !is_alive(object) )
         return nullptr;
@@ -146,7 +146,7 @@ T* EntityManager::add_component(Entity object, Args&& ... args)
 template<typename T>
 T* EntityManager::get_component(Entity object)
 {
-    static_assert( std::is_base_of<Component<T, T::chunk_size>, T>::value, "T is not component." );
+    static_assert( std::is_base_of<ComponentBase, T>::value, "T is not component." );
 
     if( !is_alive(object) )
         return nullptr;
@@ -162,7 +162,7 @@ INLINE std::tuple<T*...> EntityManager::get_components(Entity object)
 template<typename T>
 void EntityManager::remove_component(Entity object)
 {
-    static_assert( std::is_base_of<Component<T, T::chunk_size>, T>::value, "T is not component." );
+    static_assert( std::is_base_of<ComponentBase, T>::value, "T is not component." );
 
     if( !is_alive(object) )
         return;
@@ -183,7 +183,7 @@ void EntityManager::remove_component(Entity object)
 template<typename T>
 INLINE bool EntityManager::has_component(Entity object) const
 {
-    static_assert( std::is_base_of<Component<T, T::chunk_size>, T>::value, "T is not component." );
+    static_assert( std::is_base_of<ComponentBase, T>::value, "T is not component." );
 
     const auto id = ComponentTraitInfo<T>::id();
     return is_alive(object) && _components_mask[object._index].test(id);
@@ -200,7 +200,7 @@ INLINE ComponentMask EntityManager::get_components_mask(Entity object) const
 template<typename T>
 INLINE ComponentMask EntityManager::get_components_mask() const
 {
-    static_assert( std::is_base_of<Component<T, T::chunk_size>, T>::value, "T is not component." );
+    static_assert( std::is_base_of<ComponentBase, T>::value, "T is not component." );
 
     ComponentMask mask;
     mask.set(ComponentTraitInfo<T>::id());

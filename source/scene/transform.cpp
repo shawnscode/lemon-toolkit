@@ -2,7 +2,6 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <scene/transform.hpp>
-#include <scene/scene.hpp>
 
 NS_FLOW2D_BEGIN
 
