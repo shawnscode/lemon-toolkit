@@ -6,6 +6,7 @@
 #include <forward.hpp>
 #include <core/entity.hpp>
 #include <math/vector.hpp>
+#include <math/matrix.hpp>
 
 NS_FLOW2D_BEGIN
 
@@ -142,6 +143,8 @@ public:
     bool is_leaf() const;
     // returns parent entity
     Transform* get_parent();
+    // returns representation of matrix
+    Matrix3f to_matrix(TransformSpace space = TransformSpace::SELF) const;
 
     ////
     Entity get_object() const;

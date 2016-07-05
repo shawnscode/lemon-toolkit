@@ -79,7 +79,7 @@ struct Canvas
 {
     static Canvas* create();
 
-    void begin_frame(const Vector2f&);
+    void begin_frame(const Matrix3f&);
     void end_frame();
 
     /// PATH
@@ -151,7 +151,7 @@ protected:
     bool initialize();
     void tesselate_bezier(const Vector2f&, const Vector2f&, const Vector2f&, const Vector2f&, int);
 
-    Vector2f                m_screen_size;
+    Matrix3f                m_ortho;
 
     std::vector<VGState>    m_states;
     std::vector<uint16_t>   m_countors;

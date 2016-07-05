@@ -97,6 +97,21 @@ void UIElement::set_fixed_size(const Vector2f& size)
     _fixed_size = size;
 }
 
+void UIElement::set_pivot(const Vector2f& pivot)
+{
+    _pivot = pivot;
+}
+
+void UIElement::set_anchor(const Rect2f& anchor)
+{
+    _anchor = anchor;
+}
+
+Vector2f UIElement::get_pivot() const
+{
+    return _pivot;
+}
+
 Vector2f UIElement::get_fixed_size() const
 {
     return _fixed_size;
@@ -105,7 +120,10 @@ Vector2f UIElement::get_fixed_size() const
 Vector2f UIElement::get_prefered_size() const
 {
     if( _layout )
-        return _layout->get_prefered_size();
+        return _layout->get_prefered_size(_view);
+
+    if( _view )
+        return _view->get_prefered_size();
 
     return _size;
 }
@@ -123,21 +141,34 @@ Rect2f UIElement::get_bounds() const
     return Rect2f { ll[0], ll[1], ru[0], ru[1] };
 }
 
-void UIElement::rearrange()
+void UIElement::recalculate_size()
 {
+    if( has_fixed_size() )
+        _size = get_fixed_size();
+    else
+        _size = get_prefered_size();
+}
+
+void UIElement::update(float dt)
+{
+
+}
+
+void UIElement::rearrange(bool is_root)
+{
+    if( is_root )
+        recalculate_size();
+
     if( _layout )
     {
-        _layout->perform(*_transform);
+        _layout->perform(*this);
         return;
     }
 
     _transform->get_children_with<UIElement>().visit([&](Transform& ct, UIElement& ce)
     {
-        if( ce.has_fixed_size() )
-            ce._size = ce.get_fixed_size();
-        else
-            ce._size = ce.get_prefered_size();
-        ce.rearrange();
+        ce.recalculate_size();
+        ce.rearrange(false);
     });
 }
 

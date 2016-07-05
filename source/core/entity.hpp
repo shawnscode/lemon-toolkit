@@ -145,7 +145,7 @@ struct EntityManager
         void visit(const visitor&);
     };
 
-    EntityManager(EventManager& manager) : _dispatcher(manager) {}
+    EntityManager();
     ~EntityManager();
 
     // non-copyable
@@ -177,13 +177,13 @@ struct EntityManager
     // find entities that have all of the specified components, returns a incremental iterator
     template<typename ... T> view_trait<T...> find_entities_with();
     view find_entities();
-    // find specified components
-    // cview find_components();
-    // template<typename T> cview get_components_derived(Entity);
 
     // utils of iterators
     template<typename T> ComponentMask get_components_mask() const;
     template<typename T1, typename T2, typename ...Args> ComponentMask get_components_mask() const;
+
+    // event dispatchers
+    EventManager& get_dispatcher();
 
 protected:
     using object_chunks = ComponentChunks;
@@ -192,8 +192,8 @@ protected:
     void accomodate_entity(uint32_t);
     template<typename T> object_chunks_trait<T>* get_chunks();
 
-    EventManager& _dispatcher;
-
+    // event dispatcher
+    std::unique_ptr<EventManager> _dispatcher;
     // incremented entity index for brand new and free slot
     Entity::index_type _incremental_index = 0;
     // each element in componets_pool corresponds to a Pool for a Component

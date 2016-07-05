@@ -137,14 +137,13 @@ bool Canvas::initialize()
         0, nullptr,
         COUNTOF(vg_uniforms), vg_uniforms);
 
-    m_screen_size = kVector2fZero;
-
+    m_ortho = make_ortho(0.f,  960.f, 0.f, 640.f);
     return true;
 }
 
-void Canvas::begin_frame(const Vector2f& screen)
+void Canvas::begin_frame(const Matrix3f& ortho)
 {
-    m_screen_size = screen;
+    m_ortho = ortho;
     m_states.resize(1);
     reset_state(m_states.back());
 }
@@ -283,7 +282,7 @@ void Canvas::fill()
     m_index_buffer.force_update();
     m_vertex_buffer.force_update();
 
-    Matrix3f transform = make_ortho(0.f, m_screen_size[0], 0.f, m_screen_size[1]) * m_states.back().transform;
+    Matrix3f transform = m_ortho * m_states.back().transform;
 
     auto& device = GraphicDevice::instance();
     device.bind_shader(m_program);

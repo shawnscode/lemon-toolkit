@@ -15,6 +15,7 @@
 #include <math/rect.hpp>
 
 #include <scene/transform.hpp>
+#include <scene/ui/canvas.hpp>
 #include <scene/ui/element.hpp>
 #include <scene/ui/button.hpp>
 

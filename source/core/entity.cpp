@@ -15,6 +15,11 @@ void ComponentBase::operator delete[](void *)
     ASSERT(false, "[ECS] component memory is always managed by the EntityManager.");
 }
 
+EntityManager::EntityManager()
+{
+    _dispatcher.reset(new EventManager());
+}
+
 EntityManager::~EntityManager()
 {
     reset();
@@ -55,7 +60,7 @@ Entity EntityManager::spawn()
 
     version = _versions[index];
     auto object = Entity(index, version);
-    _dispatcher.emit<EvtEntityCreated>(object);
+    _dispatcher->emit<EvtEntityCreated>(object);
     return object;
 }
 
@@ -67,7 +72,7 @@ void EntityManager::dispose(Entity object)
         return;
     }
 
-    _dispatcher.emit<EvtEntityDisposed>(object);
+    _dispatcher->emit<EvtEntityDisposed>(object);
 
     const auto mask = _components_mask[object._index];
     for( auto i=0; i<_components_pool.size(); i++ )

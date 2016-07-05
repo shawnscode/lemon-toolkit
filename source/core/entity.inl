@@ -139,7 +139,7 @@ T* EntityManager::add_component(Entity object, Args&& ... args)
     auto component = static_cast<T*>(chunks->spawn(*this, object, std::forward<Args>(args)...));
     // set the bit mask for this component
     _components_mask[object._index].set(id);
-    _dispatcher.emit<EvtComponentAdded<T>>(object, *component);
+    _dispatcher->emit<EvtComponentAdded<T>>(object, *component);
     return component;
 }
 
@@ -172,7 +172,7 @@ void EntityManager::remove_component(Entity object)
     {
         T* component = get_component<T>(object);
         // broadcast this to listeners
-        _dispatcher.emit<EvtComponentRemoved<T>>(object, *component);
+        _dispatcher->emit<EvtComponentRemoved<T>>(object, *component);
         // remove the bit mask for this component
         _components_mask[object._index].reset(id);
         // call destructor
@@ -222,6 +222,11 @@ INLINE EntityManager::view_trait<T...> EntityManager::find_entities_with()
 INLINE EntityManager::view EntityManager::find_entities()
 {
     return EntityManager::view(*this, ComponentMask());
+}
+
+INLINE EventManager& EntityManager::get_dispatcher()
+{
+    return *_dispatcher;
 }
 
 INLINE void EntityManager::accomodate_entity(uint32_t index)

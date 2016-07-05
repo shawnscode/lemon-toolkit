@@ -111,6 +111,24 @@ INLINE Transform::view_trait<T...> Transform::get_children_with(bool recursive)
         recursive ? iterator_mode::CHILDREN_RECURSIVE : iterator_mode::CHILDREN );
 }
 
+INLINE Matrix3f Transform::to_matrix(TransformSpace space) const
+{
+    if( TransformSpace::WORLD == space )
+    {
+        auto matrix = make_translation(_worldspace.position);
+        matrix *= hlift(make_rotation(_worldspace.rotation));
+        matrix *= hlift(make_scale(_worldspace.scale));
+        return matrix;
+    }
+    else
+    {
+        auto matrix = make_translation(_localspace.position);
+        matrix *= hlift(make_rotation(_localspace.rotation));
+        matrix *= hlift(make_scale(_localspace.scale));
+        return matrix;
+    }
+}
+
 INLINE Entity Transform::get_object() const
 {
     return _object;
