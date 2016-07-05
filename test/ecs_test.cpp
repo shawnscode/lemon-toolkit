@@ -43,7 +43,7 @@ struct Direction : public Component<>
 
 struct EntityManagerFixture
 {
-    EntityManagerFixture() : _world(event), sys(_world, event) {}
+    EntityManagerFixture() : _world(), sys(_world, event) {}
     EntityManager   _world;
     EventManager    event;
     SystemManager   sys;
@@ -370,8 +370,7 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
 {
     bool freed = false;
     {
-        EventManager es;
-        EntityManager world(es);
+        EntityManager world;
         auto e = world.spawn();
         world.add_component<FreedSentinel>(e, freed);
         REQUIRE( !freed );

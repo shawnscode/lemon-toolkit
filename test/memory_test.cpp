@@ -124,7 +124,7 @@ struct ObjectChunksFixture : ComponentChunksTrait<Position>
     size_t          dispose_count = 0;
 
     ObjectChunksFixture()
-    : ComponentChunksTrait<Position>(kChunkSize), world(dispatcher)
+    : ComponentChunksTrait<Position>(kChunkSize)
     {
         when_spawn = [&](Entity, Position&) { spawn_count ++; };
         when_dispose = [&](Entity, Position&) { dispose_count ++; };

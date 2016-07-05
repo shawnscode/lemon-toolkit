@@ -6,9 +6,7 @@ USING_NS_FLOW2D;
 struct TransformFixture
 {
     EntityManager   _world;
-    EventManager    _dispatcher;
-
-    TransformFixture() : _world(_dispatcher) {}
+    TransformFixture() {}
 };
 
 TEST_CASE_METHOD(TransformFixture, "TestConstructor")
