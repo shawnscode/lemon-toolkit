@@ -74,6 +74,13 @@ INLINE void Transform::view::visit(const visitor& cb)
         cb(*iter);
 }
 
+INLINE size_t Transform::view::count() const
+{
+    size_t result = 0;
+    for( auto iter = begin(); iter != end(); ++iter ) result++;
+    return result;
+}
+
 template<typename ... T>
 INLINE void Transform::view_trait<T...>::visit(const visitor& cb)
 {
@@ -83,6 +90,25 @@ INLINE void Transform::view_trait<T...>::visit(const visitor& cb)
         if( (mask & _mask) == _mask )
             cb(*iter, *((*iter).template get_component<T>()) ...);
     }
+}
+
+template<typename ... T>
+INLINE size_t Transform::view_trait<T...>::count() const
+{
+    size_t result = 0;
+    for( auto iter = begin(); iter != end(); ++ iter )
+    {
+        auto mask = _start->_world->get_components_mask(_start->_object);
+        if( (mask & _mask) == _mask ) result++;
+    }
+    return result;
+}
+
+template<typename ... T>
+INLINE Transform::view_trait<T...> Transform::get_children_with(bool recursive)
+{
+    return view_trait<T...>(this,
+        recursive ? iterator_mode::CHILDREN_RECURSIVE : iterator_mode::CHILDREN );
 }
 
 INLINE Entity Transform::get_object() const

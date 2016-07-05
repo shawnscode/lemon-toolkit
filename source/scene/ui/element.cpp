@@ -7,48 +7,26 @@
 
 NS_FLOW2D_BEGIN
 
-void IVisual::on_spawn(EntityManager& world, Entity object)
-{
-    ASSERT( world.has_component<UIElement>(object),
-        "visual component of ui requires UIElement." );
-
-    auto element = world.get_component<UIElement>(object);
-    ASSERT( element->_visual == nullptr,
-        "duplicated visual component of ui in same Entity." );
-
-    element->_visual = this;
-}
-
-void IVisual::on_dispose(EntityManager& world, Entity object)
-{
-    ENSURE( world.has_component<UIElement>(object) );
-
-    auto element = world.get_component<UIElement>(object);
-    ENSURE( element->_visual == this );
-
-    element->_visual = nullptr;
-}
-
-void IInteraction::on_spawn(EntityManager& world, Entity object)
+void IViewController::on_spawn(EntityManager& world, Entity object)
 {
     ASSERT( world.has_component<UIElement>(object),
         "interaction component of ui requires UIElement." );
 
     auto element = world.get_component<UIElement>(object);
-    ASSERT( element->_interaction == nullptr,
+    ASSERT( element->_view == nullptr,
         "duplicated interaction component of ui in same Entity." );
 
-    element->_interaction = this;
+    element->_view = this;
 }
 
-void IInteraction::on_dispose(EntityManager& world, Entity object)
+void IViewController::on_dispose(EntityManager& world, Entity object)
 {
     ENSURE( world.has_component<UIElement>(object) );
 
     auto element = world.get_component<UIElement>(object);
-    ENSURE( element->_interaction == this );
+    ENSURE( element->_view == this );
 
-    element->_interaction = nullptr;
+    element->_view = nullptr;
 }
 
 void ILayout::on_spawn(EntityManager& world, Entity object)
@@ -137,6 +115,14 @@ Vector2f UIElement::get_size() const
     return _size;
 }
 
+Rect2f UIElement::get_bounds() const
+{
+    auto position = _transform->get_position(TransformSpace::WORLD);
+    auto ll = position - Vector2f { _size[0] * _pivot[0], _size[1] * _pivot[1] };
+    auto ru = ll + _size;
+    return Rect2f { ll[0], ll[1], ru[0], ru[1] };
+}
+
 void UIElement::rearrange()
 {
     if( _layout )
@@ -148,31 +134,29 @@ void UIElement::rearrange()
     _transform->get_children_with<UIElement>().visit([&](Transform& ct, UIElement& ce)
     {
         if( ce.has_fixed_size() )
-            ce.set_size(ce.get_fixed_size());
+            ce._size = ce.get_fixed_size();
         else
-            ce.set_size(ce.get_prefered_size());
+            ce._size = ce.get_prefered_size();
         ce.rearrange();
     });
 }
 
 void UIElement::draw(Canvas& canvas)
 {
-    if( _visual )
+    if( _view )
     {
-        _visual->draw(canvas);
+        _view->draw(*this, canvas);
         return;
     }
 
     if( _transform->is_leaf() )
         return;
 
-    canvas.translate(_transform->get_position());
     _transform->get_children_with<UIElement>().visit([&](Transform& ct, UIElement& ce)
     {
         if( ce.is_visible() )
             ce.draw(canvas);
     });
-    canvas.translate(-_transform->get_position());
 }
 
 NS_FLOW2D_END

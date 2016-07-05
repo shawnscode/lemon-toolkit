@@ -49,15 +49,10 @@ struct Color
     static const Color TRANSPARENT;
 };
 
-// struct ColorTransform
-// {
-// };
-
-#include <math/color.inl>
-
 // test for equality with epsilon
 bool equals(const Color&, const Color&, float epsilon = std::numeric_limits<float>::epsilon());
 // return linear interpolation o this color with another color
 Color lerp(const Color&, const Color&, float t);
 
+#include <math/color.inl>
 NS_FLOW2D_END

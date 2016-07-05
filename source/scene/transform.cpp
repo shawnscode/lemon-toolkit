@@ -19,7 +19,8 @@ Transform::iterator::iterator(Transform* t, iterator_mode m)
 
 Transform::view Transform::get_children(bool recursive)
 {
-    return view(this, recursive ? iterator_mode::CHILDREN_RECURSIVE : iterator_mode::CHILDREN);
+    return view(this,
+        recursive ? iterator_mode::CHILDREN_RECURSIVE : iterator_mode::CHILDREN);
 }
 
 Transform::view Transform::get_ancestors()
@@ -42,12 +43,16 @@ void Transform::set_scale(const Vector2f& scale, TransformSpace space)
         _localspace.scale = scale;
         if( _parent )
             _worldspace = _parent->_worldspace * _localspace;
+        else
+            _worldspace = _localspace;
     }
     else
     {
         _worldspace.scale = scale;
         if( _parent )
             _localspace = _worldspace / _parent->_worldspace;
+        else
+            _localspace = _worldspace;
     }
 
     update_children();
@@ -60,12 +65,16 @@ void Transform::set_position(const Vector2f& position, TransformSpace space)
         _localspace.position = position;
         if( _parent )
             _worldspace = _parent->_worldspace * _localspace;
+        else
+            _worldspace = _localspace;
     }
     else
     {
         _worldspace.position = position;
         if( _parent )
             _localspace = _worldspace / _parent->_worldspace;
+        else
+            _localspace = _worldspace;
     }
 
     update_children();
@@ -78,12 +87,16 @@ void Transform::set_rotation(float rotation, TransformSpace space)
         _localspace.rotation = rotation;
         if( _parent )
             _worldspace = _parent->_worldspace * _localspace;
+        else
+            _worldspace = _localspace;
     }
     else
     {
         _worldspace.rotation = rotation;
         if( _parent )
             _localspace = _worldspace / _parent->_worldspace;
+        else
+            _localspace = _worldspace;
     }
 
     update_children();
@@ -173,13 +186,6 @@ bool Transform::is_leaf() const
 Transform* Transform::get_parent()
 {
     return _parent;
-}
-
-size_t Transform::get_children_count(bool recursive)
-{
-    size_t result = 0;
-    get_children(recursive).visit([&](Transform&) { result ++; });
-    return result;
 }
 
 /// MEMBER METHODS

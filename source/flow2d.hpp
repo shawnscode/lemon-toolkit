@@ -15,5 +15,7 @@
 #include <math/rect.hpp>
 
 #include <scene/transform.hpp>
+#include <scene/ui/element.hpp>
+#include <scene/ui/button.hpp>
 
 #define USING_NS_FLOW2D using namespace flow2d;

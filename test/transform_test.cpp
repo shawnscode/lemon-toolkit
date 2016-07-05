@@ -29,6 +29,36 @@ TEST_CASE_METHOD(TransformFixture, "TestConstructor")
     REQUIRE( equals(t1->get_scale(), t2->get_scale()) );
 }
 
+TEST_CASE_METHOD(TransformFixture, "TestOpsWithoutHierachy")
+{
+    Entity e1 = _world.spawn();
+    Transform* t1 = _world.add_component<Transform>(e1, Vector2f{10.f, 10.f});
+
+    t1->set_position({20.f, 20.f});
+    REQUIRE( t1->get_position() == Vector2f({20.f, 20.f}) );
+    REQUIRE( t1->get_position() == t1->get_position(TransformSpace::WORLD) );
+
+    t1->set_position({30.f, 30.f}, TransformSpace::WORLD);
+    REQUIRE( t1->get_position() == Vector2f({30.f, 30.f}) );
+    REQUIRE( t1->get_position() == t1->get_position(TransformSpace::WORLD) );
+
+    t1->set_scale({2.f, 2.f});
+    REQUIRE( t1->get_scale() == Vector2f({2.f, 2.f}) );
+    REQUIRE( t1->get_scale() == t1->get_scale(TransformSpace::WORLD) );
+
+    t1->set_scale({3.f, 3.f}, TransformSpace::WORLD);
+    REQUIRE( t1->get_scale() == Vector2f({3.f, 3.f}) );
+    REQUIRE( t1->get_scale() == t1->get_scale(TransformSpace::WORLD) );
+
+    t1->set_rotation(45.f);
+    REQUIRE( t1->get_rotation() == 45.f);
+    REQUIRE( t1->get_rotation() == t1->get_rotation(TransformSpace::WORLD) );
+
+    t1->set_rotation(60.f, TransformSpace::WORLD);
+    REQUIRE( t1->get_rotation() == 60.f);
+    REQUIRE( t1->get_rotation() == t1->get_rotation(TransformSpace::WORLD) );
+}
+
 TEST_CASE_METHOD(TransformFixture, "TestHierachy")
 {
     Entity e1 = _world.spawn();
@@ -44,8 +74,8 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachy")
     Transform* t4 = _world.add_component<Transform>(e4, Vector2f{-50.f, -10.f}, Vector2f{3.0f, 3.0f});
 
     t1->append_child(*t2);
-    REQUIRE( t1->get_children_count() == 1 );
-    REQUIRE( t2->get_children_count() == 0 );
+    REQUIRE( t1->get_children().count() == 1 );
+    REQUIRE( t2->get_children().count() == 0 );
     REQUIRE( t2->get_parent() == t1 );
     REQUIRE( equals(t1->get_position(), {10.f, 10.f}) );
     REQUIRE( equals(t2->get_position(), {20.f, 20.f}) );
@@ -53,7 +83,7 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachy")
 
     // keep world pose of t3
     t1->append_child(*t3, true);
-    REQUIRE( t1->get_children_count() == 2 );
+    REQUIRE( t1->get_children().count() == 2 );
     REQUIRE( equals(t1->get_position(), {10.f, 10.f}) );
     REQUIRE( equals(t3->get_position(), {30.f, 30.f}) );
     REQUIRE( t3->get_parent() == t1 );
@@ -61,9 +91,9 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachy")
 
     // nested hierachies
     t3->append_child(*t4);
-    REQUIRE( t1->get_children_count() == 2 );
-    REQUIRE( t1->get_children_count(true) == 3 );
-    REQUIRE( t3->get_children_count(true) == 1 );
+    REQUIRE( t1->get_children().count() == 2 );
+    REQUIRE( t1->get_children(true).count() == 3 );
+    REQUIRE( t3->get_children(true).count() == 1 );
     REQUIRE( t4->get_parent() == t3 );
     REQUIRE( equals(t4->get_position(TransformSpace::WORLD), {-10.f, 30.f}) );
     REQUIRE( equals(t4->get_scale(TransformSpace::WORLD), {6.f, 6.f}) );
@@ -97,8 +127,8 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachyReconstructWhenDispose")
     REQUIRE( !t3->is_leaf() );
     REQUIRE( t4->is_leaf() );
 
-    REQUIRE( t1->get_children_count() == 2 );
-    REQUIRE( t1->get_children_count(true) == 3 );
+    REQUIRE( t1->get_children().count() == 2 );
+    REQUIRE( t1->get_children(true).count() == 3 );
 
     t3->remove_from_parent();
 
@@ -107,13 +137,13 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachyReconstructWhenDispose")
     REQUIRE( t3->is_root() );
     REQUIRE( !t4->is_root() );
 
-    REQUIRE( t1->get_children_count() == 1 );
-    REQUIRE( t1->get_children_count(true) == 1 );
+    REQUIRE( t1->get_children().count() == 1 );
+    REQUIRE( t1->get_children(true).count() == 1 );
 }
 
 static void dump_heriachy(Transform* t, int index = 1, int level = 0)
 {
-    if( t->get_children_count() == 0 )
+    if( t->get_children().count() == 0 )
         return;
 
     for( size_t i = 0; i < level; i++ )
@@ -151,9 +181,9 @@ TEST_CASE_METHOD(TransformFixture, "TestIteration")
         if( pindex == 0 ) count ++;
         constructed[pindex]->append_child(*transforms[index]);
 
-        // if( constructed[0]->get_children_count(true) != i+ 1)
+        // if( constructed[0]->get_children(true).count() != i+ 1)
         //     dump_heriachy(constructed[0]);
-        REQUIRE( constructed[0]->get_children_count(true) == i+1 );
+        REQUIRE( constructed[0]->get_children(true).count() == i+1 );
 
         constructed.push_back(transforms[index]);
         transforms.erase(transforms.begin()+index);

@@ -79,7 +79,6 @@ struct Canvas;
 struct NSScene;
 struct Transform;
 
-struct NSUserInterface;
 struct UIElement;
 
 struct ILayout;
@@ -87,12 +86,10 @@ struct UIBoxLayout;
 struct UIGroupLayout;
 struct UIGridLayout;
 
-struct IVisual;
+struct IViewController;
 struct UIText;
 struct UIImage;
 struct UIMask;
-
-struct IInteraction;
 struct UIButton;
 struct UISlider;
 struct UIScrollView;

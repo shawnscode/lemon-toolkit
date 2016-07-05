@@ -80,6 +80,8 @@ protected:
 
         using visitor = std::function<void(Transform&)>;
         void visit(const visitor&);
+        // returns the number of direct _children in this hierarchy
+        virtual size_t count() const;
 
     protected:
         Transform*      _start;
@@ -93,6 +95,7 @@ protected:
 
         using visitor = std::function<void(Transform&, T& ...)>;
         void visit(const visitor&);
+        virtual size_t count() const override;
 
     protected:
         ComponentMask _mask;
@@ -124,9 +127,10 @@ public:
 
     // visit all of this object's ancestors/decenster,
     // in depth-first order if works with recursive mode.
-    view get_children(bool recursive = false);
     view get_ancestors();
-    template<typename ... T> view_trait<T...> get_children_with();
+    view get_children(bool recursive = false);
+    // find children that have all of the specified components
+    template<typename ... T> view_trait<T...> get_children_with(bool recursive = false);
 
     // appends an entity to this hierarchy
     void append_child(Transform&, bool keep_world_pose = false);
@@ -138,8 +142,6 @@ public:
     bool is_leaf() const;
     // returns parent entity
     Transform* get_parent();
-    // returns the number of direct _children in this hierarchy
-    size_t get_children_count(bool recursive = false); // const
 
     ////
     Entity get_object() const;
