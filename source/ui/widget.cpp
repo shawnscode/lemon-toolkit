@@ -1,7 +1,7 @@
 // @date 2016/07/01
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <scene/ui/element.hpp>
+#include <ui/widget.hpp>
 #include <scene/transform.hpp>
 #include <graphic/canvas.hpp>
 

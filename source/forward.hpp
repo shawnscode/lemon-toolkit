@@ -17,7 +17,7 @@
 #include <algorithm>
 
 #include <math/math.hpp>
-#include <scene/ui/ui.hpp>
+#include <ui/ui.hpp>
 
 NS_FLOW2D_BEGIN
 

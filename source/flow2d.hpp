@@ -15,9 +15,9 @@
 #include <math/rect.hpp>
 
 #include <scene/transform.hpp>
-#include <scene/ui/canvas.hpp>
-#include <scene/ui/element.hpp>
-#include <scene/ui/button.hpp>
+#include <ui/canvas.hpp>
+#include <ui/widget.hpp>
+#include <ui/button.hpp>
 
 #define USING_NS_FLOW2D using namespace flow2d;
 #define USING_NS_FLOW2D_UI using namespace flow2d::ui;

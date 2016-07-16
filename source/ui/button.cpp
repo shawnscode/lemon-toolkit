@@ -1,7 +1,7 @@
 // @date 2016/07/04
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <scene/ui/button.hpp>
+#include <ui/button.hpp>
 #include <graphic/canvas.hpp>
 
 NS_FLOW2D_UI_BEGIN

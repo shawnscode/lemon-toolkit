@@ -170,7 +170,7 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
 
     for( size_t i = 0; i < kChunkSize-1; i++ )
     {
-        auto p = (Position*)spawn(world, entities[i], i, i*2);
+        auto p = (Position*)spawn(entities[i], i, i*2);
         REQUIRE( p->x == i );
         REQUIRE( p->y == i*2 );
     }
@@ -189,7 +189,7 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     REQUIRE( get_memory_capacity() == kChunkSize );
 
     for( size_t i = kChunkSize-1; i < kChunkSize*2; i++ )
-        spawn(world, entities[i], i, i*2);
+        spawn(entities[i], i, i*2);
 
     for( size_t i = 0; i < kChunkSize*2; i++ )
     {
@@ -210,7 +210,7 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     {
         if( i % 2 == 0 || i % 3 == 0 || i % 7 == 0 )
         {
-            dispose(world, entities[i]);
+            dispose(entities[i]);
             removed.insert(i);
             holes ++;
         }
@@ -226,7 +226,7 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     {
         if( *cursor % 7 == 0 && *cursor % 2 != 0 && *cursor % 3 != 0 )
         {
-            spawn(world, entities[*cursor], 0, 0);
+            spawn(entities[*cursor], 0, 0);
             holes --;
         }
     }
@@ -239,7 +239,7 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     {
         if( *cursor % 3 == 0 && *cursor % 7 != 0 && *cursor % 2 != 0 )
         {
-            spawn(world, entities[*cursor], 0, 0);
+            spawn(entities[*cursor], 0, 0);
             holes --;
         }
     }

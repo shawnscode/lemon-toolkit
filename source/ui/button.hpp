@@ -4,7 +4,7 @@
 #pragma once
 
 #include <forward.hpp>
-#include <scene/ui/element.hpp>
+#include <ui/widget.hpp>
 
 NS_FLOW2D_UI_BEGIN
 

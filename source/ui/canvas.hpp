@@ -6,7 +6,7 @@
 #include <forward.hpp>
 #include <core/entity.hpp>
 #include <math/matrix.hpp>
-#include <scene/ui/element.hpp>
+#include <ui/widget.hpp>
 
 NS_FLOW2D_UI_BEGIN
 

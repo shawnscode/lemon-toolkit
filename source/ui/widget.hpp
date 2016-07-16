@@ -12,7 +12,6 @@
 
 NS_FLOW2D_UI_BEGIN
 
-
 enum class WidgetEdge : uint8_t
 {
     LEFT    = 0,
