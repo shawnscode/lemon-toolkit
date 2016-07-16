@@ -366,6 +366,16 @@ struct FreedSentinel : public Component<>
   bool &yes;
 };
 
+TEST_CASE_METHOD(EntityManagerFixture, "TestComponentDestruction")
+{
+    bool freed = false;
+    auto e = _world.spawn();
+    _world.add_component<FreedSentinel>(e, freed);
+    _world.remove_component<FreedSentinel>(e);
+
+    REQUIRE( freed );
+}
+
 TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
 {
     bool freed = false;
@@ -380,12 +390,36 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentDestructorCalledWhenEntityDestroyed")
 {
-    auto e = _world.spawn();
     bool freed = false;
+    auto e = _world.spawn();
     _world.add_component<FreedSentinel>(e, freed);
     REQUIRE( !freed );
     _world.dispose(e);
     REQUIRE( freed );
+}
+
+struct Base : public VTraitComponent<Base, 32>
+{
+    virtual void add(int&) {}
+};
+
+struct Derived : public Base
+{
+    virtual void add(int& v) override { v++; }
+};
+
+TEST_CASE_METHOD(EntityManagerFixture, "TestTraitComponent")
+{
+    auto e = _world.spawn();
+    _world.add_component<Derived>(e);
+
+    REQUIRE( _world.has_component<Base::Trait>(e) );
+
+    int c = 0;
+    auto bt = _world.get_component<Base::Trait>(e);
+    (*bt)->add(c);
+
+    REQUIRE( c == 1 );
 }
 
 struct Counter : public Component<>

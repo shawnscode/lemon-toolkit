@@ -63,7 +63,7 @@ template<size_t s = kEntPoolChunkSize> struct Component : ComponentBase
 template<typename T> struct ComponentTraitInfo
 {
     static TypeID::index_type id() { return TypeID::value<ComponentBase, T>(); }
-    static size_t   get_chunk_size() { return T::chunk_size; }
+    static size_t get_chunk_size() { return T::chunk_size; }
 };
 
 struct ComponentChunks : public MemoryChunks<Entity::index_type>
@@ -72,7 +72,7 @@ struct ComponentChunks : public MemoryChunks<Entity::index_type>
     : MemoryChunks<Entity::index_type>(element_size, chunk_size) {}
     virtual ~ComponentChunks() = default;
 
-    virtual void dispose(EntityManager&, Entity) = 0;
+    virtual void dispose(Entity) = 0;
     virtual void resize(Entity::index_type) = 0;
 };
 
@@ -85,8 +85,8 @@ template<typename T> struct ComponentChunksTrait : public ComponentChunks
     : ComponentChunks(sizeof(T), chunk_size) {}
     virtual ~ComponentChunksTrait();
 
-    template<typename ... Args> void* spawn(EntityManager&, Entity, Args && ...);
-    void  dispose(EntityManager&, Entity) override;
+    template<typename ... Args> void* spawn(Entity, Args && ...);
+    void  dispose(Entity) override;
     void  resize(Entity::index_type) override;
 
     T* get(Entity);

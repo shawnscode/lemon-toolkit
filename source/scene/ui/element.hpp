@@ -5,75 +5,72 @@
 
 #include <forward.hpp>
 #include <core/entity.hpp>
+#include <core/generic.hpp>
 #include <math/vector.hpp>
 #include <math/rect.hpp>
 #include <math/color.hpp>
 
-NS_FLOW2D_BEGIN
+NS_FLOW2D_UI_BEGIN
 
-const static size_t kUiComponentsChunkSize = 128;
 
-struct UIElement : public Component<kUiComponentsChunkSize>
+enum class WidgetEdge : uint8_t
+{
+    LEFT    = 0,
+    RIGHT   = 1,
+    TOP     = 2,
+    BOTTOM  = 3
+};
+
+struct Widget : public Component<>
 {
     void on_spawn(EntityManager&, Entity) override;
     void on_dispose(EntityManager&, Entity) override;
 
+    // calculate/return bounds of this widget
+    void on_resize(const Rect2f&);
+    Rect2f get_bounds() const;
+
+    // access to transform of this widget
+    Transform& get_transform() { return *_transform; }
+    const Transform& get_transform() const { return *_transform; }
+
+    // visibility of this widget and its children
     bool is_visible(bool recursive = false) const;
     void set_visible(bool);
 
-    void        set_anchor(const Rect2f&);
-    void        set_pivot(const Vector2f&);
-    void        set_fixed_size(const Vector2f&);
+    // location of the pivot point around which the rectangle rotates,
+    // defined as a fraction of the size of the rectangle itself.
+    void     set_anchor(const Vector2f&);
+    Vector2f get_anchor() const;
 
-    Vector2f    get_fixed_size() const;
-    Vector2f    get_prefered_size() const;
-    Vector2f    get_size() const;
-    Vector2f    get_pivot() const;
-    Rect2f      get_bounds() const;
+    // custom size in local space, might be changed if on_resize happens
+    void     set_custom_size(const Vector2f&);
+    Vector2f get_custom_size() const;
 
-    void update(float dt);
-    void rearrange(bool is_root = true);
-    void draw(Canvas&);
+    // positions of the rectangle’s edges relative to parent
+    void set_margin(WidgetEdge, float, bool is_percent = false);
 
 protected:
-    bool has_fixed_size() const;
-    void recalculate_size();
+    Transform*  _transform          = nullptr;
 
-    Transform*      _transform  = nullptr;
-    Vector2f        _pivot      = {0.f, 0.f};
-    Vector2f        _size       = {5.f, 5.f};
-    Vector2f        _fixed_size = kVector2fNan;
-    Rect2f          _anchor     = {0.f, 0.f, 0.f, 0.f};
-    bool            _visible    = false;
+    bool        _visible            = true;
+    Vector2f    _custom_size        = { 0.f, 0.f };
+    Vector2f    _anchor             = { 0.5f, 0.5f };
 
-    friend class ILayout;
-    friend class IViewController;
-    ILayout*            _layout = nullptr;
-    IViewController*    _view   = nullptr;
+    // [optional] gives hints about positioning and sizing preferences when on_resize happens
+    // left, right, top, bottom
+    float       _margin[4]          = { math::nan };
 };
 
-struct EvtMouseDrag {};
-struct EvtMouseClick {};
-struct EvtFocusChanged {};
-struct EvtKeyboardCharacter {};
-
-struct IViewController : public Component<kUiComponentsChunkSize>
+struct View : public VTraitComponent<View, kUiComponentsChunkSize>
 {
-    void on_spawn(EntityManager&, Entity) override final;
-    void on_dispose(EntityManager&, Entity) override final;
-
-    virtual void draw(UIElement&, Canvas&) = 0;
-    virtual void update(float) {};
-    virtual Vector2f get_prefered_size() const = 0;
+    virtual void on_update(float) = 0;
+    virtual void on_draw(Canvas&, const Rect2f&) = 0;
 };
 
-struct ILayout : public Component<kUiComponentsChunkSize>
+struct Container : public VTraitComponent<Container, kUiComponentsChunkSize>
 {
-    void on_spawn(EntityManager&, Entity) override final;
-    void on_dispose(EntityManager&, Entity) override final;
-
-    virtual Vector2f get_prefered_size(IViewController*) const = 0;
-    virtual void perform(UIElement&) {};
+    virtual void on_format(Transform&, Rect2f&) = 0;
 };
 
-NS_FLOW2D_END
+NS_FLOW2D_UI_END

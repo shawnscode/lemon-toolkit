@@ -8,7 +8,7 @@
 #include <math/matrix.hpp>
 #include <scene/ui/element.hpp>
 
-NS_FLOW2D_BEGIN
+NS_FLOW2D_UI_BEGIN
 
 enum class ResolutionResolveMode : uint8_t
 {
@@ -42,19 +42,26 @@ enum class ResolutionResolveMode : uint8_t
     REFINE_ALL
 };
 
-struct CanvasScaler : public Component<kUiComponentsChunkSize>
+struct CanvasDirector : public Component<1>
 {
-    CanvasScaler();
+    CanvasDirector();
 
     void set_resolve_mode(ResolutionResolveMode);
     void set_screen_size(const Vector2f&);
     void set_design_size(const Vector2f&);
+
     Matrix3f get_ortho() const;
+    Vector2f get_resolved_size() const;
+
+    void resize(Transform&);
 
 protected:
-    Matrix3f resolve() const;
+    void resolve();
+    void resize_recursive(Transform&, const Rect2f&);
 
     Matrix3f                _ortho;
+    Vector2f                _resolved_size  = {960.f, 640.f};
+
     Vector2f                _design_size    = {960.f, 640.f};
     Vector2f                _screen_size    = {960.f, 640.f};
     ResolutionResolveMode   _resolve_mode   = ResolutionResolveMode::REFINE_ALL;
@@ -65,18 +72,19 @@ struct CanvasSystem
     CanvasSystem(EntityManager&);
     ~CanvasSystem();
 
-    void receive(const EvtComponentAdded<CanvasScaler>&);
-    void receive(const EvtComponentRemoved<CanvasScaler>&);
+    void receive(const EvtComponentAdded<CanvasDirector>&);
+    void receive(const EvtComponentRemoved<CanvasDirector>&);
+    // void receive(const EvtInputMouse&);
 
     void set_screen_size(const Vector2f&);
     void update(float);
     void draw();
 
 protected:
-    std::unordered_map<Entity, CanvasScaler*>   _scalers;
+    std::unordered_map<Entity, CanvasDirector*> _scalers;
     std::unique_ptr<Canvas>                     _canvas;
     EntityManager&                              _world;
     Vector2f                                    _screen_size;
 };
 
-NS_FLOW2D_END
+NS_FLOW2D_UI_END

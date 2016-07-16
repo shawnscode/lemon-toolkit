@@ -20,3 +20,4 @@
 #include <scene/ui/button.hpp>
 
 #define USING_NS_FLOW2D using namespace flow2d;
+#define USING_NS_FLOW2D_UI using namespace flow2d::ui;

@@ -46,8 +46,8 @@ using Vector2f  = Vector<2, float>;
 using Vector2i  = Vector<2, int>;
 
 static const Vector2f kVector2fZero = { 0.f, 0.f };
-static const Vector2f kVector2fInfinity = { std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity() };
-static const Vector2f kVector2fNan = { std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::quiet_NaN() };
+static const Vector2f kVector2fInfinity = { math::inf, math::inf };
+static const Vector2f kVector2fNan = { math::nan, math::nan };
 static const Vector2f kVector2fOne  = { 1.f, 1.f };
 static const Vector2f kVector2fLeft = { -1.f, 0.f };
 static const Vector2f kVector2fRight = { 1.f, 0.f };
@@ -70,6 +70,9 @@ template<size_t N, typename T>
 Vector<N, T> operator - (const Vector<N, T>&, const Vector<N, T>&);
 
 template<size_t N, typename T>
+Vector<N, T> operator * (const Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
 Vector<N, T> operator * (const Vector<N, T>&, T);
 
 template<size_t N, typename T>
@@ -83,6 +86,9 @@ Vector<N, T>& operator += (Vector<N, T>&, const Vector<N, T>&);
 
 template<size_t N, typename T>
 Vector<N, T>& operator -= (Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
+Vector<N, T>& operator *= (Vector<N, T>&, const Vector<N, T>&);
 
 template<size_t N, typename T>
 Vector<N, T>& operator *= (Vector<N, T>&, T);

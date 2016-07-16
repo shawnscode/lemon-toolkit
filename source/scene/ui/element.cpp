@@ -5,76 +5,37 @@
 #include <scene/transform.hpp>
 #include <graphic/canvas.hpp>
 
-NS_FLOW2D_BEGIN
+NS_FLOW2D_UI_BEGIN
 
-void IViewController::on_spawn(EntityManager& world, Entity object)
-{
-    ASSERT( world.has_component<UIElement>(object),
-        "interaction component of ui requires UIElement." );
-
-    auto element = world.get_component<UIElement>(object);
-    ASSERT( element->_view == nullptr,
-        "duplicated interaction component of ui in same Entity." );
-
-    element->_view = this;
-}
-
-void IViewController::on_dispose(EntityManager& world, Entity object)
-{
-    ENSURE( world.has_component<UIElement>(object) );
-
-    auto element = world.get_component<UIElement>(object);
-    ENSURE( element->_view == this );
-
-    element->_view = nullptr;
-}
-
-void ILayout::on_spawn(EntityManager& world, Entity object)
-{
-    ASSERT( world.has_component<UIElement>(object),
-        "layout component of ui requires UIElement." );
-
-    auto element = world.get_component<UIElement>(object);
-    ASSERT( element->_layout == nullptr,
-        "duplicated layout component of ui in same Entity." );
-
-    element->_layout = this;
-}
-
-void ILayout::on_dispose(EntityManager& world, Entity object)
-{
-    ENSURE( world.has_component<UIElement>(object) );
-
-    auto element = world.get_component<UIElement>(object);
-    ENSURE( element->_layout == this );
-
-    element->_layout = nullptr;
-}
-
-void UIElement::on_spawn(EntityManager& world, Entity object)
+void Widget::on_spawn(EntityManager& world, Entity object)
 {
     ASSERT( world.has_component<Transform>(object),
-        "UIElement requires Transform component." );
+        "Widget requires Transform component." );
 
     _transform = world.get_component<Transform>(object);
 }
 
-void UIElement::on_dispose(EntityManager& world, Entity object)
+void Widget::on_dispose(EntityManager& world, Entity object)
 {
     _transform = nullptr;
 }
 
-bool UIElement::is_visible(bool recursive) const
+void Widget::set_visible(bool visible)
+{
+    _visible = visible;
+}
+
+bool Widget::is_visible(bool recursive) const
 {
     if( !recursive )
         return _visible;
 
     for( auto& ancestor : _transform->get_ancestors() )
     {
-        if( !ancestor.has_component<UIElement>() )
+        if( !ancestor.has_component<Widget>() )
             continue;
 
-        auto ae = ancestor.get_component<UIElement>();
+        auto ae = ancestor.get_component<Widget>();
         if( !ae->_visible )
             return false;
     }
@@ -82,112 +43,100 @@ bool UIElement::is_visible(bool recursive) const
     return true;
 };
 
-void UIElement::set_visible(bool visible)
+void Widget::set_anchor(const Vector2f& anchor)
 {
-    _visible = visible;
+    ENSURE( !isnan(anchor) && !isinf(anchor) );
+
+    auto clamped = clamp(anchor, {0.f, 0.f}, {1.f, 1.f});
+    auto position = (clamped - _anchor) * _custom_size + _transform->get_position();
+
+    _anchor = clamped;
+    _transform->set_position( position );
 }
 
-bool UIElement::has_fixed_size() const
+Vector2f Widget::get_anchor() const
 {
-    return !isnan(_fixed_size);
+    return _anchor;
 }
 
-void UIElement::set_fixed_size(const Vector2f& size)
+void Widget::set_custom_size(const Vector2f& size)
 {
-    _fixed_size = size;
-}
+    ENSURE( !isnan(size) && !isinf(size) );
 
-void UIElement::set_pivot(const Vector2f& pivot)
-{
-    _pivot = pivot;
-}
+    _custom_size = size;
 
-void UIElement::set_anchor(const Rect2f& anchor)
-{
-    _anchor = anchor;
-}
+    // update optional margin hints
+    auto parent = _transform->get_parent();
+    auto bounds = get_bounds();
 
-Vector2f UIElement::get_pivot() const
-{
-    return _pivot;
-}
-
-Vector2f UIElement::get_fixed_size() const
-{
-    return _fixed_size;
-}
-
-Vector2f UIElement::get_prefered_size() const
-{
-    if( _layout )
-        return _layout->get_prefered_size(_view);
-
-    if( _view )
-        return _view->get_prefered_size();
-
-    return _size;
-}
-
-Vector2f UIElement::get_size() const
-{
-    return _size;
-}
-
-Rect2f UIElement::get_bounds() const
-{
-    auto position = _transform->get_position(TransformSpace::WORLD);
-    auto ll = position - Vector2f { _size[0] * _pivot[0], _size[1] * _pivot[1] };
-    auto ru = ll + _size;
-    return Rect2f { ll[0], ll[1], ru[0], ru[1] };
-}
-
-void UIElement::recalculate_size()
-{
-    if( has_fixed_size() )
-        _size = get_fixed_size();
+    if( !parent || !parent->has_component<Widget>() )
+    {
+        _margin[0] = _margin[1] = _margin[2] = _margin[3] = math::nan;
+    }
     else
-        _size = get_prefered_size();
-}
-
-void UIElement::update(float dt)
-{
-
-}
-
-void UIElement::rearrange(bool is_root)
-{
-    if( is_root )
-        recalculate_size();
-
-    if( _layout )
     {
-        _layout->perform(*this);
-        return;
+        auto widget = parent->get_component<Widget>();
+        auto parent_bounds = widget->get_bounds();
+
+        if( !std::isnan(_margin[0]) ) _margin[0] = bounds[0] - parent_bounds[0];
+        if( !std::isnan(_margin[1]) ) _margin[1] = parent_bounds[2] - bounds[2];
+        if( !std::isnan(_margin[2]) ) _margin[2] = parent_bounds[3] - bounds[3];
+        if( !std::isnan(_margin[3]) ) _margin[3] = bounds[1] - parent_bounds[1];
+    }
+}
+
+Vector2f Widget::get_custom_size() const
+{
+    return _custom_size;
+}
+
+Rect2f Widget::get_bounds() const
+{
+    auto position = _transform->get_position();
+    return {
+        position - _anchor*_custom_size,
+        position + (Vector2f{1-_anchor[0], 1-_anchor[1]})*_custom_size };
+}
+
+void Widget::set_margin(WidgetEdge edge, float margin, bool is_percent)
+{
+    ASSERT( _transform->get_parent() && _transform->get_parent()->has_component<Widget>(),
+        "it makes no sense to set widget's margin which has no parent." );
+
+    auto size = _transform->get_parent()->get_component<Widget>()->get_custom_size();
+    if( is_percent )
+    {
+        switch(edge)
+        {
+            case WidgetEdge::LEFT:
+            case WidgetEdge::RIGHT: margin = size[0] * margin; break;
+            case WidgetEdge::TOP:
+            case WidgetEdge::BOTTOM:
+            default: margin = size[1] * margin; break;
+        }
     }
 
-    _transform->get_children_with<UIElement>().visit([&](Transform& ct, UIElement& ce)
-    {
-        ce.recalculate_size();
-        ce.rearrange(false);
-    });
+    _margin[static_cast<uint8_t>(edge)] = margin;
 }
 
-void UIElement::draw(Canvas& canvas)
+void Widget::on_resize(const Rect2f& bounds)
 {
-    if( _view )
-    {
-        _view->draw(*this, canvas);
-        return;
-    }
+    if( !std::isnan(_margin[0]) && !std::isnan(_margin[1]) )
+        _custom_size[0] = std::max(bounds.size()[0] - _margin[0] - _margin[1], 0.f);
 
-    if( _transform->is_leaf() )
-        return;
+    if( !std::isnan(_margin[2]) && !std::isnan(_margin[3]) )
+        _custom_size[1] = std::max(bounds.size()[1] - _margin[2] - _margin[3], 0.f);
 
-    _transform->get_children_with<UIElement>().visit([&](Transform& ct, UIElement& ce)
-    {
-        if( ce.is_visible() )
-            ce.draw(canvas);
-    });
+    auto position = _transform->get_position();
+    if( !std::isnan(_margin[0]) )
+        position[0] = (bounds[0] + _margin[0]) + _custom_size[0] * _anchor[0];
+    else if( !std::isnan(_margin[1]) )
+        position[0] = (bounds[2] - _margin[1]) - _custom_size[0] * (1-_anchor[0]);
+
+    if( !std::isnan(_margin[2]) )
+        position[1] = (bounds[3] - _margin[2]) - _custom_size[1] * (1-_anchor[1]);
+    else if( !std::isnan(_margin[3]) )
+        position[1] = (bounds[1] + _margin[3]) + _custom_size[1] * _anchor[1];
 }
 
-NS_FLOW2D_END
+NS_FLOW2D_UI_END

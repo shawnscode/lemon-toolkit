@@ -114,7 +114,7 @@ public:
     void on_spawn(EntityManager&, Entity) override;
     void on_dispose(EntityManager&, Entity) override;
 
-    // setters and getters of transform properties
+    // setters and getters of transform properties in parents or world space
     void set_scale(const Vector2f&, TransformSpace space = TransformSpace::SELF);
     void set_position(const Vector2f&, TransformSpace space = TransformSpace::SELF);
     void set_rotation(float, TransformSpace space = TransformSpace::SELF);
@@ -124,7 +124,7 @@ public:
     float    get_rotation(TransformSpace space = TransformSpace::SELF) const;
 
     // update the world pose of children
-    void     update_children();
+    void update_children();
 
     // visit all of this object's ancestors/decenster,
     // in depth-first order if works with recursive mode.

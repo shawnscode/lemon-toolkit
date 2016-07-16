@@ -104,6 +104,21 @@ INLINE size_t Transform::view_trait<T...>::count() const
     return result;
 }
 
+INLINE bool Transform::is_root() const
+{
+    return _parent == nullptr;
+}
+
+INLINE bool Transform::is_leaf() const
+{
+    return _first_child == nullptr;
+}
+
+INLINE Transform* Transform::get_parent()
+{
+    return _parent;
+}
+
 template<typename ... T>
 INLINE Transform::view_trait<T...> Transform::get_children_with(bool recursive)
 {

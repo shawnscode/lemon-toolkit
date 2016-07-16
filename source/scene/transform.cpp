@@ -173,21 +173,6 @@ void Transform::remove_from_parent()
     _next_sibling = nullptr;
 }
 
-bool Transform::is_root() const
-{
-    return _parent == nullptr;
-}
-
-bool Transform::is_leaf() const
-{
-    return _first_child == nullptr;
-}
-
-Transform* Transform::get_parent()
-{
-    return _parent;
-}
-
 /// MEMBER METHODS
 void Transform::on_spawn(EntityManager& world, Entity object)
 {

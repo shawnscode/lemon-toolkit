@@ -16,6 +16,9 @@
 #include <unordered_map>
 #include <algorithm>
 
+#include <math/math.hpp>
+#include <scene/ui/ui.hpp>
+
 NS_FLOW2D_BEGIN
 
 #define INLINE inline
@@ -78,26 +81,6 @@ struct Canvas;
 //- SCENE GRAPH SYSTEM
 struct NSScene;
 struct Transform;
-
-struct UIElement;
-
-struct ILayout;
-struct UIBoxLayout;
-struct UIGroupLayout;
-struct UIGridLayout;
-
-struct IViewController;
-struct UIText;
-struct UIImage;
-struct UIMask;
-struct UIButton;
-struct UISlider;
-struct UIScrollView;
-
-struct UILayout;
-struct UIBoxLayout;
-struct UIGroupLayout;
-struct UIGridLayout;
 
 //- GRAPHIC RENDER SYSTEM
 using Rid = size_t;

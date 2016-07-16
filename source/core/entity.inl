@@ -46,7 +46,7 @@ ComponentChunksTrait<T>::~ComponentChunksTrait()
 
 template<typename T>
 template<typename ... Args>
-void* ComponentChunksTrait<T>::spawn(EntityManager& world, Entity object, Args && ... args)
+void* ComponentChunksTrait<T>::spawn(Entity object, Args && ... args)
 {
     ENSURE( _memory_indices[object.get_index()] == chunks_type::invalid );
 
@@ -63,7 +63,7 @@ void* ComponentChunksTrait<T>::spawn(EntityManager& world, Entity object, Args &
 }
 
 template<typename T>
-void ComponentChunksTrait<T>::dispose(EntityManager& world, Entity object)
+void ComponentChunksTrait<T>::dispose(Entity object)
 {
     ENSURE( object.get_index() < _memory_indices.size() );
 
@@ -136,7 +136,7 @@ T* EntityManager::add_component(Entity object, Args&& ... args)
 
     // placement new into the component pool
     auto chunks = get_chunks<T>();
-    auto component = static_cast<T*>(chunks->spawn(*this, object, std::forward<Args>(args)...));
+    auto component = static_cast<T*>(chunks->spawn(object, std::forward<Args>(args)...));
     // set the bit mask for this component
     _components_mask[object._index].set(id);
     _dispatcher->emit<EvtComponentAdded<T>>(object, *component);
@@ -176,7 +176,7 @@ void EntityManager::remove_component(Entity object)
         // remove the bit mask for this component
         _components_mask[object._index].reset(id);
         // call destructor
-        get_chunks<T>()->dispose(object._index);
+        get_chunks<T>()->dispose(object);
     }
 }
 

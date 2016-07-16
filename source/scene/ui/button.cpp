@@ -4,9 +4,9 @@
 #include <scene/ui/button.hpp>
 #include <graphic/canvas.hpp>
 
-NS_FLOW2D_BEGIN
+NS_FLOW2D_UI_BEGIN
 
-void UIButton::update(float dt)
+void Button::on_update(float dt)
 {
     if( _fade_ticker > 0 )
     {
@@ -15,23 +15,16 @@ void UIButton::update(float dt)
     }
 }
 
-Vector2f UIButton::get_prefered_size() const
-{
-    return {20.f, 10.f};
-}
-
-void UIButton::set_fade_duration(float duration)
+void Button::set_fade_duration(float duration)
 {
     _fade_duration = duration;
 }
 
-void UIButton::draw(UIElement& element, Canvas& canvas)
+void Button::on_draw(Canvas& canvas, const Rect2f& bounds)
 {
-    canvas.begin_path();
-
     canvas.save();
 
-    auto bounds = element.get_bounds();
+    canvas.begin_path();
     canvas.move_to(bounds.position());
     canvas.line_to({bounds[2], bounds[1]});
     canvas.line_to(bounds.corner());
@@ -49,4 +42,4 @@ void UIButton::draw(UIElement& element, Canvas& canvas)
     canvas.restore();
 }
 
-NS_FLOW2D_END
+NS_FLOW2D_UI_END

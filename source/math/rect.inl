@@ -19,8 +19,8 @@ Rect<N, T>::Rect(std::initializer_list<T> values)
 }
 
 template<size_t N, typename T>
-Rect<N, T>::Rect(const Vector<N, T>& position, const Vector<N, T>& m_corner)
-: m_position(position), m_corner(m_corner)
+Rect<N, T>::Rect(const Vector<N, T>& position, const Vector<N, T>& corner)
+: m_position(position), m_corner(corner)
 {}
 
 template<size_t N, typename T>
