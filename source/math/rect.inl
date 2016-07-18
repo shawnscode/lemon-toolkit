@@ -6,40 +6,9 @@ template<size_t N, typename T>
 Rect<N, T>::Rect() {}
 
 template<size_t N, typename T>
-Rect<N, T>::Rect(std::initializer_list<T> values)
-{
-    auto size = values.size();
-    auto cursor = values.begin();
-
-    for( size_t i = 0; i < N; i++ )
-        m_position[i] = i < size ? *cursor++ : 0;
-
-    for( size_t i = N; i < 2*N; i++ )
-        m_corner[i-N] = i < size ? *cursor++ : m_position[i-N];
-}
-
-template<size_t N, typename T>
-Rect<N, T>::Rect(const Vector<N, T>& position, const Vector<N, T>& corner)
-: m_position(position), m_corner(corner)
+Rect<N, T>::Rect(const Vector<N, T>& position, const Vector<N, T>& size)
+: m_position(position), m_corner(max(size, {0.f, 0.f})+position)
 {}
-
-template<size_t N, typename T>
-INLINE const T& Rect<N, T>::operator[](int i) const
-{
-    ENSURE( i >= 0 && i < 2*N );
-
-    if( i < N ) return m_position[i];
-    return m_corner[i-N];
-}
-
-template<size_t N, typename T>
-INLINE T& Rect<N, T>::operator[](int i)
-{
-    ENSURE( i >= 0 && i < 2*N );
-
-    if( i < N ) return m_position[i];
-    return m_corner[i-N];
-}
 
 template<size_t N, typename T>
 INLINE bool Rect<N, T>::operator == (const Rect<N, T>& rh) const
@@ -109,12 +78,6 @@ INLINE Vector<N, T> Rect<N, T>::position() const
 }
 
 template<size_t N, typename T>
-INLINE Vector<N, T> Rect<N, T>::corner() const
-{
-    return m_corner;
-}
-
-template<size_t N, typename T>
 INLINE Vector<N, T> Rect<N, T>::center() const
 {
     return m_position + (m_corner - m_position) * 0.5f;
@@ -124,6 +87,30 @@ template<size_t N, typename T>
 INLINE Vector<N, T> Rect<N, T>::size() const
 {
     return max(m_corner - m_position, 0.f);
+}
+
+template<size_t N, typename T>
+template<size_t A>
+INLINE T Rect<N, T>::lower() const
+{
+    static_assert( A < N, "invalid axis." );
+    return m_position[A];
+}
+
+template<size_t N, typename T>
+template<size_t A>
+INLINE T Rect<N, T>::upper() const
+{
+    static_assert( A < N, "invalid axis." );
+    return m_corner[A];
+}
+
+template<size_t N, typename T>
+template<size_t A>
+INLINE T Rect<N, T>::length() const
+{
+    static_assert( A < N, "invalid axis." );
+    return std::max(m_corner[A] - m_position[A], (T)0);
 }
 
 template<size_t N, typename T>
@@ -146,10 +133,14 @@ INLINE bool equals(const Rect<N, T>& lh, const Rect<N, T>& rh, T epslion)
 template<size_t N, typename T>
 INLINE Rect<N, T> intersect(const Rect<N, T>& lh, const Rect<N, T>& rh)
 {
-    Vector<N, T> position = max(lh.position(), rh.position());
-    Vector<N, T> corner = min(lh.corner(), rh.corner());
+    Vector<N, T> position = max(
+        Vector<N, T>{lh.template lower<0>(), lh.template lower<1>()},
+        Vector<N, T>{rh.template lower<0>(), rh.template lower<1>()});
+    Vector<N, T> corner = min(
+        Vector<N, T>{lh.template upper<0>(), lh.template upper<1>()},
+        Vector<N, T>{rh.template upper<0>(), rh.template upper<1>()});
 
     if( corner[0] >= position[0] && corner[1] >= position[1] )
-        return Rect<N, T> {position, corner};
-    return {(T)0, (T)0, (T)0, (T)0};
+        return Rect<N, T> {position, corner-position};
+    return {{(T)0, (T)0}, {(T)0, (T)0}};
 }

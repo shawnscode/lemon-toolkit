@@ -25,7 +25,7 @@ static void reset_state(VGState& state)
     state.line_join     = VGLineJoin::MITER;
     state.line_cap      = VGLineCap::BUTT;
     state.alpha         = 1.f;
-    state.scissor       = { -inf, -inf, inf, inf };
+    state.scissor       = { {-inf, -inf}, {inf, inf} };
     state.transform.identity();
 }
 
@@ -295,8 +295,9 @@ void Canvas::fill()
     // paint transform
     device.bind_uniform(1, UniformFormat::MATRIX_F33, &transpose(paint.transform)[0]);
     // scissor
-    auto& scissor = m_states.back().scissor;
-    float sdata[4] = { scissor[0], scissor[2], scissor[1], scissor[3] };
+
+    auto& s = m_states.back().scissor;
+    float sdata[4] = { s.lower<0>(), s.upper<0>(), s.lower<1>(), s.upper<1>() };
     device.bind_uniform(2, UniformFormat::VECTOR_F4, sdata);
     // inner color
     auto inner_color = paint.inner_color;
@@ -397,7 +398,7 @@ void Canvas::intersect_scissor(const Rect2f& scissor)
 void Canvas::reset_scissor()
 {
     const float inf = std::numeric_limits<float>::infinity();
-    m_states.back().scissor = { -inf, -inf, inf, inf };
+    m_states.back().scissor = { {-inf, -inf}, {inf, inf} };
 }
 
 void Canvas::identity()

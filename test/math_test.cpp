@@ -88,26 +88,30 @@ TEST_CASE("TestVectorMethods")
 
 TEST_CASE("TestRectInitializerList")
 {
-    Rect2f r { 0.0f, 1.0f, 3.0f, 5.0f };
-    REQUIRE( r[0] == Approx(0.f) );
-    REQUIRE( r[1] == Approx(1.f) );
-    REQUIRE( r[2] == Approx(3.f) );
-    REQUIRE( r[3] == Approx(5.f) );
+    Rect2f r { {0.0f, 1.0f}, {3.0f, 5.0f} };
 
-    Rect2f r2 { 2.0f, 1.0f };
 
-    REQUIRE( r2[0] == Approx(2.f) );
-    REQUIRE( r2[1] == Approx(1.f) );
-    REQUIRE( r2[2] == Approx(2.f) );
-    REQUIRE( r2[3] == Approx(1.f) );
+    REQUIRE( r.lower<0>() == Approx(0.f) );
+    REQUIRE( r.lower<1>() == Approx(1.f) );
+    REQUIRE( r.upper<0>() == Approx(3.f) );
+    REQUIRE( r.upper<1>() == Approx(6.f) );
 
-    REQUIRE( kRect2fFull == (Rect2f { -1.f, -1.f, 1.f, 1.f }) );
-    REQUIRE( kRect2fPositive == (Rect2f { 0.f, 0.f, 1.f, 1.f }) );
+    REQUIRE( r.length<0>() == Approx(3.0f) );
+    REQUIRE( r.length<1>() == Approx(5.0f) );
+
+    Rect2f r2 { {2.0f, 1.0f} };
+
+    REQUIRE( r2.lower<0>() == Approx(2.f) );
+    REQUIRE( r2.lower<1>() == Approx(1.f) );
+    REQUIRE( r2.upper<0>() == Approx(2.f) );
+    REQUIRE( r2.upper<1>() == Approx(1.f) );
+
+
 }
 
 TEST_CASE("TestRectOperations")
 {
-    Rect2f r { 0.0f, 0.0f, 1.0f, 1.0f };
+    Rect2f r { {0.0f, 0.0f}, {1.0f, 1.0f} };
 
     REQUIRE( r.is_inside({ 0.f, 0.f }) );
     REQUIRE( r.is_inside({ 0.f, 0.9f }) );
@@ -116,20 +120,22 @@ TEST_CASE("TestRectOperations")
     REQUIRE( !r.is_inside({ 1.f, 1.f }) );
     REQUIRE( !r.is_inside({ 2.f, 0.5f }) );
 
-    Rect2f r2 { 2.0f, 2.0f, 5.0f, 5.0f };
+    Rect2f r2 { {2.0f, 2.0f}, {1.0f, 1.0f} };
     Rect2f r3 = r + r2;
-    REQUIRE( r3 == (Rect2f { 0.f, 0.f, 5.f, 5.f }) );
+
+    REQUIRE( r3 == (Rect2f({0.f, 0.f}, {3.f, 3.f})) );
 
     r2 += r;
     REQUIRE( r3 == r2 );
-    REQUIRE( (r + Rect2f { -1.f, 0.f, 1.f, 1.f }) == (Rect2f { -1.f, 0.f, 1.f, 1.f }) );
+    REQUIRE( (r + Rect2f({-1.f, 0.f}, {2.f, 1.f})) == (Rect2f({-1.f, 0.f}, {2.f, 1.f })) );
 
     Vector2f v { 4.f, -2.f };
-    REQUIRE( (r + v) == (Rect2f { 0.f, -2.f, 4.f, 1.f }) );
+    REQUIRE( (r + v) == (Rect2f({ 0.f, -2.f}, {4.f, 3.f })) );
 
-    REQUIRE( intersect( Rect2f{0.f, 0.f, 5.f, 5.f}, Rect2f{1.f, 1.f, 2.f, 2.f} ) == (Rect2f{1.f, 1.f, 2.f, 2.f}) );
-    REQUIRE( intersect( Rect2f{0.f, 0.f, 2.f, 2.f}, Rect2f{1.f, 1.f, 3.f, 3.f} ) == (Rect2f{1.f, 1.f, 2.f, 2.f}) );
-    REQUIRE( intersect( Rect2f{0.f, 0.f, 2.f, 2.f}, Rect2f{3.f, 3.f, 4.f, 4.f} ) == (Rect2f{0.f, 0.f, 0.f, 0.f}) );
+    r3 = intersect( Rect2f({0.f, 0.f}, {5.f, 5.f}), Rect2f({1.f, 1.f}, {1.f, 1.f}) );
+    REQUIRE( intersect( Rect2f({0.f, 0.f}, {5.f, 5.f}), Rect2f({1.f, 1.f}, {1.f, 1.f}) ) == (Rect2f({1.f, 1.f}, {1.f, 1.f})) );
+    REQUIRE( intersect( Rect2f({0.f, 0.f}, {2.f, 2.f}), Rect2f({1.f, 1.f}, {2.f, 2.f}) ) == (Rect2f({1.f, 1.f}, {1.f, 1.f})) );
+    REQUIRE( intersect( Rect2f({0.f, 0.f}, {2.f, 2.f}), Rect2f({3.f, 3.f}, {1.f, 1.f}) ) == (Rect2f({0.f, 0.f}, {0.f, 0.f})) );
 }
 
 TEST_CASE("TestColor")
