@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <forward.hpp>
+#include <math/math.hpp>
 #include <initializer_list>
 
 NS_FLOW2D_BEGIN
@@ -73,6 +73,9 @@ template<size_t N, typename T>
 Vector<N, T> operator * (const Vector<N, T>&, const Vector<N, T>&);
 
 template<size_t N, typename T>
+Vector<N, T> operator / (const Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
 Vector<N, T> operator * (const Vector<N, T>&, T);
 
 template<size_t N, typename T>
@@ -89,6 +92,9 @@ Vector<N, T>& operator -= (Vector<N, T>&, const Vector<N, T>&);
 
 template<size_t N, typename T>
 Vector<N, T>& operator *= (Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
+Vector<N, T>& operator /= (Vector<N, T>&, const Vector<N, T>&);
 
 template<size_t N, typename T>
 Vector<N, T>& operator *= (Vector<N, T>&, T);

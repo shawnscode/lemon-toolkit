@@ -117,6 +117,13 @@ Vector<N, T> operator * (const Vector<N, T>& v0, const Vector<N, T>& v1)
 }
 
 template<size_t N, typename T>
+Vector<N, T> operator / (const Vector<N, T>& v0, const Vector<N, T>& v1)
+{
+    Vector<N, T> result = v0;
+    return result /= v1;
+}
+
+template<size_t N, typename T>
 Vector<N, T> operator * (const Vector<N, T>& v, T scalar)
 {
     Vector<N, T> result = v;
@@ -155,6 +162,13 @@ template<size_t N, typename T>
 Vector<N, T>& operator *= (Vector<N, T>& v0, const Vector<N, T>& v1)
 {
     for( auto i = 0; i < N; i++ ) v0[i] *= v1[i];
+    return v0;
+}
+
+template<size_t N, typename T>
+Vector<N, T>& operator /= (Vector<N, T>& v0, const Vector<N, T>& v1)
+{
+    for( auto i = 0; i < N; i++ ) v0[i] /= v1[i];
     return v0;
 }
 

@@ -413,11 +413,9 @@ void Canvas::scale(const Vector2f& scale)
 
 void Canvas::rotate(float degree, const Vector2f& anchor)
 {
-    float radians = degree/180*3.1415926f;
-
     Matrix3f t;
     t = make_translation(anchor);
-    t *= hlift(make_rotation(radians));
+    t *= hlift(make_rotation(math::degree_to_radians(degree)));
     t *= make_translation(-anchor);
     transform(t);
 }

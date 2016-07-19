@@ -16,9 +16,6 @@
 #include <unordered_map>
 #include <algorithm>
 
-#include <math/math.hpp>
-#include <ui/ui.hpp>
-
 NS_FLOW2D_BEGIN
 
 #define INLINE inline

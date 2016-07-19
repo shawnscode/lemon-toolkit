@@ -84,7 +84,7 @@ void Transform::set_rotation(float rotation, TransformSpace space)
 {
     if( TransformSpace::SELF == space )
     {
-        _localspace.rotation = rotation;
+        _localspace.rotation = math::degree_to_radians(rotation);
         if( _parent )
             _worldspace = _parent->_worldspace * _localspace;
         else
@@ -92,7 +92,7 @@ void Transform::set_rotation(float rotation, TransformSpace space)
     }
     else
     {
-        _worldspace.rotation = rotation;
+        _worldspace.rotation = math::degree_to_radians(rotation);
         if( _parent )
             _localspace = _worldspace / _parent->_worldspace;
         else
@@ -124,6 +124,48 @@ float Transform::get_rotation(TransformSpace space) const
         return _localspace.rotation;
     else
         return _worldspace.rotation;
+}
+
+Vector2f Transform::transform_point(const Vector2f& point) const
+{
+    return point + _worldspace.position;
+}
+
+Vector2f Transform::inverse_transform_point(const Vector2f& point) const
+{
+    return point - _worldspace.position;
+}
+
+Vector2f Transform::transform_vector(const Vector2f& v) const
+{
+    auto sn = std::sin(_worldspace.rotation);
+    auto cs = std::cos(_worldspace.rotation);
+
+    return Vector2f { v[0]*cs - v[1]*sn, v[0]*sn + v[1]*cs } * _worldspace.scale;
+}
+
+Vector2f Transform::inverse_transform_vector(const Vector2f& v) const
+{
+    auto sn = std::sin(-_worldspace.rotation);
+    auto cs = std::cos(-_worldspace.rotation);
+
+    return Vector2f { v[0]*cs - v[1]*sn, v[0]*sn + v[1]*cs } / _worldspace.scale;
+}
+
+Vector2f Transform::transform_direction(const Vector2f& d) const
+{
+    auto sn = std::sin(_worldspace.rotation);
+    auto cs = std::cos(_worldspace.rotation);
+
+    return Vector2f { d[0]*cs - d[1]*sn, d[0]*sn + d[1]*cs };
+}
+
+Vector2f Transform::inverse_transform_direction(const Vector2f& d) const
+{
+    auto sn = std::sin(-_worldspace.rotation);
+    auto cs = std::cos(-_worldspace.rotation);
+
+    return Vector2f { d[0]*cs - d[1]*sn, d[0]*sn + d[1]*cs };
 }
 
 void Transform::append_child(Transform& transform, bool keep_world_pose)

@@ -123,8 +123,20 @@ public:
     Vector2f get_position(TransformSpace space = TransformSpace::SELF) const;
     float    get_rotation(TransformSpace space = TransformSpace::SELF) const;
 
-    // update the world pose of children
-    void update_children();
+    // transforms the position from local space to world space
+    Vector2f transform_point(const Vector2f&) const;
+    // the opposite of Transform::transform_point
+    Vector2f inverse_transform_point(const Vector2f&) const;
+    // transforms the vector from local space to world space,
+    // this operation is not affected by position of the transform, but is is affected by scale.
+    Vector2f transform_vector(const Vector2f&) const;
+    // ths opposite of Transform::transform_vector
+    Vector2f inverse_transform_vector(const Vector2f&) const;
+    // transforms direction from local space to world space,
+    // this operation is not affected by scale or position of the transform.
+    Vector2f transform_direction(const Vector2f&) const;
+    // ths opposite of Transform::transform_direction
+    Vector2f inverse_transform_direction(const Vector2f&) const;
 
     // visit all of this object's ancestors/decenster,
     // in depth-first order if works with recursive mode.
@@ -154,6 +166,9 @@ public:
     template<typename T> bool has_component() const;
 
 protected:
+    // update the world pose of children
+    void update_children();
+
     Entity          _object;
     EntityManager*  _world = nullptr;
 
