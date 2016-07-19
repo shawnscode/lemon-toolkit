@@ -32,11 +32,13 @@ void Button::on_dispose(EntityManager& world, Entity object)
 
 void Button::receive(Transform& transfrom, EvtMouseDown& evt)
 {
+    evt.consume();
     set_state(state::PRESSED);
 }
 
 void Button::receive(Transform& transfrom, EvtMouseClick& evt)
 {
+    evt.consume();
     set_state(state::NORMAL);
 }
 

@@ -121,9 +121,9 @@ Vector2f Transform::get_position(TransformSpace space) const
 float Transform::get_rotation(TransformSpace space) const
 {
     if( TransformSpace::SELF == space )
-        return _localspace.rotation;
+        return math::radians_to_degree(_localspace.rotation);
     else
-        return _worldspace.rotation;
+        return math::radians_to_degree(_worldspace.rotation);
 }
 
 Vector2f Transform::transform_point(const Vector2f& point) const

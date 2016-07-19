@@ -43,9 +43,8 @@ struct Direction : public Component<>
 
 struct EntityManagerFixture
 {
-    EntityManagerFixture() : _world(), sys(_world, event) {}
+    EntityManagerFixture() : _world(), sys(_world) {}
     EntityManager   _world;
-    EventManager    event;
     SystemManager   sys;
 };
 
@@ -428,13 +427,14 @@ struct Counter : public Component<>
     int counter;
 };
 
-struct MovementSystem : public SystemTrait<MovementSystem>
+struct MovementSystem : public System
 {
-    explicit MovementSystem(string label = "") : label(label) {}
+    explicit MovementSystem(EntityManager& world, string label = "")
+    : System(world), label(label) {}
 
     void update(float dt) override
     {
-        world().find_entities_with<Position, Direction>()
+        _world.find_entities_with<Position, Direction>()
             .visit([&](Entity ent, Position& pos, Direction& dir)
             {
                 pos.x += dir.x;
@@ -445,11 +445,13 @@ struct MovementSystem : public SystemTrait<MovementSystem>
     std::string label;
 };
 
-struct CounterSystem : public SystemTrait<CounterSystem>
+struct CounterSystem : public System
 {
+    CounterSystem(EntityManager& world) : System(world) {}
+
     void update(float dt) override
     {
-        world().find_entities_with<Counter>()
+        _world.find_entities_with<Counter>()
             .visit([&](Entity ent, Counter& c)
             {
                 c.counter ++;

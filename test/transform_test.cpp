@@ -53,8 +53,11 @@ TEST_CASE_METHOD(TransformFixture, "TestOpsWithoutHierachy")
     REQUIRE( t1->get_rotation() == t1->get_rotation(TransformSpace::WORLD) );
 
     t1->set_rotation(60.f, TransformSpace::WORLD);
-    REQUIRE( t1->get_rotation() == 60.f);
-    REQUIRE( t1->get_rotation() == t1->get_rotation(TransformSpace::WORLD) );
+    REQUIRE( t1->get_rotation() == Approx(60.f));
+    REQUIRE( t1->get_rotation() == Approx(t1->get_rotation(TransformSpace::WORLD)) );
+
+    t1->set_rotation(480.f, Transform::WORLD);
+    REQUIRE( t1->get_rotation() == Approx(120.f));
 }
 
 TEST_CASE_METHOD(TransformFixture, "TestHierachy")

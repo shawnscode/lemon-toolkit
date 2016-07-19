@@ -38,6 +38,7 @@ struct EvtInputMousePosition
 
 struct EvtBase
 {
+    // stop propagation
     void consume() { consumed = true; }
     bool is_consumed() const { return consumed; }
 
