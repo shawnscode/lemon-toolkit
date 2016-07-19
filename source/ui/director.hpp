@@ -43,7 +43,9 @@ enum class ResolutionResolveMode : uint8_t
     REFINE_ALL
 };
 
-struct CanvasDirector : public Component<1>
+// struct CanvasDirector : public Component<1>
+
+struct CanvasDirector : public ComponentWithEnvironment<1>
 {
     CanvasDirector();
 

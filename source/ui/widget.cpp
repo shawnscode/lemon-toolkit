@@ -132,6 +132,7 @@ void Widget::perform_resize(const Rect2f& bounds)
         position[1] = (bounds.upper<1>() - _margin[2]) - _custom_size[1] * (1-_anchor[1]);
     else if( !std::isnan(_margin[3]) )
         position[1] = (bounds.lower<1>() + _margin[3]) + _custom_size[1] * _anchor[1];
+    _transform->set_position(position);
 }
 
 NS_FLOW2D_UI_END

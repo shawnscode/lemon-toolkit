@@ -4,8 +4,7 @@
 #pragma once
 
 #include <ui/ui.hpp>
-#include <core/entity.hpp>
-#include <core/generic.hpp>
+#include <core/components.hpp>
 #include <scene/transform.hpp>
 #include <math/vector.hpp>
 #include <math/rect.hpp>

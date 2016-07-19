@@ -4,6 +4,7 @@
 #pragma once
 
 #include <forward.hpp>
+#include <core/components.hpp>
 #include <core/entity.hpp>
 #include <math/vector.hpp>
 #include <math/matrix.hpp>
@@ -48,7 +49,7 @@ struct TransformMatrix
 };
 
 // transform component is used to allow entities to be coordinated in the world.
-struct Transform : public Component<>
+struct Transform : public ComponentWithEnvironment<>
 {
 protected:
     enum class iterator_mode : uint8_t
@@ -158,19 +159,9 @@ public:
     // returns representation of matrix
     Matrix3f to_matrix(TransformSpace space = TransformSpace::SELF) const;
 
-    ////
-    Entity get_object() const;
-    template<typename T, typename ... Args> T* add_component(Args && ... args);
-    template<typename T> T* get_component();
-    template<typename T> void remove_component();
-    template<typename T> bool has_component() const;
-
 protected:
     // update the world pose of children
     void update_children();
-
-    Entity          _object;
-    EntityManager*  _world = nullptr;
 
     TransformMatrix _localspace;
     TransformMatrix _worldspace;

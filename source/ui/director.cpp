@@ -117,12 +117,12 @@ void CanvasDirector::resolve()
 void CanvasDirector::resize(Transform& transform)
 {
     Rect2f bounds({0, 0}, _resolved_size);
-    transform.get_children().visit([&](Transform& ct) { resize_recursive(ct, bounds); });
+    resize_recursive(transform, bounds);
 }
 
 void CanvasDirector::resize_recursive(Transform& transform, const Rect2f& bounds)
 {
-    if( transform.has_component<CanvasDirector>() )
+    if( transform.has_component<CanvasDirector>() && transform.get_object() != get_object() )
         return;
 
     auto next_bounds = bounds;

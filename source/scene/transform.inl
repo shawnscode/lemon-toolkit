@@ -143,32 +143,3 @@ INLINE Matrix3f Transform::to_matrix(TransformSpace space) const
         return matrix;
     }
 }
-
-INLINE Entity Transform::get_object() const
-{
-    return _object;
-}
-
-template<typename T, typename ... Args>
-INLINE T* Transform::add_component(Args && ... args)
-{
-    return _world->add_component(_object, std::forward<Args>(args)...);
-}
-
-template<typename T>
-INLINE T* Transform::get_component()
-{
-    return _world->get_component<T>(_object);
-}
-
-template<typename T>
-INLINE void Transform::remove_component()
-{
-    _world->remove_component<T>(_object);
-}
-
-template<typename T>
-INLINE bool Transform::has_component() const
-{
-    return _world->has_component<T>(_object);
-}
