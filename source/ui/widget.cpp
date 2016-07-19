@@ -20,6 +20,12 @@ void Widget::on_dispose(EntityManager& world, Entity object)
     _transform = nullptr;
 }
 
+bool Widget::is_inside(const Vector2f& position, TransformSpace space) const
+{
+    auto local = space == TransformSpace::WORLD ? _transform->inverse_transform_point(position) : position;
+    return Rect2f( { -_anchor*_custom_size, _custom_size } ).is_inside(local);
+}
+
 void Widget::set_visible(bool visible)
 {
     _visible = visible;
@@ -78,10 +84,17 @@ void Widget::set_custom_size(const Vector2f& size)
         auto widget = parent->get_component<Widget>();
         auto parent_bounds = widget->get_bounds();
 
-        if( !std::isnan(_margin[0]) ) _margin[0] = bounds[0] - parent_bounds[0];
-        if( !std::isnan(_margin[1]) ) _margin[1] = parent_bounds[2] - bounds[2];
-        if( !std::isnan(_margin[2]) ) _margin[2] = parent_bounds[3] - bounds[3];
-        if( !std::isnan(_margin[3]) ) _margin[3] = bounds[1] - parent_bounds[1];
+        if( !std::isnan(_margin[0]) )
+            _margin[0] = bounds.lower<0>() - parent_bounds.lower<0>();
+
+        if( !std::isnan(_margin[1]) )
+            _margin[1] = parent_bounds.upper<0>() - bounds.upper<0>();
+
+        if( !std::isnan(_margin[2]) )
+            _margin[2] = parent_bounds.upper<1>() - bounds.upper<1>();
+
+        if( !std::isnan(_margin[3]) )
+            _margin[3] = bounds.lower<1>() - parent_bounds.lower<1>();
     }
 }
 
@@ -93,50 +106,32 @@ Vector2f Widget::get_custom_size() const
 Rect2f Widget::get_bounds() const
 {
     auto position = _transform->get_position();
-    return {
-        position - _anchor*_custom_size,
-        position + (Vector2f{1-_anchor[0], 1-_anchor[1]})*_custom_size };
+    return { position - _anchor*_custom_size, _custom_size };
 }
 
-void Widget::set_margin(WidgetEdge edge, float margin, bool is_percent)
+void Widget::set_margin(WidgetEdge edge, float margin)
 {
-    ASSERT( _transform->get_parent() && _transform->get_parent()->has_component<Widget>(),
-        "it makes no sense to set widget's margin which has no parent." );
-
-    auto size = _transform->get_parent()->get_component<Widget>()->get_custom_size();
-    if( is_percent )
-    {
-        switch(edge)
-        {
-            case WidgetEdge::LEFT:
-            case WidgetEdge::RIGHT: margin = size[0] * margin; break;
-            case WidgetEdge::TOP:
-            case WidgetEdge::BOTTOM:
-            default: margin = size[1] * margin; break;
-        }
-    }
-
     _margin[static_cast<uint8_t>(edge)] = margin;
 }
 
-void Widget::on_resize(const Rect2f& bounds)
+void Widget::perform_resize(const Rect2f& bounds)
 {
     if( !std::isnan(_margin[0]) && !std::isnan(_margin[1]) )
-        _custom_size[0] = std::max(bounds.size()[0] - _margin[0] - _margin[1], 0.f);
+        _custom_size[0] = std::max(bounds.length<0>() - _margin[0] - _margin[1], 0.f);
 
     if( !std::isnan(_margin[2]) && !std::isnan(_margin[3]) )
-        _custom_size[1] = std::max(bounds.size()[1] - _margin[2] - _margin[3], 0.f);
+        _custom_size[1] = std::max(bounds.length<1>() - _margin[2] - _margin[3], 0.f);
 
     auto position = _transform->get_position();
     if( !std::isnan(_margin[0]) )
-        position[0] = (bounds[0] + _margin[0]) + _custom_size[0] * _anchor[0];
+        position[0] = (bounds.lower<0>() + _margin[0]) + _custom_size[0] * _anchor[0];
     else if( !std::isnan(_margin[1]) )
-        position[0] = (bounds[2] - _margin[1]) - _custom_size[0] * (1-_anchor[0]);
+        position[0] = (bounds.upper<0>() - _margin[1]) - _custom_size[0] * (1-_anchor[0]);
 
     if( !std::isnan(_margin[2]) )
-        position[1] = (bounds[3] - _margin[2]) - _custom_size[1] * (1-_anchor[1]);
+        position[1] = (bounds.upper<1>() - _margin[2]) - _custom_size[1] * (1-_anchor[1]);
     else if( !std::isnan(_margin[3]) )
-        position[1] = (bounds[1] + _margin[3]) + _custom_size[1] * _anchor[1];
+        position[1] = (bounds.lower<1>() + _margin[3]) + _custom_size[1] * _anchor[1];
 }
 
 NS_FLOW2D_UI_END

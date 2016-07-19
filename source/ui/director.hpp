@@ -4,9 +4,10 @@
 #pragma once
 
 #include <forward.hpp>
-#include <core/entity.hpp>
+#include <core/system.hpp>
 #include <math/matrix.hpp>
 #include <ui/widget.hpp>
+#include <ui/listener.hpp>
 
 NS_FLOW2D_UI_BEGIN
 
@@ -54,6 +55,7 @@ struct CanvasDirector : public Component<1>
     Vector2f get_resolved_size() const;
 
     void resize(Transform&);
+    bool invoke();
 
 protected:
     void resolve();
@@ -67,24 +69,37 @@ protected:
     ResolutionResolveMode   _resolve_mode   = ResolutionResolveMode::REFINE_ALL;
 };
 
-struct CanvasSystem
+struct CanvasSystem : public SystemWithEntities<CanvasDirector>
 {
-    CanvasSystem(EntityManager&);
-    ~CanvasSystem();
+    CanvasSystem(EntityManager& world) : SystemWithEntities<CanvasDirector>(world) {}
 
-    void receive(const EvtComponentAdded<CanvasDirector>&);
-    void receive(const EvtComponentRemoved<CanvasDirector>&);
-    // void receive(const EvtInputMouse&);
+    void on_spawn(SystemManager&) override;
+    void on_dispose(SystemManager&) override;
 
     void set_screen_size(const Vector2f&);
     void update(float);
     void draw();
 
+    using handler = std::function<void(Entity, EventListenerGroup&)>;
+    void receive(const EvtInputMouse&);
+    void receive(const EvtInputMousePosition&);
+
+    // void transform_point()
+
 protected:
-    std::unordered_map<Entity, CanvasDirector*> _scalers;
-    std::unique_ptr<Canvas>                     _canvas;
-    EntityManager&                              _world;
-    Vector2f                                    _screen_size;
+    template<typename T> void dispatch(T&);
+    template<typename T> T construct_event(const EvtInputMouse&);
+
+    // mouse event dispatches
+    ButtonAction        _mouse_state[kMaxMouseButton];
+    std::vector<Entity> _mouse_focused_entities[kMaxMouseButton];
+    Vector2f            _mouse_position;
+    Vector2f            _mouse_delta;
+    float               _mouse_pressed;
+
+    //
+    std::unique_ptr<Canvas> _canvas;
+    Vector2f                _screen_size;
 };
 
 NS_FLOW2D_UI_END
