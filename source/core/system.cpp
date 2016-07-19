@@ -5,11 +5,7 @@
 
 NS_FLOW2D_BEGIN
 
-System::Type System::s_type_counter = 0;
-
-SystemManager::SystemManager(EntityManager& ent, EventManager& evt)
-: _world(ent), _dispatcher(evt)
-{}
+SystemManager::SystemManager(EntityManager& world) : _world(world) {}
 
 SystemManager::~SystemManager()
 {

@@ -22,6 +22,7 @@ struct Color
     bool operator != (const Color&) const;
     Color operator + (const Color&) const;
     Color operator - (const Color&) const;
+    Color operator * (const Color&) const;
     Color operator * (float) const;
     float operator [] (size_t) const;
 

@@ -57,7 +57,7 @@ bool GraphicRender::is_visible(float x, float y) const
 
 void GraphicRender::scissor_push(float x, float y, float width, float height)
 {
-    m_scissors.push_back(Rect2f{ x, y, width, height});
+    m_scissors.push_back(Rect2f({x, y}, {width, height}));
     auto& device = GraphicDevice::instance();
     device.set_scissor(true, x, y, width, height);
 }

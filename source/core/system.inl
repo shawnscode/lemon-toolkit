@@ -1,71 +1,41 @@
 // @date 2016/05/28
 // @author Mao Jingkai(oammix@gmail.com)
 
+template<typename C>
+void SystemWithEntities<C>::on_spawn(SystemManager& manager)
+{
+    manager.get_dispatcher().template subscribe<EvtComponentAdded<C>>(*this);
+    manager.get_dispatcher().template subscribe<EvtComponentRemoved<C>>(*this);
+}
+
+template<typename C>
+void SystemWithEntities<C>::on_dispose(SystemManager& manager)
+{
+    manager.get_dispatcher().template unsubscribe<EvtComponentAdded<C>>(*this);
+    manager.get_dispatcher().template unsubscribe<EvtComponentRemoved<C>>(*this);
+}
+
+template<typename C>
+void SystemWithEntities<C>::receive(const EvtComponentAdded<C>& evt)
+{
+    _entities[evt.entity] = &evt.component;
+}
+
+template<typename C>
+void SystemWithEntities<C>::receive(const EvtComponentRemoved<C>& evt)
+{
+    _entities.erase(evt.entity);
+}
+
 // INCLUDED METHODS OF SYSTEM MANAGER
-INLINE EntityManager& System::world()
-{
-    return *_world;
-}
-
-INLINE EventManager& System::dispatcher()
-{
-    return *_dispatcher;
-}
-
-INLINE SystemManager& System::systems()
-{
-    return *_systems;
-}
-
-template<typename T>
-System::Type SystemTrait<T>::type()
-{
-    static Type cls = s_type_counter ++;
-    return cls;
-}
-
-template<typename C, typename ... Args>
-void RequireComponents<C, Args...>::on_attach()
-{
-    System::dispatcher().template subscribe<EvtComponentAdded<C>>(*this);
-}
-
-template<typename C, typename ... Args>
-void RequireComponents<C, Args...>::on_detach()
-{
-    System::dispatcher().template unsubscribe<EvtComponentAdded<C> >(*this);
-}
-
-template<typename C, typename ... Args>
-void RequireComponents<C, Args...>::receive(const EvtComponentAdded<C>& evt)
-{
-    add_component<Args...>(evt.entity);
-}
-
-template<typename C, typename ... Args>
-template<typename D>
-void RequireComponents<C, Args...>::add_component(Entity ent)
-{
-    if( !System::_world->template has_component<D>(ent) )
-        System::_world->template add_component<D>(ent);
-}
-
-template<typename C, typename ... Args>
-template<typename D, typename D1, typename ... Tails>
-void RequireComponents<C, Args...>::add_component(Entity ent)
-{
-    add_component<D>(ent);
-    add_component<D1, Tails...>(ent);
-}
-
-INLINE EventManager& SystemManager::dispatcher()
-{
-    return _dispatcher;
-}
-
-INLINE EntityManager& SystemManager::world()
+INLINE EntityManager& SystemManager::get_world()
 {
     return _world;
+}
+
+INLINE EventManager& SystemManager::get_dispatcher()
+{
+    return _world.get_dispatcher();
 }
 
 template<typename S, typename ... Args>
@@ -73,37 +43,30 @@ S* SystemManager::ensure(Args && ... args)
 {
     auto found = _systems.find(S::type());
     if( found == _systems.end() )
-    {
-        auto sys = new (std::nothrow) S(std::forward<Args>(args) ...);
-        _systems.insert(std::make_pair(S::type(), sys));
-        return sys;
-    }
+        return add(std::forward<Args>(args)...);
 
     return found->second;
 }
 
-
 template<typename S, typename ... Args>
 S* SystemManager::add(Args && ... args)
 {
-    auto found = _systems.find(S::type());
+    auto found = _systems.find(TypeID::value<System, S>());
     ASSERT( found == _systems.end(), "[ECS] duplicated system.");
 
-    auto sys = new (std::nothrow) S(std::forward<Args>(args) ...);
-    sys->_world = &_world;
-    sys->_dispatcher = &_dispatcher;
-    sys->_systems = this;
-
-    _systems.insert(std::make_pair(S::type(), sys));
+    auto sys = new (std::nothrow) S(_world, std::forward<Args>(args) ...);
+    sys->on_spawn(*this);
+    _systems.insert(std::make_pair(TypeID::value<System, S>(), sys));
     return sys;
 }
 
 template<typename S>
 void SystemManager::remove()
 {
-    auto found = _systems.find(S::type());
+    auto found = _systems.find(TypeID::value<System, S>());
     if( found != _systems.end() )
     {
+        found->on_dispose(*this);
         delete found->second;
         _systems.erase(found);
     }
@@ -112,7 +75,7 @@ void SystemManager::remove()
 template<typename S>
 S* SystemManager::get()
 {
-    auto found = _systems.find(S::type());
+    auto found = _systems.find(TypeID::value<System, S>());
     if( found != _systems.end() )
         return static_cast<S*>(found->second);
     return nullptr;

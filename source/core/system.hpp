@@ -5,61 +5,48 @@
 
 #include <forward.hpp>
 #include <core/entity.hpp>
+#include <core/traits.hpp>
 
 NS_FLOW2D_BEGIN
 
 struct System
 {
-    typedef size_t Type;
-
+    System(EntityManager& world) : _world(world) {}
     virtual ~System() {}
-    virtual void on_attach() {}
-    virtual void on_detach() {}
+    virtual void on_spawn(SystemManager&) {}
+    virtual void on_dispose(SystemManager&) {}
     virtual void update(float) {}
 
-    EntityManager&  world();
-    EventManager&   dispatcher();
-    SystemManager&  systems();
-
 protected:
-    friend class SystemManager;
-    static Type s_type_counter;
-
-    EntityManager*  _world         = nullptr;
-    EventManager*   _dispatcher    = nullptr;
-    SystemManager*  _systems       = nullptr;
+    EntityManager& _world;
 };
 
-template<typename T> struct SystemTrait : public System
+template<typename C>
+struct SystemWithEntities : public System
 {
-    virtual ~SystemTrait() {}
-    static Type type();
-};
+    SystemWithEntities(EntityManager& world) : System(world) {}
 
-// an system for declaring component dependencies
-template<typename C, typename ... Args>
-struct RequireComponents : public SystemTrait<RequireComponents<C, Args...>>
-{
-    void on_attach() override;
-    void on_detach() override;
+    virtual void on_spawn(SystemManager&) override;
+    virtual void on_dispose(SystemManager&) override;
+
     void receive(const EvtComponentAdded<C>&);
+    void receive(const EvtComponentRemoved<C>&);
 
 protected:
-    template<typename D> void add_component(Entity);
-    template<typename D, typename D1, typename ... Tails> void add_component(Entity);
+    std::unordered_map<Entity, C*> _entities;
 };
 
 struct SystemManager
 {
     // non-copyable
-    SystemManager(EntityManager&, EventManager&);
+    SystemManager(EntityManager&);
     SystemManager(const SystemManager&) = delete;
     SystemManager& operator=(const SystemManager&) = delete;
 
+    //
     ~SystemManager();
-
-    EventManager&   dispatcher();
-    EntityManager&  world();
+    EntityManager&  get_world();
+    EventManager&   get_dispatcher();
 
     void            update(float);
 
@@ -69,9 +56,8 @@ struct SystemManager
     template<typename S> S* get();
 
 protected:
-    EntityManager&                              _world;
-    EventManager&                               _dispatcher;
-    std::unordered_map<System::Type, System*>   _systems;
+    EntityManager& _world;
+    std::unordered_map<TypeID::index_type, System*> _systems;
 };
 
 #include <core/system.inl>

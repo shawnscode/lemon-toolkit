@@ -23,6 +23,11 @@ INLINE Color Color::operator - (const Color& rh) const
     return Color { r-rh.r, g-rh.g, b-rh.b, a-rh.a };
 }
 
+INLINE Color Color::operator * (const Color& rh) const
+{
+    return Color { r*rh.r, g*rh.g, b*rh.b, a*rh.a };
+}
+
 INLINE Color Color::operator * (float t) const
 {
     return Color { r*t, g*t, b*t, a*t };
