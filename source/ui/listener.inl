@@ -38,11 +38,11 @@ template<size_t N> EventListener<N>& EventListener<N>::operator -= (void* owner)
     return *this;
 }
 
-template<size_t N> void EventListener<N>::operator () (void* a1, void* a2)
+template<size_t N> void EventListener<N>::operator () (void* a1)
 {
     for( size_t i = 0; i < N; i++ )
         if( _callbacks[i].first != nullptr )
-            _callbacks[i].second(a1, a2);
+            _callbacks[i].second(a1);
 }
 
 template<typename E, typename T>
@@ -55,14 +55,14 @@ void EventListenerGroup::subscribe(T& owner)
         _listeners[TypeID::value<EvtBase, E>()] = EventListener<kMaxEventListeners>();
 
     _listeners[TypeID::value<EvtBase, E>()] +=
-        std::make_pair(static_cast<void*>(&owner), [&](void* t, void* c)
+        std::make_pair(static_cast<void*>(&owner), [&](void* c)
         {
-            owner.receive(*static_cast<Transform*>(t), *static_cast<E*>(c));
+            owner.receive(*static_cast<E*>(c));
         });
 }
 
 template<typename E, typename T>
-void EventListenerGroup::subscribe(T& owner, const func<T>& f)
+void EventListenerGroup::subscribe(T& owner, const func<E>& f)
 {
     static_assert( std::is_base_of<EvtBase, E>::value, "E is not subtype of EvtBase." );
 
@@ -71,9 +71,9 @@ void EventListenerGroup::subscribe(T& owner, const func<T>& f)
         _listeners[TypeID::value<EvtBase, E>()] = EventListener<kMaxEventListeners>();
 
     _listeners[TypeID::value<EvtBase, E>()] +=
-        std::make_pair(static_cast<void*>(&owner), [&](void* t, void* c)
+        std::make_pair(static_cast<void*>(&owner), [&](void* c)
         {
-            f(*static_cast<Transform*>(t), *static_cast<E*>(c));
+            f(*static_cast<E*>(c));
         });
 }
 
@@ -87,11 +87,27 @@ void EventListenerGroup::unsubscribe(T& owner)
         found->second -= static_cast<void*>(&owner);
 }
 
-template<typename E> void EventListenerGroup::emit(Transform& t, E& evt)
+template<typename E> void EventListenerGroup::emit(E& evt)
 {
     static_assert( std::is_base_of<EvtBase, E>::value, "E is not subtype of EvtBase." );
 
     auto found = _listeners.find(TypeID::value<EvtBase, E>());
     if( found != _listeners.end() )
-        found->second(static_cast<void*>(&t), static_cast<void*>(&evt));
+        found->second(static_cast<void*>(&evt));
+}
+
+template<typename E, typename T>
+void EventListenerGroup::subscribe(Transform& transform, T& owner, const func<E>& cb)
+{
+    if( !transform.has_component<EventListenerGroup>() )
+        transform.add_component<EventListenerGroup>();
+
+    transform.get_component<EventListenerGroup>()->subscribe(owner, cb);
+}
+
+template<typename T>
+void EventListenerGroup::unsubscribe(Transform& transform, T& owner)
+{
+    if( transform.has_component<EventListenerGroup>() )
+        transform.get_component<EventListenerGroup>()->unsubscribe(owner);
 }

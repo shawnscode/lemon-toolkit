@@ -3,10 +3,9 @@
 
 #pragma once
 
-#include <forward.hpp>
+#include <ui/ui.hpp>
 #include <core/system.hpp>
 #include <math/matrix.hpp>
-#include <ui/widget.hpp>
 
 NS_FLOW2D_UI_BEGIN
 
@@ -21,8 +20,9 @@ const static size_t kMaxMouseButton = 3;
 
 enum class ButtonAction : uint8_t
 {
-    PRESS = 0,
-    RELEASE = 1
+    NONE    = 0,
+    PRESS   = 1,
+    RELEASE = 2
 };
 
 struct EvtInputMouse
@@ -39,11 +39,12 @@ struct EvtInputMousePosition
 struct EvtBase
 {
     // stop propagation
-    void consume() { consumed = true; }
-    bool is_consumed() const { return consumed; }
+    void consume() { _consumed = true; }
+    bool is_consumed() const { return _consumed; }
 
 protected:
-    bool consumed = false;
+    friend class CanvasSystem;
+    bool _consumed  = false;
 };
 
 struct EvtMouse : public EvtBase
@@ -55,23 +56,21 @@ struct EvtMouse : public EvtBase
 };
 
 // basic mouse input events, three events below should be invoked in sequence
-struct EvtMouseDown : public EvtMouse {};
-struct EvtMouseUp : public EvtMouse {};
+struct EvtMousePress : public EvtMouse {};
 struct EvtMouseMove : public EvtMouse {};
-// caused if mouse actions sequence has been interrupted
-struct EvtMouseCancel : public EvtMouse {};
+struct EvtMouseRelease : public EvtMouse {};
 // invoked on a widget after EvtMouseUp if the pointer is still inside its hitarea.
 struct EvtMouseClick : public EvtMouse {};
-// EvtMouseDrag is sent when the mouse has been moving move than threshold
-struct EvtMouseDrag : public EvtMouse {};
+// caused if mouse actions sequence has been interrupted
+struct EvtMouseLostFocus : public EvtMouse {};
 
 template<size_t N> struct EventListener
 {
-    using closure = std::pair<void*, std::function<void(void*, void*)>>;
+    using closure = std::pair<void*, std::function<void(void*)>>;
 
     EventListener& operator += (const closure& c);
     EventListener& operator -= (void* ptr);
-    void operator () (void*, void*);
+    void operator () (void*);
 
 protected:
     closure _callbacks[N];
@@ -79,17 +78,16 @@ protected:
 
 struct EventListenerGroup : public Component<kUiComponentsChunkSize>
 {
-    template<typename T> using func = std::function<void(Transform&, T&)>;
-    template<typename T> using closure = std::pair<void*, func<T>>;
+    template<typename E> using func = std::function<void(E&)>;
+    template<typename E> using closure = std::pair<void*, func<E>>;
 
     template<typename E, typename T> void subscribe(T&);
-    template<typename E, typename T> void subscribe(T&, const func<T>&);
+    template<typename E, typename T> void subscribe(T&, const func<E>&);
     template<typename E, typename T> void unsubscribe(T&);
+    template<typename T> void emit(T&);
 
-    template<typename T> void emit(Transform&, T&);
-
-    // template<typename T> static void subscribe(EntityManager&, Entity, void*, const func<T>&);
-    // template<typename T> static void dispatch(EntityManager&, Entity, void*);
+    template<typename E, typename T> static void subscribe(Transform&, T&, const func<E>&);
+    template<typename T> static void unsubscribe(Transform&, T&);
 
 protected:
     std::unordered_map<TypeID::index_type, EventListener<kMaxEventListeners>> _listeners;

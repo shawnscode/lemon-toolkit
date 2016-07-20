@@ -14,4 +14,7 @@ struct Widget;
 struct View;
 struct Container;
 
+struct CanvasDirector;
+struct CavnasSystem;
+
 NS_FLOW2D_UI_END

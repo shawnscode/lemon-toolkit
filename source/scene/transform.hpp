@@ -115,6 +115,9 @@ public:
     void on_spawn(EntityManager&, Entity) override;
     void on_dispose(EntityManager&, Entity) override;
 
+    bool operator == (const Transform&) const;
+    bool operator != (const Transform&) const;
+
     // setters and getters of transform properties in parents or world space
     void set_scale(const Vector2f&, TransformSpace space = TransformSpace::SELF);
     void set_position(const Vector2f&, TransformSpace space = TransformSpace::SELF);
@@ -154,6 +157,8 @@ public:
     bool is_root() const;
     // returns true if this is the leaf of a hierarchy, aka. has no children
     bool is_leaf() const;
+    // returns true if target is one of the ancestor of this transfrom
+    bool is_ancestor(Transform&);
     // returns parent entity
     Transform* get_parent();
     // returns representation of matrix

@@ -28,6 +28,14 @@ Transform::view Transform::get_ancestors()
     return view(_parent, iterator_mode::ANCESTORS);
 }
 
+bool Transform::is_ancestor(Transform& target)
+{
+    for( auto& ancestor : get_ancestors() )
+        if( ancestor == target )
+            return true;
+    return false;
+}
+
 void Transform::update_children()
 {
     get_children(true).visit([](Transform& t)

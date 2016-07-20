@@ -104,6 +104,16 @@ INLINE size_t Transform::view_trait<T...>::count() const
     return result;
 }
 
+INLINE bool Transform::operator == (const Transform& rh) const
+{
+    return get_object() == rh.get_object();
+}
+
+INLINE bool Transform::operator != (const Transform& rh) const
+{
+    return get_object() != rh.get_object();
+}
+
 INLINE bool Transform::is_root() const
 {
     return _parent == nullptr;

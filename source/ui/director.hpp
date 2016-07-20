@@ -77,29 +77,28 @@ struct CanvasSystem : public SystemWithEntities<CanvasDirector>
 
     void on_spawn(SystemManager&) override;
     void on_dispose(SystemManager&) override;
+    void receive(const EvtInputMouse&);
+    void receive(const EvtInputMousePosition&);
 
     void set_screen_size(const Vector2f&);
     void update(float);
     void draw();
 
-    using handler = std::function<void(Entity, EventListenerGroup&)>;
-    void receive(const EvtInputMouse&);
-    void receive(const EvtInputMousePosition&);
-
-    // void transform_point()
-
 protected:
-    template<typename T> void dispatch(T&);
-    template<typename T> T construct_event(const EvtInputMouse&);
+    struct MouseState
+    {
+        ButtonAction action;
+        Vector2f     current;   // current mouse position
+        Vector2f     last;      // mouse position of last frame
+        Vector2f     start;
+        float        pressed;   // pressed timer
+        Entity       object;    // focused object
+    };
 
-    // mouse event dispatches
-    ButtonAction        _mouse_state[kMaxMouseButton];
-    std::vector<Entity> _mouse_focused_entities[kMaxMouseButton];
-    Vector2f            _mouse_position;
-    Vector2f            _mouse_delta;
-    float               _mouse_pressed;
+    Vector2f screen_to_design(const Vector2f&);
+    void set_mouse_focus(MouseButton, Entity);
 
-    //
+    MouseState              _mouse_states[kMaxMouseButton];
     std::unique_ptr<Canvas> _canvas;
     Vector2f                _screen_size;
 };

@@ -29,8 +29,9 @@ struct Button : public View
     void set_fade_duration(float);
     void set_state_color(state, const Color&);
 
-    void receive(Transform&, EvtMouseDown&);
-    void receive(Transform&, EvtMouseClick&);
+    void receive(EvtMousePress&);
+    void receive(EvtMouseRelease&);
+    void receive(EvtMouseLostFocus&);
 
 protected:
     state _current_state    = state::NORMAL;

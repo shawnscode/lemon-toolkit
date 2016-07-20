@@ -14,8 +14,9 @@ void Button::on_spawn(EntityManager& world, Entity object)
         world.add_component<EventListenerGroup>(object);
 
     auto group = world.get_component<EventListenerGroup>(object);
-    group->subscribe<EvtMouseDown>(*this);
-    group->subscribe<EvtMouseClick>(*this);
+    group->subscribe<EvtMousePress>(*this);
+    group->subscribe<EvtMouseRelease>(*this);
+    group->subscribe<EvtMouseLostFocus>(*this);
 }
 
 void Button::on_dispose(EntityManager& world, Entity object)
@@ -26,19 +27,24 @@ void Button::on_dispose(EntityManager& world, Entity object)
         world.add_component<EventListenerGroup>(object);
 
     auto group = world.get_component<EventListenerGroup>(object);
-    group->unsubscribe<EvtMouseDown>(*this);
-    group->unsubscribe<EvtMouseClick>(*this);
+    group->unsubscribe<EvtMousePress>(*this);
+    group->unsubscribe<EvtMouseRelease>(*this);
+    group->unsubscribe<EvtMouseLostFocus>(*this);
 }
 
-void Button::receive(Transform& transfrom, EvtMouseDown& evt)
+void Button::receive(EvtMousePress& evt)
 {
     evt.consume();
     set_state(state::PRESSED);
 }
 
-void Button::receive(Transform& transfrom, EvtMouseClick& evt)
+void Button::receive(EvtMouseRelease& evt)
 {
-    evt.consume();
+    set_state(state::NORMAL);
+}
+
+void Button::receive(EvtMouseLostFocus& evt)
+{
     set_state(state::NORMAL);
 }
 
