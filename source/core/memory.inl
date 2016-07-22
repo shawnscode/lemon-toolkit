@@ -2,43 +2,25 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 // INCLUDED METHODS OF POOL
-template<typename T>
-const T MemoryChunks<T>::invalid = std::numeric_limits<index_type>::max();
-
-template<typename T>
-MemoryChunks<T>::MemoryChunks(T element_size, T chunk_size)
-: _chunk_size(chunk_size), _first_free_block(invalid), _available(0), _total_elements(0)
-{
-    static_assert( std::numeric_limits<T>::is_integer,
-        "index type of MemoryChunks should be integer." );
-
-    _element_size = element_size;
-    if( _element_size < sizeof(T) )
-        _element_size = sizeof(T);
-}
-
-template<typename T>
-MemoryChunks<T>::~MemoryChunks()
-{
-    for( auto blocks : _chunks )
-        ::free(blocks);
-    _chunks.clear();
-}
-
-template<typename T>
-INLINE T MemoryChunks<T>::size() const
+INLINE MemoryChunks::index_type MemoryChunks::size() const
 {
     return _total_elements - _available;
 }
 
-template<typename T>
-INLINE T MemoryChunks<T>::chunk_size() const
+INLINE MemoryChunks::index_type MemoryChunks::chunk_size() const
 {
     return _chunk_size;
 }
 
-template<typename T>
-INLINE void* MemoryChunks<T>::get_element(T index)
+INLINE void* MemoryChunks::get_element(index_type index)
+{
+    if( index >= _total_elements )
+        return nullptr;
+
+    return static_cast<void*>(_chunks[index/_chunk_size] + (index%_chunk_size)*_element_size);
+}
+
+INLINE const void* MemoryChunks::get_element(index_type index) const
 {
     if( index >= _total_elements )
         return nullptr;
@@ -47,59 +29,122 @@ INLINE void* MemoryChunks<T>::get_element(T index)
 }
 
 template<typename T>
-INLINE const void* MemoryChunks<T>::get_element(T index) const
+template<typename ... Args>
+T* ObjectChunks<T>::spawn(Args&& ... args)
 {
-    if( index >= _total_elements )
-        return nullptr;
+    auto object = MemoryChunks::malloc();
+    if( object == nullptr ) return nullptr;
 
-    return static_cast<void*>(_chunks[index/_chunk_size] + (index%_chunk_size)*_element_size);
+    ::new(object) T(std::forward<Args>(args)...);
+    return object;
 }
 
 template<typename T>
-T MemoryChunks<T>::malloc()
+void ObjectChunks<T>::dispose(T* object)
 {
-    if( _first_free_block == invalid )
+    if( object != nullptr )
     {
-        ENSURE( _available == 0 );
-        ENSURE( _total_elements < std::numeric_limits<T>::max() - _chunk_size);
+        object->~T();
+        MemoryChunks::free(object);
+    }
+}
 
-        uint8_t* chunk = static_cast<uint8_t*>(::malloc(_chunk_size*_element_size));
-        if( chunk == nullptr )
+template<typename T, typename I, size_t DS>
+IndexedObjectChunks<T, I, DS>::IndexedObjectChunks(index_type chunk_size)
+: MemoryChunks(sizeof(T), chunk_size)
+{
+    static_assert( std::numeric_limits<I>::is_integer,
+        "index type of IndexedObjectChunks should be integer." );
+    _objects.resize(DS, nullptr);
+}
+
+template<typename T, typename I, size_t DS>
+IndexedObjectChunks<T, I, DS>::~IndexedObjectChunks()
+{
+    for( auto ptr : _objects )
+        if( ptr != nullptr )
+            ptr->~T();
+}
+
+template<typename T, typename I, size_t DS>
+template<typename ... Args> T* IndexedObjectChunks<T, I, DS>::spawn(I index, Args&& ... args)
+{
+    auto object = MemoryChunks::malloc();
+    if( object == nullptr ) return nullptr;
+
+    ::new(object) T(std::forward<Args>(args)...);
+    _top = std::max(_top, (size_t)index+1);
+
+    if( !_fallback )
+    {
+        for( auto i = 0; i < _objects.size(); i++ )
         {
-            LOGW("failed to allocate memory[%d byte(s)] from system to initialize pool",
-                _element_size*_chunk_size);
-            return invalid;
+            if( _objects[i] == nullptr )
+            {
+                _objects[i] = static_cast<T*>(object);
+                _redirect_index[i] = (size_t)index;
+                return static_cast<T*>(object);
+            }
         }
 
-        uint8_t* cursor = chunk;
-        T offset = _chunk_size * _chunks.size();
-        for( T i=1; i<_chunk_size; i++, cursor += _element_size )
-            *(T*)cursor = offset + i;
-        *(T*)cursor = invalid;
+        auto clone = std::move(_objects);
+        _fallback = true;
+        _objects.resize(_top, nullptr);
 
-        _total_elements += _chunk_size;
-        _available += _chunk_size;
-        _first_free_block = offset;
-        _chunks.push_back(chunk);
+        for( auto i = 0; i < clone.size(); i++ )
+            _objects[_redirect_index[i]] = clone[i];
+        _objects[(size_t)index] = static_cast<T*>(object);
+        return static_cast<T*>(object);
     }
 
-    void* element = get_element(_first_free_block);
-    ENSURE( element != nullptr );
+    if( _objects.size() < _top )
+        _objects.resize(_top, nullptr);
 
-    T result = _first_free_block;
-    _first_free_block = *(T*)element;
-    _available --;
-    return result;
+    _objects[(size_t)index] = static_cast<T*>(object);
+    return static_cast<T*>(object);
 }
 
-template<typename T>
-void MemoryChunks<T>::free(T index)
+template<typename T, typename I, size_t DS>
+void IndexedObjectChunks<T, I, DS>::dispose(I index)
 {
-    void* element = get_element(index);
-    if( element == nullptr )
-        return;
+    if( !_fallback )
+    {
+        for( auto i = 0; i < DS; i++ )
+        {
+            if( _redirect_index[i] == (size_t)index )
+            {
+                if( _objects[i] != nullptr )
+                {
+                    _objects[i]->~T();
+                    MemoryChunks::free(_objects[i]);
+                    _objects[i] = nullptr;
+                }
+                return;
+            }
+        }
 
-    *(T*)element = _first_free_block;
-    _first_free_block = index;
-    _available ++;
+        FATAL("fix this.");
+    }
+
+    if( _objects.size() > index && _objects[index] != nullptr )
+    {
+        _objects[index]->~T();
+        MemoryChunks::free(_objects[index]);
+        _objects[index] = nullptr;
+    }
+}
+
+template<typename T, typename I, size_t DS>
+T* IndexedObjectChunks<T, I, DS>::find(I index)
+{
+    if( !_fallback )
+    {
+        for( auto i = 0; i < DS; i++ )
+        {
+            if( _redirect_index[i] == (size_t)index )
+                return _objects[i];
+        }
+    }
+
+    return _objects.size() > index ? _objects[index] : nullptr;
 }

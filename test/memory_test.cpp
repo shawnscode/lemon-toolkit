@@ -8,24 +8,13 @@ USING_NS_FLOW2D;
 
 const static size_t kChunkSize = 8;
 
-struct MemoryChunksFixture : MemoryChunks<size_t>
+struct MemoryChunksFixture : public MemoryChunks
 {
-    MemoryChunksFixture() : MemoryChunks<size_t>(sizeof(int32_t), kChunkSize) {}
+    MemoryChunksFixture() : MemoryChunks(sizeof(int32_t), kChunkSize) {}
 
-    size_t get_memory_chunks() const
-    {
-        return _chunks.size();
-    }
-
-    size_t get_memory_capacity() const
-    {
-        return _total_elements;
-    }
-
-    size_t get_available() const
-    {
-        return _available;
-    }
+    size_t get_memory_chunks() const { return _chunks.size(); }
+    size_t get_memory_capacity() const { return _total_elements; }
+    size_t get_available() const { return _available; }
 
     void dump() const
     {
@@ -49,14 +38,13 @@ TEST_CASE_METHOD(MemoryChunksFixture, "TestMemoryChunksReuse")
     //
     for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
     {
-        std::vector<size_t> indices;
+        std::vector<void*> ptrs;
         int holes = std::rand()%kChunkSize;
 
         for( size_t i = 0; i < kChunkSize - holes; i++ )
         {
-            size_t index = malloc();
-            *(int32_t*)get_element(index) = kChunkSize * 1000 +i;
-            indices.push_back(index);
+            ptrs.push_back(malloc());
+            *(int32_t*)ptrs.back() = kChunkSize * 1000 + i;
         }
 
         REQUIRE( size() == kChunkSize - holes );
@@ -66,13 +54,13 @@ TEST_CASE_METHOD(MemoryChunksFixture, "TestMemoryChunksReuse")
 
         for( size_t i = 0; i < kChunkSize-holes; i++ )
         {
-            int ra = std::rand()%indices.size();
-            REQUIRE( *(int32_t*)get_element(indices[ra]) >= (int32_t)(kChunkSize * 1000) );
+            int ra = std::rand()%ptrs.size();
+            REQUIRE( *(int32_t*)ptrs[ra] >= (int32_t)(kChunkSize * 1000) );
 
-            free(indices[ra%indices.size()]);
-            REQUIRE( *(int32_t*)get_element(indices[ra]) < (int32_t)(kChunkSize * 1000) );
+            free(ptrs[ra]);
+            REQUIRE( *(int32_t*)ptrs[ra] < (int32_t)(kChunkSize * 1000) );
 
-            indices.erase(indices.begin()+(ra%indices.size()));
+            ptrs.erase(ptrs.begin()+ra);
         }
     }
 
@@ -80,17 +68,13 @@ TEST_CASE_METHOD(MemoryChunksFixture, "TestMemoryChunksReuse")
     int max_chunks = 0;
     for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
     {
-        int chunks = std::rand()%3+1;
+        int chunks = std::rand()%5+1;
         int holes = std::rand()%kChunkSize;
         max_chunks = std::max(chunks, max_chunks);
 
-        std::vector<size_t> indices;
+        std::vector<void*> ptrs;
         for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
-        {
-            size_t index = malloc();
-            *(int32_t*)get_element(index) = -1;
-            indices.push_back(index);
-        }
+            ptrs.push_back(malloc());
 
         REQUIRE( size() == kChunkSize*chunks - holes );
         REQUIRE( get_memory_chunks() == max_chunks );
@@ -98,10 +82,9 @@ TEST_CASE_METHOD(MemoryChunksFixture, "TestMemoryChunksReuse")
 
         for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
         {
-            int ra = std::rand();
-            free(indices[ra%indices.size()]);
-            // printf("free %ld \n", indices[ra%indices.size()]);
-            indices.erase(indices.begin()+(ra%indices.size()));
+            int ra = std::rand()%ptrs.size();
+            free(ptrs[ra]);
+            ptrs.erase(ptrs.begin()+ra);
         }
 
         REQUIRE( size() == 0 );
@@ -110,50 +93,62 @@ TEST_CASE_METHOD(MemoryChunksFixture, "TestMemoryChunksReuse")
     }
 }
 
-struct Position : public Component<>
+struct IndexedObjectChunksFixture;
+struct IntPosition : public Component<>
 {
-    Position(int x, int y) : x(x), y(y) {}
+    IntPosition(IndexedObjectChunksFixture& f, int x, int y);
+    ~IntPosition();
+
     int x, y;
+    IndexedObjectChunksFixture& fixture;
 };
 
-struct ObjectChunksFixture : ComponentChunksTrait<Position>
+struct IndexedObjectChunksFixture : IndexedObjectChunks<IntPosition, Entity::index_type, 8>
 {
     EntityManager   world;
     EventManager    dispatcher;
     size_t          spawn_count = 0;
     size_t          dispose_count = 0;
 
-    ObjectChunksFixture()
-    : ComponentChunksTrait<Position>(kChunkSize)
-    {
-        when_spawn = [&](Entity, Position&) { spawn_count ++; };
-        when_dispose = [&](Entity, Position&) { dispose_count ++; };
-    }
+    IndexedObjectChunksFixture()
+    : IndexedObjectChunks<IntPosition, Entity::index_type, 8>(kChunkSize)
+    {}
 
-    size_t capacity() const
+    size_t capacity() const { return _objects.capacity(); }
+    size_t get_memory_chunks() const { return _chunks.size(); }
+    size_t get_memory_capacity() const { return _total_elements; }
+    size_t get_available() const { return _available; }
+    
+    void dump() const
     {
-        return _memory_indices.capacity();
-    }
-
-    size_t get_plain_index(size_t index) const
-    {
-        return _memory_indices[index];
-    };
-
-    size_t get_memory_chunks() const
-    {
-        return _chunks.size();
-    }
-
-    size_t get_memory_capacity() const
-    {
-        return _total_elements;
+        for( size_t i = 0; i < _chunks.size(); i++ )
+        {
+            printf("chunk %ld:\n", i);
+            for( size_t j = 0; j < _chunk_size; j++ )
+                printf("%d ", *(int32_t*)get_element(_chunk_size*i+j));
+            printf("\n");
+        }
     }
 };
 
-TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
+IntPosition::IntPosition(IndexedObjectChunksFixture& f, int x, int y) : x(x), y(y), fixture(f)
 {
-    REQUIRE( capacity() == 0 );
+    fixture.spawn_count ++;
+}
+
+IntPosition::~IntPosition()
+{
+    fixture.dispose_count ++;
+}
+
+TEST_CASE_METHOD(IndexedObjectChunksFixture, "TestIndexedObjectChunksOutOfIndex")
+{
+    for( size_t i = 0; i < 256; i++ )
+        REQUIRE( find(i) == nullptr );
+}
+
+TEST_CASE_METHOD(IndexedObjectChunksFixture, "TestIndexedObjectChunks")
+{
     REQUIRE( size() == 0 );
     REQUIRE( get_memory_chunks() == 0 );
     REQUIRE( get_memory_capacity() == 0 );
@@ -162,22 +157,20 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     for( size_t i = 0; i < kChunkSize*3; i++ )
         entities.push_back(world.spawn());
 
-    resize(kChunkSize*3); // this will changes nothing but the capacity of _memory_indices
-    REQUIRE( capacity() == kChunkSize*3 );
     REQUIRE( size() == 0 );
     REQUIRE( get_memory_chunks() == 0 );
     REQUIRE( get_memory_capacity() == 0 );
-
+    
     for( size_t i = 0; i < kChunkSize-1; i++ )
     {
-        auto p = (Position*)spawn(entities[i], i, i*2);
+        auto p = spawn(entities[i].get_index(), *this, i, i*2);
         REQUIRE( p->x == i );
         REQUIRE( p->y == i*2 );
     }
 
     for( size_t i = 0; i < kChunkSize-1; i++ )
     {
-        auto p = get(entities[i]);
+        auto p = find(entities[i].get_index());
         REQUIRE( p->x == i );
         REQUIRE( p->y == i*2 );
     }
@@ -189,11 +182,11 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     REQUIRE( get_memory_capacity() == kChunkSize );
 
     for( size_t i = kChunkSize-1; i < kChunkSize*2; i++ )
-        spawn(entities[i], i, i*2);
+        spawn(entities[i].get_index(), *this, i, i*2);
 
     for( size_t i = 0; i < kChunkSize*2; i++ )
     {
-        auto p = get(entities[i]);
+        auto p = find(entities[i].get_index());
         REQUIRE( p->x == i );
         REQUIRE( p->y == i*2 );
     }
@@ -210,7 +203,7 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     {
         if( i % 2 == 0 || i % 3 == 0 || i % 7 == 0 )
         {
-            dispose(entities[i]);
+            dispose(entities[i].get_index());
             removed.insert(i);
             holes ++;
         }
@@ -226,7 +219,7 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     {
         if( *cursor % 7 == 0 && *cursor % 2 != 0 && *cursor % 3 != 0 )
         {
-            spawn(entities[*cursor], 0, 0);
+            spawn(entities[*cursor].get_index(), *this, 0, 0);
             holes --;
         }
     }
@@ -239,7 +232,7 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     {
         if( *cursor % 3 == 0 && *cursor % 7 != 0 && *cursor % 2 != 0 )
         {
-            spawn(entities[*cursor], 0, 0);
+            spawn(entities[*cursor].get_index(), *this, 0, 0);
             holes --;
         }
     }
@@ -247,4 +240,96 @@ TEST_CASE_METHOD(ObjectChunksFixture, "TestObjectChunks")
     REQUIRE( size() == (kChunkSize*2 - holes) );
     REQUIRE( get_memory_chunks() == 2 );
     REQUIRE( get_memory_capacity() == kChunkSize*2 );
+}
+
+TEST_CASE_METHOD(IndexedObjectChunksFixture, "TestIndexedObjectChunksWithRandomHoles")
+{
+    const size_t kIterationCount = 32;
+
+    // use current time as seed for random generator
+    std::srand(std::time(0));
+
+    //
+    for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
+    {
+        std::vector<size_t> indices, shuffle;
+        int holes = std::rand()%kChunkSize;
+
+        for( size_t i = 0; i < kChunkSize; i++ ) shuffle.push_back(i);
+
+        for( size_t i = 0; i < kChunkSize - holes; i++ )
+        {
+            int ra = std::rand()%shuffle.size();
+            spawn(shuffle[ra], *this, shuffle[ra], shuffle[ra]);
+            indices.push_back(shuffle[ra]);
+
+            std::swap(shuffle[ra], shuffle[shuffle.size()-1]);
+            shuffle.pop_back();
+        };
+
+        REQUIRE( size() == kChunkSize - holes );
+        REQUIRE( get_memory_chunks() == 1 );
+        REQUIRE( get_memory_capacity() == kChunkSize );
+        REQUIRE( get_available() == holes );
+
+        for( size_t i = 0; i < kChunkSize-holes; i++ )
+        {
+            int ra = std::rand()%indices.size();
+
+            auto object = find(indices[ra]);
+            REQUIRE( object != nullptr );
+            REQUIRE( object->x == indices[ra] );
+            REQUIRE( object->y == indices[ra] );
+
+            dispose(indices[ra]);
+            REQUIRE( find(indices[ra]) == nullptr );
+
+            indices.erase(indices.begin()+ra);
+        }
+    }
+
+    // multi-chunks
+    int max_chunks = 0;
+    for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
+    {
+        int chunks = std::rand()%5+1;
+        int holes = std::rand()%kChunkSize;
+        max_chunks = std::max(chunks, max_chunks);
+
+        std::vector<size_t> indices, shuffle;
+        for( size_t i = 0; i < kChunkSize*chunks; i++ ) shuffle.push_back(i);
+
+        for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
+        {
+            int ra = std::rand()%shuffle.size();
+            spawn(shuffle[ra], *this, shuffle[ra], shuffle[ra]);
+            indices.push_back(shuffle[ra]);
+
+            std::swap(shuffle[ra], shuffle[shuffle.size()-1]);
+            shuffle.pop_back();
+        }
+
+        REQUIRE( size() == kChunkSize*chunks - holes );
+        REQUIRE( get_memory_chunks() == max_chunks );
+        REQUIRE( get_memory_capacity() == kChunkSize*max_chunks );
+
+        for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
+        {
+            int ra = std::rand()%indices.size();
+
+            auto object = find(indices[ra]);
+            REQUIRE( object != nullptr );
+            REQUIRE( object->x == indices[ra] );
+            REQUIRE( object->y == indices[ra] );
+
+            dispose(indices[ra]);
+            REQUIRE( find(indices[ra]) == nullptr );
+
+            indices.erase(indices.begin()+ra);
+        }
+
+        REQUIRE( size() == 0 );
+        REQUIRE( get_memory_chunks() == max_chunks );
+        REQUIRE( get_memory_capacity() == kChunkSize*max_chunks );
+    }
 }

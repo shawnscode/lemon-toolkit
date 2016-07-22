@@ -142,18 +142,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentConstruction")
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentIdsDiffer")
 {
-    REQUIRE( ComponentTraitInfo<Position>::id() != ComponentTraitInfo<Direction>::id() );
-}
-
-struct C1 : public Component<16> {};
-struct C2 : public Component<32> {};
-struct C4 : public Component<64> {};
-
-TEST_CASE_METHOD(EntityManagerFixture, "TextComponentTraitInfo")
-{
-    REQUIRE( ComponentTraitInfo<C1>::get_chunk_size() == 16 );
-    REQUIRE( ComponentTraitInfo<C2>::get_chunk_size() == 32 );
-    REQUIRE( ComponentTraitInfo<C4>::get_chunk_size() == 64 );
+    // REQUIRE( TypeID::value<ComponentBase, Position>() != TypeID::value<ComponentBase, Direction>() );
 }
 
 TEST_CASE_METHOD(EntityManagerFixture, "TestComponentHandleInvalidatedWhenEntityDestroyed") {

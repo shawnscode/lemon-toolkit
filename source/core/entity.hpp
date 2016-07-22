@@ -60,44 +60,6 @@ template<size_t s = kEntPoolChunkSize> struct Component : ComponentBase
     static const size_t chunk_size = s;
 };
 
-template<typename T> struct ComponentTraitInfo
-{
-    static TypeID::index_type id() { return TypeID::value<ComponentBase, T>(); }
-    static size_t get_chunk_size() { return T::chunk_size; }
-};
-
-struct ComponentChunks : public MemoryChunks<Entity::index_type>
-{
-    ComponentChunks(Entity::index_type element_size, Entity::index_type chunk_size)
-    : MemoryChunks<Entity::index_type>(element_size, chunk_size) {}
-    virtual ~ComponentChunks() = default;
-
-    virtual void dispose(Entity) = 0;
-    virtual void resize(Entity::index_type) = 0;
-};
-
-template<typename T> struct ComponentChunksTrait : public ComponentChunks
-{
-    using chunks_type = MemoryChunks<Entity::index_type>;
-    using callback = std::function<void(Entity, T&)>;
-
-    ComponentChunksTrait(Entity::index_type chunk_size)
-    : ComponentChunks(sizeof(T), chunk_size) {}
-    virtual ~ComponentChunksTrait();
-
-    template<typename ... Args> void* spawn(Entity, Args && ...);
-    void  dispose(Entity) override;
-    void  resize(Entity::index_type) override;
-
-    T* get(Entity);
-
-    callback when_spawn;
-    callback when_dispose;
-
-protected:
-    std::vector<Entity::index_type> _memory_indices;
-};
-
 // entity life-circle management and component assignments
 struct EntityManager
 {
@@ -184,13 +146,12 @@ struct EntityManager
 
     // event dispatchers
     EventManager& get_dispatcher();
+    
 
 protected:
-    using object_chunks = ComponentChunks;
-    template<typename T> using object_chunks_trait = ComponentChunksTrait<T>;
-
+    template<typename T> using object_chunks = IndexedObjectChunks<T, Entity::index_type, 8>;
+    template<typename T> object_chunks<T>* get_chunks();
     void accomodate_entity(uint32_t);
-    template<typename T> object_chunks_trait<T>* get_chunks();
 
     // event dispatcher
     std::unique_ptr<EventManager> _dispatcher;
@@ -198,7 +159,8 @@ protected:
     Entity::index_type _incremental_index = 0;
     // each element in componets_pool corresponds to a Pool for a Component
     // the index into the vector is the Component::type();
-    std::vector<object_chunks*> _components_pool;
+    std::vector<MemoryChunks*> _components_pool;
+    std::vector<std::function<void(Entity)>> _components_dispose;
     // bitmask of components associated with each entity
     // the index into the vector is the Entity::Uid
     std::vector<ComponentMask> _components_mask;

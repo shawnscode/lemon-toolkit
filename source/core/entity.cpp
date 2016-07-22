@@ -79,7 +79,7 @@ void EntityManager::dispose(Entity object)
     {
         auto p = _components_pool[i];
         if( p != nullptr && mask.test(i) )
-            p->dispose(object);
+            _components_dispose[i](object);
     }
 
     _components_mask[object._index].reset();

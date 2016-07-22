@@ -33,69 +33,6 @@ INLINE void Entity::invalidate()
     _version = invalid;
 }
 
-// INCLUDED METHODS OF COMPONENT
-template<typename T>
-ComponentChunksTrait<T>::~ComponentChunksTrait()
-{
-    for( Entity::index_type index : _memory_indices )
-    {
-        T* component = static_cast<T*>(chunks_type::get_element(index));
-        if( component ) component->~T();
-    }
-}
-
-template<typename T>
-template<typename ... Args>
-void* ComponentChunksTrait<T>::spawn(Entity object, Args && ... args)
-{
-    ENSURE( _memory_indices[object.get_index()] == chunks_type::invalid );
-
-    Entity::index_type index = chunks_type::malloc();
-    if( index == chunks_type::invalid )
-        return nullptr;
-
-    void* component = chunks_type::get_element(index);
-    ::new(component) T(std::forward<Args>(args)...);
-
-    _memory_indices[object.get_index()] = index;
-    when_spawn(object, *static_cast<T*>(component));
-    return component;
-}
-
-template<typename T>
-void ComponentChunksTrait<T>::dispose(Entity object)
-{
-    ENSURE( object.get_index() < _memory_indices.size() );
-
-    Entity::index_type index = _memory_indices[object.get_index()];
-    if( index == chunks_type::invalid )
-        return;
-
-    T* component = static_cast<T*>(chunks_type::get_element(index));
-    when_dispose(object, *component);
-
-    component->~T();
-    chunks_type::free(index);
-    _memory_indices[object.get_index()] = chunks_type::invalid;
-}
-
-template<typename T>
-INLINE T* ComponentChunksTrait<T>::get(Entity object)
-{
-    ENSURE( object.get_index() < _memory_indices.size() );
-
-    Entity::index_type index = _memory_indices[object.get_index()];
-    if( index == chunks_type::invalid )
-        return nullptr;
-    return static_cast<T*>(chunks_type::get_element(index));
-}
-
-template<typename T>
-INLINE void ComponentChunksTrait<T>::resize(Entity::index_type size)
-{
-    _memory_indices.resize(size, chunks_type::invalid);
-}
-
 // INCLUDED METHODS OF ENTITY MANAGER
 INLINE size_t EntityManager::size() const
 {
@@ -130,15 +67,18 @@ T* EntityManager::add_component(Entity object, Args&& ... args)
     if( !is_alive(object) )
         return nullptr;
 
-    const auto id = ComponentTraitInfo<T>::id();
+    const auto id = TypeID::value<ComponentBase, T>();
     ASSERT( !_components_mask[object._index].test(id),
         "invalid operation(duplicated component) on entity." );
 
     // placement new into the component pool
     auto chunks = get_chunks<T>();
-    auto component = static_cast<T*>(chunks->spawn(object, std::forward<Args>(args)...));
+    auto component = chunks->spawn(object.get_index(), std::forward<Args>(args)...);
     // set the bit mask for this component
     _components_mask[object._index].set(id);
+
+    //
+    component->on_spawn(*this, object);
     _dispatcher->emit<EvtComponentAdded<T>>(object, *component);
     return component;
 }
@@ -150,7 +90,7 @@ T* EntityManager::get_component(Entity object)
 
     if( !is_alive(object) )
         return nullptr;
-    return get_chunks<T>()->get(object);
+    return get_chunks<T>()->find(object.get_index());
 }
 
 template<typename ... T>
@@ -167,16 +107,17 @@ void EntityManager::remove_component(Entity object)
     if( !is_alive(object) )
         return;
 
-    const auto id = ComponentTraitInfo<T>::id();
+    const auto id = TypeID::value<ComponentBase, T>();
     if( _components_mask[object._index].test(id) )
     {
         T* component = get_component<T>(object);
         // broadcast this to listeners
         _dispatcher->emit<EvtComponentRemoved<T>>(object, *component);
+        component->on_dispose(*this, object);
         // remove the bit mask for this component
         _components_mask[object._index].reset(id);
         // call destructor
-        get_chunks<T>()->dispose(object);
+        get_chunks<T>()->dispose(object.get_index());
     }
 }
 
@@ -185,7 +126,7 @@ INLINE bool EntityManager::has_component(Entity object) const
 {
     static_assert( std::is_base_of<ComponentBase, T>::value, "T is not component." );
 
-    const auto id = ComponentTraitInfo<T>::id();
+    const auto id = TypeID::value<ComponentBase, T>();
     return is_alive(object) && _components_mask[object._index].test(id);
 }
 
@@ -203,7 +144,7 @@ INLINE ComponentMask EntityManager::get_components_mask() const
     static_assert( std::is_base_of<ComponentBase, T>::value, "T is not component." );
 
     ComponentMask mask;
-    mask.set(ComponentTraitInfo<T>::id());
+    mask.set(TypeID::value<ComponentBase, T>());
     return mask;
 }
 
@@ -235,35 +176,36 @@ INLINE void EntityManager::accomodate_entity(uint32_t index)
     {
         _components_mask.resize(index+1);
         _versions.resize(index+1);
-        for( auto p : _components_pool)
-            if( p != nullptr )
-                p->resize(index+1);
     }
 }
 
 template<typename T>
-EntityManager::object_chunks_trait<T>* EntityManager::get_chunks()
+EntityManager::object_chunks<T>* EntityManager::get_chunks()
 {
-    const auto id = ComponentTraitInfo<T>::id();
+    const auto id = TypeID::value<ComponentBase, T>();
     if( _components_pool.size() < (id+1) )
-        _components_pool.resize((id+1), nullptr);
+    {
+        _components_pool.resize(id+1, nullptr);
+        _components_dispose.resize(id+1, nullptr);
+    }
 
     if( _components_pool[id] == nullptr )
     {
-        auto chunks = new object_chunks_trait<T>(T::chunk_size);
-        chunks->resize(_components_mask.size());
-        chunks->when_spawn = [&](Entity o, T& c)
-        {
-            c.on_spawn(*this, o);
-        };
-        chunks->when_dispose = [&](Entity o, T& c)
-        {
-            c.on_dispose(*this, o);
-        };
+        auto chunks = new object_chunks<T>(T::chunk_size);
         _components_pool[id] = chunks;
+        _components_dispose[id] = [chunks, this](Entity object)
+        {
+            auto component = chunks->find(object.get_index());
+            if( component != nullptr )
+            {
+                _dispatcher->emit<EvtComponentRemoved<T>>(object, *component);
+                component->on_dispose(*this, object);
+                chunks->dispose(object.get_index());
+            }
+        };
     }
 
-    return static_cast<EntityManager::object_chunks_trait<T>*>(_components_pool[id]);
+    return static_cast<object_chunks<T>*>(_components_pool[id]);
 }
 
 // INCLUDED METHODS OF ENTITY VIEW AND ITERATOR
