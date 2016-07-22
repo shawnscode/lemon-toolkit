@@ -12,6 +12,11 @@ INLINE MemoryChunks::index_type MemoryChunks::chunk_size() const
     return _chunk_size;
 }
 
+INLINE MemoryChunks::index_type MemoryChunks::element_size() const
+{
+    return _element_size;
+}
+
 INLINE void* MemoryChunks::get_element(index_type index)
 {
     if( index >= _total_elements )

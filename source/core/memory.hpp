@@ -20,6 +20,7 @@ struct MemoryChunks
 
     index_type  size() const;
     index_type  chunk_size() const;
+    index_type  element_size() const;
 
     // returns a free memory block from pool
     void* malloc();

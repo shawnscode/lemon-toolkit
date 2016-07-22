@@ -76,8 +76,9 @@ struct ResourceCacheManager;
 struct Canvas;
 
 //- SCENE GRAPH SYSTEM
-struct NSScene;
 struct Transform;
+struct Action;
+struct ActionSystem;
 
 //- GRAPHIC RENDER SYSTEM
 using Rid = size_t;

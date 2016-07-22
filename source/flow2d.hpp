@@ -15,6 +15,8 @@
 #include <math/rect.hpp>
 
 #include <scene/transform.hpp>
+#include <scene/action.hpp>
+
 #include <ui/director.hpp>
 #include <ui/listener.hpp>
 #include <ui/widget.hpp>

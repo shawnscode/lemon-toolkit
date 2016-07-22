@@ -50,12 +50,8 @@ void* MemoryChunks::malloc()
     }
 
     void* element = get_element(_first_free_block);
-    if( element == nullptr )
-    {
-        printf("%zu %zu\n", _first_free_block, _total_elements);
-    }
-
     ENSURE( element != nullptr );
+
     _first_free_block = *(index_type*)element;
     _available --;
     return element;
