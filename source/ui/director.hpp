@@ -81,7 +81,7 @@ struct CanvasSystem : public SystemWithEntities<CanvasDirector>
     void receive(const EvtInputMousePosition&);
 
     void set_screen_size(const Vector2f&);
-    void update(float);
+    void update(float) override;
     void draw();
 
 protected:
