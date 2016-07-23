@@ -50,6 +50,8 @@ bool ActionExecutor::is_finished() const
     return _task == nullptr ? true : _task->is_finished();
 }
 
+std::unordered_map<size_t, MemoryChunks*> Action::memories;
+
 void* Action::operator new(size_t size, MemoryChunks* chunks)
 {
     ENSURE( chunks->element_size() == size + sizeof(MemoryChunks*) );
@@ -70,23 +72,6 @@ void ActionTransform::start(ActionExecutor& executor)
     ASSERT( executor.has_component<Transform>(),
         "trying to perform transformation action on entity without Transform component." );
     _transform = executor.get_component<Transform>();
-}
-
-ActionSystem& ActionExecutor::get_environment()
-{
-    return *_environment;
-}
-
-void ActionSystem::receive(const EvtComponentAdded<ActionExecutor>& evt)
-{
-    SystemWithEntities::receive(evt);
-    evt.component._environment = this;
-}
-
-void ActionSystem::receive(const EvtComponentRemoved<ActionExecutor>& evt)
-{
-    SystemWithEntities::receive(evt);
-    evt.component._environment = nullptr;
 }
 
 void ActionSystem::update(float dt)

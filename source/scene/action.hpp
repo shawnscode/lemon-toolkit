@@ -22,12 +22,8 @@ struct ActionExecutor : ComponentWithEnvironment<>
     void update(float);
     bool is_finished() const;
 
-    ActionSystem& get_environment();
-
 protected:
     friend class ActionSystem;
-
-    ActionSystem*   _environment = nullptr;
     Action*         _task   = nullptr;
     bool            _paused = false;
 };
@@ -43,9 +39,7 @@ struct Action
     void operator delete(void*);
 
 protected:
-    friend class ActionSystem;
-
-    // action memory is always managed by ActionSystem
+    // actions' memory is always managed by specified object pool
     void* operator new(size_t);
     void* operator new[](size_t);
     void operator delete[](void*);
@@ -54,8 +48,27 @@ protected:
     Action(const Action&) = delete;
     Action& operator = (const Action&) = delete;
 
-private:
-    MemoryChunks* _recycle = nullptr;
+// static methods
+public:
+    template<typename T> static size_t get_size_of()
+    {
+        auto found = memories.find(sizeof(T));
+        if( found == memories.end() )
+            return 0;
+        return memories[sizeof(T)]->size();
+    }
+
+    template<typename T, typename ... Args> static T* spawn(Args&& ... args)
+    {
+        static_assert( std::is_base_of<Action, T>::value, "T is not action." );
+        auto found = memories.find(sizeof(T));
+        if( found == memories.end() )
+            memories.insert( std::make_pair(sizeof(T), new MemoryChunks(sizeof(T) + sizeof(MemoryChunks*), 64)) );
+        return new (memories[sizeof(T)]) T(std::forward<Args>(args)...);
+    }
+
+protected:
+    static std::unordered_map<size_t, MemoryChunks*> memories;
 };
 
 struct ActionTransform : public Action
@@ -129,31 +142,7 @@ protected:
 struct ActionSystem : SystemWithEntities<ActionExecutor>
 {
     ActionSystem(EntityManager& world) : SystemWithEntities(world) {}
-
-    void receive(const EvtComponentAdded<ActionExecutor>&);
-    void receive(const EvtComponentRemoved<ActionExecutor>&);
-
     void update(float) override;
-
-    template<typename T> size_t get_size_of()
-    {
-        auto found = _memories.find(sizeof(T));
-        if( found == _memories.end() )
-            return 0;
-        return _memories[sizeof(T)]->size();
-    }
-
-    template<typename T, typename ... Args> T* spawn(Args && ... args)
-    {
-        auto found = _memories.find(sizeof(T));
-        if( found == _memories.end() )
-            _memories.insert( std::make_pair(sizeof(T), new MemoryChunks(sizeof(T) + sizeof(MemoryChunks*), 64)) );
-
-        return new (_memories[sizeof(T)]) T(std::forward<Args>(args)...);
-    }
-
-protected:
-    std::unordered_map<size_t, MemoryChunks*> _memories;
 };
 
 NS_FLOW2D_END

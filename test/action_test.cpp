@@ -19,7 +19,7 @@ TEST_CASE_METHOD(ActionFixture, "TestActionTransform")
     auto executor = _world.add_component<ActionExecutor>(object);
 
     //auto env = executor->get_environment();
-    executor->run( as->spawn<ActionMoveTo, float, const Vector2f&>(2.0f, {5.0f, 5.0f}) );
+    executor->run( Action::spawn<ActionMoveTo>(2.0f, Vector2f {5.0f, 5.0f}) );
     REQUIRE( equals(transform->get_position(), {0.f, 0.f}) );
     REQUIRE( !executor->is_finished() );
 
@@ -34,7 +34,7 @@ TEST_CASE_METHOD(ActionFixture, "TestActionTransform")
 
 TEST_CASE_METHOD(ActionFixture, "TestActionReuse")
 {
-    auto as = _manager.add<ActionSystem>();
+    _manager.add<ActionSystem>();
 
     for( auto iteration = 0; iteration < 32; iteration++ )
     {
@@ -42,17 +42,17 @@ TEST_CASE_METHOD(ActionFixture, "TestActionReuse")
         auto factor = std::rand() % 5 + 1;
         for( auto c = 0; c < 64; c++ )
         {
-            auto action = as->spawn<ActionMoveTo>(2.0f, Vector2f {5.0f, 5.0f});
+            auto action = Action::spawn<ActionMoveTo>(2.0f, Vector2f {5.0f, 5.0f});
 
             if( c % factor != 0 ) delete action;
             else alives.push_back(action);
         }
 
-        REQUIRE( as->get_size_of<ActionMoveTo>() == alives.size() );
+        REQUIRE( Action::get_size_of<ActionMoveTo>() == alives.size() );
 
         for( auto c = 0; c < alives.size(); c++ )
             delete alives[c];
 
-        REQUIRE( as->get_size_of<ActionMoveTo>() == 0 );
+        REQUIRE( Action::get_size_of<ActionMoveTo>() == 0 );
     }
 }
