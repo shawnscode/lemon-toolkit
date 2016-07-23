@@ -123,6 +123,10 @@ public:
     void set_position(const Vector2f&, TransformSpace space = TransformSpace::SELF);
     void set_rotation(float, TransformSpace space = TransformSpace::SELF);
 
+    void scale(const Vector2f&);
+    void rotate(float);
+    void translate(const Vector2f&);
+
     Vector2f get_scale(TransformSpace space = TransformSpace::SELF) const;
     Vector2f get_position(TransformSpace space = TransformSpace::SELF) const;
     float    get_rotation(TransformSpace space = TransformSpace::SELF) const;

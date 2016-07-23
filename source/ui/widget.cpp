@@ -77,7 +77,7 @@ void Widget::set_custom_size(const Vector2f& size)
 
     if( !parent || !parent->has_component<Widget>() )
     {
-        _margin[0] = _margin[1] = _margin[2] = _margin[3] = math::nan;
+        _margin[0] = _margin[1] = _margin[2] = _margin[3] = math::nan<float>();
     }
     else
     {

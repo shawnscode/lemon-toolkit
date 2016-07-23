@@ -46,8 +46,8 @@ using Vector2f  = Vector<2, float>;
 using Vector2i  = Vector<2, int>;
 
 static const Vector2f kVector2fZero = { 0.f, 0.f };
-static const Vector2f kVector2fInfinity = { math::inf, math::inf };
-static const Vector2f kVector2fNan = { math::nan, math::nan };
+static const Vector2f kVector2fInfinity = { math::inf<float>(), math::inf<float>() };
+static const Vector2f kVector2fNan = { math::nan<float>(), math::nan<float>() };
 static const Vector2f kVector2fOne  = { 1.f, 1.f };
 static const Vector2f kVector2fLeft = { -1.f, 0.f };
 static const Vector2f kVector2fRight = { 1.f, 0.f };

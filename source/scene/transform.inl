@@ -114,6 +114,21 @@ INLINE bool Transform::operator != (const Transform& rh) const
     return get_object() != rh.get_object();
 }
 
+INLINE void Transform::scale(const Vector2f& scaler)
+{
+    set_scale(get_scale() * scaler);
+}
+
+INLINE void Transform::rotate(float rotation)
+{
+    set_rotation(get_rotation() + rotation);
+}
+
+INLINE void Transform::translate(const Vector2f& translation)
+{
+    set_position(get_position() + translation);
+}
+
 INLINE bool Transform::is_root() const
 {
     return _parent == nullptr;

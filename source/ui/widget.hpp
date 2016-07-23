@@ -61,7 +61,7 @@ protected:
     Vector2f    _anchor         = { 0.5f, 0.5f };
 
     // [optional] gives hints about positioning and sizing preferences when on_resize happens
-    float       _margin[4]      = { math::nan };
+    float       _margin[4]      = { math::nan<float>() };
 };
 
 struct Container : public VTraitComponent<Container, kUiComponentsChunkSize>
