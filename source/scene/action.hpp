@@ -12,7 +12,6 @@
 
 NS_FLOW2D_BEGIN
 
-// const static size_t kMaxSizeofAction = 32;
 //
 struct ActionExecutor : ComponentWithEnvironment<>
 {
@@ -63,6 +62,7 @@ public:
         return memories[sizeof(T)]->size();
     }
 
+protected:
     template<typename T, typename ... Args> static T* spawn(Args&& ... args)
     {
         static_assert( std::is_base_of<Action, T>::value, "T is not action." );
@@ -72,9 +72,11 @@ public:
         return new (memories[sizeof(T)]) T(std::forward<Args>(args)...);
     }
 
-protected:
     static std::unordered_map<size_t, MemoryChunks*> memories;
 };
+
+#define STATIC_SPAWN(T) template<typename ... Args> static T* spawn(Args&& ... args) \
+    { return Action::spawn<T>(std::forward<Args>(args)...); }
 
 ///
 enum class EaseTween
@@ -105,40 +107,29 @@ enum class EaseTween
 
 struct ActionFiniteTime : public Action
 {
-    ActionFiniteTime(float duration)
-    : _duration(duration)
-    {
-        with_tween(EaseTween::LINEAR);
-    }
-
+    ActionFiniteTime(float);
     virtual ~ActionFiniteTime() {}
 
-    void reset() final { _eplased = 0.f; }
-    void update(float dt) final
-    {
-        _eplased += dt;
-        step(_tweener(std::min(_eplased/_duration, 1.0f), _tween_params));
-    }
-    bool is_finished() const final { return _eplased >= _duration; }
+    virtual void reset() override;
+    virtual void update(float) override;
+    virtual bool is_finished() const override;
+    virtual void step(float) = 0;
 
     float get_duration() const { return _duration; }
     float get_eplased() const { return _eplased; }
-    ActionFiniteTime* with_tween(EaseTween, size_t c = 0, float* params = nullptr);
-
-    virtual void step(float) = 0;
+    ActionFiniteTime* with_tween(EaseTween);
 
 protected:
-    using tweener = std::function<float(float, float*)>;
+    using tweener = std::function<float(float)>;
 
     float   _duration = 0.f, _eplased = 0.f;
     tweener _tweener;
-    float   _tween_params[4];
 };
 
 /// TRANSFORMATION TASKS
 struct ActionTransform : public ActionFiniteTime
 {
-    ActionTransform(float d, TransformSpace space) : ActionFiniteTime(d), _space(space) {}
+    ActionTransform(float, TransformSpace);
     virtual void on_spawn(ActionExecutor&) override;
 
 protected:
@@ -148,19 +139,12 @@ protected:
 
 struct ActionMoveTo : public ActionTransform
 {
-    ActionMoveTo(float d, const Vector2f& p, TransformSpace space = TransformSpace::SELF)
-    : ActionTransform(d, space), _to(p) {}
+    STATIC_SPAWN(ActionMoveTo);
+    ActionMoveTo(float, const Vector2f&, TransformSpace space = TransformSpace::SELF);
 
-    void on_spawn(ActionExecutor& executor) override
-    {
-        ActionTransform::on_spawn(executor);
-        _from = _transform->get_position(_space);
-    }
-
-    void step(float t) override
-    {
-        _transform->set_position(_from+t*(_to-_from), _space);
-    }
+    virtual void on_spawn(ActionExecutor& executor) override;
+    virtual void reset() override;
+    virtual void step(float t) override;
 
 protected:
     Vector2f _from, _to;
@@ -168,19 +152,12 @@ protected:
 
 struct ActionMoveBy : public ActionTransform
 {
-    ActionMoveBy(float d, const Vector2f& p, TransformSpace space = TransformSpace::SELF)
-    : ActionTransform(d, space), _to(p) {}
+    STATIC_SPAWN(ActionMoveBy);
+    ActionMoveBy(float, const Vector2f&, TransformSpace space = TransformSpace::SELF);
 
-    void on_spawn(ActionExecutor& executor) override
-    {
-        ActionTransform::on_spawn(executor);
-        _from = _transform->get_position(_space);
-    }
-
-    void step(float t) override
-    {
-        _transform->set_position(_from + t*_to, _space);
-    }
+    virtual void on_spawn(ActionExecutor& executor) override;
+    virtual void reset() override;
+    virtual void step(float t) override;
 
 protected:
     Vector2f _from, _to;
@@ -189,30 +166,13 @@ protected:
 /// decorator actions
 struct ActionRepeat : public Action
 {
-    ActionRepeat(Action* a, size_t c) : _slave(a), _times(c) {}
+    STATIC_SPAWN(ActionRepeat);
+    ActionRepeat(Action*, size_t);
 
-    void reset() override
-    {
-        _slave->reset();
-        _count = 0;
-    }
-
-    void update(float dt) override
-    {
-        if( !_slave->is_finished() )
-            _slave->update(dt);
-
-        while( _slave->is_finished() && _count < _times )
-        {
-            _slave->reset();
-            _count ++;
-        }
-    }
-
-    bool is_finished() const override
-    {
-        return _times == 0 || (_count >= _times && _slave->is_finished());
-    }
+    virtual void on_spawn(ActionExecutor& executor) override;
+    virtual void reset() override;
+    virtual void update(float dt) override;
+    virtual bool is_finished() const override;
 
 protected:
     Action* _slave = nullptr;
@@ -221,16 +181,35 @@ protected:
 };
 
 /// compositable actions
-struct ActionCompositor : public Action
+template<typename T> struct ActionCompositor : public Action
 {
-    ActionCompositor(std::initializer_list<Action*> values)
+    template<typename ... Args> static T* spawn(Args&& ... args)
     {
-        for( auto value : values ) _actions.push_back(value);
+        auto compositor = Action::spawn<T>();
+        return compositor->insert(std::forward<Args>(args) ...);
+    }
+
+    template<typename A1, typename A2, typename ... Args> T* insert(A1* a1, A2* a2, Args&& ... args)
+    {
+        _actions.push_back(a1);
+        return insert(a2, std::forward<Args>(args) ...);
+    }
+
+    template<typename A> T* insert(A* task)
+    {
+        static_assert( std::is_base_of<Action, A>::value, "T is not action." );
+        _actions.push_back(task);
+        return static_cast<T*>(this);
     }
 
     virtual ~ActionCompositor()
     {
         for( auto value : _actions ) delete value;
+    }
+
+    virtual void on_spawn(ActionExecutor& executor) override
+    {
+        for( auto value : _actions ) value->on_spawn(executor);
     }
 
     virtual void reset() override
@@ -242,65 +221,21 @@ protected:
     std::vector<Action*> _actions;
 };
 
-struct ActionSequence : public ActionCompositor
+struct ActionSequence : public ActionCompositor<ActionSequence>
 {
-    ActionSequence(std::initializer_list<Action*> actions) : ActionCompositor(actions) {}
-
-    void reset() override
-    {
-        ActionCompositor::reset();
-        _current = 0;
-    }
-
-    void update(float dt) override
-    {
-        do
-        {
-            if( !_actions[_current]->is_finished() )
-            {
-                _actions[_current]->update(dt);
-                break;
-            }
-            else _current ++;
-        } while( !is_finished() );
-    }
-
-    bool is_finished() const override
-    {
-        return _current >= _actions.size();
-    }
+    virtual void reset() override;
+    virtual void update(float) override;
+    virtual bool is_finished() const override;
 
 protected:
     size_t _current = 0;
 };
 
-struct ActionParallel : public ActionCompositor
+struct ActionParallel : public ActionCompositor<ActionParallel>
 {
-    ActionParallel(std::initializer_list<Action*> actions) : ActionCompositor(actions) {}
-
-    void reset() override
-    {
-        ActionCompositor::reset();
-        _finished = false;
-    }
-
-    void update(float dt) override
-    {
-        _finished = true;
-        for( auto task : _actions )
-        {
-            if( !task->is_finished() )
-            {
-                _finished = false;
-                task->update(dt);
-            }
-        }
-    }
-
-    bool is_finished() const override
-    {
-        return _finished;
-    }
+    virtual void reset() override;
+    virtual void update(float) override;
+    virtual bool is_finished() const override;
 
 protected:
     bool _finished = false;
@@ -309,17 +244,20 @@ protected:
 /// misc
 struct ActionWaitForSeconds : public ActionFiniteTime
 {
-    ActionWaitForSeconds(float t) : ActionFiniteTime(t) {}
+    STATIC_SPAWN(ActionWaitForSeconds);
+    ActionWaitForSeconds(float);
 };
 
 struct ActionClosure : Action
 {
     using closure = std::function<bool()>;
-    ActionClosure(const closure& c) : _closure(c) {}
 
-    void reset() override { _break = false; }
-    void update(float dt) override { _break = _closure(); };
-    bool is_finished() const override { return _closure && !_break; }
+    STATIC_SPAWN(ActionClosure);
+    ActionClosure(const closure&);
+
+    virtual void reset() override;
+    virtual void update(float) override;
+    virtual bool is_finished() const override;
 
 protected:
     bool    _break      = false;
