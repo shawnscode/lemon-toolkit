@@ -29,6 +29,7 @@ struct EvtInputMouse
 {
     ButtonAction action;
     MouseButton  button;
+    Vector2f     position;
 };
 
 struct EvtInputMousePosition
@@ -39,8 +40,9 @@ struct EvtInputMousePosition
 struct EvtBase
 {
     // stop propagation
-    void consume() { _consumed = true; }
-    bool is_consumed() const { return _consumed; }
+    void request_focus() { _consumed = true; }
+    void reset_focus() { _consumed = false; }
+    bool has_focus() const { return _consumed; }
 
 protected:
     friend class CanvasSystem;

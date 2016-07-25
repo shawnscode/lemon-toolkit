@@ -11,7 +11,10 @@ Transform::iterator::iterator(Transform* t, iterator_mode m)
     if( t != nullptr )
     {
         _start = t;
-        _cusor = t->_first_child;
+        if( m == iterator_mode::ANCESTORS )
+            _cusor = t->_parent;
+        else
+            _cusor = t->_first_child;
     }
     else
         _start = _cusor = nullptr;
@@ -25,7 +28,7 @@ Transform::view Transform::get_children(bool recursive)
 
 Transform::view Transform::get_ancestors()
 {
-    return view(_parent, iterator_mode::ANCESTORS);
+    return view(this, iterator_mode::ANCESTORS);
 }
 
 bool Transform::is_ancestor(Transform& target)
@@ -221,6 +224,17 @@ void Transform::remove_from_parent()
     _parent = nullptr;
     _prev_sibling = nullptr;
     _next_sibling = nullptr;
+}
+
+Transform* Transform::get_root()
+{
+    if( get_parent() == nullptr )
+        return nullptr;
+
+    auto parent = get_parent();
+    while( parent->get_parent() != nullptr )
+        parent = parent->get_parent();
+    return parent;
 }
 
 /// MEMBER METHODS

@@ -130,6 +130,18 @@ INLINE bool EntityManager::has_component(Entity object) const
     return is_alive(object) && _components_mask[object._index].test(id);
 }
 
+template<typename T>
+INLINE bool EntityManager::has_components(Entity object) const
+{
+    return has_component<T>(object);
+}
+
+template<typename T1, typename T2, typename ... Args>
+INLINE bool EntityManager::has_components(Entity object) const
+{
+    return has_component<T1>(object) | has_components<T2, Args...>(object);
+}
+
 INLINE ComponentMask EntityManager::get_components_mask(Entity object) const
 {
     if( !is_alive(object) )

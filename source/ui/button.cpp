@@ -8,7 +8,7 @@ NS_FLOW2D_UI_BEGIN
 
 void Button::on_spawn(EntityManager& world, Entity object)
 {
-    VTraitComponent::on_spawn(world, object);
+    View::on_spawn(world, object);
 
     if( !world.has_component<EventListenerGroup>(object) )
         world.add_component<EventListenerGroup>(object);
@@ -21,7 +21,7 @@ void Button::on_spawn(EntityManager& world, Entity object)
 
 void Button::on_dispose(EntityManager& world, Entity object)
 {
-    VTraitComponent::on_dispose(world, object);
+    View::on_dispose(world, object);
 
     if( !world.has_component<EventListenerGroup>(object) )
         world.add_component<EventListenerGroup>(object);
@@ -34,7 +34,7 @@ void Button::on_dispose(EntityManager& world, Entity object)
 
 void Button::receive(EvtMousePress& evt)
 {
-    evt.consume();
+    evt.request_focus();
     set_state(state::PRESSED);
 }
 
@@ -69,8 +69,10 @@ void Button::set_fade_duration(float duration)
     _fade_duration = std::max(duration, 0.01f);
 }
 
-void Button::on_draw(Canvas& canvas, const Rect2f& bounds)
+void Button::on_draw(Canvas& canvas)
 {
+    auto bounds = get_component<Widget>()->get_bounds_in_world();
+
     canvas.save();
 
     canvas.begin_path();

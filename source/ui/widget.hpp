@@ -20,26 +20,23 @@ enum class WidgetEdge : uint8_t
     BOTTOM  = 3
 };
 
-struct Widget : public Component<>
+struct Widget : public ComponentWithEnvironment<>
 {
     void on_spawn(EntityManager&, Entity) override;
-    void on_dispose(EntityManager&, Entity) override;
 
     // check if position is inside this widget
     bool is_inside(const Vector2f&, TransformSpace space = TransformSpace::SELF) const;
 
     // calculate/return bounds of this widget
-    void    perform_resize(const Rect2f&);
+    void perform_resize(const Rect2f&);
 
-    // [TODO] we need a better alternative to the bounds concept
-    Rect2f  get_bounds() const;
-
-    // access to transform of this widget
-    Transform& get_transform() { return *_transform; }
-    const Transform& get_transform() const { return *_transform; }
+    // get_bounds of widget in specified transform space,
+    // bounds in local-space would be returned if target == nullptr.
+    Rect2f get_bounds_in(Transform* target = nullptr) const;
+    Rect2f get_bounds_in_world() const;
 
     // visibility of this widget and its children
-    bool is_visible(bool recursive = false) const;
+    bool is_visible(bool recursive = false);
     void set_visible(bool);
 
     // location of the pivot point around which the rectangle rotates,
@@ -55,11 +52,9 @@ struct Widget : public Component<>
     void set_margin(WidgetEdge, float);
 
 protected:
-    Transform*  _transform      = nullptr;
     bool        _visible        = true;
     Vector2f    _custom_size    = { 0.f, 0.f };
     Vector2f    _anchor         = { 0.5f, 0.5f };
-
     // [optional] gives hints about positioning and sizing preferences when on_resize happens
     float       _margin[4]      = { math::nan<float>() };
 };
@@ -71,8 +66,35 @@ struct Container : public VTraitComponent<Container, kUiComponentsChunkSize>
 
 struct View : public VTraitComponent<View, kUiComponentsChunkSize>
 {
+    virtual void on_spawn(EntityManager&, Entity) override;
+    virtual void on_dispose(EntityManager&, Entity) override;
+
     virtual void on_update(float) = 0;
-    virtual void on_draw(Canvas&, const Rect2f&) = 0;
+    virtual void on_draw(Canvas&) = 0;
+
+    template<typename T, typename ... Args> INLINE T* add_component(Args && ... args)
+    {
+        return _world->add_component(_object, std::forward<Args>(args)...);
+    }
+
+    template<typename T> INLINE T* get_component()
+    {
+        return _world->get_component<T>(_object);
+    }
+
+    template<typename T> INLINE void remove_component()
+    {
+        _world->remove_component<T>(_object);
+    }
+
+    template<typename T> INLINE bool has_component() const
+    {
+        return _world->has_component<T>(_object);
+    }
+
+protected:
+    EntityManager*  _world;
+    Entity          _object;
 };
 
 NS_FLOW2D_UI_END

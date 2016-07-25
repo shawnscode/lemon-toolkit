@@ -133,6 +133,8 @@ struct EntityManager
     template<typename T> void remove_component(Entity);
     // check if an entity has a component
     template<typename T> bool has_component(Entity) const;
+    template<typename T> bool has_components(Entity) const;
+    template<typename T1, typename T2, typename ...Args> bool has_components(Entity) const;
     // get bitmask representation of components
     ComponentMask get_components_mask(Entity) const;
 

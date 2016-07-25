@@ -86,7 +86,7 @@ INLINE void Transform::view_trait<T...>::visit(const visitor& cb)
 {
     for( auto iter = begin(); iter != end(); ++ iter )
     {
-        auto mask = _start->_world->get_components_mask(_start->_object);
+        auto mask = _start->_world->get_components_mask((*iter).get_object());
         if( (mask & _mask) == _mask )
             cb(*iter, *((*iter).template get_component<T>()) ...);
     }
@@ -98,7 +98,7 @@ INLINE size_t Transform::view_trait<T...>::count() const
     size_t result = 0;
     for( auto iter = begin(); iter != end(); ++ iter )
     {
-        auto mask = _start->_world->get_components_mask(_start->_object);
+        auto mask = _start->_world->get_components_mask((*iter).get_object());
         if( (mask & _mask) == _mask ) result++;
     }
     return result;

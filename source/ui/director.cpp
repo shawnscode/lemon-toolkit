@@ -132,7 +132,7 @@ void CanvasDirector::resize_recursive(Transform& transform, const Rect2f& bounds
     {
         auto widget = transform.get_component<Widget>();
         widget->perform_resize(bounds);
-        next_bounds = widget->get_bounds();
+        next_bounds = widget->get_bounds_in();
     }
 
     if( transform.has_component<Container::Trait>() )
@@ -165,6 +165,25 @@ void CanvasSystem::on_dispose(SystemManager& manager)
     manager.get_dispatcher().unsubscribe<EvtInputMousePosition>(*this);
 }
 
+void CanvasSystem::find_mouse_focus(Entity director, EvtMousePress& evt, Transform& transform)
+{
+    auto& state = _mouse_states[static_cast<size_t>(evt.button)];
+    state.director = director;
+    state.start = state.last = state.current = evt.position;
+    state.pressed = 0.f;
+    state.objects.push_back(transform.get_object());
+
+    auto v = transform.get_children_with<Widget, EventListenerGroup>(true);
+    for( auto iter = v.begin(); iter != v.end(); ++iter )
+    {
+        if( (*iter).get_component<Widget>()->is_inside(evt.position, TransformSpace::WORLD) )
+            (*iter).get_component<EventListenerGroup>()->emit(evt);
+
+        if( evt.has_focus() )
+            state.objects.push_back((*iter).get_object());
+    }
+}
+
 void CanvasSystem::receive(const EvtInputMouse& evt)
 {
     if( static_cast<size_t>(evt.button) >= kMaxMouseButton )
@@ -177,8 +196,9 @@ void CanvasSystem::receive(const EvtInputMouse& evt)
         {
             EvtMousePress mouse_down;
             mouse_down.button   = evt.button;
-            mouse_down.position = state.current * pair.second->get_resolved_size();
+            mouse_down.position = screen_to_design(evt.position) * pair.second->get_resolved_size();
 
+            // find first Entity that consumed Press action
             if( _world.has_component<Transform>(pair.first) )
             {
                 auto cps = _world.get_components<Transform, Widget, EventListenerGroup>(pair.first);
@@ -186,9 +206,9 @@ void CanvasSystem::receive(const EvtInputMouse& evt)
                     if( std::get<1>(cps)->is_inside(mouse_down.position, TransformSpace::WORLD) )
                         std::get<2>(cps)->emit(mouse_down);
 
-                if( mouse_down.is_consumed() )
+                if( mouse_down.has_focus() )
                 {
-                    set_mouse_focus(evt.button, pair.first);
+                    find_mouse_focus(pair.first, mouse_down, *std::get<0>(cps));
                     return;
                 }
 
@@ -197,9 +217,9 @@ void CanvasSystem::receive(const EvtInputMouse& evt)
                 {
                     if( (*iter).get_component<Widget>()->is_inside(mouse_down.position, TransformSpace::WORLD) )
                         (*iter).get_component<EventListenerGroup>()->emit(mouse_down);
-                    if( mouse_down.is_consumed() )
+                    if( mouse_down.has_focus() )
                     {
-                        set_mouse_focus(evt.button, pair.first);
+                        find_mouse_focus(pair.first, mouse_down, *iter);
                         return;
                     }
                 }
@@ -210,41 +230,25 @@ void CanvasSystem::receive(const EvtInputMouse& evt)
 
     if( ButtonAction::RELEASE == evt.action )
     {
-        auto object = state.object;
-        state.object.invalidate();
-
-        if( !_world.is_alive(object) || !_world.has_component<EventListenerGroup>(object) )
+        if( state.objects.size() == 0 )
             return;
 
-        if( _world.has_component<Transform>(object) && _world.has_component<Widget>(object) )
+        EvtMouseRelease mouse_release;
+        mouse_release.button    = evt.button;
+        mouse_release.position  = state.current;
+        mouse_release.pressed   = state.pressed;
+        mouse_release.delta     = state.current - state.start;
+
+        for( auto object : state.objects )
         {
-            auto cps = _world.get_components<Transform, Widget, EventListenerGroup>(object);
-            for( auto pair : _entities )
-            {
-                if( pair.second->has_component<Transform>() &&
-                    (*std::get<0>(cps) == *pair.second->get_component<Transform>() ||
-                     std::get<0>(cps)->is_ancestor(*pair.second->get_component<Transform>())) )
-                {
-                    auto current = state.current * pair.second->get_resolved_size();
-                    auto start   = state.start * pair.second->get_resolved_size();
-                    if( std::get<1>(cps)->is_inside(current, TransformSpace::WORLD) )
-                    {
-                        EvtMouseRelease mouse_release;
-                        mouse_release.button    = evt.button;
-                        mouse_release.position  = current;
-                        mouse_release.pressed   = state.pressed;
-                        mouse_release.delta     = current - start;
-                        std::get<2>(cps)->emit(mouse_release);
-                        return;
-                    }
-                    break;
-                }
-            }
+            if( !_world.has_component<EventListenerGroup>(object) )
+                continue;
+
+            _world.get_component<EventListenerGroup>(object)->emit(mouse_release);
         }
 
-        EvtMouseLostFocus mouse_lost;
-        mouse_lost.button = evt.button;
-        _world.get_component<EventListenerGroup>(object)->emit(mouse_lost);
+        state.objects.clear();
+        return;
     }
 }
 
@@ -252,40 +256,13 @@ void CanvasSystem::receive(const EvtInputMousePosition& evt)
 {
     auto position = screen_to_design(evt.position);
     for( auto i = 0; i < kMaxMouseButton; i++ )
-        _mouse_states[i].current = position;
-}
-
-void CanvasSystem::set_mouse_focus(MouseButton button, Entity object)
-{
-    if( static_cast<size_t>(button) >= kMaxMouseButton )
-        return;
-
-    auto& state = _mouse_states[static_cast<size_t>(button)];
-    state.start = state.last = state.current;
-    state.pressed = 0.f;
-
-    if( _world.is_alive(state.object) && _world.has_component<EventListenerGroup>(state.object) )
     {
-        EvtMouseLostFocus mouse_lost;
-        _world.get_component<EventListenerGroup>(state.object)->emit(mouse_lost);
-    }
-
-    state.object = object;
-}
-
-Vector2f CanvasSystem::screen_to_design(const Vector2f& screen)
-{
-    return { screen[0] / _screen_size[0], (_screen_size[1] - screen[1]) / _screen_size[1] };
-}
-
-void CanvasSystem::set_screen_size(const Vector2f& size)
-{
-    _screen_size = size;
-    for( auto pair : _entities )
-    {
-        pair.second->set_screen_size(size);
-        if( _world.has_component<Transform>(pair.first) )
-            pair.second->resize(*_world.get_component<Transform>(pair.first));
+        auto& state = _mouse_states[i];
+        if( _world.has_component<CanvasDirector>(state.director) )
+        {
+            auto director = _world.get_component<CanvasDirector>(state.director);
+            state.current = position * director->get_resolved_size();
+        }
     }
 }
 
@@ -309,56 +286,97 @@ void CanvasSystem::update(float dt)
     for( auto i = 0; i < kMaxMouseButton; i++ )
     {
         auto& state = _mouse_states[i];
-        if( !_world.is_alive(state.object) || !_world.has_component<EventListenerGroup>(state.object) )
-            return;
+        if( state.objects.size() == 0 )
+            continue;
+
+        EvtMouseLostFocus mouse_lost;
+        mouse_lost.button   = static_cast<MouseButton>(i);
+        mouse_lost.position = state.current;
+        mouse_lost.pressed  = state.pressed;
+        mouse_lost.delta    = state.current - state.start;
+
+        // disable focus to all the tracking objects if we lost director
+        if( !_world.has_component<CanvasDirector>(state.director) )
+        {
+            for( auto object : state.objects )
+            {
+                if( _world.has_component<EventListenerGroup>(object) )
+                    _world.get_component<EventListenerGroup>(object)->emit(mouse_lost);
+            }
+
+            state.objects.clear();
+            continue;
+        }
 
         state.pressed += dt;
-        auto listeners = _world.get_component<EventListenerGroup>(state.object);
+        if( (state.current-state.last).length_square() < kMoveThreshold )
+            continue;
 
-        if( _world.has_component<Transform>(state.object) && _world.has_component<Widget>(state.object) )
+        EvtMouseMove mouse_move;
+        mouse_move.button   = static_cast<MouseButton>(i);
+        mouse_move.position = state.current;
+        mouse_move.pressed  = state.pressed;
+        mouse_move.delta    = state.current - state.last;
+
+        Entity focus;
+        for( int32_t i = state.objects.size()-1; i>=0; i --)
         {
-            auto cps = _world.get_components<Transform, Widget>(state.object);
-            for( auto pair : _entities )
+            auto object = state.objects[i];
+            if( !_world.has_components<Widget, EventListenerGroup>(object) )
             {
-                if( pair.second->has_component<Transform>() &&
-                    (*std::get<0>(cps) == *pair.second->get_component<Transform>() ||
-                     std::get<0>(cps)->is_ancestor(*pair.second->get_component<Transform>())) )
-                {
-                    auto current = state.current * pair.second->get_resolved_size();
-                    auto last = state.last * pair.second->get_resolved_size();
-                    if( !std::get<1>(cps)->is_inside(current, TransformSpace::WORLD) )
-                    {
-                        EvtMouseLostFocus mouse_lost;
-                        mouse_lost.button = static_cast<MouseButton>(i);
+                state.objects.erase(state.objects.begin()+i);
+                continue;
+            }
 
-                        listeners->emit(mouse_lost);
-                        state.object.invalidate();
-                        break;
-                    }
+            auto cps = _world.get_components<Widget, EventListenerGroup>(object);
+            if( !std::get<0>(cps)->is_inside(state.current, TransformSpace::WORLD) )
+            {
+                std::get<1>(cps)->emit(mouse_lost);
+                state.objects.erase(state.objects.begin()+i);
+                continue;
+            }
 
-                    if( (current-last).length_square() < kMoveThreshold )
-                    {
-                        EvtMouseMove mouse_move;
-                        mouse_move.button    = static_cast<MouseButton>(i);
-                        mouse_move.position  = current;
-                        mouse_move.pressed   = state.pressed;
-                        mouse_move.delta     = current - last;
-
-                        listeners->emit(mouse_move);
-                        state.last = state.current;
-                        break;
-                    }
-                }
+            std::get<1>(cps)->emit(mouse_move);
+            if( mouse_move.has_focus() )
+            {
+                focus = object;
+                break;;
             }
         }
-        else
-        {
-            EvtMouseLostFocus mouse_lost;
-            mouse_lost.button = static_cast<MouseButton>(i);
 
-            listeners->emit(mouse_lost);
-            state.object.invalidate();
+        if( mouse_move.has_focus() )
+        {
+            for( auto object : state.objects )
+            {
+                if( object != focus )
+                    _world.get_component<EventListenerGroup>(object)->emit(mouse_lost);
+            }
+
+            state.objects.clear();
+            state.objects.push_back(focus);
         }
+
+        state.last = state.current;
+    }
+}
+
+Vector2f CanvasSystem::screen_to_design(const Vector2f& screen)
+{
+    return { screen[0] / _screen_size[0], (_screen_size[1] - screen[1]) / _screen_size[1] };
+}
+
+void CanvasSystem::set_screen_size(const Vector2f& size)
+{
+    if( equals(_screen_size, size) )
+        return;
+
+    _screen_size = size;
+
+    for( auto pair : _entities )
+    {
+        pair.second->set_screen_size(size);
+        if( _world.has_component<Transform>(pair.first) )
+            pair.second->resize(*_world.get_component<Transform>(pair.first));
     }
 }
 
@@ -367,20 +385,16 @@ void CanvasSystem::draw()
     for( auto pair : _entities )
     {
         _canvas->begin_frame(pair.second->get_ortho());
-        if( _world.has_component<View::Trait>(pair.first) && _world.has_component<Widget>(pair.first) )
-        {
-            auto widget = _world.get_component<Widget>(pair.first);
-            (*_world.get_component<View::Trait>(pair.first))->on_draw(*_canvas, widget->get_bounds());
-        }
+        if( _world.has_component<View::Trait>(pair.first) )
+            (*_world.get_component<View::Trait>(pair.first))->on_draw(*_canvas);
 
         if( _world.has_component<Transform>(pair.first) )
         {
             auto transform = _world.get_component<Transform>(pair.first);
-            transform->get_children_with<Widget, View::Trait>(true).visit(
-                [&](Transform& ct, Widget& cw, View::Trait& cv)
-                {
-                    cv->on_draw(*_canvas, cw.get_bounds());
-                });
+            transform->get_children_with<View::Trait>(true).visit([&](Transform& ct, View::Trait& cv)
+            {
+                cv->on_draw(*_canvas);
+            });
         }
         _canvas->end_frame();
     }

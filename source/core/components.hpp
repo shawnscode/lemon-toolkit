@@ -71,6 +71,12 @@ template<size_t size = kEntPoolChunkSize> struct ComponentWithEnvironment : publ
     }
 
     template<typename T>
+    INLINE const T* get_component() const
+    {
+        return _world->get_component<T>(_object);
+    }
+
+    template<typename T>
     INLINE void remove_component()
     {
         _world->remove_component<T>(_object);

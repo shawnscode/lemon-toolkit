@@ -87,16 +87,17 @@ struct CanvasSystem : public SystemWithEntities<CanvasDirector>
 protected:
     struct MouseState
     {
-        ButtonAction action;
-        Vector2f     current;   // current mouse position
-        Vector2f     last;      // mouse position of last frame
-        Vector2f     start;
-        float        pressed;   // pressed timer
-        Entity       object;    // focused object
+        ButtonAction        action;
+        Vector2f            current = {0.f, 0.f};   // current mouse position
+        Vector2f            last    = {0.f, 0.f};   // mouse position of last frame
+        Vector2f            start   = {0.f, 0.f};
+        float               pressed = 0.f;          // pressed timer
+        Entity              director;
+        std::vector<Entity> objects;                // focused object
     };
 
     Vector2f screen_to_design(const Vector2f&);
-    void set_mouse_focus(MouseButton, Entity);
+    void find_mouse_focus(Entity, EvtMousePress&, Transform&);
 
     MouseState              _mouse_states[kMaxMouseButton];
     std::unique_ptr<Canvas> _canvas;

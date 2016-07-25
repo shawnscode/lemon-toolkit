@@ -165,6 +165,7 @@ public:
     bool is_ancestor(Transform&);
     // returns parent entity
     Transform* get_parent();
+    Transform* get_root();
     // returns representation of matrix
     Matrix3f to_matrix(TransformSpace space = TransformSpace::SELF) const;
 

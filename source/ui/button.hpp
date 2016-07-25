@@ -22,7 +22,7 @@ struct Button : public View
     void on_spawn(EntityManager&, Entity) override;
     void on_dispose(EntityManager&, Entity) override;
 
-    void on_draw(Canvas&, const Rect2f&) override;
+    void on_draw(Canvas&) override;
     void on_update(float) override;
 
     void set_state(state);

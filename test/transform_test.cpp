@@ -210,3 +210,27 @@ TEST_CASE_METHOD(TransformFixture, "TestIteration")
 
     REQUIRE( total == 254 );
 }
+
+TEST_CASE_METHOD(TransformFixture, "TestGenericIteration")
+{
+    USING_NS_FLOW2D_UI;
+
+    std::vector<Transform*> transforms;
+    std::vector<Widget*> widgets;
+
+    auto r = _world.spawn();
+    auto root = _world.add_component<Transform>(r);
+
+    for( size_t i = 0; i < 255; i++ )
+    {
+        auto e = _world.spawn_with<Transform>();
+        transforms.push_back(_world.get_component<Transform>(e));
+        root->append_child(*transforms.back());
+
+        if( (i % 2) == 1 )
+            widgets.push_back( _world.add_component<Widget>(e) );
+    }
+
+    REQUIRE( transforms.size() == root->get_children_with<Transform>(true).count() );
+    REQUIRE( widgets.size() == root->get_children_with<Widget>(true).count() );
+}
