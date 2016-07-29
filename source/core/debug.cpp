@@ -1,7 +1,7 @@
 #include <core/debug.hpp>
 #include <cassert>
 
-NS_FLOW2D_BEGIN
+NS_FLOW2D_CORE_BEGIN
 
 static void abortx(const char* file, int line, const char* format, va_list args)
 {
@@ -9,38 +9,6 @@ static void abortx(const char* file, int line, const char* format, va_list args)
     FLOW_LOGE("\n\tIn: %s:%d\n\nStacktrace:", file, line);
     Debug::traceback();
     exit(0);
-}
-
-void ABORT(const char* file, int line, const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    abortx(file, line, format, args);
-    va_end(args);
-}
-
-void LOGI(const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    Debug::log(LogLevel::INFORMATION, format, args);
-    va_end(args);
-}
-
-void LOGW(const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    Debug::log(LogLevel::WARNING, format, args);
-    va_end(args);
-}
-
-void LOGE(const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    Debug::log(LogLevel::ERROR, format, args);
-    va_end(args);
 }
 
 void Debug::log(LogLevel level, const char* msg, va_list args)
@@ -182,6 +150,42 @@ void Debug::traceback()
 
     free(funcname);
     free(symbollist);
+}
+
+NS_FLOW2D_CORE_END
+
+NS_FLOW2D_BEGIN
+
+void ABORT(const char* file, int line, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    core::abortx(file, line, format, args);
+    va_end(args);
+}
+
+void LOGI(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    core::Debug::log(core::LogLevel::INFORMATION, format, args);
+    va_end(args);
+}
+
+void LOGW(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    core::Debug::log(core::LogLevel::WARNING, format, args);
+    va_end(args);
+}
+
+void LOGE(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    core::Debug::log(core::LogLevel::ERROR, format, args);
+    va_end(args);
 }
 
 NS_FLOW2D_END

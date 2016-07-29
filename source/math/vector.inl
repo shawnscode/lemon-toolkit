@@ -12,72 +12,106 @@ Vector<N, T>::Vector(std::initializer_list<T> values)
     size_t i = 0;
     for( auto value : values )
     {
-        if( i < N ) m_tuple[i++] = value;
+        if( i < N ) _tuple[i++] = value;
         else break;
     }
 
-    for( ; i < N; ++i ) m_tuple[i] = (T)0;
+    for( ; i < N; ++i ) _tuple[i] = (T)0;
 }
 
 template<size_t N, typename T>
 INLINE const T& Vector<N, T>::operator[] (size_t i) const
 {
-    return m_tuple[i];
+    ENSURE( i < N );
+    return _tuple[i];
 }
 
 template<size_t N, typename T>
 INLINE T& Vector<N, T>::operator[] (size_t i)
 {
-    return m_tuple[i];
+    ENSURE( i < N );
+    return _tuple[i];
 }
 
 template<size_t N, typename T>
 INLINE bool Vector<N, T>::operator == (const Vector<N, T>& rh) const
 {
-    return m_tuple == rh.m_tuple;
+    for( size_t i = 0; i < N; i++ )
+        if( _tuple[i] != rh._tuple[i] )
+            return false;
+    return true;
 }
 
 template<size_t N, typename T>
 INLINE bool Vector<N, T>::operator != (const Vector<N, T>& rh) const
 {
-    return m_tuple != rh.m_tuple;
+    for( size_t i = 0; i < N; i++ )
+        if( _tuple[i] != rh._tuple[i] )
+            return true;
+    return false;
 }
 
 template<size_t N, typename T>
 INLINE bool Vector<N, T>::operator < (const Vector<N, T>& rh) const
 {
-    return m_tuple < rh.m_tuple;
+    for( size_t i = 0; i < N; i++ )
+        if( _tuple[i] < rh._tuple[i] )
+            return true;
+    return false;
 }
 
 template<size_t N, typename T>
 INLINE bool Vector<N, T>::operator <= (const Vector<N, T>& rh) const
 {
-    return m_tuple <= rh.m_tuple;
+    for( size_t i = 0; i < N; i++ )
+        if( _tuple[i] <= rh._tuple[i] )
+            return true;
+    return false;
 }
 
 template<size_t N, typename T>
 INLINE bool Vector<N, T>::operator > (const Vector<N, T>& rh) const
 {
-    return m_tuple > rh.m_tuple;
+    for( size_t i = 0; i < N; i++ )
+        if( _tuple[i] > rh._tuple[i] )
+            return true;
+    return false;
 }
 
 template<size_t N, typename T>
 INLINE bool Vector<N, T>::operator >= (const Vector<N, T>& rh) const
 {
-    return m_tuple >= rh.m_tuple;
+    for( size_t i = 0; i < N; i++ )
+        if( _tuple[i] >= rh._tuple[i] )
+            return true;
+    return false;
 }
 
 template<size_t N, typename T>
 INLINE void Vector<N, T>::zero()
 {
-    std::fill(m_tuple.begin(), m_tuple.end(), (T)0);
+    for( size_t i = 0; i < N; i++ )
+        _tuple[i] = (T)0;
 }
 
 template<size_t N, typename T>
 INLINE void Vector<N, T>::unit(size_t d)
 {
     zero();
-    if( 0 <= d && d < N ) m_tuple[d] = (T)1;
+    if( 0 <= d && d < N )
+        _tuple[d] = (T)1;
+}
+
+template<size_t N, typename T>
+std::ostream& operator<< (std::ostream& out, const Vector<N, T>& v)
+{
+    out << "Vector(";
+    for( size_t i = 0; i < N; i++ )
+    {
+        out << v[i];
+        if( i != N-1 ) out << ", ";
+    }
+    return out << ")";
 }
 
 template<size_t N, typename T>
@@ -90,7 +124,8 @@ template<size_t N, typename T>
 Vector<N, T> operator - (const Vector<N, T>& v)
 {
     Vector<N, T> result;
-    for( auto i = 0; i < N; ++i ) result[i] = -v[i];
+    for( auto i = 0; i < N; ++i )
+        result[i] = -v[i];
     return result;
 }
 
@@ -147,42 +182,48 @@ Vector<N, T> operator / (const Vector<N, T>& v, T scalar)
 template<size_t N, typename T>
 Vector<N, T>& operator += (Vector<N, T>& v0, const Vector<N, T>& v1)
 {
-    for( auto i = 0; i < N; i++ ) v0[i] += v1[i];
+    for( auto i = 0; i < N; i++ )
+        v0[i] += v1[i];
     return v0;
 }
 
 template<size_t N, typename T>
 Vector<N, T>& operator -= (Vector<N, T>& v0, const Vector<N, T>& v1)
 {
-    for( auto i = 0; i < N; i++ ) v0[i] -= v1[i];
+    for( auto i = 0; i < N; i++ )
+        v0[i] -= v1[i];
     return v0;
 }
 
 template<size_t N, typename T>
 Vector<N, T>& operator *= (Vector<N, T>& v0, const Vector<N, T>& v1)
 {
-    for( auto i = 0; i < N; i++ ) v0[i] *= v1[i];
+    for( auto i = 0; i < N; i++ )
+        v0[i] *= v1[i];
     return v0;
 }
 
 template<size_t N, typename T>
 Vector<N, T>& operator /= (Vector<N, T>& v0, const Vector<N, T>& v1)
 {
-    for( auto i = 0; i < N; i++ ) v0[i] /= v1[i];
+    for( auto i = 0; i < N; i++ )
+        v0[i] /= v1[i];
     return v0;
 }
 
 template<size_t N, typename T>
 Vector<N, T>& operator *= (Vector<N, T>& v, T scalar)
 {
-    for( auto i = 0; i < N; i++ ) v[i] *= scalar;
+    for( auto i = 0; i < N; i++ )
+        v[i] *= scalar;
     return v;
 }
 
 template<size_t N, typename T>
 Vector<N, T>& operator /= (Vector<N, T>& v, T scalar)
 {
-    for( auto i = 0; i < N; i++ ) v[i] /= scalar;
+    for( auto i = 0; i < N; i++ )
+        v[i] /= scalar;
     return v;
 }
 

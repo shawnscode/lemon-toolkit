@@ -17,14 +17,14 @@ Matrix<R, C, T>::Matrix(std::initializer_list<T> values)
     {
         for( c = 0; c < C; c++, i++ )
         {
-            if( i < size ) m_values[r][c] = *cursor++;
+            if( i < size ) _values[r][c] = *cursor++;
             else break;
         }
 
         if( c < C )
         {
             for( ; c < C; c++ )
-                m_values[r][c] = (T)0;
+                _values[r][c] = (T)0;
             r++;
             break;
         }
@@ -34,58 +34,41 @@ Matrix<R, C, T>::Matrix(std::initializer_list<T> values)
     {
         for( ; r < R; r++ )
             for( c = 0; c < C; c++ )
-                m_values[r][c] = (T)0;
+                _values[r][c] = (T)0;
     }
 }
 
 template<size_t R, size_t C, typename T>
-INLINE const T& Matrix<R, C, T>::operator() (size_t r, size_t c) const
+INLINE const Vector<C, T>& Matrix<R, C, T>::operator[] (size_t index) const
 {
-    ENSURE( r < R && c < C );
-    return m_values[r][c];
+    return _values[index];
 }
 
 template<size_t R, size_t C, typename T>
-INLINE T& Matrix<R, C, T>::operator() (size_t r, size_t c)
+INLINE Vector<C, T>& Matrix<R, C, T>::operator[] (size_t index)
 {
-    ENSURE( r < R && c < C );
-    return m_values[r][c];
-}
-
-template<size_t R, size_t C, typename T>
-INLINE const T& Matrix<R, C, T>::operator[] (size_t index) const
-{
-    ENSURE( index < R*C );
-    const T* elements = &m_values[0][0];
-    return elements[index];
-}
-
-template<size_t R, size_t C, typename T>
-INLINE T& Matrix<R, C, T>::operator[] (size_t index)
-{
-    T* elements = &m_values[0][0];
-    return elements[index];
+    return _values[index];
 }
 
 template<size_t R, size_t C, typename T>
 INLINE bool Matrix<R, C, T>::operator == (const Matrix<R, C, T>& rh) const
 {
-    return m_values == rh.m_values;
+    return _values == rh._values;
 }
 
 template<size_t R, size_t C, typename T>
 INLINE bool Matrix<R, C, T>::operator != (const Matrix<R, C, T>& rh) const
 {
-    return m_values != rh.m_values;
+    return _values != rh._values;
 }
 
 template<size_t R, size_t C, typename T>
 void Matrix<R, C, T>::zero()
 {
     auto zero = (T)0;
-    for( auto i=0; i<R; i++ )
-        for( auto j=0; j<C; j++ )
-            m_values[i][j] = zero;
+    for( size_t i = 0; i < R; i++ )
+        for( size_t j = 0; j < C; j++ )
+            _values[i][j] = zero;
 }
 
 template<size_t R, size_t C, typename T>
@@ -93,7 +76,7 @@ void Matrix<R, C, T>::unit(size_t r, size_t c)
 {
     zero();
     if( 0 <= r && r < R && 0 <= c && c <= C )
-        m_values[r][c] = (T)1;
+        _values[r][c] = (T)1;
 }
 
 template<size_t R, size_t C, typename T>
@@ -101,8 +84,8 @@ void Matrix<R, C, T>::identity()
 {
     zero();
     auto diagonal = R <= C ? R : C;
-    for( auto i=0; i<diagonal; i++ )
-        m_values[i][i] = (T)1;
+    for( size_t i = 0; i < diagonal; i++ )
+        _values[i][i] = (T)1;
 }
 
 // unary operations
@@ -116,7 +99,8 @@ template<size_t R, size_t C, typename T>
 Matrix<R, C, T> operator - (const Matrix<R, C, T>& rh)
 {
     auto result = rh;
-    for( auto i = 0; i < R*C; i++ ) result[i] = -result[i];
+    for( size_t i = 0; i < R; i++ )
+        result[i] = -result[i];
     return result;
 }
 
@@ -159,21 +143,24 @@ Matrix<R, C, T> operator / (const Matrix<R, C, T>& M0, T scalar)
 template<size_t R, size_t C, typename T>
 Matrix<R, C, T>& operator += (Matrix<R, C, T>& M0, const Matrix<R, C, T>& M1)
 {
-    for( auto i = 0; i < R*C; i++ ) M0[i] += M1[i];
+    for( size_t i = 0; i < R; i++ )
+        M0[i] += M1[i];
     return M0;
 }
 
 template<size_t R, size_t C, typename T>
 Matrix<R, C, T>& operator -= (Matrix<R, C, T>& M0, const Matrix<R, C, T>& M1)
 {
-    for( auto i = 0; i < R*C; i++ ) M0[i] -= M1[i];
+    for( size_t i = 0; i < R; i++ )
+        M0[i] -= M1[i];
     return M0;
 }
 
 template<size_t R, size_t C, typename T>
 Matrix<R, C, T>& operator *= (Matrix<R, C, T>& M0, T scalar)
 {
-    for( auto i = 0; i < R*C; i++ ) M0[i] *= scalar;
+    for( size_t i = 0; i < R; i++ )
+        M0[i] *= scalar;
     return M0;
 }
 
@@ -187,7 +174,8 @@ Matrix<R, C, T>& operator *= (Matrix<R, S, T>& M0, const Matrix<S, C, T>& M1)
 template<size_t R, size_t C, typename T>
 Matrix<R, C, T>& operator /= (Matrix<R, C, T>& M0, T scalar)
 {
-    for( auto i = 0; i < R*C; i++ ) M0[i] /= scalar;
+    for( size_t i = 0; i < R; i++ )
+        M0[i] /= scalar;
     return M0;
 }
 
@@ -200,9 +188,8 @@ Vector<R, T> operator * (const Matrix<R, C, T>& M, const Vector<C, T>& V)
     {
         result[r] = (T)0;
         for( auto c = 0; c < C; c++ )
-            result[r] += M(r, c) * V[c];
+            result[r] += M[r][c] * V[c];
     }
-
     return result;
 }
 
@@ -215,7 +202,7 @@ Vector<N-1, T> operator * (const Matrix<N, N, T>& M, const Vector<N-1, T>& V)
     {
         L[r] = (T)0;
         for( auto c = 0; c < N; c++ )
-            L[r] += M(r, c) * L[c];
+            L[r] += M[r][c] * L[c];
     }
 
     return hproject(L);
@@ -230,7 +217,7 @@ Vector<C, T> operator * (const Vector<R, T>& V, const Matrix<R, C, T>& M)
     {
         result[c] = (T)0;
         for( auto r = 0; r < R; r++ )
-            result[c] += V[c] * M(r, c);
+            result[c] += V[c] * M[r][c];
     }
     return result;
 }
@@ -244,9 +231,9 @@ Matrix<R, C, T> operator * (const Matrix<R, S, T>& M0, const Matrix<S, C, T>& M1
     {
         for( auto c = 0; c < C; c ++ )
         {
-            result(r, c) = (T)0;
+            result[r][c] = (T)0;
             for( auto i = 0; i < S; i ++ )
-                result(r, c) += M0(r, i) * M1(i, c);
+                result[r][c] += M0[r][i] * M1[i][c];
         }
     }
     return result;
@@ -259,7 +246,7 @@ Matrix<C, R, T> transpose(const Matrix<R, C, T>& M)
     Matrix<C, R, T> result;
     for( auto r = 0; r < R; r ++ )
         for( auto c = 0; c < C; c ++ )
-            result(c, r) = M(r, c);
+            result[c][r] = M[r][c];
     return result;
 }
 
@@ -271,7 +258,7 @@ Matrix<R-1, C-1, T> hproject(const Matrix<R, C, T>& M)
     Matrix<R-1, C-1, T> result;
     for( auto r = 0; r < R-1; r ++ )
         for( auto c = 0; c < C-1; c ++ )
-            result(r, c) = M(r, c);
+            result[r][c] = M[r][c];
     return result;
 }
 
@@ -282,7 +269,7 @@ Matrix<R+1, C+1, T> hlift(const Matrix<R, C, T>& M)
     result.identity();
     for( auto r = 0; r < R; r ++ )
         for( auto c = 0; c < C; c ++ )
-            result(r, c) = M(r, c);
+            result[r][c] = M[r][c];
     return result;
 }
 
@@ -291,7 +278,8 @@ Matrix<N, N, T> make_scale(const Vector<N, T>& V)
 {
     Matrix<N, N, T> result;
     result.zero();
-    for( auto i = 0; i < N; i++ ) result(i, i) = V[i];
+    for( auto i = 0; i < N; i++ )
+        result[i][i] = V[i];
     return result;
 }
 
@@ -300,7 +288,8 @@ Matrix<N+1, N+1, T> make_translation(const Vector<N, T>& V)
 {
     Matrix<N+1, N+1, T> result;
     result.identity();
-    for( auto i = 0; i < N; i++ ) result(i, N) = V[i];
+    for( auto i = 0; i < N; i++ )
+        result[i][N] = V[i];
     return result;
 }
 
@@ -318,9 +307,9 @@ Matrix3<T> make_ortho(T xmin, T xmax, T ymin, T ymax)
 {
     Matrix3<T> result;
     result.identity();
-    result(0, 0) = static_cast<T>(2) / (xmax - xmin);
-    result(1, 1) = static_cast<T>(2) / (ymax - ymin);
-    result(0, 2) = - (xmax + xmin) / (xmax - xmin);
-    result(1, 2) = - (ymax + ymin) / (ymax - ymin);
+    result[0][0] = static_cast<T>(2) / (xmax - xmin);
+    result[1][1] = static_cast<T>(2) / (ymax - ymin);
+    result[0][2] = - (xmax + xmin) / (xmax - xmin);
+    result[1][2] = - (ymax + ymin) / (ymax - ymin);
     return result;
 }

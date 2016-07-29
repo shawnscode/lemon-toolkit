@@ -1,14 +1,8 @@
-#include <ostream>
-#include <set>
-#include <map>
-#include <vector>
-#include <string>
-
 #include <catch.hpp>
 #include <flow2d.hpp>
 
 using namespace std;
-using namespace flow2d;
+using namespace flow2d::core;
 
 template<typename T> int size(const T& t)
 {
@@ -17,7 +11,7 @@ template<typename T> int size(const T& t)
     return n;
 }
 
-struct Position : public Component<>
+struct Position : public Component
 {
     Position(float x = 0.0f, float y = 0.0f) : x(x), y(y) {}
 
@@ -29,7 +23,7 @@ struct Position : public Component<>
     float x, y;
 };
 
-struct Direction : public Component<>
+struct Direction : public Component
 {
     Direction(float x = 0.0f, float y = 0.0f) : x(x), y(y) {}
 
@@ -41,14 +35,7 @@ struct Direction : public Component<>
     float x, y;
 };
 
-struct EntityManagerFixture
-{
-    EntityManagerFixture() : _world(), sys(_world) {}
-    EntityManager   _world;
-    SystemManager   sys;
-};
-
-TEST_CASE_METHOD(EntityManagerFixture, "TestCreateEntity")
+TEST_CASE_METHOD(Context, "TestCreateEntity")
 {
     REQUIRE( _world.size() == 0UL );
 
@@ -62,7 +49,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestCreateEntity")
 
 // its complex to implementation a generic clone senario,
 // when take hierarchy into consideration.
-// TEST_CASE_METHOD(EntityManagerFixture, "TestEntityCreateFromCopy")
+// TEST_CASE_METHOD(Context, "TestEntityCreateFromCopy")
 // {
 //     auto e = _world.spawn();
 //     auto ep = _world.add_component<Position>(e, 1, 2);
@@ -80,7 +67,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestCreateEntity")
 //     REQUIRE( _world.size() == 2 );
 // }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestEntityAsBoolean")
+TEST_CASE_METHOD(Context, "TestEntityAsBoolean")
 {
     REQUIRE( _world.size() == 0UL );
 
@@ -93,7 +80,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityAsBoolean")
     REQUIRE( !_world.is_alive(e) );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestEntityReuse")
+TEST_CASE_METHOD(Context, "TestEntityReuse")
 {
     auto e1 = _world.spawn();
     auto e2 = e1;
@@ -116,7 +103,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityReuse")
     REQUIRE( _world.has_component<Position>(e3) );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestEntityAssignment")
+TEST_CASE_METHOD(Context, "TestEntityAssignment")
 {
     Entity a = _world.spawn();
     Entity b = a;
@@ -129,7 +116,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityAssignment")
     REQUIRE( _world.is_alive(b) );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestComponentConstruction")
+TEST_CASE_METHOD(Context, "TestComponentConstruction")
 {
     auto e = _world.spawn();
     auto p = _world.add_component<Position>(e, 1, 2);
@@ -140,12 +127,12 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentConstruction")
     REQUIRE( cp->y == Approx(2.0f) );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestComponentIdsDiffer")
+TEST_CASE_METHOD(Context, "TestComponentIdsDiffer")
 {
     // REQUIRE( TypeID::value<ComponentBase, Position>() != TypeID::value<ComponentBase, Direction>() );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestComponentHandleInvalidatedWhenEntityDestroyed") {
+TEST_CASE_METHOD(Context, "TestComponentHandleInvalidatedWhenEntityDestroyed") {
     auto a = _world.spawn();
     auto position = _world.add_component<Position>(a, 1, 2);
     REQUIRE(position);
@@ -156,7 +143,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentHandleInvalidatedWhenEntity
     REQUIRE( !_world.has_component<Position>(a) );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestComponentAssignmentFromCopy")
+TEST_CASE_METHOD(Context, "TestComponentAssignmentFromCopy")
 {
     auto e = _world.spawn();
     auto p = Position(1, 2);
@@ -170,7 +157,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentAssignmentFromCopy")
     REQUIRE( !_world.has_component<Position>(e) );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestDestroyEntity")
+TEST_CASE_METHOD(Context, "TestDestroyEntity")
 {
     auto e = _world.spawn();
     auto f = _world.spawn();
@@ -198,7 +185,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestDestroyEntity")
     REQUIRE( _world.has_component<Position>(f) );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestEntityDestroyAll")
+TEST_CASE_METHOD(Context, "TestEntityDestroyAll")
 {
     auto e = _world.spawn();
     auto f = _world.spawn();
@@ -207,7 +194,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityDestroyAll")
     REQUIRE( !_world.is_alive(f) );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestEntityDestroyHole") {
+TEST_CASE_METHOD(Context, "TestEntityDestroyHole") {
     std::vector<Entity> entities;
 
     auto count = [this]()->int {
@@ -227,7 +214,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityDestroyHole") {
     REQUIRE(count() ==  4999);
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestEntityInStdSet")
+TEST_CASE_METHOD(Context, "TestEntityInStdSet")
 {
     auto a = _world.spawn();
     auto b = _world.spawn();
@@ -239,7 +226,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityInStdSet")
     REQUIRE( entitySet.insert(c).second );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestEntityInStdMap")
+TEST_CASE_METHOD(Context, "TestEntityInStdMap")
 {
     auto a = _world.spawn();
     auto b = _world.spawn();
@@ -253,7 +240,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityInStdMap")
     REQUIRE( entityMap[c] == 3 );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestGetEntitiesWithComponent")
+TEST_CASE_METHOD(Context, "TestGetEntitiesWithComponent")
 {
     auto e = _world.spawn();
     auto f = _world.spawn();
@@ -282,7 +269,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestGetEntitiesWithComponent")
     REQUIRE( 25 == size(_world.find_entities_with<Direction, Position>()) );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestGetComponentsAsTuple") {
+TEST_CASE_METHOD(Context, "TestGetComponentsAsTuple") {
     auto e = _world.spawn();
     _world.add_component<Position>(e, 1, 2);
     _world.add_component<Direction>(e, 3, 4);
@@ -294,7 +281,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestGetComponentsAsTuple") {
     REQUIRE(std::get<1>(components)->y == 4);
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestEntityIteration")
+TEST_CASE_METHOD(Context, "TestEntityIteration")
 {
     auto e = _world.spawn();
     auto f = _world.spawn();
@@ -317,7 +304,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestEntityIteration")
     REQUIRE( count == 2 );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestIterateAllEntitiesSkipsDestroyed") {
+TEST_CASE_METHOD(Context, "TestIterateAllEntitiesSkipsDestroyed") {
     auto e = _world.spawn();
     auto f = _world.spawn();
     auto g = _world.spawn();
@@ -333,7 +320,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestIterateAllEntitiesSkipsDestroyed") {
     REQUIRE( it == _world.find_entities().end() );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestComponentsRemovedFromReusedEntities")
+TEST_CASE_METHOD(Context, "TestComponentsRemovedFromReusedEntities")
 {
   auto e = _world.spawn();
   auto eversion = e.get_version();
@@ -347,14 +334,14 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentsRemovedFromReusedEntities"
   REQUIRE( !_world.has_component<Position>(f) );
 }
 
-struct FreedSentinel : public Component<>
+struct FreedSentinel : public Component
 {
   explicit FreedSentinel(bool &yes) : yes(yes) {}
   ~FreedSentinel() { yes = true; }
   bool &yes;
 };
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestComponentDestruction")
+TEST_CASE_METHOD(Context, "TestComponentDestruction")
 {
     bool freed = false;
     auto e = _world.spawn();
@@ -368,15 +355,15 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
 {
     bool freed = false;
     {
-        EntityManager world;
-        auto e = world.spawn();
-        world.add_component<FreedSentinel>(e, freed);
+        Context context;
+        auto e = context.get_world().spawn();
+        context.get_world().add_component<FreedSentinel>(e, freed);
         REQUIRE( !freed );
     }
     REQUIRE( freed );
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestComponentDestructorCalledWhenEntityDestroyed")
+TEST_CASE_METHOD(Context, "TestComponentDestructorCalledWhenEntityDestroyed")
 {
     bool freed = false;
     auto e = _world.spawn();
@@ -386,76 +373,76 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestComponentDestructorCalledWhenEntityD
     REQUIRE( freed );
 }
 
-struct Base : public VTraitComponent<Base, 32>
-{
-    virtual void add(int&) {}
-};
+// struct Base : public VTraitComponent<Base, 32>
+// {
+//     virtual void add(int&) {}
+// };
 
-struct Derived : public Base
-{
-    virtual void add(int& v) override { v++; }
-};
+// struct Derived : public Base
+// {
+//     virtual void add(int& v) override { v++; }
+// };
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestTraitComponent")
-{
-    auto e = _world.spawn();
-    _world.add_component<Derived>(e);
+// TEST_CASE_METHOD(Context, "TestTraitComponent")
+// {
+//     auto e = _world.spawn();
+//     _world.add_component<Derived>(e);
 
-    REQUIRE( _world.has_component<Base::Trait>(e) );
+//     REQUIRE( _world.has_component<Base::Trait>(e) );
 
-    int c = 0;
-    auto bt = _world.get_component<Base::Trait>(e);
-    (*bt)->add(c);
+//     int c = 0;
+//     auto bt = _world.get_component<Base::Trait>(e);
+//     (*bt)->add(c);
 
-    REQUIRE( c == 1 );
-}
+//     REQUIRE( c == 1 );
+// }
 
-struct Counter : public Component<>
+struct Counter : public Component
 {
     explicit Counter(int counter = 0) : counter(counter) {}
     int counter;
 };
 
-struct MovementSystem : public System
+struct MovementSystem : public SubsystemWithEntities<Position, Direction>
 {
-    explicit MovementSystem(EntityManager& world, string label = "")
-    : System(world), label(label) {}
+    explicit MovementSystem(Context& c, string label = "")
+    : SubsystemWithEntities(c), label(label) {}
 
     void update(float dt) override
     {
-        _world.find_entities_with<Position, Direction>()
-            .visit([&](Entity ent, Position& pos, Direction& dir)
-            {
-                pos.x += dir.x;
-                pos.y += dir.y;
-            });
+        for( auto pair : *this )
+        {
+            std::get<0>(pair.second)->x += std::get<1>(pair.second)->x;
+            std::get<0>(pair.second)->y += std::get<1>(pair.second)->y;
+        }
     }
 
     std::string label;
 };
 
-struct CounterSystem : public System
+struct CounterSystem : public SubsystemWithEntities<Counter>
 {
-    CounterSystem(EntityManager& world) : System(world) {}
+    CounterSystem(Context& c) : SubsystemWithEntities(c) {}
 
     void update(float dt) override
     {
-        _world.find_entities_with<Counter>()
-            .visit([&](Entity ent, Counter& c)
-            {
-                c.counter ++;
-            });
+        visit([&](Entity object, Counter& c)
+        {
+            c.counter ++;
+        });
     }
 };
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestConstructSystemWithArgs")
+TEST_CASE_METHOD(Context, "TestConstructSystemWithArgs")
 {
-    sys.add<MovementSystem>("movement");
-    REQUIRE("movement" == sys.get<MovementSystem>()->label);
+    add_subsystem<MovementSystem>("movement");
+    REQUIRE("movement" == get_subsystem<MovementSystem>().label);
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestApplySystem")
+TEST_CASE_METHOD(Context, "TestApplySystem")
 {
+    add_subsystem<MovementSystem>();
+
     std::vector<Entity> created_entities;
     for (int i = 0; i < 150; ++i)
     {
@@ -466,8 +453,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestApplySystem")
         _world.add_component<Counter>(e, 0);
     }
 
-    sys.add<MovementSystem>();
-    sys.update(0.0f);
+    update(0.0f);
     for (auto entity : created_entities)
     {
         auto position = _world.get_component<Position>(entity);
@@ -486,7 +472,7 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestApplySystem")
     }
 }
 
-TEST_CASE_METHOD(EntityManagerFixture, "TestApplyAllSystems")
+TEST_CASE_METHOD(Context, "TestApplyAllSystems")
 {
     std::vector<Entity> created_entities;
     for (int i = 0; i < 150; ++i) {
@@ -497,9 +483,9 @@ TEST_CASE_METHOD(EntityManagerFixture, "TestApplyAllSystems")
         _world.add_component<Counter>(e, 0);
     }
 
-    sys.add<MovementSystem>();
-    sys.add<CounterSystem>();
-    sys.update(0.f);
+    add_subsystem<MovementSystem>();
+    add_subsystem<CounterSystem>();
+    update(0.f);
 
     for (auto entity : created_entities)
     {

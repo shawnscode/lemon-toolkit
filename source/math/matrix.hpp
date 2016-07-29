@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include <forward.hpp>
+#include <math/defines.hpp>
 #include <math/vector.hpp>
-#include <initializer_list>
 
-NS_FLOW2D_BEGIN
+NS_FLOW2D_MATH_BEGIN
 
+// row-major based matrix
 template<size_t R, size_t C, typename T> struct Matrix
 {
     Matrix();
@@ -17,12 +17,8 @@ template<size_t R, size_t C, typename T> struct Matrix
     Matrix(const Matrix&) = default;
     Matrix& operator = (const Matrix&) = default;
 
-    // index in row major
-    const T& operator() (size_t, size_t) const;
-    T& operator() (size_t, size_t);
-
-    const T& operator[](size_t) const;
-    T& operator[](size_t);
+    const Vector<C, T>& operator[](size_t) const;
+    Vector<C, T>& operator[](size_t);
 
     bool operator == (const Matrix&) const;
     bool operator != (const Matrix&) const;
@@ -32,7 +28,7 @@ template<size_t R, size_t C, typename T> struct Matrix
     void identity();
 
 protected:
-    std::array<std::array<T, C>, R> m_values;
+    Vector<R, Vector<C, T>> _values;
 };
 
 template<typename T>
@@ -133,4 +129,4 @@ template<typename T>
 Matrix3<T> make_ortho(T xmin, T xmax, T ymin, T ymax);
 
 #include <math/matrix.inl>
-NS_FLOW2D_END
+NS_FLOW2D_MATH_END

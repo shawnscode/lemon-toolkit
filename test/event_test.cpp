@@ -1,10 +1,7 @@
 #include <catch.hpp>
 #include <flow2d.hpp>
 
-#include <string>
-#include <vector>
-
-USING_NS_FLOW2D;
+USING_NS_FLOW2D_CORE;
 
 struct Explosion
 {

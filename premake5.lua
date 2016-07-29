@@ -47,11 +47,10 @@ workspace("chore")
 
     project( "test" )
         location( "build/test" )
-        links({ "flow2d" })
-        files({ "test/*_test.cpp" })
+        files({ "test/*_test.cpp", "source/**.cpp" })
 
     project( "example" )
         location( "build/example" )
-        links({ "glfw3", "glew", "flow2d", "tess2" })
+        links({ "glfw3", "glew", "tess2" })
         linkoptions { "-framework OpenGL", "-framework Cocoa", "-framework IOKit", "-framework CoreVideo" }
         files({ "example/*.cpp", "source/**.cpp" })

@@ -3,106 +3,37 @@
 
 // INCLUDED METHODS OF RECT
 template<size_t N, typename T>
-Rect<N, T>::Rect() {}
-
-template<size_t N, typename T>
-Rect<N, T>::Rect(const Vector<N, T>& position, const Vector<N, T>& size)
-: m_position(position), m_corner(max(size, {0.f, 0.f})+position)
+Rect<N, T>::Rect()
+: min({inf<T>(), inf<T>()}), max({-inf<T>(), -inf<T>()})
 {}
 
 template<size_t N, typename T>
-INLINE bool Rect<N, T>::operator == (const Rect<N, T>& rh) const
+Rect<N, T>::Rect(const Vector<N, T>& min, const Vector<N, T>& max)
+: min(min), max(flow2d::math::max(min, max))
+{}
+
+template<size_t N, typename T>
+INLINE bool Rect<N, T>::operator == (const Rect<N, T>& rhs) const
 {
-    return m_position == rh.m_position && m_corner == rh.m_corner;
+    return min == rhs.min && max == rhs.max;
 }
 
 template<size_t N, typename T>
-INLINE bool Rect<N, T>::operator != (const Rect<N, T>& rh) const
+INLINE bool Rect<N, T>::operator != (const Rect<N, T>& rhs) const
 {
-    return m_position != rh.m_position || m_corner != rh.m_corner;
-}
-
-template<size_t N, typename T>
-INLINE Rect<N, T> Rect<N, T>::operator + (const Rect<N, T>& rh) const
-{
-    auto result = *this;
-    return result += rh;
-}
-
-template<size_t N, typename T>
-INLINE Rect<N, T> Rect<N, T>::operator + (const Vector<N, T>& rh) const
-{
-    auto result = *this;
-    return result += rh;
-}
-
-template<size_t N, typename T>
-INLINE Rect<N, T>& Rect<N, T>::operator += (const Rect<N, T>& rh)
-{
-    for( size_t i = 0; i < N; i++ )
-    {
-        if( rh.m_position[i] < m_position[i] )
-            m_position[i] = rh.m_position[i];
-        if( rh.m_corner[i] > m_corner[i] )
-            m_corner[i] = rh.m_corner[i];
-    }
-    return *this;
-}
-
-template<size_t N, typename T>
-INLINE Rect<N, T>& Rect<N, T>::operator += (const Vector<N, T>& rh)
-{
-    for( size_t i = 0; i < N; i++ )
-    {
-        if( rh[i] < m_position[i] ) m_position[i] = rh[i];
-        if( rh[i] > m_corner[i] ) m_corner[i] = rh[i];
-    }
-    return *this;
-}
-
-template<size_t N, typename T>
-INLINE bool Rect<N, T>::is_inside(const Vector<N, T>& coord) const
-{
-    for( size_t i = 0; i < N; i++ )
-    {
-        if( coord[i] < m_position[i] || coord[i] >= m_corner[i] )
-            return false;
-    }
-    return true;
-}
-
-template<size_t N, typename T>
-INLINE Vector<N, T> Rect<N, T>::position() const
-{
-    return m_position;
+    return min != rhs.min || max != rhs.max;
 }
 
 template<size_t N, typename T>
 INLINE Vector<N, T> Rect<N, T>::center() const
 {
-    return m_position + (m_corner - m_position) * 0.5f;
+    return min + (max - min) * 0.5f;
 }
 
 template<size_t N, typename T>
 INLINE Vector<N, T> Rect<N, T>::size() const
 {
-    return max(m_corner - m_position, 0.f);
-}
-
-template<size_t N, typename T>
-template<size_t A>
-INLINE T Rect<N, T>::lower() const
-{
-    static_assert( A < N, "invalid axis." );
-    return m_position[A];
-}
-
-template<size_t N, typename T>
-template<size_t A>
-INLINE T Rect<N, T>::upper() const
-{
-    static_assert( A < N, "invalid axis." );
-    return m_corner[A];
+    return max(max - min, 0.f);
 }
 
 template<size_t N, typename T>
@@ -110,37 +41,97 @@ template<size_t A>
 INLINE T Rect<N, T>::length() const
 {
     static_assert( A < N, "invalid axis." );
-    return std::max(m_corner[A] - m_position[A], (T)0);
+    return std::max(max[A] - min[A], (T)0);
 }
 
 template<size_t N, typename T>
-INLINE T Rect<N, T>::area() const
+std::ostream& operator<< (std::ostream& out, const Rect<N, T>& rect)
 {
-    T result = (T)1;
+    out << "Rect({";
     for( size_t i = 0; i < N; i++ )
-        result *= std::max(m_corner[i] - m_position[i], (T)0);
+    {
+        out << rect.min[i];
+        if( i != N-1 ) out << ", ";
+    }
+    out << "}, {";
+    for( size_t i = 0; i < N; i++ )
+    {
+        out << rect.max[i];
+        if( i != N-1 ) out << ", ";
+    }
+    return out << "})";
+}
+
+template<size_t N, typename T>
+INLINE bool equals(const Rect<N, T>& lhs, const Rect<N, T>& rhs, T epslion)
+{
+    return equals( lhs.min, rhs.min, epslion ) && equals( lhs.max, rhs.max, epslion );
+}
+
+template<size_t N, typename T>
+INLINE Rect<N, T> intersect(const Rect<N, T>& lhs, const Rect<N, T>& rhs)
+{
+    Rect<N, T> result = lhs;
+    if( rhs.min[0] > lhs.min[0] ) result.min[0] = rhs.min[0];
+    if( rhs.max[0] < lhs.max[0] ) result.max[0] = rhs.max[0];
+    if( rhs.min[1] > lhs.min[1] ) result.min[1] = rhs.min[1];
+    if( rhs.max[1] < lhs.max[1] ) result.max[1] = rhs.max[1];
+
+    if( result.min[0] > result.max[0] || result.min[1] > result.max[1] )
+    {
+        result.min = { inf<float>(), inf<float>() };
+        result.max = { -inf<float>(), inf<float>() };
+    }
+
     return result;
 }
 
 template<size_t N, typename T>
-INLINE bool equals(const Rect<N, T>& lh, const Rect<N, T>& rh, T epslion)
+INLINE Rect<N, T> merge(const Rect<N, T>& lhs, const Rect<N, T>& rhs)
 {
-    return
-        equals( lh.position(), rh.position(), epslion ) &&
-        equals( lh.size(), rh.size(), epslion );
+    Rect<N, T> result = lhs;
+    for( size_t i = 0; i < N; i++ )
+    {
+        if( rhs.min[i] < lhs.min[i] ) result.min[i] = rhs.min[i];
+        if( rhs.max[i] > lhs.max[i] ) result.max[i] = rhs.max[i];
+    }
+    return result;
 }
 
 template<size_t N, typename T>
-INLINE Rect<N, T> intersect(const Rect<N, T>& lh, const Rect<N, T>& rh)
+INLINE Rect<N, T> merge(const Rect<N, T>& lhs, const Vector<N, T>& rhs)
 {
-    Vector<N, T> position = max(
-        Vector<N, T>{lh.template lower<0>(), lh.template lower<1>()},
-        Vector<N, T>{rh.template lower<0>(), rh.template lower<1>()});
-    Vector<N, T> corner = min(
-        Vector<N, T>{lh.template upper<0>(), lh.template upper<1>()},
-        Vector<N, T>{rh.template upper<0>(), rh.template upper<1>()});
+    Rect<N, T> result = lhs;
+    for( size_t i = 0; i < N; i++ )
+    {
+        if( rhs[i] < lhs.min[i] ) result.min[i] = rhs[i];
+        if( rhs[i] > lhs.max[i] ) result.max[i] = rhs[i];
+    }
+    return result;
+}
 
-    if( corner[0] >= position[0] && corner[1] >= position[1] )
-        return Rect<N, T> {position, corner-position};
-    return {{(T)0, (T)0}, {(T)0, (T)0}};
+template<size_t N, typename T>
+INLINE bool is_inside(const Rect<N, T>& rect, const Vector<N, T>& coord)
+{
+    for( size_t i = 0; i < N; i++ )
+        if( coord[i] < rect.min[i] || coord[i] >= rect.max[i] )
+            return false;
+    return true;
+}
+
+template<size_t N, typename T>
+INLINE bool isnan(const Rect<N, T>& rect)
+{
+    for( size_t i = 0; i < N; i++ )
+        if( rect.min[i] > rect.max[i] ) return true;
+    return false;
+}
+
+template<size_t N, typename T>
+INLINE Vector<N*2, T> to_vector(const Rect<N, T>& rect)
+{
+    Vector<N*2, T> result;
+    for( size_t i = 0; i < N; i++ ) result[i] = rect.min[i];
+    for( size_t i = 0; i < N; i++ ) result[i+N] = rect.max[i];
+    return result;
 }
