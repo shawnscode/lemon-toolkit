@@ -9,16 +9,23 @@
 
 NS_FLOW2D_CORE_BEGIN
 
+//
+#define SUBSYSTEM(NAME) constexpr static char const* const name = NAME;
+
 struct Subsystem
 {
-    Subsystem(Context& c) : _context(c) {}
-    virtual ~Subsystem() {}
+    SUBSYSTEM("NONAME");
 
-    virtual void on_spawn() {}
-    virtual void on_dispose() {}
+    // initialize/dispose will be called when u spawn/release it with a context
+    virtual bool initialize() { return true; }
+    virtual void dispose() {}
     virtual void update(float) {}
 
 protected:
+    friend class Context;
+    Subsystem(Context& c) : _context(c) {}
+    virtual ~Subsystem() {}
+
     Context& _context;
 };
 
@@ -31,10 +38,11 @@ struct SubsystemWithEntities : public Subsystem
     using iterator = typename collection::iterator;
     using const_iterator = typename collection::const_iterator;
 
+    SUBSYSTEM("SubsystemWithEntities");
     SubsystemWithEntities(Context& c) : Subsystem(c) {}
 
-    virtual void on_spawn() override;
-    virtual void on_dispose() override;
+    virtual bool initialize() override;
+    virtual void dispose() override;
 
     void receive(const EvtEntityModified& );
     void visit(const visitor&);
@@ -54,38 +62,59 @@ struct Context
     Context(const Context&) = delete;
     Context& operator = (const Context&) = delete;
 
+    virtual ~Context()
+    {
+        for( auto pair : _subsystems )
+        {
+            pair.second->dispose();
+            delete pair.second;
+        }
+        _subsystems.clear();
+    }
+
     EntityManager& get_world();
     EventManager&  get_dispatcher();
     template<typename S> S& get_subsystem();
 
     const EntityManager& get_world() const;
     const EventManager&  get_dispatcher() const;
-    template<typename S> const S& get_subsystem() const;
 
+    // retrieve the registered system instance, existence should be guaranteed
+    template<typename S> const S& get_subsystem() const;
+    // spawn a new subsystem with type S and construct arguments
     template<typename S, typename ... Args> void add_subsystem(Args&& ...);
+    // release and unregistered a subsystem from our context
     template<typename S> void remove_subsystem();
+
+    // template<>
+    // template<typename S, typename ... Args> void set_dependencies();
+
+    // update all of the subsystems
     void update(float);
 
 protected:
+    using collection = std::vector<Subsystem*>;
+    void resolve_nocycle();
+
     EntityManager   _world;
     EventManager    _dispatcher;
-
-    std::unordered_map<TypeInfo::index_type, Subsystem*> _systems;
+    std::unordered_map<TypeInfo::index_type, Subsystem*> _subsystems;
 };
 
 ///
 template<typename ... Args>
-void SubsystemWithEntities<Args...>::on_spawn()
+bool SubsystemWithEntities<Args...>::initialize()
 {
     auto& world = _context.get_world();
     for( auto object : world.template find_entities_with<Args...>() )
         _entities[object] = world.template get_components<Args...>(object);
 
     _context.get_dispatcher().template subscribe<EvtEntityModified>(*this);
+    return true;
 }
 
 template<typename ... Args>
-void SubsystemWithEntities<Args...>::on_dispose()
+void SubsystemWithEntities<Args...>::dispose()
 {
     _context.get_dispatcher().template unsubscribe<EvtEntityModified>(*this);
 }
@@ -118,7 +147,7 @@ void SubsystemWithEntities<Args...>::visit(const visitor& cb)
 ///
 INLINE void Context::update(float dt)
 {
-    for( auto pair : _systems )
+    for( auto pair : _subsystems )
         pair.second->update(dt);
 }
 
@@ -144,44 +173,44 @@ INLINE const EventManager& Context::get_dispatcher() const
 
 template<typename S> S& Context::get_subsystem()
 {
-    auto found = _systems.find(TypeInfo::id<Subsystem, S>());
-    if( found != _systems.end() )
+    auto found = _subsystems.find(TypeInfo::id<Subsystem, S>());
+    if( found != _subsystems.end() )
         return *static_cast<S*>(found->second);
 
-    FATAL("get undefined subsystem.");
+    FATAL( "trying to get unregistered subsystem: %s.", S::name );
     return *static_cast<S*>(nullptr); // make compiler happy
 }
 
 template<typename S> const S& Context::get_subsystem() const
 {
-    auto found = _systems.find(TypeInfo::id<Subsystem, S>());
-    if( found != _systems.end() )
+    auto found = _subsystems.find(TypeInfo::id<Subsystem, S>());
+    if( found != _subsystems.end() )
         return *static_cast<S*>(found->second);
 
-    FATAL("get undefined subsystem.");
+    FATAL( "trying to get unregistered subsystem: %s.", S::name );
     return *static_cast<S*>(nullptr); // make compiler happy
 }
 
 template<typename S, typename ... Args> void Context::add_subsystem(Args&& ... args)
 {
     auto id = TypeInfo::id<Subsystem, S>();
-    auto found = _systems.find(id);
-    ASSERT( found == _systems.end(), "duplicated subsystem.");
+    auto found = _subsystems.find(id);
+    ASSERT( found == _subsystems.end(), "duplicated subsystem: %s.", S::name );
 
     auto sys = new (std::nothrow) S(*this, std::forward<Args>(args) ...);
-    sys->on_spawn();
-    _systems.insert(std::make_pair(id, sys));
+    ASSERT( sys->initialize(), "failed to initialize subsystem: %s.", S::name );
+    _subsystems.insert(std::make_pair(id, sys));
 }
 
 template<typename S> void Context::remove_subsystem()
 {
     auto id = TypeInfo::id<Subsystem, S>();
-    auto found = _systems.find(id);
-    if( found != _systems.end() )
+    auto found = _subsystems.find(id);
+    if( found != _subsystems.end() )
     {
-        found.second->on_dispose();
+        found.second->dispose();
         delete found->second;
-        _systems.erase(found);
+        _subsystems.erase(found);
     }
 }
 

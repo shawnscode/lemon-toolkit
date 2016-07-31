@@ -5,6 +5,14 @@
 #define NS_FLOW2D_BEGIN namespace flow2d {
 #define NS_FLOW2D_END }
 
+#if defined(IOS)
+#define PLATFORM_IOS
+#elif defined(ANDROID)
+#define PLATFORM_ANDROID
+#else
+#define PLATFORM_DESKTOP
+#endif
+
 NS_FLOW2D_BEGIN
 
 #define INLINE inline
