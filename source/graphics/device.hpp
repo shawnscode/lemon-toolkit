@@ -11,37 +11,24 @@
 
 NS_FLOW2D_GFX_BEGIN
 
-// struct Resource
+// auto& device = _context.get_subsystem<graphics::Device>();
+
+// auto vb = device.spawn<VertexBuffer>();
+// auto ib = device.spawn<IndexBuffer>();
+// auto texture1 = device.spawn<Texture>();
+
+// auto shader = device.spawn<Shader>();
+// shader->set_texture(0, texture1);
+
+// device.set_vertex_buffer(vb.get());
+// device.set_index_buffer(id.get());
+// device.set_shader(shader.get());
+
+// struct GPUObject
 // {
-//     // return the resource's device handle
-//     ResourceHandle get_handle() const { return _handle; }
+//     GPUObject();
 
-// protected:
-//     friend class Device;
-//     ResourceHandle _handle;
 // };
-
-// using ResourceHandle    = size_t;
-// using ResourceWeakPtr   = std::weak_ptr<Resource>;
-// using ResourcePtr       = std::shared_ptr<Resource>;
-
-enum class PrimitiveType : uint8_t
-{
-    TRIANGLE_LIST = 0,
-    TRIANGLE_STRIP,
-    TRIANGLE_FAN,
-    LINE_LIST,
-    LINE_STRIP,
-    POINT_LIST,
-};
-
-enum class Orientation : uint8_t
-{
-    LANDSCAPE_LEFT,
-    LANDSCAPE_RIGHT,
-    PORTRAIT,
-    PORTRAIT_UPSIDE_DOWN
-};
 
 enum class WindowOption : uint16_t
 {
@@ -62,56 +49,9 @@ enum class ClearOption : uint8_t
     STENCIL = 0x4
 };
 
-enum class CompareMode : uint8_t
-{
-    ALWAYS = 0,
-    EQUAL,
-    NOT_EQUAL,
-    LESS,
-    LESS_EQUAL,
-    GREATER,
-    GREATER_EQUAL,
-};
-
-enum class StencilOp : uint8_t
-{
-    KEEP = 0,
-    ZERO,
-    REF,
-    INCR,
-    DECR
-};
-
-enum class CullMode : uint8_t
-{
-    NONE = 0,
-    CCW,
-    CW
-};
-
-enum class FillMode : uint8_t
-{
-    SOLID = 0,
-    WIREFRAME,
-    POINT
-};
-
-enum class BlendMode : uint8_t
-{
-    REPLACE = 0,
-    ADD,
-    MULTIPLY,
-    ALPHA,
-    ADDALPHA,
-    PREMULALPHA,
-    INVDESTALPHA,
-    SUBTRACT,
-    SUBTRACTALPHA
-};
-
 // graphics device subsystem. manages the window device, renedering state and gpu resources
 struct DeviceContext;
-struct Device : core::Subsystem
+struct Device : public core::Subsystem
 {
     SUBSYSTEM("Graphics'Device")
 
@@ -121,10 +61,10 @@ struct Device : core::Subsystem
     bool initialize() override;
     void dispose() override;
 
-    // restore resources and reinitialize state, requires an open window. returns true if successful
-    bool restore();
-    // release/clear GPU objects and optionally close the window
-    void release(bool, bool close_window = false);
+    // restore OpenGL context and reinitialize state, requires an open window. returns true if successful
+    bool restore_context();
+    // release OpenGL context and handle the device lost of GPU resources
+    void release_context();
 
     // set allowed screen orientations as a space-separated way
     void set_orientations(Orientation);
@@ -132,8 +72,9 @@ struct Device : core::Subsystem
     void set_position(const math::Vector2i&);
     // create window with width, height, and options. return true if successful
     bool set_window(int, int, int multisample = 1, WindowOption options = WindowOption::NONE);
-    // close the window
+    // close current window and release OpenGL context
     void close_window();
+
 
     // begin frame rendering. return true if device available and can reneder
     bool begin_frame();
@@ -142,17 +83,20 @@ struct Device : core::Subsystem
     // clear any or all of rendertarget, depth buffer and stencil buffer
     void clear(ClearOption, const Color& color = {0.f, 0.f, 0.f, 0.f}, float depth = 1.f, unsigned stencil = 0);
 
+    // reset all the graphics state to default
+    void reset_state();
     // set viewport
     void set_viewport(const math::Rect2i&);
-    // set blend mode
+    // set blending mode
     void set_blend_mode(BlendMode);
+    // set hardware culling mode
+    void set_cull_mode(CullMode);
+    // set polygon fill mode
+    void set_fill_mode(FillMode);
     // set depth test/write/bias
     void set_depth_write(bool);
     void set_depth_test(CompareMode);
     void set_depth_bias(float, float);
-    // set cull/fill mode
-    void set_cull_mode(CullMode);
-    void set_fill_mode(FillMode);
     // set scissor test
     void set_scissor_test(bool, const math::Rect2i&);
     // set color writable
@@ -182,6 +126,34 @@ struct Device : core::Subsystem
     void draw_index(PrimitiveType, unsigned start, unsigned count);
 
 protected:
+    struct RenderState
+    {
+        VertexBuffer*   vertex_buffers[kMaxVertexBuffers];
+        IndexBuffer*    index_buffer;
+        Shader*         shader;
+
+        BlendMode       blend_mode;
+        CullMode        cull_mode;
+        FillMode        fill_mode;
+
+        bool            color_write;
+        math::Rect2i    scissor;
+
+        bool            depth_test;
+        CompareMode     depth_test_mode;
+        bool            depth_write;
+        float           depth_constant_bias;
+        float           depth_slope_scaled_bias;
+
+        bool            stencil_test;
+        CompareMode     stencil_test_mode;
+        StencilOp       stencil_pass_op;
+        StencilOp       stencil_fail_op;
+        StencilOp       stencil_zfail_op;
+        unsigned        stencil_ref;
+        unsigned        stencil_write_mask;
+    };
+
     // window options and status
     int             _multisamples = 0;
     math::Vector2i  _size = {1, 1}, _position = {0, 0};
@@ -189,7 +161,23 @@ protected:
     WindowOption    _options = WindowOption::NONE;
 
     DeviceContext*  _device = nullptr;
+    RenderState     _current, _last;
 };
+
+// struct Resource
+// {
+//     // return the resource's device handle
+//     ResourceHandle get_handle() const { return _handle; }
+
+// protected:
+//     friend class Device;
+//     ResourceHandle _handle;
+// };
+
+// using ResourceHandle    = size_t;
+// using ResourceWeakPtr   = std::weak_ptr<Resource>;
+// using ResourcePtr       = std::shared_ptr<Resource>;
+
 
 // high-level rendering subsystem, manages drawing of views
 struct Renderer
@@ -211,4 +199,3 @@ NS_FLOW2D_GFX_END
 
 ENABLE_BITMASK_OPERATORS(flow2d::graphics::WindowOption);
 ENABLE_BITMASK_OPERATORS(flow2d::graphics::ClearOption);
-

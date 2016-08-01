@@ -3,6 +3,7 @@
 
 #include <graphics/device.hpp>
 #include <graphics/opengl.hpp>
+#include <core/application.hpp>
 
 NS_FLOW2D_GFX_BEGIN
 
@@ -26,14 +27,10 @@ struct DeviceContext
     SDL_GLContext   context;
 };
 
+
 bool Device::initialize()
 {
-    // initialize SDL now, graphics shoud be the first SDL-using subsystem to be created
-    if( 0 != SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) )
-    {
-        LOGW("failed to initialize SDL2, %s.", SDL_GetError());
-        return false;
-    }
+    ENSURE( _context.has_subsystems<Application>() );
 
     _device = new (std::nothrow) DeviceContext;
     if( !_device )
@@ -47,24 +44,11 @@ bool Device::initialize()
 
 void Device::dispose()
 {
-    // shutdown SDL now. Graphics should be the last SDL-using subsystem to be destroyed
-    SDL_Quit();
-
     if( _device )
     {
         delete _device;
         _device = nullptr;
     }
-}
-
-bool Device::restore()
-{
-    return true;
-}
-
-void Device::release(bool clear_objects, bool close_window)
-{
-
 }
 
 void Device::set_orientations(Orientation orientation)
@@ -116,16 +100,9 @@ bool Device::set_window(int width, int height, int multisample, WindowOption opt
     }
 
     // close the existing window and OpenGL context, mark GPU objects as lost
-    release(false, true);
+    release_context();
 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
-    ////////////////////
-    // es 2.0 TODO
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    ////////////////////
-
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, multisample > 1 ? 1 : 0);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, multisample > 1 ? multisample : 0);
     SDL_SetHint(SDL_HINT_ORIENTATIONS, orientation_tostring(_orientation));
@@ -150,11 +127,11 @@ bool Device::set_window(int width, int height, int multisample, WindowOption opt
 
     if( !_device->window )
     {
-        LOGW("failed to create window, %s.", SDL_GetError());
+        LOGE("failed to create window, %s.", SDL_GetError());
         return false;
     }
 
-    if( !restore() )
+    if( !restore_context() )
         return false;
 
     // set vsync
@@ -172,7 +149,7 @@ bool Device::set_window(int width, int height, int multisample, WindowOption opt
     // reset rendertargets and viewport for the new mode
     // reset_render_targets();
 
-    //clear the initial window content to black
+    // clear the initial window content to black
     clear(ClearOption::COLOR);
     SDL_GL_SwapWindow(_device->window);
     return true;
@@ -180,8 +157,66 @@ bool Device::set_window(int width, int height, int multisample, WindowOption opt
 
 void Device::close_window()
 {
-    if( _device->window )   
-        release(true, true);
+    release_context();
+    SDL_ShowCursor(SDL_TRUE);
+
+    if( _device->window != nullptr )
+    {
+        SDL_DestroyWindow(_device->window);
+        _device->window = nullptr;
+    }
+}
+
+bool Device::restore_context()
+{
+    if( _device->window == nullptr )
+    {
+        LOGW("failed to restore OpenGL context due to the lack of window instance.");
+        return false;
+    }
+
+    // the context might be lost behind the scene as the application is minimized in Android
+    if( _device->context && !SDL_GL_GetCurrentContext() )
+        _device->context = 0;
+
+    if( _device->context == 0 )
+    {
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+        _device->context = SDL_GL_CreateContext(_device->window);
+    }
+
+    if( _device->context == 0 )
+    {
+        LOGE("failed to create OpenGL context, %s.", SDL_GetError());
+        return false;
+    }
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    return true;
+}
+
+void Device::release_context()
+{
+    if( _device->window == nullptr )
+        return;
+
+    if( _device->context != 0 )
+    {
+        SDL_GL_DeleteContext(_device->context);
+        _device->context = 0;
+    }
+}
+
+bool Device::begin_frame()
+{
+    return _device->window != nullptr;
+}
+
+void Device::end_frame()
+{
+    SDL_GL_SwapWindow(_device->window);
 }
 
 void Device::clear(ClearOption options, const Color& color, float depth, unsigned stencil)

@@ -23,8 +23,12 @@ struct Subsystem
 
 protected:
     friend class Context;
+
     Subsystem(Context& c) : _context(c) {}
     virtual ~Subsystem() {}
+
+    Subsystem(const Subsystem&) = delete;
+    Subsystem& operator = (const Subsystem&) = delete;
 
     Context& _context;
 };
@@ -85,9 +89,9 @@ struct Context
     template<typename S, typename ... Args> void add_subsystem(Args&& ...);
     // release and unregistered a subsystem from our context
     template<typename S> void remove_subsystem();
-
-    // template<>
-    // template<typename S, typename ... Args> void set_dependencies();
+    // check if we have specified subsystems
+    template<typename S> bool has_subsystems() const;
+    template<typename S1, typename S2, typename ... Args> bool has_subsystems() const;
 
     // update all of the subsystems
     void update(float);
@@ -212,6 +216,19 @@ template<typename S> void Context::remove_subsystem()
         delete found->second;
         _subsystems.erase(found);
     }
+}
+
+template<typename S> bool Context::has_subsystems() const
+{
+    auto id = TypeInfo::id<Subsystem, S>();
+    auto found = _subsystems.find(id);
+    return found != _subsystems.end();
+}
+
+template<typename S1, typename S2, typename ... Args>
+bool Context::has_subsystems() const
+{
+    return has_subsystems<S1>() | has_subsystems<S2, Args...>();
 }
 
 NS_FLOW2D_CORE_END
