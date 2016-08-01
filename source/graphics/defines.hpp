@@ -59,13 +59,6 @@ enum class CullMode : uint8_t
     CW
 };
 
-enum class FillMode : uint8_t
-{
-    SOLID = 0,
-    WIREFRAME,
-    POINT
-};
-
 enum class BlendMode : uint8_t
 {
     REPLACE = 0,

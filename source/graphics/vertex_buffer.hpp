@@ -31,7 +31,7 @@ INLINE bool VertexElement::operator == (const VertexElement& rhs) const
     return type == rhs.type && semantic == rhs.semantic && semantic_index == rhs.semantic_index;
 }
 
-struct VertexBuffer : public Resource
+struct VertexBuffer : public GPUObject
 {
     // enable shadowing in cpu memory, and its forced on if the GraphicsEngine does not exist
     void set_shadowed(bool);
@@ -57,15 +57,10 @@ protected:
 
     bool        _shadowed;
     bool        _dynamic;
-    unsigned    _vertex_count;
-    unsigned    _vertex_size;
+    unsigned    _vertex_count, _vertex_size;
+
     // shadow data stored in memory
     stream      _shadow_data;
-
-    // buffer lock state
-    LockState   _lock_state;
-    unsigned    _lock_start;
-    unsigned    _lock_count;
     // scratch buffer for fallback locking
     void*       _scratch_data;
 };

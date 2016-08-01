@@ -26,9 +26,23 @@ NS_FLOW2D_GFX_BEGIN
 
 // struct GPUObject
 // {
-//     GPUObject();
+//     GPUObject(Device&);
+//     virtual ~GPUObject();
 
+//     virtual bool initialize() = 0;
+//     virtual void dispose() = 0;
+//     // mark the GPU resources destroyed on context destruction
+//     virtual void on_device_lost() = 0;
+//     // recreate the GPU resources and restore data if applicable
+//     virtual void on_device_restore() = 0;
+
+// protected:
+//     Device& device;
 // };
+
+// ????
+// 1. managed by graphics::Device
+// 2. 
 
 enum class WindowOption : uint16_t
 {
@@ -75,7 +89,6 @@ struct Device : public core::Subsystem
     // close current window and release OpenGL context
     void close_window();
 
-
     // begin frame rendering. return true if device available and can reneder
     bool begin_frame();
     // end frame rendering and swap buffers
@@ -84,35 +97,30 @@ struct Device : public core::Subsystem
     void clear(ClearOption, const Color& color = {0.f, 0.f, 0.f, 0.f}, float depth = 1.f, unsigned stencil = 0);
 
     // reset all the graphics state to default
-    void reset_state();
+    void reset_cached_state();
+
     // set viewport
     void set_viewport(const math::Rect2i&);
     // set blending mode
     void set_blend_mode(BlendMode);
     // set hardware culling mode
     void set_cull_mode(CullMode);
-    // set polygon fill mode
-    void set_fill_mode(FillMode);
-    // set depth test/write/bias
+
+    // per-sample processing
+    void set_scissor_test(bool, const math::Rect2i& scissor = {{0, 0}, {0, 0}});
+    void set_stencil_test(bool, CompareMode, unsigned ref = 0, unsigned compare_mask = math::max<unsigned>());
+    void set_stencil_write(StencilOp pass, StencilOp fail, StencilOp zfail, unsigned write_mask = math::max<unsigned>());
+    void set_depth_test(bool, CompareMode);
     void set_depth_write(bool);
-    void set_depth_test(CompareMode);
-    void set_depth_bias(float, float);
-    // set scissor test
-    void set_scissor_test(bool, const math::Rect2i&);
-    // set color writable
+    void set_depth_bias(float slope_scaled = 0.f, float constant = 0.f);
     void set_color_write(bool);
-    // set stencil test
-    void set_stencil_test(bool,
-        CompareMode mode = CompareMode::ALWAYS,
-        StencilOp pass = StencilOp::KEEP,
-        StencilOp fail = StencilOp::KEEP,
-        StencilOp zfail = StencilOp::KEEP,
-        unsigned ref = 0,
-        unsigned compare_mask = math::max<unsigned>(),
-        unsigned write_mask = math::max<unsigned>());
 
     // restore gpu object and reinitialize state, returns a custom shared_ptr
-    template<typename T, typename ... Args> std::shared_ptr<T> spawn(Args&& ...);
+    // template<typename T> using spawn_return = typename std::enable_if<
+    //     std::is_base_of<GPUObject, T>::value,
+    //     std::shared_ptr<T>>::type;
+    // template<typename T, typename ... Args> spawn_return<T> spawn(Args&& ...);
+
     // set vertex buffer
     void set_vertex_buffer(VertexBuffer*);
     // set index buffer
@@ -120,79 +128,52 @@ struct Device : public core::Subsystem
     // set shader
     void set_shader(Shader*);
 
+    // prepare for draw call. setup corresponding frame/vertex buffer object
+    void prepare_draw();
     // draw non-indexed geometry
     void draw(PrimitiveType, unsigned start, unsigned count);
     // draw indexed geometry
     void draw_index(PrimitiveType, unsigned start, unsigned count);
 
 protected:
-    struct RenderState
-    {
-        VertexBuffer*   vertex_buffers[kMaxVertexBuffers];
-        IndexBuffer*    index_buffer;
-        Shader*         shader;
-
-        BlendMode       blend_mode;
-        CullMode        cull_mode;
-        FillMode        fill_mode;
-
-        bool            color_write;
-        math::Rect2i    scissor;
-
-        bool            depth_test;
-        CompareMode     depth_test_mode;
-        bool            depth_write;
-        float           depth_constant_bias;
-        float           depth_slope_scaled_bias;
-
-        bool            stencil_test;
-        CompareMode     stencil_test_mode;
-        StencilOp       stencil_pass_op;
-        StencilOp       stencil_fail_op;
-        StencilOp       stencil_zfail_op;
-        unsigned        stencil_ref;
-        unsigned        stencil_write_mask;
-    };
-
     // window options and status
     int             _multisamples = 0;
     math::Vector2i  _size = {1, 1}, _position = {0, 0};
     Orientation     _orientation = Orientation::PORTRAIT;
     WindowOption    _options = WindowOption::NONE;
-
     DeviceContext*  _device = nullptr;
-    RenderState     _current, _last;
-};
+    int32_t         _system_frame_object = 0;
 
-// struct Resource
-// {
-//     // return the resource's device handle
-//     ResourceHandle get_handle() const { return _handle; }
+    // render states
+    int32_t         _current_texture = 0;
+    int32_t         _current_frame_object = 0;
+    int32_t         _current_vertex_object = 0;
+    VertexBuffer*   _vertex_buffers[kMaxVertexBuffers];
+    IndexBuffer*    _index_buffer;
+    Shader*         _shader;
 
-// protected:
-//     friend class Device;
-//     ResourceHandle _handle;
-// };
+    BlendMode       _blend_mode;
+    CullMode        _cull_mode;
 
-// using ResourceHandle    = size_t;
-// using ResourceWeakPtr   = std::weak_ptr<Resource>;
-// using ResourcePtr       = std::shared_ptr<Resource>;
+    bool            _color_write;
 
+    bool            _scissor_test;
+    math::Rect2i    _scissor;
 
-// high-level rendering subsystem, manages drawing of views
-struct Renderer
-{
+    bool            _depth_test;
+    CompareMode     _depth_test_mode;
+    bool            _depth_write;
+    float           _depth_constant_bias;
+    float           _depth_slope_scaled_bias;
 
-};
-
-struct GUIRenderer
-{
-
-};
-
-struct Material
-{
-
+    bool            _stencil_test;
+    CompareMode     _stencil_test_mode;
+    StencilOp       _stencil_pass_op;
+    StencilOp       _stencil_fail_op;
+    StencilOp       _stencil_zfail_op;
+    unsigned        _stencil_ref;
+    unsigned        _stencil_compare_mask;
+    unsigned        _stencil_write_mask;
 };
 
 NS_FLOW2D_GFX_END

@@ -56,6 +56,17 @@ template <typename T, T N>
 using make_integer_sequence = typename make_integer_sequence_impl<T, N>::type;
 
 /// to support bit mask operations of enumeration
+
+template<typename Enum> using UReturns = typename std::enable_if<
+    std::is_enum<Enum>::value,
+    typename std::underlying_type<Enum>::type>::type;
+
+template<typename Enum> UReturns<Enum> to_value (Enum e)
+{
+    return static_cast<typename std::underlying_type<Enum>::type>(e);
+}
+
+
 template<typename Enum>
 struct EnableBitMaskOperators
 {
