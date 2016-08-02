@@ -83,7 +83,7 @@ static const unsigned GL_STENCIL_OP[] =
 struct DeviceContext
 {
     SDL_Window*     window = nullptr;
-    SDL_GLContext   context;
+    SDL_GLContext   context = 0;
 };
 
 bool Device::initialize()
@@ -123,7 +123,7 @@ void Device::set_position(const math::Vector2i& position)
         SDL_SetWindowPosition(_device->window, position[0], position[1]);
 }
 
-bool Device::set_window(int width, int height, int multisample, WindowOption options)
+bool Device::spawn_window(int width, int height, int multisample, WindowOption options)
 {
     #ifdef PLATFORM_IOS
     // iOS app always take the fullscree (and with status bar hidden)
@@ -240,10 +240,26 @@ bool Device::restore_context()
 
     if( _device->context == 0 )
     {
+#ifndef GL_ES_VERSION_2_0
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#else
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 0);
+#endif
         _device->context = SDL_GL_CreateContext(_device->window);
     }
+
+#ifndef GL_ES_VERSION_2_0
+    GLenum err = glewInit();
+    if( GLEW_OK != err )
+    {
+        LOGW("failed to initialize OpenGL extensions, %s.", glewGetErrorString(err));
+        return false;
+    }
+#endif
 
     if( _device->context == 0 )
     {
@@ -256,21 +272,25 @@ bool Device::restore_context()
 
     // get default render framebuffer
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &_system_frame_object);
-
     reset_cached_state();
+
+    for( unsigned i = 0; i < _objects.size(); i++ )
+        if( _objects[i] != nullptr )
+            _objects[i]->on_device_restore();
     return true;
 }
 
 void Device::release_context()
 {
-    if( _device->window == nullptr )
-        return;
+    for( unsigned i = 0; i < _objects.size(); i++ )
+        if( _objects[i] != nullptr )
+            _objects[i]->on_device_lost();
 
-    if( _device->context != 0 )
-    {
+    if( _device->window != nullptr && _device->context != 0 )
         SDL_GL_DeleteContext(_device->context);
-        _device->context = 0;
-    }
+
+    _device->context = 0;
+    _device->window = nullptr;
 }
 
 bool Device::begin_frame()
@@ -309,13 +329,7 @@ void Device::clear(ClearOption options, const Color& color, float depth, unsigne
 
 void Device::reset_cached_state()
 {
-    _current_frame_object = _system_frame_object;
-    _current_texture = _current_vertex_object = 0;
-
-    _shader = nullptr;
-    _index_buffer = nullptr;
-    for(size_t i = 0; i < kMaxVertexBuffers; i++ )
-        _vertex_buffers[i] = nullptr;
+    _bound_fbo = _system_frame_object;
 
     _blend_mode = BlendMode::REPLACE;
     _cull_mode  = CullMode::NONE;
@@ -495,6 +509,36 @@ void Device::set_color_write(bool write)
 void Device::prepare_draw()
 {
 
+}
+
+bool Device::is_device_lost() const
+{
+    return _device->window == nullptr || _device->context == 0;
+}
+
+void Device::subscribe(GPUObject* object)
+{
+    for( unsigned i = 0; i < _objects.size(); i++ )
+    {
+        if( _objects[i] == nullptr )
+        {
+            _objects[i] = object;
+            return;
+        }
+    }
+    _objects.push_back(object);
+}
+
+void Device::unsubscribe(GPUObject* object)
+{
+    for( unsigned i = 0; i < _objects.size(); i++ )
+    {
+        if( _objects[i] == object )
+        {
+            _objects[i] = nullptr;
+            return;
+        }
+    }
 }
 
 NS_FLOW2D_GFX_END

@@ -55,6 +55,17 @@ struct make_integer_sequence_impl<T, N, typename std::enable_if<N==0>::type>
 template <typename T, T N>
 using make_integer_sequence = typename make_integer_sequence_impl<T, N>::type;
 
+template<typename Enum>
+struct EnableBitMaskOperators
+{
+    static const bool enable = false;
+};
+
+#define ENABLE_BITMASK_OPERATORS(E)  \
+    template<> struct flow2d::core::EnableBitMaskOperators<E> { static const bool enable = true; };
+
+NS_FLOW2D_CORE_END
+
 /// to support bit mask operations of enumeration
 
 template<typename Enum> using UReturns = typename std::enable_if<
@@ -65,16 +76,6 @@ template<typename Enum> UReturns<Enum> to_value (Enum e)
 {
     return static_cast<typename std::underlying_type<Enum>::type>(e);
 }
-
-
-template<typename Enum>
-struct EnableBitMaskOperators
-{
-    static const bool enable = false;
-};
-
-#define ENABLE_BITMASK_OPERATORS(E)  \
-    template<> struct flow2d::core::EnableBitMaskOperators<E> { static const bool enable = true; };
 
 template<typename Enum> struct TruthValue {
     using value_t = typename std::underlying_type<Enum>::type;
@@ -88,7 +89,7 @@ template<typename Enum> struct TruthValue {
 };
 
 template<typename Enum> using MaskReturns =
-    typename std::enable_if<EnableBitMaskOperators<Enum>::enable, TruthValue<Enum>>::type;
+    typename std::enable_if<flow2d::core::EnableBitMaskOperators<Enum>::enable, TruthValue<Enum>>::type;
 
 template<typename Enum> MaskReturns<Enum> operator ~ (Enum lhs)
 {
@@ -104,7 +105,7 @@ template<typename Enum> MaskReturns<Enum> operator & (Enum lhs, Enum rhs)
 
 template<typename Enum> MaskReturns<Enum> operator & (Enum& lhs, TruthValue<Enum> rhs)
 {
-    return lhs & rhs;
+    return lhs & rhs.t;
 }
 
 template<typename Enum> MaskReturns<Enum> operator &= (Enum& lhs, Enum rhs)
@@ -115,7 +116,7 @@ template<typename Enum> MaskReturns<Enum> operator &= (Enum& lhs, Enum rhs)
 
 template<typename Enum> MaskReturns<Enum> operator &= (Enum& lhs, TruthValue<Enum> rhs)
 {
-    lhs = lhs & rhs;
+    lhs = lhs & rhs.t;
     return lhs;
 }
 
@@ -127,7 +128,7 @@ template<typename Enum> MaskReturns<Enum> operator | (Enum lhs, Enum rhs)
 
 template<typename Enum> MaskReturns<Enum> operator | (Enum& lhs, TruthValue<Enum> rhs)
 {
-    return lhs | rhs;
+    return lhs | rhs.t;
 }
 
 template<typename Enum> MaskReturns<Enum> operator |= (Enum& lhs, Enum rhs)
@@ -138,7 +139,7 @@ template<typename Enum> MaskReturns<Enum> operator |= (Enum& lhs, Enum rhs)
 
 template<typename Enum> MaskReturns<Enum> operator |= (Enum& lhs, TruthValue<Enum> rhs)
 {
-    lhs = lhs | rhs;
+    lhs = lhs | rhs.t;
     return lhs;
 }
 
@@ -150,7 +151,7 @@ template<typename Enum> MaskReturns<Enum> operator ^ (Enum lhs, Enum rhs)
 
 template<typename Enum> MaskReturns<Enum> operator ^ (Enum& lhs, TruthValue<Enum> rhs)
 {
-    return lhs ^ rhs;
+    return lhs ^ rhs.t;
 }
 
 template<typename Enum> MaskReturns<Enum> operator ^= (Enum& lhs, Enum rhs)
@@ -161,8 +162,7 @@ template<typename Enum> MaskReturns<Enum> operator ^= (Enum& lhs, Enum rhs)
 
 template<typename Enum> MaskReturns<Enum> operator ^= (Enum& lhs, TruthValue<Enum> rhs)
 {
-    lhs = lhs ^ rhs;
+    lhs = lhs ^ rhs.t;
     return lhs;
 }
 
-NS_FLOW2D_CORE_END

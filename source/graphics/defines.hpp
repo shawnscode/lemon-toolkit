@@ -10,7 +10,8 @@
 
 NS_FLOW2D_GFX_BEGIN
 
-const static size_t kMaxVertexBuffers = 8;
+const static size_t kMaxVertexAttributes = 8;
+const static size_t kMaxTextures = 8;
 
 using ResourceHandle = size_t;
 
@@ -107,10 +108,9 @@ enum class VertexElementSemantic
     OBJECTINDEX
 };
 
-struct Resource;
-struct Shader;
+struct Device;
+struct GPUObject;
 struct IndexBuffer;
 struct VertexBuffer;
-struct GraphicsEngine;
 
 NS_FLOW2D_GFX_END

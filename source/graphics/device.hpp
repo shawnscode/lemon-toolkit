@@ -11,39 +11,6 @@
 
 NS_FLOW2D_GFX_BEGIN
 
-// auto& device = _context.get_subsystem<graphics::Device>();
-
-// auto vb = device.spawn<VertexBuffer>();
-// auto ib = device.spawn<IndexBuffer>();
-// auto texture1 = device.spawn<Texture>();
-
-// auto shader = device.spawn<Shader>();
-// shader->set_texture(0, texture1);
-
-// device.set_vertex_buffer(vb.get());
-// device.set_index_buffer(id.get());
-// device.set_shader(shader.get());
-
-// struct GPUObject
-// {
-//     GPUObject(Device&);
-//     virtual ~GPUObject();
-
-//     virtual bool initialize() = 0;
-//     virtual void dispose() = 0;
-//     // mark the GPU resources destroyed on context destruction
-//     virtual void on_device_lost() = 0;
-//     // recreate the GPU resources and restore data if applicable
-//     virtual void on_device_restore() = 0;
-
-// protected:
-//     Device& device;
-// };
-
-// ????
-// 1. managed by graphics::Device
-// 2. 
-
 enum class WindowOption : uint16_t
 {
     NONE        = 0x0,
@@ -79,13 +46,15 @@ struct Device : public core::Subsystem
     bool restore_context();
     // release OpenGL context and handle the device lost of GPU resources
     void release_context();
+    // reset all the graphics state to default
+    void reset_cached_state();
 
     // set allowed screen orientations as a space-separated way
     void set_orientations(Orientation);
     // set the initial left-upper position of window
     void set_position(const math::Vector2i&);
     // create window with width, height, and options. return true if successful
-    bool set_window(int, int, int multisample = 1, WindowOption options = WindowOption::NONE);
+    bool spawn_window(int, int, int multisample = 1, WindowOption options = WindowOption::NONE);
     // close current window and release OpenGL context
     void close_window();
 
@@ -96,8 +65,19 @@ struct Device : public core::Subsystem
     // clear any or all of rendertarget, depth buffer and stencil buffer
     void clear(ClearOption, const Color& color = {0.f, 0.f, 0.f, 0.f}, float depth = 1.f, unsigned stencil = 0);
 
-    // reset all the graphics state to default
-    void reset_cached_state();
+    // bind index buffer object
+    void set_index_buffer(unsigned);
+    // bind vertex buffer object
+    void set_vertex_buffer(unsigned);
+    // bind texture object to specified unit
+    void set_texture(unsigned);
+
+    // prepare for draw call. setup corresponding frame/vertex buffer object
+    void prepare_draw();
+    // draw non-indexed geometry
+    void draw(PrimitiveType, unsigned start, unsigned count);
+    // draw indexed geometry
+    void draw_index(PrimitiveType, unsigned start, unsigned count);
 
     // set viewport
     void set_viewport(const math::Rect2i&);
@@ -115,27 +95,20 @@ struct Device : public core::Subsystem
     void set_depth_bias(float slope_scaled = 0.f, float constant = 0.f);
     void set_color_write(bool);
 
+    // check if we have valid window and OpenGL context
+    bool is_device_lost() const;
     // restore gpu object and reinitialize state, returns a custom shared_ptr
-    // template<typename T> using spawn_return = typename std::enable_if<
-    //     std::is_base_of<GPUObject, T>::value,
-    //     std::shared_ptr<T>>::type;
-    // template<typename T, typename ... Args> spawn_return<T> spawn(Args&& ...);
-
-    // set vertex buffer
-    void set_vertex_buffer(VertexBuffer*);
-    // set index buffer
-    void set_index_buffer(IndexBuffer*);
-    // set shader
-    void set_shader(Shader*);
-
-    // prepare for draw call. setup corresponding frame/vertex buffer object
-    void prepare_draw();
-    // draw non-indexed geometry
-    void draw(PrimitiveType, unsigned start, unsigned count);
-    // draw indexed geometry
-    void draw_index(PrimitiveType, unsigned start, unsigned count);
+    template<typename T> using spawn_return = typename std::enable_if<
+        std::is_base_of<GPUObject, T>::value,
+        std::shared_ptr<T>>::type;
+    template<typename T, typename ... Args> spawn_return<T> spawn(Args&& ...);
 
 protected:
+    friend class GPUObject;
+    void subscribe(GPUObject*);
+    void unsubscribe(GPUObject*);
+    std::vector<GPUObject*> _objects;
+
     // window options and status
     int             _multisamples = 0;
     math::Vector2i  _size = {1, 1}, _position = {0, 0};
@@ -145,13 +118,7 @@ protected:
     int32_t         _system_frame_object = 0;
 
     // render states
-    int32_t         _current_texture = 0;
-    int32_t         _current_frame_object = 0;
-    int32_t         _current_vertex_object = 0;
-    VertexBuffer*   _vertex_buffers[kMaxVertexBuffers];
-    IndexBuffer*    _index_buffer;
-    Shader*         _shader;
-
+    unsigned        _bound_fbo = 0;
     BlendMode       _blend_mode;
     CullMode        _cull_mode;
 
@@ -175,6 +142,43 @@ protected:
     unsigned        _stencil_compare_mask;
     unsigned        _stencil_write_mask;
 };
+
+struct GPUObject
+{
+    unsigned get_handle() const { return _handle; }
+
+protected:
+    friend struct Device;
+
+    GPUObject(Device& device) : _device(device), _handle(0) { _device.subscribe(this); }
+    virtual ~GPUObject() { _device.unsubscribe(this); }
+
+    virtual bool initialize() = 0;
+    virtual void dispose() = 0;
+
+    virtual void on_device_lost() { _handle = 0; }
+    virtual void on_device_restore() {}
+
+    Device&     _device;
+    unsigned    _handle;
+};
+
+///
+template<typename T, typename ... Args>
+Device::spawn_return<T> Device::spawn(Args&& ... args)
+{
+    if( is_device_lost() )
+    {
+        LOGW("failed to create GPU object due to device lost.");
+        return nullptr;
+    }
+
+    auto object = new (std::nothrow) T(*this, std::forward<Args>(args)...);
+    if( object && object->initialize() )
+        return std::shared_ptr<T>(object);
+    return nullptr;
+}
+
 
 NS_FLOW2D_GFX_END
 
