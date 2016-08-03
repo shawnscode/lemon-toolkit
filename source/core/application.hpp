@@ -6,6 +6,13 @@
 
 NS_FLOW2D_CORE_BEGIN
 
+enum class Platform : uint8_t
+{
+    DESKTOP,
+    IOS,
+    ANDROID
+};
+
 // application subsystem. manages the executing environments, should be the first
 // subsystem to be created.
 struct Application : Subsystem

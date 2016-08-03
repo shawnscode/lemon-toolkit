@@ -289,6 +289,13 @@ bool Device::restore_context()
     for( unsigned i = 0; i < _objects.size(); i++ )
         if( _objects[i] != nullptr )
             _objects[i]->on_device_restore();
+
+    // ouput informations
+    LOGI("Restore OpenGL context with:");
+    LOGI("GL_VENDOR:                    %s", glGetString(GL_VENDOR));
+    LOGI("GL_RENDERER:                  %s", glGetString(GL_RENDERER));
+    LOGI("GL_VERSION:                   %s", glGetString(GL_VERSION));
+    LOGI("GL_SHADING_LANGUAGE_VERSION:  %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
     return true;
 }
 
