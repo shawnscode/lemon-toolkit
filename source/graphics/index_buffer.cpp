@@ -1,9 +1,9 @@
-#include <graphics/vertex_buffer.hpp>
+#include <graphics/index_buffer.hpp>
 #include <graphics/opengl.hpp>
 
 NS_FLOW2D_GFX_BEGIN
 
-bool VertexBuffer::initialize()
+bool IndexBuffer::initialize()
 {
     ENSURE( !_device.is_device_lost() );
 
@@ -19,41 +19,32 @@ bool VertexBuffer::initialize()
         return false;
     }
 
-    _device.set_vertex_buffer(_handle);
-    glBufferData(GL_ARRAY_BUFFER, _count*_size, 0, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
-    CHECK_GL_ERROR();
+    _device.set_index_buffer(_handle);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, _count*_size, 0, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     return true;
 }
 
-void VertexBuffer::dispose()
+void IndexBuffer::dispose()
 {
     if( _device.is_device_lost() )
         _handle = 0;
 
     if( _handle != 0 )
     {
-        if( _device.get_bound_vertex_buffer() == _handle )
-            _device.set_vertex_buffer(0);
+        if( _device.get_bound_index_buffer() == _handle )
+            _device.set_index_buffer(0);
         glDeleteBuffers(1, &_handle);
         _handle = 0;
     }
 }
 
-void VertexBuffer::on_device_restore()
+void IndexBuffer::on_device_restore()
 {
     initialize();
     if( _data_pending ) set_data(_shadowed_data.get());
 }
 
-void VertexBuffer::bind()
-{
-    if( !_handle || _device.is_device_lost() )
-        return;
-
-    _device.set_vertex_buffer(_handle);
-}
-
-void VertexBuffer::set_shadowed(bool enable)
+void IndexBuffer::set_shadowed(bool enable)
 {
     if( (_shadowed_data != nullptr) != enable )
     {
@@ -68,7 +59,7 @@ void VertexBuffer::set_shadowed(bool enable)
     }
 }
 
-bool VertexBuffer::set_data(const void* data)
+bool IndexBuffer::set_data(const void* data)
 {
     if( !data )
     {
@@ -87,17 +78,16 @@ bool VertexBuffer::set_data(const void* data)
 
     if( _handle && !_device.is_device_lost() )
     {
-        _device.set_vertex_buffer(_handle);
-        glBufferData(GL_ARRAY_BUFFER, _count * _size, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+        _device.set_index_buffer(_handle);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, _count * _size, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
     else
         _data_pending = true;
 
-    CHECK_GL_ERROR();
     return true;
 }
 
-bool VertexBuffer::set_data_range(const void* data, unsigned start, unsigned count, bool discard)
+bool IndexBuffer::set_data_range(const void* data, unsigned start, unsigned count, bool discard)
 {
     if( start == 0 && count == _count )
         return set_data(data);
@@ -122,16 +112,15 @@ bool VertexBuffer::set_data_range(const void* data, unsigned start, unsigned cou
 
     if( _handle && !_device.is_device_lost() )
     {
-        _device.set_vertex_buffer(_handle);
+        _device.set_index_buffer(_handle);
         if( !discard || start != 0 )
-            glBufferSubData(GL_ARRAY_BUFFER, start * _size, count * _size, data);
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, start * _size, count * _size, data);
         else
-            glBufferData(GL_ARRAY_BUFFER, count*_size, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, count*_size, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
     else
         _data_pending = true;
 
-    CHECK_GL_ERROR();
     return true;
 }
 

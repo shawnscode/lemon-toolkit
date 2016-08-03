@@ -44,6 +44,16 @@ using Vector2   = Vector<2, T>;
 using Vector2f  = Vector<2, float>;
 using Vector2i  = Vector<2, int>;
 
+template<typename T>
+using Vector3   = Vector<3, T>;
+using Vector3f  = Vector<3, float>;
+using Vector3i  = Vector<3, int>;
+
+template<typename T>
+using Vector4   = Vector<4, T>;
+using Vector4f  = Vector<4, float>;
+using Vector4i  = Vector<4, int>;
+
 // string serialization with stream
 template<size_t N, typename T>
 std::ostream& operator<< (std::ostream&, const Vector<N, T>&);

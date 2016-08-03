@@ -6,6 +6,6 @@
 #include <graphics/vertex_buffer.hpp>
 // #include <graphics/texture.hpp>
 // #include <graphics/surface.hpp>
-// #include <graphics/shader.hpp>
+#include <graphics/shader.hpp>
 
 #define USING_NS_FLOW2D_GRAPHICS using namespace flow2d::graphics;

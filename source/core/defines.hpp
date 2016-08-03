@@ -19,4 +19,11 @@ struct EventManager;
 struct EntityManager;
 struct Context;
 
+enum class Platform : uint8_t
+{
+    DESKTOP,
+    IOS,
+    ANDROID
+};
+
 NS_FLOW2D_CORE_END

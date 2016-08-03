@@ -24,4 +24,15 @@ void Application::dispose()
     SDL_Quit();
 }
 
+Platform Application::get_platform() const
+{
+#if defined(PLATFORM_IOS)
+    return Platform::IOS;
+#elif defined(ANDROID)
+    return Platform::ANDROID;
+#else
+    return Platform::DESKTOP;
+#endif
+}
+
 NS_FLOW2D_CORE_END

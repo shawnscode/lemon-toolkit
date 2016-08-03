@@ -17,6 +17,8 @@ struct Application : Subsystem
 
     bool initialize() override;
     void dispose() override;
+
+    Platform get_platform() const;
 };
 
 NS_FLOW2D_CORE_END

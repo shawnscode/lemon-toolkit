@@ -3,10 +3,9 @@
 
 #pragma once
 
-#include <graphics/defines.hpp>
-#include <graphics/color.hpp>
+#include <math/defines.hpp>
 
-NS_FLOW2D_GFX_BEGIN
+NS_FLOW2D_MATH_BEGIN
 
 struct Color
 {
@@ -140,4 +139,4 @@ INLINE Color lerp(const Color& from, const Color& to, float t)
     return from + (to-from)*t;
 }
 
-NS_FLOW2D_GFX_END
+NS_FLOW2D_MATH_END

@@ -1,9 +1,9 @@
 // @date 2016/06/01
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <graphics/color.hpp>
+#include <math/color.hpp>
 
-NS_FLOW2D_GFX_BEGIN
+NS_FLOW2D_MATH_BEGIN
 
 const Color Color::WHITE        = { 1.f, 1.f, 1.f, 1.f };
 const Color Color::GRAY         = { 0.5f, 0.5f, 0.5f, 0.5f };
@@ -34,4 +34,4 @@ Color::Color(const Color& rh, float a)
     a = a;
 }
 
-NS_FLOW2D_GFX_END
+NS_FLOW2D_MATH_END

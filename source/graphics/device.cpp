@@ -21,6 +21,17 @@ static const char* orientation_tostring(Orientation orientation)
     }
 }
 
+static const unsigned GL_PRIMITIVE[] =
+{
+    GL_POINTS,
+    GL_LINES,
+    GL_LINE_LOOP,
+    GL_LINE_STRIP,
+    GL_TRIANGLES,
+    GL_TRIANGLE_STRIP,
+    GL_TRIANGLE_FAN
+};
+
 static const unsigned GL_COMPARE_FUNC[] =
 {
     GL_ALWAYS,
@@ -253,6 +264,7 @@ bool Device::restore_context()
     }
 
 #ifndef GL_ES_VERSION_2_0
+    glewExperimental = GL_TRUE;
     GLenum err = glewInit();
     if( GLEW_OK != err )
     {
@@ -287,10 +299,11 @@ void Device::release_context()
             _objects[i]->on_device_lost();
 
     if( _device->window != nullptr && _device->context != 0 )
+    {
         SDL_GL_DeleteContext(_device->context);
-
-    _device->context = 0;
-    _device->window = nullptr;
+        _device->context = 0;
+        _device->window = nullptr;
+    }
 }
 
 bool Device::begin_frame()
@@ -303,7 +316,7 @@ void Device::end_frame()
     SDL_GL_SwapWindow(_device->window);
 }
 
-void Device::clear(ClearOption options, const Color& color, float depth, unsigned stencil)
+void Device::clear(ClearOption options, const math::Color& color, float depth, unsigned stencil)
 {
     unsigned flags = 0;
     if( options & ClearOption::COLOR )
@@ -330,6 +343,7 @@ void Device::clear(ClearOption options, const Color& color, float depth, unsigne
 void Device::reset_cached_state()
 {
     _bound_fbo = _system_frame_object;
+    _bound_vbo = _bound_ibo = _bound_program = 0;
 
     _blend_mode = BlendMode::REPLACE;
     _cull_mode  = CullMode::NONE;
@@ -506,9 +520,43 @@ void Device::set_color_write(bool write)
     }
 }
 
+void Device::set_shader(unsigned program)
+{
+    if( program != _bound_program )
+    {
+        glUseProgram(program);
+        _bound_program = program;
+    }
+}
+
+void Device::set_index_buffer(unsigned ibo)
+{
+    if( ibo != _bound_ibo )
+    {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+        _bound_ibo = ibo;
+    }
+}
+
+void Device::set_vertex_buffer(unsigned vbo)
+{
+    if( vbo != _bound_vbo )
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        _bound_vbo = vbo;
+    }
+}
+
+
 void Device::prepare_draw()
 {
 
+}
+
+void Device::draw(PrimitiveType type, unsigned start, unsigned count)
+{
+    glDrawArrays(GL_PRIMITIVE[to_value(type)], start, count);
+    CHECK_GL_ERROR();
 }
 
 bool Device::is_device_lost() const
@@ -539,6 +587,30 @@ void Device::unsubscribe(GPUObject* object)
             return;
         }
     }
+}
+
+static const char* to_string(GLenum error)
+{
+    switch(error) {
+        case GL_INVALID_OPERATION:
+            return "INVALID_OPERATION";
+        case GL_INVALID_ENUM:
+            return "INVALID_ENUM";
+        case GL_INVALID_VALUE:
+            return "INVALID_VALUE";
+        case GL_OUT_OF_MEMORY:
+            return "OUT_OF_MEMORY";
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+            return "INVALID_FRAMEBUFFER_OPERATION";
+    }
+    return "UNDEFINED";
+}
+
+void check_device_error(const char* file, unsigned line)
+{
+    GLenum error = glGetError();
+    if( error != GL_NO_ERROR && error != GL_INVALID_ENUM )
+        FATAL("GL_%s", to_string(error));
 }
 
 NS_FLOW2D_GFX_END

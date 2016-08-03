@@ -4,10 +4,10 @@
 #pragma once
 
 #include <graphics/defines.hpp>
-#include <graphics/color.hpp>
 #include <core/context.hpp>
 #include <core/typeinfo.hpp>
 #include <math/rect.hpp>
+#include <math/color.hpp>
 
 NS_FLOW2D_GFX_BEGIN
 
@@ -63,14 +63,14 @@ struct Device : public core::Subsystem
     // end frame rendering and swap buffers
     void end_frame();
     // clear any or all of rendertarget, depth buffer and stencil buffer
-    void clear(ClearOption, const Color& color = {0.f, 0.f, 0.f, 0.f}, float depth = 1.f, unsigned stencil = 0);
+    void clear(ClearOption, const math::Color& color = {0.f, 0.f, 0.f, 0.f}, float depth = 1.f, unsigned stencil = 0);
 
-    // bind index buffer object
+    // set current shader program
+    void set_shader(unsigned);
+    // set index buffer
     void set_index_buffer(unsigned);
-    // bind vertex buffer object
+    // set vertex buffer
     void set_vertex_buffer(unsigned);
-    // bind texture object to specified unit
-    void set_texture(unsigned);
 
     // prepare for draw call. setup corresponding frame/vertex buffer object
     void prepare_draw();
@@ -95,13 +95,18 @@ struct Device : public core::Subsystem
     void set_depth_bias(float slope_scaled = 0.f, float constant = 0.f);
     void set_color_write(bool);
 
-    // check if we have valid window and OpenGL context
-    bool is_device_lost() const;
     // restore gpu object and reinitialize state, returns a custom shared_ptr
     template<typename T> using spawn_return = typename std::enable_if<
         std::is_base_of<GPUObject, T>::value,
         std::shared_ptr<T>>::type;
     template<typename T, typename ... Args> spawn_return<T> spawn(Args&& ...);
+
+    // check if we have valid window and OpenGL context
+    bool is_device_lost() const;
+
+    unsigned get_bound_vertex_buffer() const { return _bound_vbo; }
+    unsigned get_bound_index_buffer() const { return _bound_ibo; }
+    unsigned get_bound_shader() const { return _bound_program; }
 
 protected:
     friend class GPUObject;
@@ -119,6 +124,7 @@ protected:
 
     // render states
     unsigned        _bound_fbo = 0;
+    unsigned        _bound_program = 0, _bound_vbo = 0, _bound_ibo = 0;
     BlendMode       _blend_mode;
     CullMode        _cull_mode;
 
@@ -176,9 +182,10 @@ Device::spawn_return<T> Device::spawn(Args&& ... args)
     auto object = new (std::nothrow) T(*this, std::forward<Args>(args)...);
     if( object && object->initialize() )
         return std::shared_ptr<T>(object);
+
+    if( object ) delete object;
     return nullptr;
 }
-
 
 NS_FLOW2D_GFX_END
 

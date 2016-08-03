@@ -7,15 +7,24 @@
 
 NS_FLOW2D_GFX_BEGIN
 
+// arbitrary vertex declaration element datatypes
+enum class VertexElementMask : unsigned
+{
+    INT     = 0x1,
+    UBYTE   = 0x2,
+
+    VECTOR2 = 0x10,
+    VECTOR3 = 0x20,
+    VECTOR4 = 0x30,
+
+    NORMALIZED = 0x100,
+};
+
 struct VertexBuffer : public GPUObject
 {
-    VertexBuffer(Device& device, unsigned count, unsigned size, bool dynamic = false)
-    : GPUObject(device), _count(count), _size(size), _dynamic(dynamic)
-    {}
+    virtual ~VertexBuffer() { dispose(); }
 
-    bool initialize() override;
-    void dispose() override;
-    void on_device_restore() override;
+    void bind();
 
     // enable shadowing in cpu memory, and its forced on if the GraphicsEngine does not exist
     void set_shadowed(bool);
@@ -27,12 +36,22 @@ struct VertexBuffer : public GPUObject
     // lock the buffer for write-only editing. return data pointer if successful. optionally discard data outside the range
     void* lock(unsigned, unsigned, bool discard = false);
     // unlock the buffer and apply changes to the graphic buffer
-    void unlock();
+    void  unlock();
 
     // return number of vertices
     unsigned get_vertex_count() const { _count; }
     // return vertex size in bytes
     unsigned get_vertex_size() const { _size; }
+
+protected:
+    friend class Device;
+    VertexBuffer(Device& device, unsigned count, unsigned size, bool dynamic = false)
+    : GPUObject(device), _count(count), _size(size), _dynamic(dynamic)
+    {}
+
+    bool initialize() override;
+    void dispose() override;
+    void on_device_restore() override;
 
 protected:
     bool        _dynamic;
@@ -46,3 +65,4 @@ protected:
 };
 
 NS_FLOW2D_GFX_END
+ENABLE_BITMASK_OPERATORS(flow2d::graphics::VertexElementMask);

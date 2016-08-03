@@ -17,12 +17,13 @@ using ResourceHandle = size_t;
 
 enum class PrimitiveType : uint8_t
 {
-    TRIANGLE_LIST = 0,
+    POINTS = 0,
+    LINES,
+    LINE_LOOP,
+    LINE_STRIP,
+    TRIANGLES,
     TRIANGLE_STRIP,
     TRIANGLE_FAN,
-    LINE_LIST,
-    LINE_STRIP,
-    POINT_LIST,
 };
 
 enum class Orientation : uint8_t
@@ -71,41 +72,6 @@ enum class BlendMode : uint8_t
     INVDESTALPHA,
     SUBTRACT,
     SUBTRACTALPHA
-};
-
-// vertex/index buffer lock state
-enum class LockState
-{
-    NONE = 0,
-    HARDWARE,
-    SHADOW,
-    SCRATCH
-};
-
-// arbitrary vertex declaration element datatypes
-enum class VertexElementType
-{
-    INT,
-    FLOAT,
-    VECTOR2,
-    VECTOR3,
-    VECTOR4,
-    UBYTE4,
-    UBYTE4_NORM
-};
-
-// arbitrary vertex declaration element semantics
-enum class VertexElementSemantic
-{
-    POSITION,
-    NORMAL,
-    BINORMAL,
-    TANGENT,
-    TEXCOORD,
-    COLOR,
-    BLENDWEIGHTS,
-    BLENDINDICES,
-    OBJECTINDEX
 };
 
 struct Device;

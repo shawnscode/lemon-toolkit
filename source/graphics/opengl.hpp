@@ -5,7 +5,9 @@
 
 #pragma once
 
-#include <defines.hpp>
+#include <graphics/defines.hpp>
+
+NS_FLOW2D_GFX_BEGIN
 
 #if defined(PLATFORM_ANDROID)
 #define GL_ES_VERSION_2_0
@@ -22,3 +24,9 @@
 #endif
 
 #include <SDL2/SDL.h>
+
+extern void check_device_error(const char* file, unsigned line);
+
+#define CHECK_GL_ERROR() check_device_error(__FILE__, __LINE__);
+
+NS_FLOW2D_GFX_END
