@@ -89,6 +89,22 @@ enum class ClearOption : uint8_t
     STENCIL = 0x4
 };
 
+struct Resource
+{
+    virtual bool restore() { return true; }
+    virtual void release() { _object = 0; }
+
+protected:
+    friend class Device;
+
+    // the entire lifetime of GPU resources should be managed by Device
+    Resource(Device& device) : _device(device) {}
+    virtual ~Resource() {}
+
+    Device&     _device;
+    unsigned    _object = 0;
+};
+
 // graphics device subsystem. manages the window device, renedering state and gpu resources
 struct DeviceContext;
 struct Device : public core::Subsystem
@@ -156,7 +172,7 @@ struct Device : public core::Subsystem
 
     // restore gpu object and reinitialize state, returns a custom shared_ptr
     template<typename T> using spawn_return = typename std::enable_if<
-        std::is_base_of<GPUObject, T>::value,
+        std::is_base_of<Resource, T>::value,
         std::shared_ptr<T>>::type;
     template<typename T, typename ... Args> spawn_return<T> spawn(Args&& ...);
 
@@ -168,10 +184,9 @@ struct Device : public core::Subsystem
     unsigned get_bound_shader() const { return _bound_program; }
 
 protected:
-    friend class GPUObject;
-    void subscribe(GPUObject*);
-    void unsubscribe(GPUObject*);
-    std::vector<GPUObject*> _objects;
+    void subscribe(Resource*);
+    void unsubscribe(Resource*);
+    std::vector<Resource*> _objects;
 
     // window options and status
     int             _multisamples = 0;
@@ -208,41 +223,16 @@ protected:
     unsigned        _stencil_write_mask;
 };
 
-struct GPUObject
-{
-    unsigned get_handle() const { return _handle; }
-
-protected:
-    friend struct Device;
-
-    GPUObject(Device& device) : _device(device), _handle(0) { _device.subscribe(this); }
-    virtual ~GPUObject() { _device.unsubscribe(this); }
-
-    virtual bool initialize() = 0;
-    virtual void dispose() = 0;
-
-    virtual void on_device_lost() { _handle = 0; }
-    virtual void on_device_restore() {}
-
-    Device&     _device;
-    unsigned    _handle;
-};
-
 ///
 template<typename T, typename ... Args>
 Device::spawn_return<T> Device::spawn(Args&& ... args)
 {
-    if( is_device_lost() )
-    {
-        LOGW("failed to create GPU object due to device lost.");
-        return nullptr;
-    }
-
     auto object = new (std::nothrow) T(*this, std::forward<Args>(args)...);
-    if( object && object->initialize() )
-        return std::shared_ptr<T>(object);
-
-    if( object ) delete object;
+    if( object )
+    {
+        subscribe(object);
+        return std::shared_ptr<T>(object, std::bind(&Device::unsubscribe, this, std::placeholders::_1));
+    }
     return nullptr;
 }
 

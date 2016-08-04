@@ -39,19 +39,24 @@ GLuint compile(GLenum type, const char* source)
     return shader;
 }
 
-bool Shader::initialize()
+bool Shader::restore()
 {
-    ENSURE( !_device.is_device_lost() );
+    if( _device.is_device_lost() )
+    {
+        LOGW("trying to restore vertex buffer while device is lost.");
+        return false;
+    }
 
     if( _fragment_shader.empty() || _vertex_shader.empty() )
         return false;
 
-    if( !_handle )
-        _handle = glCreateProgram();
-    
-    if( !_handle )
+    if( _object != 0 )
+        return true;
+
+    _object = glCreateProgram();
+    if( _object == 0 )
     {
-        LOGW("failed to create program name.");
+        LOGW("failed to create program object.");
         return false;
     }
 
@@ -63,23 +68,23 @@ bool Shader::initialize()
     if( fs == 0 )
         return false;
 
-    glAttachShader(_handle, vs);
-    glAttachShader(_handle, fs);
-    glLinkProgram(_handle);
+    glAttachShader(_object, vs);
+    glAttachShader(_object, fs);
+    glLinkProgram(_object);
 
-    glDetachShader(_handle, fs);
-    glDetachShader(_handle, vs);
+    glDetachShader(_object, fs);
+    glDetachShader(_object, vs);
     glDeleteShader(fs);
     glDeleteShader(vs);
 
     GLint status;
-    glGetProgramiv(_handle, GL_LINK_STATUS, &status);
+    glGetProgramiv(_object, GL_LINK_STATUS, &status);
     if( status == 0 )
     {
         char buf[1024];
         GLint len;
-        glGetProgramInfoLog(_handle, 1024, &len, buf);
-        printf("link failed:%s\n", buf);
+        glGetProgramInfoLog(_object, 1024, &len, buf);
+        LOGW("failed to link program: %s\n", buf);
         return false;
     }
 
@@ -91,26 +96,31 @@ bool Shader::initialize()
     return true;
 };
 
-void Shader::dispose()
+void Shader::release()
 {
-    if( _device.is_device_lost() )
-        _handle = 0;
-
-    if( _handle != 0 )
+    if( !_device.is_device_lost() )
     {
-        if( _device.get_bound_shader() == _handle )
-            _device.set_shader(0);
-        glDeleteProgram(_handle);
-        _handle = 0;
+        if( _object != 0 )
+        {
+            if( _device.get_bound_shader() == _object )
+                _device.set_shader(0);
+            glDeleteProgram(_object);
+        }
+
+        if( _vao != 0 )
+            glDeleteVertexArrays(1, &_vao);
     }
+
+    _object = 0;
+    _vao = 0;
 }
 
 void Shader::bind()
 {
-    if( !_handle || _device.is_device_lost() )
+    if( !_object || _device.is_device_lost() )
         return;
 
-    _device.set_shader(_handle);
+    _device.set_shader(_object);
 
 #ifndef GL_ES_VERSION_2_0
     glBindVertexArray(_vao);
@@ -150,7 +160,7 @@ void Shader::set_vertex_attribute(const char* name,
 {
     ASSERT( name, "invalid attribute name." );
 
-    if( !_handle || _device.is_device_lost() )
+    if( !_object || _device.is_device_lost() )
     {
         LOGW("trying to set vertex attribute while device is lost.");
         return;
@@ -177,7 +187,7 @@ void Shader::set_vertex_attribute(const char* name,
         }
     }
 
-    auto location = glGetAttribLocation(_handle, name);
+    auto location = glGetAttribLocation(_object, name);
     if( location == - 1 )
     {
         LOGW("failed to locate attribute %s.", name);
@@ -199,7 +209,7 @@ void Shader::set_vertex_attribute(const char* name,
 
 int32_t Shader::get_uniform_location(const char* name)
 {
-    if( !_handle || _device.is_device_lost() )
+    if( !_object || _device.is_device_lost() )
     {
         LOGW("trying to set uniform while device is lost.");
         return -1;
@@ -211,7 +221,7 @@ int32_t Shader::get_uniform_location(const char* name)
             return pair.second;
     }
 
-    auto location = glGetUniformLocation(_handle, name);
+    auto location = glGetUniformLocation(_object, name);
     if( location == -1 )
         LOGW("failed to locate uniform %s.", name);
 
@@ -225,7 +235,7 @@ void Shader::set_uniform1f(const char* name, const math::Vector<1, float>& value
     if( pos == -1 )
         return;
 
-    _device.set_shader(_handle);
+    _device.set_shader(_object);
     glUniform1f(pos, value[0]);
     CHECK_GL_ERROR();
 }
@@ -236,7 +246,7 @@ void Shader::set_uniform2f(const char* name, const math::Vector<2, float>& value
     if( pos == -1 )
         return;
 
-    _device.set_shader(_handle);
+    _device.set_shader(_object);
     glUniform2f(pos, value[0], value[1]);
     CHECK_GL_ERROR();
 }
@@ -247,7 +257,7 @@ void Shader::set_uniform3f(const char* name, const math::Vector<3, float>& value
     if( pos == -1 )
         return;
 
-    _device.set_shader(_handle);
+    _device.set_shader(_object);
     glUniform3f(pos, value[0], value[1], value[2]);
     CHECK_GL_ERROR();
 }
@@ -258,7 +268,7 @@ void Shader::set_uniform4f(const char* name, const math::Vector<4, float>& value
     if( pos == -1 )
         return;
 
-    _device.set_shader(_handle);
+    _device.set_shader(_object);
     glUniform4f(pos, value[0], value[1], value[2], value[3]);
     CHECK_GL_ERROR();
 }
@@ -269,7 +279,7 @@ void Shader::set_uniform2fm(const char* name, const math::Matrix<2, 2, float>& v
     if( pos == -1 )
         return;
 
-    _device.set_shader(_handle);
+    _device.set_shader(_object);
     glUniformMatrix2fv(pos, 1, GL_TRUE, (float*)&value);
     CHECK_GL_ERROR();
 }
@@ -280,7 +290,7 @@ void Shader::set_uniform3fm(const char* name, const math::Matrix<3, 3, float>& v
     if( pos == -1 )
         return;
 
-    _device.set_shader(_handle);
+    _device.set_shader(_object);
     glUniformMatrix3fv(pos, 1, GL_TRUE, (float*)&value);
     CHECK_GL_ERROR();
 }
@@ -291,10 +301,9 @@ void Shader::set_uniform4fm(const char* name, const math::Matrix<4, 4, float>& v
     if( pos == -1 )
         return;
 
-    _device.set_shader(_handle);
+    _device.set_shader(_object);
     glUniformMatrix4fv(pos, 1, GL_TRUE, (float*)&value);
     CHECK_GL_ERROR();
 }
-
 
 NS_FLOW2D_GFX_END

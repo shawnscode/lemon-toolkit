@@ -288,7 +288,7 @@ bool Device::restore_context()
 
     for( unsigned i = 0; i < _objects.size(); i++ )
         if( _objects[i] != nullptr )
-            _objects[i]->on_device_restore();
+            _objects[i]->restore();
 
     // ouput informations
     LOGI("Restore OpenGL context with:");
@@ -303,7 +303,7 @@ void Device::release_context()
 {
     for( unsigned i = 0; i < _objects.size(); i++ )
         if( _objects[i] != nullptr )
-            _objects[i]->on_device_lost();
+            _objects[i]->release();
 
     if( _device->window != nullptr && _device->context != 0 )
     {
@@ -571,7 +571,7 @@ bool Device::is_device_lost() const
     return _device->window == nullptr || _device->context == 0;
 }
 
-void Device::subscribe(GPUObject* object)
+void Device::subscribe(Resource* object)
 {
     for( unsigned i = 0; i < _objects.size(); i++ )
     {
@@ -582,18 +582,22 @@ void Device::subscribe(GPUObject* object)
         }
     }
     _objects.push_back(object);
+    object->restore();
 }
 
-void Device::unsubscribe(GPUObject* object)
+void Device::unsubscribe(Resource* object)
 {
     for( unsigned i = 0; i < _objects.size(); i++ )
     {
         if( _objects[i] == object )
         {
             _objects[i] = nullptr;
-            return;
+            break;
         }
     }
+
+    object->release();
+    delete object;
 }
 
 static const char* to_string(GLenum error)

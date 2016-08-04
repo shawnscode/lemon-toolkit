@@ -3,45 +3,66 @@
 
 NS_FLOW2D_GFX_BEGIN
 
-bool IndexBuffer::initialize()
+bool IndexBuffer::restore(unsigned count, unsigned size, bool dynamic)
 {
-    ENSURE( !_device.is_device_lost() );
+    _count = count;
+    _size = size;
+    _dynamic = dynamic;
+    return restore();
+}
+
+bool IndexBuffer::restore()
+{
+    if( _device.is_device_lost() )
+    {
+        LOGW("trying to restore index buffer while device is lost.");
+        return false;
+    }
 
     if( _count == 0 || _size == 0 )
         return true;
 
-    if( !_handle )
-        glGenBuffers(1, &_handle);
-
-    if( !_handle )
+    if( _object == 0 )
     {
-        LOGW("failed to create vertex buffer object.");
-        return false;
+        glGenBuffers(1, &_object);
+        if( !_object )
+        {
+            LOGW("failed to create index buffer object.");
+            return false;
+        }
     }
 
-    _device.set_index_buffer(_handle);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, _count*_size, 0, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+    if( _data_pending )
+    {
+        _device.set_index_buffer(_object);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, _count*_size, _shadowed_data.get(), _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+    }
+
+    CHECK_GL_ERROR();
     return true;
 }
 
-void IndexBuffer::dispose()
+void IndexBuffer::release()
 {
-    if( _device.is_device_lost() )
-        _handle = 0;
-
-    if( _handle != 0 )
+    if( _object != 0 && !_device.is_device_lost() )
     {
-        if( _device.get_bound_index_buffer() == _handle )
+        if( _device.get_bound_index_buffer() == _object )
             _device.set_index_buffer(0);
-        glDeleteBuffers(1, &_handle);
-        _handle = 0;
+        glDeleteBuffers(1, &_object);
     }
+
+    _object = 0;
 }
 
-void IndexBuffer::on_device_restore()
+void IndexBuffer::bind()
 {
-    initialize();
-    if( _data_pending ) set_data(_shadowed_data.get());
+    if( !_object || _device.is_device_lost() )
+    {
+        LOGW("failed to bind index buffer while device is lost.");
+        return;
+    }
+
+    _device.set_index_buffer(_object);
 }
 
 void IndexBuffer::set_shadowed(bool enable)
@@ -52,7 +73,7 @@ void IndexBuffer::set_shadowed(bool enable)
         {
             _shadowed_data.reset( new unsigned char[_count*_size] );
             if( !_shadowed_data )
-                LOGW("failed to create shadowed data for vertex buffer.");
+                LOGW("failed to create shadowed data for index buffer.");
         }
         else
             _shadowed_data.reset();
@@ -63,27 +84,22 @@ bool IndexBuffer::set_data(const void* data)
 {
     if( !data )
     {
-        LOGW("vertex buffer data could not be null.");
-        return false;
-    }
-
-    if( _device.is_device_lost() && !_shadowed_data )
-    {
-        LOGW("vertex data assignment without shadow enable while device is lost.");
+        LOGW("index buffer data could not be null.");
         return false;
     }
 
     if( _shadowed_data && data != _shadowed_data.get() )
         memcpy(_shadowed_data.get(), data, _count * _size );
 
-    if( _handle && !_device.is_device_lost() )
+    if( _object && !_device.is_device_lost() )
     {
-        _device.set_index_buffer(_handle);
+        _device.set_index_buffer(_object);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, _count * _size, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
     else
         _data_pending = true;
 
+    CHECK_GL_ERROR();
     return true;
 }
 
@@ -94,13 +110,13 @@ bool IndexBuffer::set_data_range(const void* data, unsigned start, unsigned coun
 
     if( !data )
     {
-        LOGW("vertex buffer data could not be null.");
+        LOGW("index buffer data could not be null.");
         return false;
     }
     
     if( start + count > _count )
     {
-        LOGW("out-of-range while setting new vertex buffer data.");
+        LOGW("out-of-range while setting new index buffer data.");
         return false;
     }
 
@@ -110,9 +126,9 @@ bool IndexBuffer::set_data_range(const void* data, unsigned start, unsigned coun
     if( _shadowed_data && _shadowed_data.get() + start*_size != data )
         memcpy(_shadowed_data.get() + start * _size, data, count * _size);
 
-    if( _handle && !_device.is_device_lost() )
+    if( _object && !_device.is_device_lost() )
     {
-        _device.set_index_buffer(_handle);
+        _device.set_index_buffer(_object);
         if( !discard || start != 0 )
             glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, start * _size, count * _size, data);
         else
@@ -121,6 +137,7 @@ bool IndexBuffer::set_data_range(const void* data, unsigned start, unsigned coun
     else
         _data_pending = true;
 
+    CHECK_GL_ERROR();
     return true;
 }
 

@@ -3,54 +3,66 @@
 
 NS_FLOW2D_GFX_BEGIN
 
-bool VertexBuffer::initialize()
+bool VertexBuffer::restore(unsigned count, unsigned size, bool dynamic)
 {
-    ENSURE( !_device.is_device_lost() );
+    _count = count;
+    _size = size;
+    _dynamic = dynamic;
+    return restore();
+}
+
+bool VertexBuffer::restore()
+{
+    if( _device.is_device_lost() )
+    {
+        LOGW("trying to restore vertex buffer while device is lost.");
+        return false;
+    }
 
     if( _count == 0 || _size == 0 )
         return true;
 
-    if( !_handle )
-        glGenBuffers(1, &_handle);
-
-    if( !_handle )
+    if( _object == 0 )
     {
-        LOGW("failed to create vertex buffer object.");
-        return false;
+        glGenBuffers(1, &_object);
+        if( !_object )
+        {
+            LOGW("failed to create vertex buffer object.");
+            return false;
+        }
     }
 
-    _device.set_vertex_buffer(_handle);
-    glBufferData(GL_ARRAY_BUFFER, _count*_size, 0, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+    if( _data_pending )
+    {
+        _device.set_vertex_buffer(_object);
+        glBufferData(GL_ARRAY_BUFFER, _count*_size, _shadowed_data.get(), _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+    }
+
     CHECK_GL_ERROR();
     return true;
 }
 
-void VertexBuffer::dispose()
+void VertexBuffer::release()
 {
-    if( _device.is_device_lost() )
-        _handle = 0;
-
-    if( _handle != 0 )
+    if( _object != 0 && !_device.is_device_lost() )
     {
-        if( _device.get_bound_vertex_buffer() == _handle )
+        if( _device.get_bound_vertex_buffer() == _object )
             _device.set_vertex_buffer(0);
-        glDeleteBuffers(1, &_handle);
-        _handle = 0;
+        glDeleteBuffers(1, &_object);
     }
-}
 
-void VertexBuffer::on_device_restore()
-{
-    initialize();
-    if( _data_pending ) set_data(_shadowed_data.get());
+    _object = 0;
 }
 
 void VertexBuffer::bind()
 {
-    if( !_handle || _device.is_device_lost() )
+    if( !_object || _device.is_device_lost() )
+    {
+        LOGW("failed to bind vertex buffer while device is lost.");
         return;
+    }
 
-    _device.set_vertex_buffer(_handle);
+    _device.set_vertex_buffer(_object);
 }
 
 void VertexBuffer::set_shadowed(bool enable)
@@ -76,18 +88,12 @@ bool VertexBuffer::set_data(const void* data)
         return false;
     }
 
-    if( _device.is_device_lost() && !_shadowed_data )
-    {
-        LOGW("vertex data assignment without shadow enable while device is lost.");
-        return false;
-    }
-
     if( _shadowed_data && data != _shadowed_data.get() )
         memcpy(_shadowed_data.get(), data, _count * _size );
 
-    if( _handle && !_device.is_device_lost() )
+    if( _object && !_device.is_device_lost() )
     {
-        _device.set_vertex_buffer(_handle);
+        _device.set_vertex_buffer(_object);
         glBufferData(GL_ARRAY_BUFFER, _count * _size, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
     else
@@ -120,9 +126,9 @@ bool VertexBuffer::set_data_range(const void* data, unsigned start, unsigned cou
     if( _shadowed_data && _shadowed_data.get() + start*_size != data )
         memcpy(_shadowed_data.get() + start * _size, data, count * _size);
 
-    if( _handle && !_device.is_device_lost() )
+    if( _object && !_device.is_device_lost() )
     {
-        _device.set_vertex_buffer(_handle);
+        _device.set_vertex_buffer(_object);
         if( !discard || start != 0 )
             glBufferSubData(GL_ARRAY_BUFFER, start * _size, count * _size, data);
         else

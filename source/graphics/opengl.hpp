@@ -10,11 +10,9 @@
 NS_FLOW2D_GFX_BEGIN
 
 #if defined(PLATFORM_ANDROID)
-#define GL_ES_VERSION_2_0
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #elif defined(PLATFORM_IOS)
-#define GL_ES_VERSION_2_0
 #include <OpenGLES/ES2/gl.h>
 #include <OpenGLES/ES2/glext.h>
 #elif defined(PLATFORM_DESKTOP)

@@ -7,36 +7,30 @@
 
 NS_FLOW2D_GFX_BEGIN
 
-struct IndexBuffer : public GPUObject
+struct IndexBuffer : public Resource
 {
-    virtual ~IndexBuffer() { dispose(); }
+    void bind();
+    bool restore(unsigned count, unsigned size, bool dynamic);
+    bool restore() override;
+    void release() override;
 
-    // enable shadowing in cpu memory, and its forced on if the GraphicsEngine does not exist
+    // enable shadowing data in cpu memory
     void set_shadowed(bool);
     // set all data in the buffer
     bool set_data(const void*);
-    // set a data range in the buffer. optionally discard data outside the range
+    // set a data range in the buffer, optionally discard data outside the range
     bool set_data_range(const void*, unsigned, unsigned, bool discard = false);
 
-    // lock the buffer for write-only editing. return data pointer if successful. optionally discard data outside the range
-    void* lock(unsigned, unsigned, bool discard = false);
-    // unlock the buffer and apply changes to the graphic buffer
-    void unlock();
-
     // return number of vertices
-    unsigned get_index_count() const { _count; }
+    unsigned get_vertex_count() const { _count; }
     // return vertex size in bytes
-    unsigned get_index_size() const { _size; }
+    unsigned get_vertex_size() const { _size; }
 
 protected:
     friend class Device;
     IndexBuffer(Device& device, unsigned count, unsigned size, bool dynamic = false)
-    : GPUObject(device), _count(count), _size(size), _dynamic(dynamic)
+    : Resource(device), _count(count), _size(size), _dynamic(dynamic)
     {}
-
-    bool initialize() override;
-    void dispose() override;
-    void on_device_restore() override;
 
 protected:
     bool        _dynamic;
