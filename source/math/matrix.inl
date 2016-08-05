@@ -274,42 +274,119 @@ Matrix<R+1, C+1, T> hlift(const Matrix<R, C, T>& M)
 }
 
 template<size_t N, typename T>
-Matrix<N, N, T> make_scale(const Vector<N, T>& V)
+Matrix<N+1, N+1, T> scale(const Vector<N, T>& V)
 {
-    Matrix<N, N, T> result;
-    result.zero();
+    Matrix<N+1, N+1, T> result;
+    result.identity();
     for( auto i = 0; i < N; i++ )
         result[i][i] = V[i];
     return result;
 }
 
 template<size_t N, typename T>
-Matrix<N+1, N+1, T> make_translation(const Vector<N, T>& V)
+Matrix<N+1, N+1, T> translation(const Vector<N, T>& V)
 {
     Matrix<N+1, N+1, T> result;
     result.identity();
     for( auto i = 0; i < N; i++ )
-        result[i][N] = V[i];
+        result[N][i] = V[i];
     return result;
 }
 
 template<typename T>
-Matrix2<T> make_rotation(T radians)
+Matrix3<T> rotation(T degree)
 {
-    T cos = std::cos(radians);
-    T sin = std::sin(radians);
+    T cos = std::cos(to_radians(degree));
+    T sin = std::sin(to_radians(degree));
 
-    return Matrix2<T> { cos, -sin, sin, cos };
+    return Matrix3<T> {
+        cos, sin, 0,
+        -sin, cos, 0,
+        0, 0, 1
+    };
 }
 
 template<typename T>
-Matrix3<T> make_ortho(T xmin, T xmax, T ymin, T ymax)
+Matrix4<T> rotation(T degree, const Vector3<T>& v)
 {
-    Matrix3<T> result;
+    T cos = std::cos(to_radians(degree));
+    T sin = std::sin(to_radians(degree));
+
+    const Vector3<T> axis(normalize(v));
+    const Vector3<T> temp((T(1) - cos) * axis);
+
+    Matrix4<T> result;
     result.identity();
-    result[0][0] = static_cast<T>(2) / (xmax - xmin);
-    result[1][1] = static_cast<T>(2) / (ymax - ymin);
-    result[0][2] = - (xmax + xmin) / (xmax - xmin);
-    result[1][2] = - (ymax + ymin) / (ymax - ymin);
+    result[0][0] = cos + temp[0] * axis[0];
+    result[0][1] = temp[0] * axis[1] + sin * axis[2];
+    result[0][2] = temp[0] * axis[2] - sin * axis[1];
+
+    result[1][0] = temp[1] * axis[0] - sin * axis[2];
+    result[1][1] = cos + temp[1] * axis[1];
+    result[1][2] = temp[1] * axis[2] + sin * axis[0];
+
+    result[2][0] = temp[2] * axis[0] + sin * axis[1];
+    result[2][1] = temp[2] * axis[1] - sin * axis[0];
+    result[2][2] = cos + temp[2] * axis[2];
+    return result;
+}
+
+template<typename T>
+Matrix4<T> ortho(T left, T right, T bottom, T top, T znear, T zfar)
+{
+    Matrix4<T> result;
+    result.identity();
+    result[0][0] = static_cast<T>(2) / (right - left);
+    result[1][1] = static_cast<T>(2) / (top - bottom);
+    result[2][2] = static_cast<T>(2) / (zfar - znear);
+
+    result[3][0] = - (right + left) / (right - left);
+    result[3][1] = - (top + bottom) / (top - bottom);
+    result[3][2] = - (zfar + znear) / (zfar - znear);
+    return result;
+}
+
+template<typename T>
+INLINE Matrix4<T> perspective(T fov, T aspect, T znear, T zfar)
+{
+    ENSURE( std::abs(aspect - epsilon<T>()) > static_cast<T>(0) );
+    const T scale = static_cast<T>(1) / std::tan(to_radians(fov) / static_cast<T>(2));
+
+    Matrix4<T> result;
+    result.zero();
+    result[0][0] = scale / aspect;
+    result[1][1] = scale;
+    result[2][2] = (zfar + znear) / (zfar - znear);
+
+    result[3][2] = - (static_cast<T>(2) * zfar * znear) / (zfar - znear);
+    result[2][3] = static_cast<T>(1);
+    return result;
+}
+
+template<typename T>
+INLINE Matrix4<T> look_at(const Vector3<T>& eye, const Vector3<T>& center, const Vector3<T>& up)
+{
+    const Vector3<T> f(normalize(center-eye));
+    const Vector3<T> s(normalize(cross(up, f)));
+    const Vector3<T> u(cross(f, s));
+
+    Matrix4<T> result;
+    result.identity();
+
+    result[0][0] = s[0];
+    result[0][1] = u[0];
+    result[0][2] = f[0];
+
+    result[1][0] = s[1];
+    result[1][1] = u[1];
+    result[1][2] = f[1];
+
+    result[2][0] = s[2];
+    result[2][1] = u[2];
+    result[2][2] = f[2];
+
+    result[3][0] = -dot(s, eye);
+    result[3][1] = -dot(u, eye);
+    result[3][2] = -dot(f, eye);
     return result;
 }

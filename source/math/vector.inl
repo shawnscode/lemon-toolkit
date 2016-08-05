@@ -256,14 +256,6 @@ bool equals (const Vector<N, T>& v0, const Vector<N, T>& v1, T epslion)
 }
 
 template<size_t N, typename T>
-T dot (const Vector<N, T>& v0, const Vector<N, T>& v1)
-{
-    T result = (T)0;
-    for( auto i = 0; i < N; i++ ) result += v0[i] * v1[i];
-    return result;
-}
-
-template<size_t N, typename T>
 Vector<N, T> max (const Vector<N, T>& v0, T compare)
 {
     Vector<N, T> result;
@@ -302,6 +294,24 @@ Vector<N, T> normalize (const Vector<N, T>& v)
     T len = v.length();
     result /= len;
     return result;
+}
+
+template<size_t N, typename T>
+T dot (const Vector<N, T>& v0, const Vector<N, T>& v1)
+{
+    T result = (T)0;
+    for( auto i = 0; i < N; i++ ) result += v0[i] * v1[i];
+    return result;
+}
+
+template<typename T>
+Vector3<T> cross(const Vector3<T>& v0, const Vector3<T>& v1)
+{
+    return {
+        v0[1] * v1[2] - v0[2] * v1[1],
+        v0[2] * v1[0] - v0[0] * v1[2],
+        v0[0] * v1[1] - v0[1] * v1[0]
+    };
 }
 
 template<size_t N, typename T>

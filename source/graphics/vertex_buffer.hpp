@@ -22,9 +22,9 @@ struct VertexBuffer : public Resource
     bool set_data_range(const void*, unsigned, unsigned, bool discard = false);
 
     // return number of vertices
-    unsigned get_vertex_count() const { _count; }
+    unsigned get_vertex_count() const { return _count; }
     // return vertex size in bytes
-    unsigned get_vertex_size() const { _size; }
+    unsigned get_vertex_size() const { return _size; }
 
 protected:
     friend class Device;

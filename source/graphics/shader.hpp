@@ -12,11 +12,11 @@ NS_FLOW2D_GFX_BEGIN
 enum class ElementFormat : uint8_t
 {
     BYTE = 0,
-    UNSIGNED_BYTE,
+    UBYTE,
     SHORT,
-    UNSIGNED_SHORT,
+    USHORT,
     FIXED,
-    FLOAT
+    FLOAT,
 };
 
 struct VertexAttribute
@@ -45,7 +45,7 @@ struct Shader : public Resource
     void set_uniform3fm(const char*, const math::Matrix<3, 3, float>&);
     void set_uniform4fm(const char*, const math::Matrix<4, 4, float>&);
 
-    void set_vertex_attribute(const char*, unsigned, ElementFormat, bool, unsigned, unsigned);
+    void set_vertex_attribute(const char*, unsigned, ElementFormat, unsigned, unsigned, bool normalized = false);
 
 protected:
     friend class Device;

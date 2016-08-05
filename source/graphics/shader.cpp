@@ -154,9 +154,9 @@ void Shader::bind()
 void Shader::set_vertex_attribute(const char* name,
     unsigned size,
     ElementFormat format,
-    bool normalized,
     unsigned stride,
-    unsigned offset)
+    unsigned offset,
+    bool normalized)
 {
     ASSERT( name, "invalid attribute name." );
 
@@ -273,6 +273,7 @@ void Shader::set_uniform4f(const char* name, const math::Vector<4, float>& value
     CHECK_GL_ERROR();
 }
 
+// OpenGL use column-major layout, so we always transpose our matrix
 void Shader::set_uniform2fm(const char* name, const math::Matrix<2, 2, float>& value)
 {
     auto pos = get_uniform_location(name);
