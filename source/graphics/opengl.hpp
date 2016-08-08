@@ -15,10 +15,8 @@ NS_FLOW2D_GFX_BEGIN
 #elif defined(PLATFORM_IOS)
 #include <OpenGLES/ES2/gl.h>
 #include <OpenGLES/ES2/glext.h>
-#elif defined(PLATFORM_DESKTOP)
-#include <GL/glew.h>
 #else
-#error NOT SUPPORT PLATFORM
+#include <GL/glew.h>
 #endif
 
 #include <SDL2/SDL.h>

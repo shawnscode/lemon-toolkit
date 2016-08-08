@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <math/defines.hpp>
 #include <math/vector.hpp>
 
 NS_FLOW2D_MATH_BEGIN

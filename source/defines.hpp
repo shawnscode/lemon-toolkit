@@ -9,8 +9,10 @@
 #define PLATFORM_IOS
 #elif defined(ANDROID)
 #define PLATFORM_ANDROID
+#elif defined(_WIN32)
+#define PLATFORM_WIN32
 #else
-#define PLATFORM_DESKTOP
+#define PLATFORM_UNIX
 #endif
 
 NS_FLOW2D_BEGIN
