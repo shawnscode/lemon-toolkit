@@ -18,6 +18,7 @@
 #include <graphics/index_buffer.hpp>
 #include <graphics/vertex_buffer.hpp>
 
+#include <resource/path.hpp>
 #include <resource/filesystem.hpp>
 
 #define USING_NS_FLOW2D using namespace flow2d;

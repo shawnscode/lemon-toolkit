@@ -18,3 +18,5 @@
 #include <initializer_list>
 #include <iostream>
 #include <memory>
+#include <algorithm>
+#include <sstream>
