@@ -5,86 +5,88 @@
 
 #include <resource/path.hpp>
 #include <core/context.hpp>
+#include <fstream>
 
-NS_FLOW2D_RES_BEGIN
+NS_FLOW2D_FS_BEGIN
 
-enum class FileMode : uint8_t
+enum class FileMode : uint16_t
 {
-    READ    = 0x1,
-    WRITE   = 0x2,
-    APPEND  = 0x4,
-    BINARY  = 0x8
+    READ        = 0x1,
+    WRITE       = 0x2,
+    // all output operations happen at the end of the file, appending to its existing contents
+    APPEND      = 0x4,
+    // operations are performed in binary mode rather than text
+    BINARY      = 0x8,
+    // the output position starts at the end of the file.
+    ATEND       = 0x10,
+    // any contents that existed in the file before it is open are discarded
+    TRUNCATE    = 0x20
 };
 
-struct File
+enum class ScanMode : uint16_t
 {
-    ~File() { close(); }
+    FILES       = 0x1,
+    DIRECTORIES = 0x2,
+    RECURSIVE   = 0x4,
+    HIDDEN      = 0x8
+};
 
-    // open a filesystem file, return true if successful
-    bool open(const Path&, FileMode);
-    // close the file
-    void close();
+// set the current working directory
+bool set_current_directory(const Path&);
+// get then current working directory
+const Path& get_current_directory();
 
-    // read bytes from the file, return number of bytes actually read
-    unsigned read(void*, unsigned);
-    // set position from the begining of the file
-    void seek(unsigned);
-    // check if current position reach end of the file
-    bool is_end() const;
-    // write bytes to the file, might be buffered, return number of bytes actually written.
-    unsigned write(const void*, unsigned);
-    // flush any buffered output to the file
-    void flush();
+// create a directory
+bool create_directory(const Path&, bool recursive = false);
+// move a file, return true if successful
+bool move(const Path&, const Path&);
+// delete a file, optional recursive delete the contents of path if it exists,
+// return true if successful
+bool remove(const Path&, bool recursive = false);
+// check if a file exists
+bool is_exists(const Path&);
+// check if a regular file exists
+bool is_directory(const Path&);
+// check if a directory exists
+bool is_regular_file(const Path&);
+// construct and open a filesystem file, return nullptr if failed
+std::fstream open(const Path&, FileMode);
 
-    // return a checksum of the file contents using SDBM hash algorithm
-    unsigned get_checksum() const;
+// Directory provides compliant iteration over the contents of a directory
+struct Directory
+{
+    using iterator = std::vector<Path>::iterator;
+
+    Directory() {}
+    Directory(Directory&& rhs) { _nodes = std::move(rhs._nodes); }
+
+    bool scan(const Path&, ScanMode);
+
+    iterator begin() { return _nodes.begin(); }
+    iterator end() { return _nodes.end(); }
 
 protected:
-    friend class Filesystem;
-
-    // file could only be opened through the filesystem
-    File(Filesystem& fs) : _filesystem(fs) {}
-
-    Filesystem& _filesystem;
-    FileMode    _mode;
-    void*       _object;
+    std::vector<Path> _nodes;
 };
+
+// construct and open a filesystem directory view
+Directory scan(const Path&, ScanMode mode = ScanMode::FILES);
 
 // subsystem for file and directory operations and access control
-struct Filesystem : core::Subsystem
-{
-    SUBSYSTEM("Filesystem");
+// struct Filesystem : core::Subsystem
+// {
+//     SUBSYSTEM("Filesystem");
 
-    Filesystem(core::Context& c) : Subsystem(c) {}
-    virtual ~Filesystem() {}
+//     Filesystem(core::Context& c) : Subsystem(c) {}
+//     virtual ~Filesystem() {}
 
-    bool initialize() override;
-    void dispose() override;
+//     void add_search_path(const Path&);
+//     std::filesystem open(const Path&, FileMode);
 
-    // set the current working directory
-    bool set_working_directory(const Path&);
-    // get then current working directory
-    const Path& get_working_directory() const;
+// protected:
+//     std::vector<Path> _search_path;
+// };
 
-    // create a directory
-    bool create_directory(const Path&, bool recursive = false);
-    // move a file, return true if successful
-    bool move(const Path&, const Path&);
-    // delete a file, optional recursive delete the contents of path if it exists,
-    // return true if successful
-    bool remove(const Path&, bool recursive = false);
-    // check if a file exists
-    bool is_file_exist(const Path&) const;
-    // check if a directory exists
-    bool is_directory_exist(const Path&) const;
-    // construct and open a filesystem file, return nullptr if failed
-    std::unique_ptr<File> open(const Path&, FileMode);
-    // construct and open a filesystem directory, return nullptr if failed
-    // std::unique_ptr<Directory> open(const Path&);
-
-protected:
-    Path _working_directory;
-};
-
-NS_FLOW2D_RES_END
-ENABLE_BITMASK_OPERATORS(flow2d::res::FileMode);
+NS_FLOW2D_FS_END
+ENABLE_BITMASK_OPERATORS(flow2d::fs::FileMode);
+ENABLE_BITMASK_OPERATORS(flow2d::fs::ScanMode);

@@ -4,6 +4,7 @@
 
 USING_NS_FLOW2D;
 USING_NS_FLOW2D_RESOURCE;
+USING_NS_FLOW2D_FILESYSTEM;
 
 TEST_CASE("PathConstruct")
 {
@@ -119,33 +120,28 @@ TEST_CASE("PathConcatenationAndOthers")
 //     ResourceCacheManager    cache;
 // };
 
-struct FilesystemFixture : public flow2d::core::Context
+TEST_CASE("TestFilesystem")
 {
-    FilesystemFixture()
-    {
-        add_subsystem<Filesystem>();
-    }
-};
+    REQUIRE( set_current_directory("../../test") );
+    remove("tmp_dir");
+    remove("resource", true);
 
-TEST_CASE_METHOD(FilesystemFixture, "TestFilesystem")
-{
-    auto& fs = get_subsystem<Filesystem>();
-    REQUIRE( fs.set_working_directory("../../test") );
-    fs.remove("tmp_dir");
-    fs.remove("resource", true);
+    REQUIRE( create_directory("tmp_dir") );
+    REQUIRE( is_directory("tmp_dir") );
+    REQUIRE( !is_regular_file("tmp_dir") );
 
-    REQUIRE( fs.create_directory("tmp_dir") );
-    REQUIRE( fs.is_directory_exist("tmp_dir") );
-    REQUIRE( !fs.is_file_exist("tmp_dir") );
+    REQUIRE( move("tmp_dir", "resource") );
+    REQUIRE( !is_directory("tmp_dir") );
+    REQUIRE( is_directory("resource") );
 
-    REQUIRE( fs.move("tmp_dir", "resource") );
-    REQUIRE( !fs.is_directory_exist("tmp_dir") );
-    REQUIRE( fs.is_directory_exist("resource") );
+    auto file = open("resource/resource.txt", FileMode::APPEND);
+    file.write("hahaha", 6);
+    file.close();
 
-    auto file = fs.open("resource/resource.txt", FileMode::APPEND);
-    file->write("hahaha", 6);
-
-    REQUIRE( !fs.is_directory_exist("tmp_dir") );
+    remove("tmp_dir");
+    remove("resource", true);
+    REQUIRE( !is_directory("tmp_dir") );
+    REQUIRE( !is_directory("resource") );
 }
 
 // TEST_CASE_METHOD(ArchiveManager, "FilesystemArchive")

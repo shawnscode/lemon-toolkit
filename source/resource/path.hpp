@@ -5,7 +5,7 @@
 
 #include <resource/defines.hpp>
 
-NS_FLOW2D_RES_BEGIN
+NS_FLOW2D_FS_BEGIN
 
 // operation system independent path.
 struct Path
@@ -30,6 +30,7 @@ struct Path
 
     bool is_empty() const { return _pathname.empty(); }
     bool is_absolute() const { return _pathname.compare(0, strlen(Path::sperator), Path::sperator) == 0; }
+    bool has_extension(const char* rhs) const { return get_extension() == rhs; }
 
     // return filename of this path
     std::string get_filename() const;
@@ -84,4 +85,4 @@ protected:
 std::ostream& operator << (std::ostream&, const Path&);
 std::string to_string(const Path&);
 
-NS_FLOW2D_RES_END
+NS_FLOW2D_FS_END

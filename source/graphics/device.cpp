@@ -144,11 +144,11 @@ bool Device::spawn_window(int width, int height, int multisample, WindowOption o
     #endif
 
     // makes no sense to have boarderless in fullscreen, they are mutally exclusive
-    if( options & WindowOption::FULLSCREEN )
+    if( to_value(options & WindowOption::FULLSCREEN) )
         options &= ~WindowOption::BORDERLESS;
 
     // fullscreen or borderless can not be resizable
-    if( (options & WindowOption::FULLSCREEN) || (options & WindowOption::BORDERLESS) )
+    if( to_value(options & WindowOption::FULLSCREEN) || to_value(options & WindowOption::BORDERLESS) )
         options &= ~WindowOption::RESIZABLE;
 
     width = std::max(width, 1);
@@ -164,7 +164,7 @@ bool Device::spawn_window(int width, int height, int multisample, WindowOption o
         width == _size[0] && height == _size[1] && multisample == _multisamples &&
         (options & ~WindowOption::VSYNC) == (_options & ~WindowOption::VSYNC) )
     {
-        SDL_GL_SetSwapInterval( options & WindowOption::VSYNC ? 1 : 0 );
+        SDL_GL_SetSwapInterval( to_value(options & WindowOption::VSYNC) ? 1 : 0 );
         _options = options;
         return true;
     }
@@ -177,13 +177,13 @@ bool Device::spawn_window(int width, int height, int multisample, WindowOption o
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, multisample > 1 ? multisample : 0);
     SDL_SetHint(SDL_HINT_ORIENTATIONS, orientation_tostring(_orientation));
 
-    math::Vector2i position = options & WindowOption::FULLSCREEN ? math::Vector2i({0, 0}) : _position;
+    math::Vector2i position = to_value(options & WindowOption::FULLSCREEN) ? math::Vector2i({0, 0}) : _position;
     unsigned flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
 
-    if( options & WindowOption::FULLSCREEN ) flags |= SDL_WINDOW_FULLSCREEN;
-    if( options & WindowOption::BORDERLESS ) flags |= SDL_WINDOW_BORDERLESS;
-    if( options & WindowOption::RESIZABLE ) flags |= SDL_WINDOW_RESIZABLE;
-    if( options & WindowOption::HIGHDPI ) flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+    if( to_value(options & WindowOption::FULLSCREEN) ) flags |= SDL_WINDOW_FULLSCREEN;
+    if( to_value(options & WindowOption::BORDERLESS) ) flags |= SDL_WINDOW_BORDERLESS;
+    if( to_value(options & WindowOption::RESIZABLE) ) flags |= SDL_WINDOW_RESIZABLE;
+    if( to_value(options & WindowOption::HIGHDPI) ) flags |= SDL_WINDOW_ALLOW_HIGHDPI;
 
     _device->window = SDL_CreateWindow("FLOW2D", position[0], position[1], width, height, flags);
     // if failed width multisampling, retry first without it
@@ -205,7 +205,7 @@ bool Device::spawn_window(int width, int height, int multisample, WindowOption o
         return false;
 
     // set vsync
-    SDL_GL_SetSwapInterval( options & WindowOption::VSYNC ? 1 : 0 );
+    SDL_GL_SetSwapInterval( to_value(options & WindowOption::VSYNC) ? 1 : 0 );
 
     _size = { width, height };
     _position = position;
@@ -213,7 +213,7 @@ bool Device::spawn_window(int width, int height, int multisample, WindowOption o
     _options = options;
 
     SDL_GL_GetDrawableSize(_device->window, &_size[0], &_size[1]);
-    if( !(options & WindowOption::FULLSCREEN) )
+    if( !to_value(options & WindowOption::FULLSCREEN) )
         SDL_GetWindowPosition(_device->window, &_position[0], &_position[1]);
 
     // reset rendertargets and viewport for the new mode
@@ -326,19 +326,19 @@ void Device::end_frame()
 void Device::clear(ClearOption options, const math::Color& color, float depth, unsigned stencil)
 {
     unsigned flags = 0;
-    if( options & ClearOption::COLOR )
+    if( to_value(options & ClearOption::COLOR) )
     {
         flags |= GL_COLOR_BUFFER_BIT;
         glClearColor(color.r, color.g, color.b, color.a);
     }
 
-    if( options & ClearOption::DEPTH )
+    if( to_value(options & ClearOption::DEPTH) )
     {
         flags |= GL_DEPTH_BUFFER_BIT;
         glClearDepth(depth);
     }
 
-    if( options & ClearOption::STENCIL )
+    if( to_value(options & ClearOption::STENCIL) )
     {
         flags |= GL_STENCIL_BUFFER_BIT;
         glClearStencil(stencil);

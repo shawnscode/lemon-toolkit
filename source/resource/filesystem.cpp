@@ -7,11 +7,12 @@
 #include <windows.h>
 #else
 #include <sys/stat.h>
+#include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
 #endif
 
-NS_FLOW2D_RES_BEGIN
+NS_FLOW2D_FS_BEGIN
 
 static void replace(std::string& str, const char* from, const char* to)
 {
@@ -58,147 +59,84 @@ static std::wstring to_win32(const char* str)
     replace(result, Path::sperator, "\\");
     return std::move(result);
 }
-static const wchar_t* get_filemode(FileMode mode)
-{
-    if( mode & FileMode::READ )
-    {
-        if( mode & FileMode::APPEND ) return L"a+";
-        else if( mode & FileMode::WRITE ) return L"r+";
-        else return L"r";
-    }
-    else if( mode & FileMode::APPEND ) return L"a";
-    else if( mode & FileMode::WRITE) return L"w";
-    return L"";
-}
-#else
-static const char* get_filemode(FileMode mode)
-{
-    if( mode & FileMode::READ )
-    {
-        if( mode & FileMode::APPEND ) return "a+";
-        else if( mode & FileMode::WRITE ) return "r+";
-        else return "r";
-    }
-    else if( mode & FileMode::APPEND ) return "a";
-    else if( mode & FileMode::WRITE) return "w";
-    return "";
-}
 #endif
 
-////
-bool File::open(const Path& path, FileMode mode)
+int get_filemode(FileMode mode)
 {
-    auto string_path = to_string(path.is_absolute() ?
-        path : _filesystem.get_working_directory() / path);
+    int mask = 0;
+    if( to_value(mode & FileMode::READ) )
+        mask |= std::ios::in;
 
-#ifdef PLATFORM_WIN32
-    _object = _wfopen(to_win32(string_path).c_str(), get_filemode(mode));
-#else
-    _object = fopen(string_path.c_str(), get_filemode(mode));
-#endif
+    if( to_value(mode & FileMode::WRITE) )
+        mask |= std::ios::out;
 
-    if( !_object )
+    if( to_value(mode & FileMode::APPEND) )
+        mask |= std::ios::app;
+
+    if( to_value(mode & FileMode::BINARY) )
+        mask |= std::ios::binary;
+
+    if( to_value(mode & FileMode::ATEND) )
+        mask |= std::ios::ate;
+
+    if( to_value(mode & FileMode::TRUNCATE) )
+        mask |= std::ios::trunc;
+
+    return mask;
+}
+
+///
+static Path s_current_dir;
+
+const Path& get_current_directory()
+{
+    if( s_current_dir.is_empty() )
     {
-        LOGW("failed to open file \"%s\".", string_path.c_str());
-        return false;
+#ifdef PLATFORM_WIN32
+        wchar_t path[kMaxPath];
+        path[0] = 0;
+        GetCurrentDirectory(kMaxPath, path);
+        s_current_dir.set(to_unix(path));
+#else
+        char path[kMaxPath];
+        path[0] = 0;
+        getcwd(path, kMaxPath);
+        s_current_dir.set(path);
+#endif
     }
 
-    _mode = mode;
-    return true;
+    return s_current_dir;
 }
 
-void File::close()
+bool set_current_directory(const Path& path)
 {
-    if( _object )
-    {
-        fclose((FILE*)_object);
-        _object = nullptr;
-    }
-}
-
-unsigned File::read(void* dst, unsigned size)
-{
-    auto bytes_read = fread(dst, 1, size, (FILE*)_object);
-    ASSERT( ferror((FILE*)_object) == 0, "fread failed: errno = %d", errno );
-    return (size_t)bytes_read;
-}
-
-void File::seek(unsigned position)
-{
-    auto err = fseek((FILE*)_object, (long)position, SEEK_SET);
-    ASSERT( err == 0, "fseek failed: errno = %d", errno );
-}
-
-bool File::is_end() const
-{
-    return feof((FILE*)_object) != 0;
-}
-
-unsigned File::write(const void* src, unsigned size)
-{
-    auto bytes_written = fwrite(src, 1, size, (FILE*)_object);
-    ASSERT( ferror((FILE*)_object) == 0, "fwrite failed: errno = %d", errno );
-    return (size_t)bytes_written;
-}
-
-void File::flush()
-{
-    auto err = fflush((FILE*)_object);
-    ASSERT( err == 0, "fwrite failed: errno = %d", errno );
-}
-
-////
-bool Filesystem::initialize()
-{
-#ifdef PLATFORM_WIN32
-    wchar_t path[kMaxPath];
-    path[0] = 0;
-    GetCurrentDirectory(kMaxPath, path);
-    _working_directory.set(to_unix(path));
-#else
-    char path[kMaxPath];
-    path[0] = 0;
-    getcwd(path, kMaxPath);
-    _working_directory.set(path);
-#endif
-
-    return true;
-}
-
-void Filesystem::dispose()
-{
-
-}
-
-bool Filesystem::set_working_directory(const Path& path)
-{
-    auto nwd = path.is_absolute() ? path : _working_directory / path;
-    auto string_path = to_string(nwd);
+    auto nwd = path.is_absolute() ? path : get_current_directory() / path;
 
 #ifdef PLATFORM_WIN32
-    auto wstring_path = to_win32(string_path.c_str());
+    auto wstring_path = to_win32(nwd.get_string().c_str());
     if( !SetCurrentDirectoryW(wstring_path.c_str()) )
 #else
-    if( chdir(string_path.c_str()) != 0 )
+    if( chdir(nwd.get_string().c_str()) != 0 )
 #endif
     {
-        LOGW("failed to set working directory to \"%s\".", string_path.c_str());
+        LOGW("failed to set working directory to \"%s\".", nwd.get_string().c_str());
         return false;
     }
 
-    _working_directory = std::move(nwd);
+    s_current_dir = std::move(nwd);
     return true;
 }
 
-const Path& Filesystem::get_working_directory() const
+bool create_directory(const Path& path, bool recursive)
 {
-    return _working_directory;
-}
+    if( path.is_empty() )
+    {
+        LOGW("trying to create directory with empty path.");
+        return false;
+    }
 
-bool Filesystem::create_directory(const Path& path, bool recursive)
-{
     auto parent = path.get_parent();
-    if( !is_directory_exist(parent) )
+    if( !is_directory(parent) )
     {
         if( !recursive )
         {
@@ -210,85 +148,216 @@ bool Filesystem::create_directory(const Path& path, bool recursive)
             return false;
     }
 
-    auto string_path = to_string(path.is_absolute() ? path : _working_directory / path);
 #ifdef PLATFORM_WIN32
-    auto wstring_path = to_win32(string_path.c_str());
+    auto wstring_path = to_win32(path.get_string().c_str());
     if( CreateDirectoryW(wstring_path.c_str(), nullptr) )
 #else
-    if( mkdir(string_path.c_str(), S_IRWXU) != 0 && errno != EEXIST )
+    if( mkdir(path.get_string().c_str(), S_IRWXU) != 0 && errno != EEXIST )
 #endif
     {
-        LOGW("failed to create directory \"%s\".", string_path.c_str());
+        LOGW("failed to create directory \"%s\".", path.get_string().c_str());
         return false;
     }
 
     return true;
 }
 
-bool Filesystem::move(const Path& from, const Path& to)
+bool move(const Path& from, const Path& to)
 {
-    auto from_str = to_string(from.is_absolute() ? from : _working_directory / from);
-    auto to_str = to_string(to.is_absolute() ? to : _working_directory / to);
+    if( from.is_empty() || to.is_empty() )
+    {
+        LOGW("trying to move file with empty path.");
+        return false;
+    }
 
 #ifdef PLATFORM_WIN32
-    auto from_wstr = to_win32(from_str.c_str());
-    auto to_wstr = to_win32(to_str.c_str());
+    auto from_wstr = to_win32(from.get_string().c_str());
+    auto to_wstr = to_win32(to.get_string().c_str());
     return MoveFileW(from_wstr.c_str(), to_wstr.c_str()) != 0;
 #else
-    return std::rename(from_str.c_str(), to_str.c_str()) == 0;
+    return std::rename(from.get_string().c_str(), to.get_string().c_str()) == 0;
 #endif
 }
 
-bool Filesystem::remove(const Path& path, bool recursive)
+bool remove(const Path& path, bool recursive)
 {
-    auto string_path = to_string(path.is_absolute() ? path : _working_directory / path);
+    if( path.is_empty() )
+    {
+        LOGW("trying to remove file with empty path.");
+        return false;
+    }
+
+    if( is_directory(path) && recursive )
+    {
+        auto success = true;
+        auto mode = ScanMode::HIDDEN | ScanMode::DIRECTORIES | ScanMode::FILES | ScanMode::RECURSIVE;
+        for( auto iter : scan(path, mode) )
+        {
+#ifdef PLATFORM_WIN32
+            auto wstring_path = to_win32(iter.get_string().c_str());
+            success &= DeleteFileW(wstring_path.c_str());
+#else
+            success &= (std::remove(iter.get_string().c_str()) == 0);
+#endif
+        }
+
+        if( !success ) return false;
+    }
 
 #ifdef PLATFORM_WIN32
-    auto wstring_path = to_win32(string_path.c_str());
+    auto wstring_path = to_win32(path.get_string().c_str());
     return DeleteFileW(wstring_path.c_str());
 #else
-    return std::remove(string_path.c_str()) == 0;
+    return std::remove(path.get_string().c_str()) == 0;
 #endif
 }
 
-bool Filesystem::is_file_exist(const Path& path) const
+bool is_exists(const Path& path)
 {
-    auto string_path = to_string(path.is_absolute() ? path : _working_directory / path);
+    if( path.is_empty() )
+        return true;
 
 #ifdef PLATFORM_WIN32
-    auto wstring_path = to_win32(string_path.c_str());
+    auto wstring_path = to_win32(path.get_string().c_str());
+    DWORD attr = GetFileAttributesW(wstring_path.c_str());
+    return attr != INVALID_FILE_ATTRIBUTES;
+#else
+    struct stat sb;
+    return stat(path.get_string().c_str(), &sb) == 0;
+#endif
+}
+
+bool is_regular_file(const Path& path)
+{
+    if( path.is_empty() )
+        return false;
+
+#ifdef PLATFORM_WIN32
+    auto wstring_path = to_win32(path.get_string().c_str());
     DWORD attr = GetFileAttributesW(wstring_path.c_str());
     return attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY == 0);
 #else
     struct stat sb;
-    if( stat(string_path.c_str(), &sb) )
+    if( stat(path.get_string().c_str(), &sb) )
         return false;
     return S_ISREG(sb.st_mode);
 #endif
 }
 
-bool Filesystem::is_directory_exist(const Path& path) const
+bool is_directory(const Path& path)
 {
-    auto string_path = to_string(path.is_absolute() ? path : _working_directory / path);
+    if( path.is_empty() )
+        return true;
 
 #ifdef PLATFORM_WIN32
-    auto wstring_path = to_win32(string_path.c_str());
+    auto wstring_path = to_win32(path.get_string().c_str());
     DWORD attr = GetFileAttributesW(wstring_path.c_str());
     return attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY != 0);
 #else
     struct stat sb;
-    if( stat(string_path.c_str(), &sb) )
+    if( stat(path.get_string().c_str(), &sb) )
         return false;
     return S_ISDIR(sb.st_mode);
 #endif
 }
 
-std::unique_ptr<File> Filesystem::open(const Path& path, FileMode mode)
+std::fstream open(const Path& path, FileMode mode)
 {
-    auto file = new (std::nothrow) File(*this);
-    if( file && file->open(path, mode) ) return std::unique_ptr<File>(file);
-    if( file ) delete file;
-    return nullptr;
+    std::fstream fs;
+#ifdef PLATFORM_WIN32
+    fs.open(to_win32(path.get_string().c_str()).c_str(), get_filemode(mode));
+#else
+    fs.open(path.get_string().c_str(), get_filemode(mode));
+#endif
+
+    if( !fs.is_open() )
+        LOGW("failed to open file \"%s\" with mode %d",
+            path.get_string().c_str(),(uint16_t)mode);
+
+    return fs;
 }
 
-NS_FLOW2D_RES_END
+Directory scan(const Path& path, ScanMode mode)
+{
+    Directory directory;
+    if( !directory.scan(path, mode) )
+        LOGW("failed to scan directory \"%s\"", path.get_string().c_str());
+    return directory;
+}
+
+#ifdef PLATFORM_WIN32
+static bool scan_directory(std::vector<Path>& nodes, const Path& path, ScanMode mode)
+{
+    WIN32_FIND_DATAW info;
+    HANDLE handle = FindFirstFileW(to_win32(path.get_string().c_str()).c_str(), &info);
+    if( handle != INVALID_HANDLE_VALUE )
+    {
+        do
+        {
+            auto npath = (path / info.cFileName);
+            if( !info.cFileName.empty() )
+            {
+                if( info.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN && !(mode & ScanMode::HIDDEN) )
+                    continue;
+                if( info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
+                {
+                    if( to_value(mode & ScanMode::RECURSIVE) )
+                        scan_directory(nodes, npath, mode);
+
+                    if( to_value(mode & ScanMode::DIRECTORIES) )
+                        nodes.push_back(std::move(npath));
+                }
+                else if( to_value(mode & ScanMode::FILES) )
+                    nodes.push_back(std::move(npath));
+            }
+        }
+        while(FindNextFileW(handle, &info));
+        FindClose(handle);
+        return true;
+    }
+    return false;
+}
+#else
+static bool scan_directory(std::vector<Path>& nodes, const Path& path, ScanMode mode)
+{
+    auto dir = opendir(path.get_string().c_str());
+    if( dir )
+    {
+        struct dirent* de;
+        struct stat st;
+        while( (de = readdir(dir)) )
+        {
+            if( strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0 )
+                continue;
+
+            if( !to_value(mode & ScanMode::HIDDEN) && de->d_name[0] == '.' )
+                continue;
+
+            auto npath = (path / de->d_name);
+            if( stat(npath.get_string().c_str(), &st) == 0 )
+            {
+                if( st.st_mode & S_IFDIR )
+                {
+                    if( to_value(mode & ScanMode::RECURSIVE) )
+                        scan_directory(nodes, npath, mode);
+
+                    if( to_value(mode & ScanMode::DIRECTORIES) )
+                        nodes.push_back(std::move(npath));
+                }
+                else if( to_value(mode & ScanMode::FILES) )
+                    nodes.push_back(std::move(npath));
+            }
+        }
+        closedir(dir);
+        return true;
+    }
+    return false;
+}
+#endif
+
+bool Directory::scan(const Path& path, ScanMode mode)
+{
+    return scan_directory(_nodes, path, mode);
+}
+
+NS_FLOW2D_FS_END

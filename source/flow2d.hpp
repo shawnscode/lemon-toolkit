@@ -26,3 +26,4 @@
 #define USING_NS_FLOW2D_MATH using namespace flow2d::math;
 #define USING_NS_FLOW2D_GRAPHICS using namespace flow2d::graphics;
 #define USING_NS_FLOW2D_RESOURCE using namespace flow2d::res;
+#define USING_NS_FLOW2D_FILESYSTEM using namespace flow2d::fs;

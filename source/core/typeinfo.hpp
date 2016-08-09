@@ -62,11 +62,9 @@ struct EnableBitMaskOperators
 };
 
 #define ENABLE_BITMASK_OPERATORS(E)  \
-    template<> struct flow2d::core::EnableBitMaskOperators<E> { static const bool enable = true; };
+    template<> struct flow2d::core::EnableBitMaskOperators<E> { static const bool enable = true; }; \
 
 NS_FLOW2D_CORE_END
-
-/// to support bit mask operations of enumeration
 
 template<typename Enum> using UReturns = typename std::enable_if<
     std::is_enum<Enum>::value,
@@ -77,19 +75,9 @@ template<typename Enum> UReturns<Enum> to_value (Enum e)
     return static_cast<typename std::underlying_type<Enum>::type>(e);
 }
 
-template<typename Enum> struct TruthValue {
-    using value_t = typename std::underlying_type<Enum>::type;
-
-    Enum t;
-    TruthValue(Enum t): t(t) { }
-    operator Enum() const { return t; }
-    operator Enum&() { return t; }
-    operator bool() const { return static_cast<value_t>(t); }
-    bool operator == (const TruthValue& rhs) const { return t == rhs.t; }
-};
-
-template<typename Enum> using MaskReturns =
-    typename std::enable_if<flow2d::core::EnableBitMaskOperators<Enum>::enable, TruthValue<Enum>>::type;
+template<typename Enum> using MaskReturns = typename std::enable_if<
+    flow2d::core::EnableBitMaskOperators<Enum>::enable,
+    Enum>::type;
 
 template<typename Enum> MaskReturns<Enum> operator ~ (Enum lhs)
 {
@@ -103,20 +91,9 @@ template<typename Enum> MaskReturns<Enum> operator & (Enum lhs, Enum rhs)
     return static_cast<Enum> (static_cast<value_t>(lhs) & static_cast<value_t>(rhs));
 }
 
-template<typename Enum> MaskReturns<Enum> operator & (Enum& lhs, TruthValue<Enum> rhs)
-{
-    return lhs & rhs.t;
-}
-
-template<typename Enum> MaskReturns<Enum> operator &= (Enum& lhs, Enum rhs)
+template<typename Enum> MaskReturns<Enum> operator &= (Enum lhs, Enum rhs)
 {
     lhs = lhs & rhs;
-    return lhs;
-}
-
-template<typename Enum> MaskReturns<Enum> operator &= (Enum& lhs, TruthValue<Enum> rhs)
-{
-    lhs = lhs & rhs.t;
     return lhs;
 }
 
@@ -126,20 +103,9 @@ template<typename Enum> MaskReturns<Enum> operator | (Enum lhs, Enum rhs)
     return static_cast<Enum> (static_cast<value_t>(lhs) | static_cast<value_t>(rhs));
 }
 
-template<typename Enum> MaskReturns<Enum> operator | (Enum& lhs, TruthValue<Enum> rhs)
-{
-    return lhs | rhs.t;
-}
-
-template<typename Enum> MaskReturns<Enum> operator |= (Enum& lhs, Enum rhs)
+template<typename Enum> MaskReturns<Enum> operator |= (Enum lhs, Enum rhs)
 {
     lhs = lhs | rhs;
-    return lhs;
-}
-
-template<typename Enum> MaskReturns<Enum> operator |= (Enum& lhs, TruthValue<Enum> rhs)
-{
-    lhs = lhs | rhs.t;
     return lhs;
 }
 
@@ -149,20 +115,8 @@ template<typename Enum> MaskReturns<Enum> operator ^ (Enum lhs, Enum rhs)
     return static_cast<Enum> (static_cast<value_t>(lhs) ^ static_cast<value_t>(rhs));
 }
 
-template<typename Enum> MaskReturns<Enum> operator ^ (Enum& lhs, TruthValue<Enum> rhs)
-{
-    return lhs ^ rhs.t;
-}
-
-template<typename Enum> MaskReturns<Enum> operator ^= (Enum& lhs, Enum rhs)
+template<typename Enum> MaskReturns<Enum> operator ^= (Enum lhs, Enum rhs)
 {
     lhs = lhs ^ rhs;
     return lhs;
 }
-
-template<typename Enum> MaskReturns<Enum> operator ^= (Enum& lhs, TruthValue<Enum> rhs)
-{
-    lhs = lhs ^ rhs.t;
-    return lhs;
-}
-
