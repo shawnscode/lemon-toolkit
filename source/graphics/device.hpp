@@ -148,6 +148,8 @@ struct Device : public core::Subsystem
     void set_index_buffer(unsigned);
     // set vertex buffer
     void set_vertex_buffer(unsigned);
+    // set texture
+    void set_texture(unsigned, unsigned, unsigned);
 
     // prepare for draw call. setup corresponding frame/vertex buffer object
     void prepare_draw();
@@ -197,6 +199,7 @@ protected:
     // render states
     unsigned        _bound_fbo = 0;
     unsigned        _bound_program = 0, _bound_vbo = 0, _bound_ibo = 0;
+    unsigned        _active_texunit = 0, _bound_texture = 0, _bound_textype = 0;
     BlendMode       _blend_mode;
     CullMode        _cull_mode;
 

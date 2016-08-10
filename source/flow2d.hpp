@@ -17,11 +17,13 @@
 #include <graphics/shader.hpp>
 #include <graphics/index_buffer.hpp>
 #include <graphics/vertex_buffer.hpp>
+#include <graphics/texture.hpp>
 
 #include <resource/path.hpp>
 #include <resource/filesystem.hpp>
 #include <resource/archives.hpp>
 #include <resource/resource.hpp>
+#include <resource/image.hpp>
 
 #define USING_NS_FLOW2D using namespace flow2d;
 #define USING_NS_FLOW2D_CORE using namespace flow2d::core;

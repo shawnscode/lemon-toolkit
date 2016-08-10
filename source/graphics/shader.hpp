@@ -50,10 +50,11 @@ struct Shader : public GPUObject
     void set_uniform2f(const char*, const math::Vector<2, float>&);
     void set_uniform3f(const char*, const math::Vector<3, float>&);
     void set_uniform4f(const char*, const math::Vector<4, float>&);
-
     void set_uniform2fm(const char*, const math::Matrix<2, 2, float>&);
     void set_uniform3fm(const char*, const math::Matrix<3, 3, float>&);
     void set_uniform4fm(const char*, const math::Matrix<4, 4, float>&);
+    // set texture uniform with unit index
+    void set_texture(const char*, unsigned);
 
     // set vertex attribute
     void set_vertex_attribute(const char*, unsigned, ElementFormat, unsigned, unsigned, bool normalized = false);
@@ -64,6 +65,7 @@ protected:
     std::string _fragment_shader, _vertex_shader;
     std::vector<VertexAttribute> _attributes;
     std::vector<std::pair<math::StringHash, int32_t>> _locations;
+
 #ifndef GL_ES_VERSION_2_0
     unsigned _vao = 0;
 #endif

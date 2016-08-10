@@ -361,6 +361,7 @@ void Device::reset_cached_state()
 {
     _bound_fbo = _system_frame_object;
     _bound_vbo = _bound_ibo = _bound_program = 0;
+    _active_texunit = _bound_textype = _bound_texture = 0;
 
     _blend_mode = BlendMode::REPLACE;
     _cull_mode  = CullMode::NONE;
@@ -564,6 +565,21 @@ void Device::set_vertex_buffer(unsigned vbo)
     }
 }
 
+void Device::set_texture(unsigned unit, unsigned type, unsigned object)
+{
+    if( _active_texunit != unit )
+    {
+        glActiveTexture(GL_TEXTURE0+unit);
+        _active_texunit = unit;
+    }
+
+    if( _bound_textype != type || _bound_texture != object )
+    {
+        glBindTexture(_bound_textype, _bound_texture);
+        _bound_textype = type;
+        _bound_texture = object;
+    }
+}
 
 void Device::prepare_draw()
 {

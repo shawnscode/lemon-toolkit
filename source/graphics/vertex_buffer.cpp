@@ -19,20 +19,19 @@ bool VertexBuffer::restore()
         return false;
     }
 
-    if( _count == 0 || _size == 0 )
-        return true;
+    release();
 
-    if( _object == 0 )
+    if( _count == 0 || _size == 0 )
+        return false;
+
+    glGenBuffers(1, &_object);
+    if( !_object )
     {
-        glGenBuffers(1, &_object);
-        if( !_object )
-        {
-            LOGW("failed to create vertex buffer object.");
-            return false;
-        }
+        LOGW("failed to create vertex buffer object.");
+        return false;
     }
 
-    if( _data_pending )
+    if( _shadowed_data )
     {
         _device.set_vertex_buffer(_object);
         glBufferData(GL_ARRAY_BUFFER, _count*_size, _shadowed_data.get(), _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
@@ -96,8 +95,6 @@ bool VertexBuffer::set_data(const void* data)
         _device.set_vertex_buffer(_object);
         glBufferData(GL_ARRAY_BUFFER, _count * _size, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
-    else
-        _data_pending = true;
 
     CHECK_GL_ERROR();
     return true;
@@ -134,8 +131,6 @@ bool VertexBuffer::set_data_range(const void* data, unsigned start, unsigned cou
         else
             glBufferData(GL_ARRAY_BUFFER, count*_size, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
-    else
-        _data_pending = true;
 
     CHECK_GL_ERROR();
     return true;

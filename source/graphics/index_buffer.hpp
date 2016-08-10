@@ -40,8 +40,6 @@ protected:
 
     // shadow data stored in system memory
     std::unique_ptr<uint8_t[]> _shadowed_data;
-    // do we need to sync shadow data to gpu
-    bool _data_pending = false;
 };
 
 NS_FLOW2D_GFX_END

@@ -25,6 +25,7 @@ struct StringHash
     bool operator == (const std::string& rhs) const { return _value == calculate(rhs.c_str()); }
     operator uint32_t () const { return _value; }
 
+    bool is_empty() const { return _value == 0; }
     uint32_t get_hash() const { return _value; }
 
 protected:

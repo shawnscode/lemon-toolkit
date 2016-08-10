@@ -39,8 +39,6 @@ void ResourceCache::make_room(unsigned size)
 
     _memusage = size;
     for( auto pair : _resources ) _memusage += pair.second->get_memusage();
-
-    unsigned eliminated = 0;
     for( auto cursor = _lru.begin(); cursor != _lru.end(); )
     {
         if( cursor->second.use_count() == 2 )

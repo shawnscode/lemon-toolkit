@@ -55,10 +55,12 @@ bool Shader::restore()
     }
 
     if( _fragment_shader.empty() || _vertex_shader.empty() )
+    {
+        LOGW("failed to restore shader without vertex/fragment shader.");
         return false;
+    }
 
-    if( _object != 0 )
-        return true;
+    release();
 
     _object = glCreateProgram();
     if( _object == 0 )
@@ -120,6 +122,7 @@ void Shader::release()
 
     _object = 0;
     _vao = 0;
+    _locations.clear();
 }
 
 void Shader::bind_to_device()
@@ -222,9 +225,10 @@ int32_t Shader::get_uniform_location(const char* name)
         return -1;
     }
 
+    auto hash = math::StringHash(name);
     for( auto& pair : _locations )
     {
-        if( pair.first == name )
+        if( pair.first == hash )
             return pair.second;
     }
 
@@ -232,8 +236,18 @@ int32_t Shader::get_uniform_location(const char* name)
     if( location == -1 )
         LOGW("failed to locate uniform %s.", name);
 
-    _locations.push_back(std::make_pair(math::StringHash(name), location));
+    _locations.push_back(std::make_pair(hash, location));
     return location;
+}
+
+void Shader::set_texture(const char* name, unsigned unit)
+{
+    auto pos = get_uniform_location(name);
+    if( pos == -1 )
+        return;
+
+    _device.set_shader(_object);
+    glUniform1i(pos, unit);
 }
 
 void Shader::set_uniform1f(const char* name, const math::Vector<1, float>& value)

@@ -30,7 +30,7 @@ bool Image::read(std::istream& in)
     }
     tmp.reset();
 
-    if( set_size(width, height, components) )
+    if( !set_size(width, height, components) )
     {
         stbi_image_free(pixels);
         return false;
