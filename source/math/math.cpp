@@ -16,4 +16,9 @@ uint32_t StringHash::calculate(const char* str)
     return (hash & 0x7FFFFFFF);
 }
 
+std::ostream& operator << (std::ostream& out, const StringHash& hash)
+{
+    return out << "StringHash(" << hash.get_hash() << ")";
+}
+
 NS_FLOW2D_MATH_END

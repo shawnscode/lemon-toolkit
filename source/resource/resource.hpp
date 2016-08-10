@@ -58,6 +58,8 @@ struct ResourceCache : public core::Subsystem
     unsigned get_memusage() const { return _memusage; }
 
 protected:
+    friend std::ostream& operator << (std::ostream&, const ResourceCache&);
+
     void make_room(unsigned);
     void touch(math::StringHash);
     std::fstream get_file(const fs::Path&);
@@ -65,9 +67,12 @@ protected:
     unsigned _memusage;
     unsigned _threshold;
 
+    std::unordered_map<math::StringHash, std::string>     _names;
     std::unordered_map<math::StringHash, Resource::ptr>   _resources;
     std::list<std::pair<math::StringHash, Resource::ptr>> _lru;
 };
+
+std::ostream& operator << (std::ostream&, const ResourceCache&);
 
 /// IMPLEMENTATIONS
 template<typename T>
@@ -97,6 +102,7 @@ ResourceCache::return_type<T> ResourceCache::get(const fs::Path& name)
             make_room(resource->get_memusage());
             _resources[hash] = resource;
             _lru.push_back(std::make_pair(hash, resource));
+            _names[hash] = name.to_string();
             return resource;
         }
     }

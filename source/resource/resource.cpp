@@ -45,6 +45,7 @@ void ResourceCache::make_room(unsigned size)
         {
             _memusage -= cursor->second->get_memusage();
             _resources.erase(cursor->first);
+            _names.erase(cursor->first);
             _lru.erase(cursor++);
 
             if( _memusage + size <= _threshold ) return;
@@ -76,6 +77,21 @@ void ResourceCache::touch(math::StringHash hash)
 std::fstream ResourceCache::get_file(const fs::Path& path)
 {
     return get_subsystem<ArchiveCollection>().open(path, fs::FileMode::READ);
+}
+
+std::ostream& operator << (std::ostream& out, const ResourceCache& cache)
+{
+    out << "ResourceCache" << std::endl;
+    unsigned usage = 0;
+    for( auto pair : cache._resources )
+    {
+        usage += pair.second->get_memusage();
+        auto name = cache._names.find(pair.first);
+        if( name != cache._names.end() ) out << "\t" << name->second;
+        else out << "\t" << pair.first;
+        out << " : " << pair.second->get_memusage() << " byte(s)" << std::endl;
+    }
+    return out << usage << " byte(s)" <<std::endl;
 }
 
 NS_FLOW2D_RES_END

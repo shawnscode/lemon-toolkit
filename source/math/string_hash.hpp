@@ -32,6 +32,8 @@ protected:
     uint32_t _value;
 };
 
+std::ostream& operator << (std::ostream&, const StringHash&);
+
 NS_FLOW2D_MATH_END
 
 namespace std
