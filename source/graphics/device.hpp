@@ -89,20 +89,20 @@ enum class ClearOption : uint8_t
     STENCIL = 0x4
 };
 
-struct Resource
+// device events
+struct EvtDeviceLost {};
+struct EvtDeviceRestore {};
+
+// base class for gpu resources
+struct GPUObject
 {
-    // recreate the resource and restore data if applicable
-    virtual bool restore() { return true; }
-    // remark the resource released or context destruction
-    virtual void release() { _object = 0; }
+    GPUObject(Device& device);
+    virtual ~GPUObject();
+
+    virtual void receive(const EvtDeviceRestore&) {}
+    virtual void receive(const EvtDeviceLost&) {}
 
 protected:
-    friend class Device;
-
-    // the entire lifetime of GPU resources should be managed by Device
-    Resource(Device& device) : _device(device) {}
-    virtual ~Resource() {}
-
     Device&     _device;
     unsigned    _object = 0;
 };
@@ -174,7 +174,7 @@ struct Device : public core::Subsystem
 
     // restore gpu object and reinitialize state, returns a custom shared_ptr
     template<typename T> using spawn_return = typename std::enable_if<
-        std::is_base_of<Resource, T>::value,
+        std::is_base_of<GPUObject, T>::value,
         std::shared_ptr<T>>::type;
     template<typename T, typename ... Args> spawn_return<T> spawn(Args&& ...);
 
@@ -186,10 +186,6 @@ struct Device : public core::Subsystem
     unsigned get_bound_shader() const { return _bound_program; }
 
 protected:
-    void subscribe(Resource*);
-    void unsubscribe(Resource*);
-    std::vector<Resource*> _objects;
-
     // window options and status
     int             _multisamples = 0;
     math::Vector2i  _size = {1, 1}, _position = {0, 0};
@@ -229,13 +225,8 @@ protected:
 template<typename T, typename ... Args>
 Device::spawn_return<T> Device::spawn(Args&& ... args)
 {
-    auto object = new (std::nothrow) T(*this, std::forward<Args>(args)...);
-    if( object )
-    {
-        subscribe(object);
-        return std::shared_ptr<T>(object, std::bind(&Device::unsubscribe, this, std::placeholders::_1));
-    }
-    return nullptr;
+    auto object = new (std::nothrow) T(*this);
+    return std::shared_ptr<T>(object);
 }
 
 NS_FLOW2D_GFX_END

@@ -27,6 +27,11 @@ struct Subsystem
     // check if we have specified subsystems
     template<typename ... Args> bool has_subsystems() const;
 
+    EntityManager& get_world();
+    EventManager&  get_dispatcher();
+    const EntityManager& get_world() const;
+    const EventManager&  get_dispatcher() const;
+
 protected:
     friend class Context;
 
@@ -112,6 +117,26 @@ protected:
 };
 
 ///
+
+INLINE EntityManager& Subsystem::get_world()
+{
+    return _context.get_world();
+}
+
+INLINE EventManager&  Subsystem::get_dispatcher()
+{
+    return _context.get_dispatcher();
+}
+
+INLINE const EntityManager& Subsystem::get_world() const
+{
+    return _context.get_world();
+}
+
+INLINE const EventManager&  Subsystem::get_dispatcher() const
+{
+    return _context.get_dispatcher();
+}
 
 template<typename ... Args>
 INLINE bool Subsystem::has_subsystems() const

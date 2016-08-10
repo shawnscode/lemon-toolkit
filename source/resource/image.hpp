@@ -9,7 +9,8 @@ NS_FLOW2D_RES_BEGIN
 
 struct Image : public Resource
 {
-    virtual ~Image() {}
+    using ptr = std::shared_ptr<Image>;
+    using weak_ptr = std::weak_ptr<Image>;
 
     bool read(std::istream&) override;
     bool save(std::ostream&) override;

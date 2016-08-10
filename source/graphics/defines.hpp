@@ -20,9 +20,11 @@ const static size_t kMaxVertexAttributes = 8;
 const static size_t kMaxTextures = 8;
 
 struct Device;
-struct Resource;
+struct GPUObject;
 struct IndexBuffer;
 struct VertexBuffer;
 struct Shader;
+struct Texture;
+struct Texture2D;
 
 NS_FLOW2D_GFX_END

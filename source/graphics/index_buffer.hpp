@@ -7,13 +7,20 @@
 
 NS_FLOW2D_GFX_BEGIN
 
-struct IndexBuffer : public Resource
+struct IndexBuffer : public GPUObject
 {
-    void bind();
-    bool restore(unsigned count, unsigned size, bool dynamic);
-    bool restore() override;
-    void release() override;
+    IndexBuffer(Device& device) : GPUObject(device) {}
+    virtual ~IndexBuffer() { release(); }
 
+    void receive(const EvtDeviceRestore&) override { restore(); }
+    void receive(const EvtDeviceLost&) override { release(); }
+
+    bool restore(unsigned count, unsigned size, bool dynamic);
+    bool restore();
+    void release();
+
+    // bind this vertex buffer to graphic device
+    void bind_to_device();
     // enable shadowing data in cpu memory
     void set_shadowed(bool);
     // set all data in the buffer
@@ -27,15 +34,9 @@ struct IndexBuffer : public Resource
     unsigned get_vertex_size() const { return _size; }
 
 protected:
-    friend class Device;
-    IndexBuffer(Device& device, unsigned count, unsigned size, bool dynamic = false)
-    : Resource(device), _count(count), _size(size), _dynamic(dynamic)
-    {}
-
-protected:
-    bool        _dynamic;
-    unsigned    _count;
-    unsigned    _size;
+    bool        _dynamic    = false;
+    unsigned    _count      = 0;
+    unsigned    _size       = 0;
 
     // shadow data stored in system memory
     std::unique_ptr<uint8_t[]> _shadowed_data;

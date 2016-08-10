@@ -54,7 +54,7 @@ void IndexBuffer::release()
     _object = 0;
 }
 
-void IndexBuffer::bind()
+void IndexBuffer::bind_to_device()
 {
     if( !_object || _device.is_device_lost() )
     {

@@ -39,6 +39,13 @@ GLuint compile(GLenum type, const char* source)
     return shader;
 }
 
+bool Shader::restore(const char* vs, const char* ps)
+{
+    _vertex_shader = vs;
+    _fragment_shader = ps;
+    return restore();
+}
+
 bool Shader::restore()
 {
     if( _device.is_device_lost() )
@@ -115,7 +122,7 @@ void Shader::release()
     _vao = 0;
 }
 
-void Shader::bind()
+void Shader::bind_to_device()
 {
     if( !_object || _device.is_device_lost() )
         return;

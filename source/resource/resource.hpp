@@ -10,16 +10,6 @@
 
 NS_FLOW2D_RES_BEGIN
 
-// enum AsyncLoadState
-// {
-//     UNLOADED = 0,
-//     LOADING,
-//     LOADED,
-//     UNLOADING,
-//     PREPARED,
-//     PREPARING
-// };
-
 struct Resource
 {
     using weak_ptr = std::weak_ptr<Resource>;
@@ -38,12 +28,7 @@ struct Resource
 protected:
     std::string     _name;
     unsigned        _memusage;
-
-    // asynchronous loading state
-    // AsyncLoadState _state;
 };
-
-// background loader of resources. owned by the resource cache
 
 // resource cache subsystems. loads resources on demand and cache them
 // for later access with a LRU strategy.

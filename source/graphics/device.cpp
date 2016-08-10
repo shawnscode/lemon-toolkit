@@ -97,6 +97,18 @@ struct DeviceContext
     SDL_GLContext   context = 0;
 };
 
+GPUObject::GPUObject(Device& device) : _device(device)
+{
+    _device.get_dispatcher().subscribe<EvtDeviceLost>(*this);
+    _device.get_dispatcher().subscribe<EvtDeviceRestore>(*this);
+}
+
+GPUObject::~GPUObject()
+{
+    _device.get_dispatcher().unsubscribe<EvtDeviceLost>(*this);
+    _device.get_dispatcher().unsubscribe<EvtDeviceRestore>(*this);
+}
+
 bool Device::initialize()
 {
     ENSURE( _context.has_subsystems<Application>() );
@@ -286,25 +298,23 @@ bool Device::restore_context()
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &_system_frame_object);
     reset_cached_state();
 
-    for( unsigned i = 0; i < _objects.size(); i++ )
-        if( _objects[i] != nullptr )
-            _objects[i]->restore();
-
     // ouput informations
     LOGI("Restore OpenGL context with:");
     LOGI("GL_VENDOR:                    %s", glGetString(GL_VENDOR));
     LOGI("GL_RENDERER:                  %s", glGetString(GL_RENDERER));
     LOGI("GL_VERSION:                   %s", glGetString(GL_VERSION));
     LOGI("GL_SHADING_LANGUAGE_VERSION:  %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+    //
+    get_dispatcher().emit<EvtDeviceRestore>();
     return true;
 }
 
 void Device::release_context()
 {
-    for( unsigned i = 0; i < _objects.size(); i++ )
-        if( _objects[i] != nullptr )
-            _objects[i]->release();
+    get_dispatcher().emit<EvtDeviceLost>();
 
+    //
     if( _device->window != nullptr && _device->context != 0 )
     {
         SDL_GL_DeleteContext(_device->context);
@@ -569,35 +579,6 @@ void Device::draw(PrimitiveType type, unsigned start, unsigned count)
 bool Device::is_device_lost() const
 {
     return _device->window == nullptr || _device->context == 0;
-}
-
-void Device::subscribe(Resource* object)
-{
-    for( unsigned i = 0; i < _objects.size(); i++ )
-    {
-        if( _objects[i] == nullptr )
-        {
-            _objects[i] = object;
-            return;
-        }
-    }
-    _objects.push_back(object);
-    object->restore();
-}
-
-void Device::unsubscribe(Resource* object)
-{
-    for( unsigned i = 0; i < _objects.size(); i++ )
-    {
-        if( _objects[i] == object )
-        {
-            _objects[i] = nullptr;
-            break;
-        }
-    }
-
-    object->release();
-    delete object;
 }
 
 static const char* to_string(GLenum error)
