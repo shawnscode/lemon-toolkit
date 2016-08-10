@@ -113,13 +113,13 @@ bool set_current_directory(const Path& path)
     auto nwd = path.is_absolute() ? path : get_current_directory() / path;
 
 #ifdef PLATFORM_WIN32
-    auto wstring_path = to_win32(nwd.get_string().c_str());
+    auto wstring_path = to_win32(nwd.to_string().c_str());
     if( !SetCurrentDirectoryW(wstring_path.c_str()) )
 #else
-    if( chdir(nwd.get_string().c_str()) != 0 )
+    if( chdir(nwd.to_string().c_str()) != 0 )
 #endif
     {
-        LOGW("failed to set working directory to \"%s\".", nwd.get_string().c_str());
+        LOGW("failed to set working directory to \"%s\".", nwd.to_string().c_str());
         return false;
     }
 
@@ -149,13 +149,13 @@ bool create_directory(const Path& path, bool recursive)
     }
 
 #ifdef PLATFORM_WIN32
-    auto wstring_path = to_win32(path.get_string().c_str());
+    auto wstring_path = to_win32(path.to_string().c_str());
     if( CreateDirectoryW(wstring_path.c_str(), nullptr) )
 #else
-    if( mkdir(path.get_string().c_str(), S_IRWXU) != 0 && errno != EEXIST )
+    if( mkdir(path.to_string().c_str(), S_IRWXU) != 0 && errno != EEXIST )
 #endif
     {
-        LOGW("failed to create directory \"%s\".", path.get_string().c_str());
+        LOGW("failed to create directory \"%s\".", path.to_string().c_str());
         return false;
     }
 
@@ -171,11 +171,11 @@ bool move(const Path& from, const Path& to)
     }
 
 #ifdef PLATFORM_WIN32
-    auto from_wstr = to_win32(from.get_string().c_str());
-    auto to_wstr = to_win32(to.get_string().c_str());
+    auto from_wstr = to_win32(from.to_string().c_str());
+    auto to_wstr = to_win32(to.to_string().c_str());
     return MoveFileW(from_wstr.c_str(), to_wstr.c_str()) != 0;
 #else
-    return std::rename(from.get_string().c_str(), to.get_string().c_str()) == 0;
+    return std::rename(from.to_string().c_str(), to.to_string().c_str()) == 0;
 #endif
 }
 
@@ -194,10 +194,10 @@ bool remove(const Path& path, bool recursive)
         for( auto iter : scan(path, mode) )
         {
 #ifdef PLATFORM_WIN32
-            auto wstring_path = to_win32(iter.get_string().c_str());
+            auto wstring_path = to_win32(iter.to_string().c_str());
             success &= DeleteFileW(wstring_path.c_str());
 #else
-            success &= (std::remove(iter.get_string().c_str()) == 0);
+            success &= (std::remove(iter.to_string().c_str()) == 0);
 #endif
         }
 
@@ -205,10 +205,10 @@ bool remove(const Path& path, bool recursive)
     }
 
 #ifdef PLATFORM_WIN32
-    auto wstring_path = to_win32(path.get_string().c_str());
+    auto wstring_path = to_win32(path.to_string().c_str());
     return DeleteFileW(wstring_path.c_str());
 #else
-    return std::remove(path.get_string().c_str()) == 0;
+    return std::remove(path.to_string().c_str()) == 0;
 #endif
 }
 
@@ -218,12 +218,12 @@ bool is_exists(const Path& path)
         return true;
 
 #ifdef PLATFORM_WIN32
-    auto wstring_path = to_win32(path.get_string().c_str());
+    auto wstring_path = to_win32(path.to_string().c_str());
     DWORD attr = GetFileAttributesW(wstring_path.c_str());
     return attr != INVALID_FILE_ATTRIBUTES;
 #else
     struct stat sb;
-    return stat(path.get_string().c_str(), &sb) == 0;
+    return stat(path.to_string().c_str(), &sb) == 0;
 #endif
 }
 
@@ -233,12 +233,12 @@ bool is_regular_file(const Path& path)
         return false;
 
 #ifdef PLATFORM_WIN32
-    auto wstring_path = to_win32(path.get_string().c_str());
+    auto wstring_path = to_win32(path.to_string().c_str());
     DWORD attr = GetFileAttributesW(wstring_path.c_str());
     return attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY == 0);
 #else
     struct stat sb;
-    if( stat(path.get_string().c_str(), &sb) )
+    if( stat(path.to_string().c_str(), &sb) )
         return false;
     return S_ISREG(sb.st_mode);
 #endif
@@ -250,12 +250,12 @@ bool is_directory(const Path& path)
         return true;
 
 #ifdef PLATFORM_WIN32
-    auto wstring_path = to_win32(path.get_string().c_str());
+    auto wstring_path = to_win32(path.to_string().c_str());
     DWORD attr = GetFileAttributesW(wstring_path.c_str());
     return attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY != 0);
 #else
     struct stat sb;
-    if( stat(path.get_string().c_str(), &sb) )
+    if( stat(path.to_string().c_str(), &sb) )
         return false;
     return S_ISDIR(sb.st_mode);
 #endif
@@ -265,14 +265,14 @@ std::fstream open(const Path& path, FileMode mode)
 {
     std::fstream fs;
 #ifdef PLATFORM_WIN32
-    fs.open(to_win32(path.get_string().c_str()).c_str(), get_filemode(mode));
+    fs.open(to_win32(path.to_string().c_str()).c_str(), get_filemode(mode));
 #else
-    fs.open(path.get_string().c_str(), get_filemode(mode));
+    fs.open(path.to_string().c_str(), get_filemode(mode));
 #endif
 
     if( !fs.is_open() )
         LOGW("failed to open file \"%s\" with mode %d",
-            path.get_string().c_str(),(uint16_t)mode);
+            path.to_string().c_str(),(uint16_t)mode);
 
     return fs;
 }
@@ -281,7 +281,7 @@ Directory scan(const Path& path, ScanMode mode)
 {
     Directory directory;
     if( !directory.scan(path, mode) )
-        LOGW("failed to scan directory \"%s\"", path.get_string().c_str());
+        LOGW("failed to scan directory \"%s\"", path.to_string().c_str());
     return directory;
 }
 
@@ -289,7 +289,7 @@ Directory scan(const Path& path, ScanMode mode)
 static bool scan_directory(std::vector<Path>& nodes, const Path& path, ScanMode mode)
 {
     WIN32_FIND_DATAW info;
-    HANDLE handle = FindFirstFileW(to_win32(path.get_string().c_str()).c_str(), &info);
+    HANDLE handle = FindFirstFileW(to_win32(path.to_string().c_str()).c_str(), &info);
     if( handle != INVALID_HANDLE_VALUE )
     {
         do
@@ -320,7 +320,7 @@ static bool scan_directory(std::vector<Path>& nodes, const Path& path, ScanMode 
 #else
 static bool scan_directory(std::vector<Path>& nodes, const Path& path, ScanMode mode)
 {
-    auto dir = opendir(path.get_string().c_str());
+    auto dir = opendir(path.to_string().c_str());
     if( dir )
     {
         struct dirent* de;
@@ -334,7 +334,7 @@ static bool scan_directory(std::vector<Path>& nodes, const Path& path, ScanMode 
                 continue;
 
             auto npath = (path / de->d_name);
-            if( stat(npath.get_string().c_str(), &st) == 0 )
+            if( stat(npath.to_string().c_str(), &st) == 0 )
             {
                 if( st.st_mode & S_IFDIR )
                 {

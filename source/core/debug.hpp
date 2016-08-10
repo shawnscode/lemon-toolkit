@@ -19,7 +19,6 @@ struct Debug
 {
     static void log(LogLevel, const char* msg, va_list args);
     static void log(LogLevel, const char* msg, ...);
-    static void set_log_filter(LogLevel);
 
     // aborts the program execution and trys print the stacktrace
     static void abort(const char* file, int line, const char* format, ...);

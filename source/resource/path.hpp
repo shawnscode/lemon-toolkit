@@ -39,7 +39,7 @@ struct Path
     // return extension if get_filename() contains a dot
     std::string get_extension() const;
     // return string representation of path
-    const std::string& get_string() const { return _pathname; }
+    const std::string& to_string() const { return _pathname; }
     // return parent/root path of this
     Path        get_root() const;
     Path        get_parent() const;

@@ -7,12 +7,12 @@ NS_FLOW2D_FS_BEGIN
 
 std::ostream& operator << (std::ostream& os, const Path& path)
 {
-    return os << path.get_string();
+    return os << path.to_string();
 }
 
 std::string to_string(const Path& path)
 {
-    return path.get_string();
+    return path.to_string();
 }
 
 Path::iterator::iterator(const Path& p, size_t pos) : _target(p)
@@ -209,13 +209,12 @@ void Path::compress()
 
 Path& Path::concat(const Path& rhs)
 {
-    ASSERT( !rhs.is_absolute(), "trying to concat a absolute path." );
     if( rhs.is_empty() )
         return *this;
 
     _pathname.reserve(rhs._pathname.length()+_pathname.length()+1);
 
-    if( _pathname != Path::sperator && !is_empty() )
+    if( _pathname != Path::sperator && !is_empty() && !rhs.is_absolute() )
         _pathname.append(Path::sperator);
     _pathname.append(rhs._pathname);
 

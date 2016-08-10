@@ -3,6 +3,9 @@
 
 NS_FLOW2D_CORE_BEGIN
 
+static LogLevel s_filter    = LogLevel::INFORMATION;
+static bool     s_exception = false;
+
 static void abortx(const char* file, int line, const char* format, va_list args)
 {
     FLOW_LOGEV(format, args);
@@ -13,6 +16,9 @@ static void abortx(const char* file, int line, const char* format, va_list args)
 
 void Debug::log(LogLevel level, const char* msg, va_list args)
 {
+    if( static_cast<int>(level) < static_cast<int>(s_filter) )
+        return;
+
     char buf[8192];
     int len = vsnprintf(buf, sizeof(buf), msg, args);
     buf[len] = '\0';
@@ -186,6 +192,12 @@ void LOGE(const char* format, ...)
     va_start(args, format);
     core::Debug::log(core::LogLevel::ERROR, format, args);
     va_end(args);
+}
+
+void SET_DEBUG_CONFIG(int filter, bool exception)
+{
+    core::s_filter = static_cast<core::LogLevel>(filter);
+    core::s_exception = exception;
 }
 
 NS_FLOW2D_END

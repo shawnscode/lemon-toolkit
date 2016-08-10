@@ -93,6 +93,74 @@ TEST_CASE("PathConcatenationAndOthers")
     REQUIRE( iterator == path4.end() );
 }
 
+TEST_CASE("TestFilesystem")
+{
+    auto pwd = get_current_directory();
+    REQUIRE( set_current_directory("../../test") );
+    remove("tmp_dir");
+    remove("resource", true);
+
+    REQUIRE( create_directory("tmp_dir") );
+    REQUIRE( is_directory("tmp_dir") );
+    REQUIRE( !is_regular_file("tmp_dir") );
+
+    REQUIRE( move("tmp_dir", "resource") );
+    REQUIRE( !is_directory("tmp_dir") );
+    REQUIRE( is_directory("resource") );
+
+    auto file = open("resource/resource.txt", FileMode::APPEND);
+    file.write("hahaha", 6);
+    file.close();
+
+    remove("tmp_dir");
+    remove("resource", true);
+    REQUIRE( !is_directory("tmp_dir") );
+    REQUIRE( !is_directory("resource") );
+    REQUIRE( set_current_directory(pwd) );
+}
+
+struct ArchiveFixture : core::Context
+{
+    ArchiveFixture()
+    {
+        SET_DEBUG_CONFIG(LOG_ERROR, true);
+
+        pwd = get_current_directory();
+        set_current_directory("../../test");
+        add_subsystem<ArchiveCollection>();
+    }
+
+    ~ArchiveFixture()
+    {
+        set_current_directory(pwd);
+    }
+
+    Path pwd;
+};
+
+TEST_CASE_METHOD(ArchiveFixture, "TestArchiveCollection")
+{
+    remove("resource", true);
+
+    auto& collection = get_subsystem<ArchiveCollection>();
+    REQUIRE( !collection.add_search_path("resource") );
+    auto file = collection.open("resource.txt", FileMode::APPEND);
+    REQUIRE( !file.is_open() );
+
+    REQUIRE( create_directory("resource") );
+    REQUIRE( collection.add_search_path("resource") );
+    file = collection.open("resource.txt", FileMode::APPEND);
+    REQUIRE( !file.is_open() );
+
+    file = open("resource/resource.txt", FileMode::APPEND);
+    file.write("hahaha", 6);
+    file.close();
+
+    file = collection.open("resource.txt", FileMode::APPEND);
+    REQUIRE( file.is_open() );
+    file.close();
+}
+
 // TEST_CASE("Path")
 
 // struct Text : public ResourceTrait<Text>
@@ -119,30 +187,6 @@ TEST_CASE("PathConcatenationAndOthers")
 //     ArchiveManager          archives;
 //     ResourceCacheManager    cache;
 // };
-
-TEST_CASE("TestFilesystem")
-{
-    REQUIRE( set_current_directory("../../test") );
-    remove("tmp_dir");
-    remove("resource", true);
-
-    REQUIRE( create_directory("tmp_dir") );
-    REQUIRE( is_directory("tmp_dir") );
-    REQUIRE( !is_regular_file("tmp_dir") );
-
-    REQUIRE( move("tmp_dir", "resource") );
-    REQUIRE( !is_directory("tmp_dir") );
-    REQUIRE( is_directory("resource") );
-
-    auto file = open("resource/resource.txt", FileMode::APPEND);
-    file.write("hahaha", 6);
-    file.close();
-
-    remove("tmp_dir");
-    remove("resource", true);
-    REQUIRE( !is_directory("tmp_dir") );
-    REQUIRE( !is_directory("resource") );
-}
 
 // TEST_CASE_METHOD(ArchiveManager, "FilesystemArchive")
 // {

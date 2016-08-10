@@ -72,21 +72,6 @@ protected:
 // construct and open a filesystem directory view
 Directory scan(const Path&, ScanMode mode = ScanMode::FILES);
 
-// subsystem for file and directory operations and access control
-// struct Filesystem : core::Subsystem
-// {
-//     SUBSYSTEM("Filesystem");
-
-//     Filesystem(core::Context& c) : Subsystem(c) {}
-//     virtual ~Filesystem() {}
-
-//     void add_search_path(const Path&);
-//     std::filesystem open(const Path&, FileMode);
-
-// protected:
-//     std::vector<Path> _search_path;
-// };
-
 NS_FLOW2D_FS_END
 ENABLE_BITMASK_OPERATORS(flow2d::fs::FileMode);
 ENABLE_BITMASK_OPERATORS(flow2d::fs::ScanMode);
