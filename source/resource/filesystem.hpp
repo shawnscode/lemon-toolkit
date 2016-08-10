@@ -5,7 +5,6 @@
 
 #include <resource/path.hpp>
 #include <core/context.hpp>
-#include <fstream>
 
 NS_FLOW2D_FS_BEGIN
 

@@ -13,8 +13,10 @@ struct Path
     constexpr static const char * const sperator = "/";
     constexpr static const char * const extension_sperator = ".";
     constexpr static const char * const previous = "..";
+    constexpr static const char * const empty = ".";
+    constexpr static const char * const empty_representation = "./";
 
-    Path() {}
+    Path() { tokenize(); }
     Path(const char* str) { set(std::move(std::string(str))); }
     Path(const std::string& str) { set(str); }
     Path(std::string&& str) { set(std::move(str)); }
@@ -28,7 +30,7 @@ struct Path
     Path& set(std::string&& rhs) { _pathname = std::move(rhs); tokenize(); return *this; }
     Path& concat(const Path&);
 
-    bool is_empty() const { return _pathname.empty(); }
+    bool is_empty() const { return _pathname == Path::empty_representation; }
     bool is_absolute() const { return _pathname.compare(0, strlen(Path::sperator), Path::sperator) == 0; }
     bool has_extension(const char* rhs) const { return get_extension() == rhs; }
 
@@ -38,8 +40,10 @@ struct Path
     std::string get_basename() const;
     // return extension if get_filename() contains a dot
     std::string get_extension() const;
-    // return string representation of path
+    // return string/c_str representation of path
     const std::string& to_string() const { return _pathname; }
+    const char* c_str() const { return _pathname.c_str(); }
+
     // return parent/root path of this
     Path        get_root() const;
     Path        get_parent() const;

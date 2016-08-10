@@ -10,6 +10,7 @@ NS_FLOW2D_GFX_BEGIN
 struct VertexBuffer : public Resource
 {
     void bind();
+
     bool restore(unsigned count, unsigned size, bool dynamic);
     bool restore() override;
     void release() override;

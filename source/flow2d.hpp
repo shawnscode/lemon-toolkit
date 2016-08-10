@@ -21,6 +21,7 @@
 #include <resource/path.hpp>
 #include <resource/filesystem.hpp>
 #include <resource/archives.hpp>
+#include <resource/resource.hpp>
 
 #define USING_NS_FLOW2D using namespace flow2d;
 #define USING_NS_FLOW2D_CORE using namespace flow2d::core;

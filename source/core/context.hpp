@@ -21,6 +21,12 @@ struct Subsystem
     virtual void dispose() {}
     virtual void update(float) {}
 
+    // retrieve the registered system instance, existence should be guaranteed
+    template<typename S> S& get_subsystem();
+    template<typename S> const S& get_subsystem() const;
+    // check if we have specified subsystems
+    template<typename ... Args> bool has_subsystems() const;
+
 protected:
     friend class Context;
 
@@ -78,12 +84,12 @@ struct Context
 
     EntityManager& get_world();
     EventManager&  get_dispatcher();
-    template<typename S> S& get_subsystem();
 
     const EntityManager& get_world() const;
     const EventManager&  get_dispatcher() const;
 
     // retrieve the registered system instance, existence should be guaranteed
+    template<typename S> S& get_subsystem();
     template<typename S> const S& get_subsystem() const;
     // spawn a new subsystem with type S and construct arguments
     template<typename S, typename ... Args> void add_subsystem(Args&& ...);
@@ -106,6 +112,25 @@ protected:
 };
 
 ///
+
+template<typename ... Args>
+INLINE bool Subsystem::has_subsystems() const
+{
+    return _context.has_subsystems<Args...>();
+}
+
+template<typename S>
+INLINE S& Subsystem::get_subsystem()
+{
+    return _context.get_subsystem<S>();
+}
+
+template<typename S>
+INLINE const S& Subsystem::get_subsystem() const
+{
+    return _context.get_subsystem<S>();
+}
+
 template<typename ... Args>
 bool SubsystemWithEntities<Args...>::initialize()
 {

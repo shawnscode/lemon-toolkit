@@ -13,11 +13,18 @@
 
 NS_FLOW2D_RES_BEGIN
 
+const static unsigned kCacheDefaultThreshold = 128 * 1024 * 1024;
+struct Archive;
+struct FilesystemArchive;
+struct PackageArchive;
+struct ArchiveCollection;
+
 NS_FLOW2D_RES_END
 
 NS_FLOW2D_FS_BEGIN
 
 const static unsigned kMaxPath = 256;
+struct Path;
 struct File;
 struct Filesystem;
 

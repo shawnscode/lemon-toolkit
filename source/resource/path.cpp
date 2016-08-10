@@ -97,7 +97,10 @@ std::string Path::iterator::operator * () const
 
 void Path::tokenize()
 {
-    if( is_empty() )
+    if( _pathname.empty() )
+        _pathname = Path::empty_representation;
+
+    if( _pathname == Path::empty_representation )
         return;
 
     // remove suffix sperator
@@ -123,7 +126,9 @@ void Path::tokenize()
 
         if( start != end - 1 )
             _pathname.replace(start+1, end - start, Path::sperator);
-
+        
+        if( start == 0 )
+            break;
         end = _pathname.find_last_of(Path::sperator, start-1);
     }
 
@@ -132,6 +137,22 @@ void Path::tokenize()
 
 void Path::compress()
 {
+    size_t end = _pathname.length();
+    while( end != std::string::npos && end != 0 )
+    {
+        size_t start = _pathname.find_last_of(Path::sperator, end-1);
+        if( start == std::string::npos )
+        {
+            if( _pathname.compare(0, end, Path::empty) == 0 )
+                _pathname.erase(0, strlen(Path::empty)+1);
+            break;
+        }
+
+        if( _pathname.compare(start+1, end-start-1, Path::empty) == 0 )
+            _pathname.erase(end == _pathname.length() ? start : start+1,  end-start);
+        end = start;
+    }
+
     size_t previous_count = 0, eliminated = 0;
     size_t last_pos = _pathname.length(), pos = _pathname.find_last_of(Path::sperator);
     while( last_pos != std::string::npos )
@@ -205,6 +226,9 @@ void Path::compress()
         if( prefix > 0 )
             _pathname.erase(1, prefix);
     }
+
+    if( _pathname.empty() )
+        _pathname = Path::empty_representation;
 }
 
 Path& Path::concat(const Path& rhs)

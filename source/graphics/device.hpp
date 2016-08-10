@@ -91,7 +91,9 @@ enum class ClearOption : uint8_t
 
 struct Resource
 {
+    // recreate the resource and restore data if applicable
     virtual bool restore() { return true; }
+    // remark the resource released or context destruction
     virtual void release() { _object = 0; }
 
 protected:
