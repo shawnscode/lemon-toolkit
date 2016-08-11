@@ -62,10 +62,17 @@ struct Component
     template<typename T, typename ... Args> T* add_component(Args && ... args);
     // retrieve a component assigned to object
     template<typename T> T* get_component();
+    template<typename T> const T* get_component() const;
     // remove a component from object
     template<typename T> void remove_component();
-    // check if we has a component
-    template<typename T> bool has_component() const;
+    // check if we have specified components
+    template<typename ...Args> bool has_components() const;
+    // get bitmask representation of components
+    ComponentMask get_components_mask() const;
+
+    Entity get_object() const { return _object; }
+    EntityManager* get_world() { return _world; }
+    const EntityManager* get_world() const { return _world; }
 
 private:
     friend class EntityManager;

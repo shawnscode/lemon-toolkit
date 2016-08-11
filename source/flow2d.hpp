@@ -25,6 +25,8 @@
 #include <resource/resource.hpp>
 #include <resource/image.hpp>
 
+#include <scene/transform.hpp>
+
 #define USING_NS_FLOW2D using namespace flow2d;
 #define USING_NS_FLOW2D_CORE using namespace flow2d::core;
 #define USING_NS_FLOW2D_MATH using namespace flow2d::math;

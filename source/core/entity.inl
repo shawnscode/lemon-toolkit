@@ -47,15 +47,26 @@ INLINE T* Component::get_component()
 }
 
 template<typename T>
+INLINE const T* Component::get_component() const
+{
+    return _world->get_component<T>(_object);
+}
+
+template<typename T>
 INLINE void Component::remove_component()
 {
     return _world->remove_component<T>(_object);
 }
 
-template<typename T>
-INLINE bool Component::has_component() const
+template<typename ... Args>
+INLINE bool Component::has_components() const
 {
-    return _world->has_component<T>(_object);
+    return _world->has_components<Args...>(_object);
+}
+
+INLINE ComponentMask Component::get_components_mask() const
+{
+    return _world->get_components_mask(_object);
 }
 
 // INCLUDED METHODS OF ENTITY MANAGER
