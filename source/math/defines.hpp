@@ -18,6 +18,7 @@ template<typename T> T min() { return std::numeric_limits<T>::min(); }
 template<typename T> T nan() { return std::numeric_limits<T>::quiet_NaN(); }
 template<typename T> T inf() { return std::numeric_limits<T>::infinity(); }
 template<typename T> T epsilon() { return std::numeric_limits<T>::epsilon(); }
+template<typename T> T clamp(T s, T min, T max) { return std::max(std::min(s, max), min); }
 
 INLINE float to_radians(float degree) { return std::fmod(degree, 360.f) / 180 * pi; }
 INLINE float to_degree(float radians) { return std::fmod(radians, pi*2) * 180 / pi; }

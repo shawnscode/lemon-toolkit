@@ -21,6 +21,9 @@ bool Image::read(std::istream& in)
     in.read((char*)tmp.get(), size);
 
     unsigned width, height, components;
+
+    // make sure we have same texture coordinations with OpenGL
+    stbi_set_flip_vertically_on_load(true);
     auto pixels = stbi_load_from_memory(
         tmp.get(), size, (int*)&width, (int*)&height, (int*)&components, 0);
     if( !pixels )
@@ -43,15 +46,32 @@ bool Image::read(std::istream& in)
 
 bool Image::save(std::ostream& out)
 {
-    return false;
+    if( !_data )
+    {
+        LOGW("can't save zero-sized image %s.", _name.c_str());
+        return false;
+    }
+
+    int len;
+    uint8_t* png = stbi_write_png_to_mem(_data.get(), 0, _width, _height, _components, &len);
+    out.write((const char*)png, len);
+    free(png);
+
+    if( (out.rdstate() & std::ifstream::failbit ) != 0 )
+    {
+        LOGW("failed to write ot ostream when save image %s", _name.c_str());
+        return false;
+    }
+
+    return true;
 }
 
-bool Image::set_size(unsigned width, unsigned height, unsigned components)
+bool Image::set_size(unsigned width, unsigned height, unsigned components, ImageElementFormat element)
 {
-    if( width == _width && height == _width && components == _components )
+    if( width == _width && height == _width && element == _element_format )
         return true;
 
-    if( width <= 0 || height <= 0 || components <= 0 || components > 4 )
+    if( width <= 0 || height <= 0 || components <=0 || components > 4 )
     {
         LOGW("invalid image size/components when set_size.");
         return false;
@@ -67,6 +87,7 @@ bool Image::set_size(unsigned width, unsigned height, unsigned components)
     _width = width;
     _height = height;
     _components = components;
+    _element_format = element;
     _memusage = width * height * components;
     return true;
 }
@@ -77,6 +98,102 @@ void Image::set_data(const uint8_t* data)
         return;
 
     memcpy(_data.get(), data, _width*_height*_components);
+}
+
+void Image::clear(const math::Color& color)
+{
+    if( !_data )
+        return;
+
+    for( unsigned y = 0; y < _height; y++ )
+        for( unsigned x = 0; x < _width; x++ )
+            set_pixel(x, y, color);
+}
+
+void Image::set_pixel(unsigned x, unsigned y, const math::Color& color)
+{
+    if( !_data || x >= _width || y >= _height )
+        return;
+
+    uint8_t* dest = _data.get() + (y*_width+x) * _components;
+    uint32_t ic = color.to_uint32();
+    switch(_components)
+    {
+        case 4: // RGBA
+            dest[3] = (uint8_t)((ic & 0x000000FF) >> 0);
+        case 3: // RGB
+        {
+            dest[0] = (uint8_t)((ic & 0xFF000000) >> 24);
+            dest[1] = (uint8_t)((ic & 0x00FF0000) >> 16);
+            dest[2] = (uint8_t)((ic & 0x0000FF00) >> 8);
+            break;
+        }
+        case 2: // LUMINANCE_ALPHA
+        {
+            dest[0] = (uint8_t)math::clamp(255.f * color.grayscale(), 0.f, 255.f);
+            dest[1] = (uint8_t)((ic & 0x000000FF) >> 0);
+            break;
+        }
+        case 1: // ALPHA
+        {
+            dest[0] = (uint8_t)((ic & 0x000000FF) >> 0);
+            break;
+        }
+        default: FATAL("invalid components");
+    }
+}
+
+math::Color Image::get_pixel(unsigned x, unsigned y) const
+{
+    if( !_data )
+        return 0xFF000000;
+
+    x = x >= _width ? _width - 1 : x;
+    y = y >= _height ? _height - 1 : y;
+    uint8_t* src = _data.get() + (y*_width+x) * _components;
+
+    math::Color ret = { 0.f, 0.f, 0.f, 1.f };
+    switch(_components)
+    {
+        case 4: // RGBA
+            ret.a = (float)src[3] / 255.0f;
+        case 3: // RGB
+        {
+            ret.r = (float)src[0] / 255.0f;
+            ret.g = (float)src[1] / 255.0f;
+            ret.b = (float)src[2] / 255.0f;
+            break;
+        }
+        case 2: // LUMINANCE_ALPHA
+        {
+            ret.r = ret.g = ret.b = (float)src[0] / 255.0f;
+            ret.a = (float)src[1] / 255.f;
+            break;
+        }
+        case 1:
+        {
+            ret.a = (float)src[0] / 255.f;
+            break;
+        }
+        default: FATAL("invalid components");
+    }
+    return ret;
+}
+
+math::Color Image::get_pixel_linear(float x, float y) const
+{
+    x = math::clamp(x * _width - 0.5f, 0.f, (float)(_width-1));
+    y = math::clamp(y * _height - 0.5f, 0.f, (float)(_height-1));
+
+    int xi = (int)x;
+    int yi = (int)y;
+
+    float xd = x - std::floor(x);
+    float yd = y - std::floor(y);
+
+    auto top    = lerp(get_pixel(xi, yi+1), get_pixel(xi+1, yi+1), xd);
+    auto bottom = lerp(get_pixel(xi, yi), get_pixel(xi+1, yi), xd);
+    return lerp(top, bottom, yd);
 }
 
 NS_FLOW2D_RES_END

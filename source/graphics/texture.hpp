@@ -65,7 +65,9 @@ struct Texture : public GPUObject
     void set_address_mode(TextureCoordinate, TextureAddressMode);
     // update the changed parameters to device
     void update_parameters(bool force = false);
-    // set data
+    // return memory representation if we shadowed this texture
+    res::Image::ptr get_image() { return _image; }
+    // set data from an image, return true if success
     virtual bool set_data(res::Image::ptr) = 0;
 
 protected:

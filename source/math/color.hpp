@@ -13,6 +13,7 @@ struct Color
     Color(const Color&) = default;
     Color(const Color&, float);
     Color(std::initializer_list<float>);
+    Color(uint32_t);
     Color& operator = (const Color&) = default;
 
     // test for equality and equality with another color without epsilon.
@@ -43,6 +44,8 @@ struct Color
     static const Color YELLOW;
     static const Color TRANSPARENT;
 };
+
+std::ostream& operator << (std::ostream&, const Color&);
 
 Color operator + (const Color&, const Color&);
 Color operator - (const Color&, const Color&);

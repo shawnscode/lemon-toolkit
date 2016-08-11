@@ -18,7 +18,7 @@ static GLenum GL_WRAP_MODES[] =
 #endif
 };
 
-static GLenum GL_IMAGE_FORMATS[] =
+static GLenum GL_TEXTURE_FORMATS[] =
 {
     GL_ALPHA,
     GL_RGB,
@@ -100,6 +100,11 @@ void Texture::set_shadowed(bool shadowed)
 void Texture::set_mipmap(bool mipmap)
 {
     _mipmap = mipmap;
+    if( _object && !_device.is_device_lost() && _image )
+    {
+        _device.set_texture(0, _target, _object);
+        if( mipmap ) glGenerateMipmap(_target);
+    }
 }
 
 void Texture::set_filter_mode(TextureFilterMode mode)
@@ -174,11 +179,11 @@ bool Texture2D::set_data(res::Image::ptr image)
         glTexImage2D(
             _target,
             0,
-            GL_IMAGE_FORMATS[to_value(_format)],
+            GL_TEXTURE_FORMATS[to_value(_format)],
             image->get_width(),
             image->get_height(),
             0,
-            GL_IMAGE_FORMATS[to_value(image->get_format())],
+            GL_TEXTURE_FORMATS[to_value(_format)],
             GL_IMAGE_ELEMENT_FORMATS[to_value(image->get_element_format())],
             image->get_data());
 
