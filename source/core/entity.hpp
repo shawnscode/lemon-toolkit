@@ -85,56 +85,48 @@ struct EntityManager
 {
     // an iterator over a specified view with components of the entites in an EntityManager.
     template<typename T>
-    struct t_iterator : public std::iterator<std::forward_iterator_tag, Entity>
+    struct iterator_t : public std::iterator<std::forward_iterator_tag, Entity>
     {
-        t_iterator(T& manager, Entity::index_type index = Entity::invalid, ComponentMask mask = ComponentMask())
-        : _world(manager), _index(index), _mask(mask)
-        {
-            find_next_available();
-        }
+        iterator_t(T& manager, Entity::index_type, ComponentMask);
 
-        t_iterator& operator ++ ();
-        bool        operator == (const t_iterator&) const;
-        bool        operator != (const t_iterator&) const;
+        iterator_t& operator ++ ();
+        iterator_t  operator ++ (int);
+
+        bool        operator == (const iterator_t&) const;
+        bool        operator != (const iterator_t&) const;
         Entity      operator * () const;
 
     protected:
         void find_next_available();
+        bool is_match(Entity::index_type);
+
         T&                  _world;
         ComponentMask       _mask;
         Entity::index_type  _index;
     };
 
-    using iterator = t_iterator<EntityManager>;
-    using const_iterator = t_iterator<const EntityManager>;
+    using iterator = iterator_t<EntityManager>;
+    using const_iterator = iterator_t<const EntityManager>;
 
-    template<typename T> struct t_view
+    template<typename T, typename ... Args> struct view_t
     {
-        t_view(T& manager, ComponentMask mask)
-        : _world(manager), _mask(mask) {}
+        view_t(T& manager);
 
-        t_iterator<T> begin() const;
-        t_iterator<T> end() const;
+        // range iteration interface
+        iterator_t<T> begin() const;
+        iterator_t<T> end() const;
+
+        // visit entities with specialized components
+        using visitor = std::function<void(Entity, Args& ...)>;
+        void visit(const visitor&);
 
     protected:
         T&              _world;
         ComponentMask   _mask;
     };
 
-    using view = t_view<EntityManager>;
-    using const_view = t_view<const EntityManager>;
-
-    template<typename T, typename ...Args> struct t_view_trait : public t_view<T>
-    {
-        t_view_trait(EntityManager& manager)
-        : view(manager, manager.get_components_mask<Args...>()) {}
-
-        using visitor = std::function<void(Entity, Args& ...)>;
-        void visit(const visitor&);
-    };
-
-    template<typename ... Args> using view_trait = t_view_trait<EntityManager, Args...>;
-    template<typename ... Args> using const_view_trait = t_view_trait<const EntityManager, Args...>;
+    template<typename ... Args> using view = view_t<EntityManager, Args...>;
+    template<typename ... Args> using const_view = view_t<const EntityManager, Args...>;
 
     EntityManager(EventManager&);
     ~EntityManager();
@@ -159,8 +151,7 @@ struct EntityManager
     template<typename T> void remove_component(Entity);
     // check if an entity has a component
     template<typename T> bool has_component(Entity) const;
-    template<typename T> bool has_components(Entity) const;
-    template<typename T1, typename T2, typename ...Args> bool has_components(Entity) const;
+    template<typename ... Args> bool has_components(Entity) const;
     // retrieve a component assigned to an Entity
     template<typename T> T* get_component(Entity);
     template<typename T> const T* get_component(Entity) const;
@@ -168,18 +159,21 @@ struct EntityManager
     template<typename ... T> std::tuple<const T*...> get_components(Entity) const;
 
     // find entities that have all of the specified components, returns a incremental iterator
-    view find_entities();
-    const_view find_entities() const;
-    template<typename ... T> view_trait<T...> find_entities_with();
-    template<typename ... T> const_view_trait<T...> find_entities_with() const;
+    view<> find_entities();
+    const_view<> find_entities() const;
+    template<typename ... T> view<T...> find_entities_with();
+    template<typename ... T> const_view<T...> find_entities_with() const;
 
     // get bitmask representation of components
     ComponentMask get_components_mask(Entity) const;
-    // utils of iterators
-    template<typename T> ComponentMask get_components_mask() const;
-    template<typename T1, typename T2, typename ...Args> ComponentMask get_components_mask() const;
+    template<typename ... Args> ComponentMask get_components_mask() const;
 
 protected:
+    template<typename T> ComponentMask get_components_mask_t() const;
+    template<typename T1, typename T2, typename ...Args> ComponentMask get_components_mask_t() const;
+    template<typename T> bool has_components_t(Entity) const;
+    template<typename T1, typename T2, typename ...Args> bool has_components_t(Entity) const;
+
     template<typename T> using object_chunks = IndexedObjectChunks<T, Entity::index_type, 8>;
     template<typename T> object_chunks<T>* get_chunks();
     void accomodate_entity(uint32_t);

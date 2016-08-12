@@ -78,7 +78,7 @@ protected:
         iterator_t<T> begin() const;
         iterator_t<T> end() const;
         // returns the number of children in this hierachy
-        virtual unsigned count() const;
+        unsigned count() const;
 
         // visit the *iterator in sequences
         using visitor = std::function<void(T&, Args&...)>;

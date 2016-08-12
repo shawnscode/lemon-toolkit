@@ -138,12 +138,11 @@ INLINE T& Transform::iterator_t<T>::operator * ()
     return *_cursor;
 }
 
-/// IMPLEMENTATIONS OF TRANSFORM VIEW
 template<typename T, typename ... Args>
 Transform::view_t<T, Args...>::view_t(T* transform, iterate_mode mode)
 : _transform(transform), _mode(mode)
 {
-    //_mask = transform->get_world()->template get_components_mask<Args...>();
+    _mask = transform->get_world()->template get_components_mask<Args...>();
 }
 
 template<typename T, typename ... Args>
@@ -229,14 +228,15 @@ INLINE Matrix4f Transform::to_matrix(TransformSpace space) const
     if( TransformSpace::WORLD == space )
     {
         auto matrix = translation(_world_pose.position);
-        // matrix *= hlift(rotation(_world_pose.rotation));
-        // matrix *= hlift(scale(_world_pose.scale));
+        // matrix *= rotation(_world_pose.rotation);
+        // matrix *= scale(_world_pose.scale);
         return matrix;
     }
     else
     {
         auto matrix = translation(_pose.position);
         // matrix *= hlift(rotation(_pose.rotation));
+        // matrix *= scale(_world_pose.scale);
         // matrix *= hlift(scale(_pose.scale));
         return matrix;
     }

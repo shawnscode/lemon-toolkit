@@ -171,16 +171,28 @@ INLINE bool EntityManager::has_component(Entity object) const
     return is_alive(object) && _components_mask[object._index].test(id);
 }
 
-template<typename T>
+template<>
 INLINE bool EntityManager::has_components(Entity object) const
+{
+    return true;
+}
+
+template<typename ... Args>
+INLINE bool EntityManager::has_components(Entity object) const
+{
+    return has_components_t<Args...>();
+}
+
+template<typename T>
+INLINE bool EntityManager::has_components_t(Entity object) const
 {
     return has_component<T>(object);
 }
 
 template<typename T1, typename T2, typename ... Args>
-INLINE bool EntityManager::has_components(Entity object) const
+INLINE bool EntityManager::has_components_t(Entity object) const
 {
-    return has_component<T1>(object) | has_components<T2, Args...>(object);
+    return has_component<T1>(object) | has_components_t<T2, Args...>(object);
 }
 
 INLINE ComponentMask EntityManager::get_components_mask(Entity object) const
@@ -191,8 +203,20 @@ INLINE ComponentMask EntityManager::get_components_mask(Entity object) const
     return _components_mask[object._index];
 }
 
-template<typename T>
+template<>
 INLINE ComponentMask EntityManager::get_components_mask() const
+{
+    return ComponentMask();
+}
+
+template<typename ... Args>
+INLINE ComponentMask EntityManager::get_components_mask() const
+{
+    return get_components_mask_t<Args...>();
+}
+
+template<typename T>
+INLINE ComponentMask EntityManager::get_components_mask_t() const
 {
     static_assert( std::is_base_of<Component, T>::value, "T is not component." );
 
@@ -202,20 +226,31 @@ INLINE ComponentMask EntityManager::get_components_mask() const
 }
 
 template<typename T1, typename T2, typename ... Args>
-INLINE ComponentMask EntityManager::get_components_mask() const
+INLINE ComponentMask EntityManager::get_components_mask_t() const
 {
-    return get_components_mask<T1>() | get_components_mask<T2, Args ...>();
+    return get_components_mask_t<T1>() | get_components_mask_t<T2, Args ...>();
+}
+
+INLINE EntityManager::view<> EntityManager::find_entities()
+{
+    return EntityManager::view<>(*this);
+}
+
+INLINE EntityManager::const_view<> EntityManager::find_entities() const
+{
+    return EntityManager::const_view<>(*this);
 }
 
 template<typename ... T>
-INLINE EntityManager::view_trait<T...> EntityManager::find_entities_with()
+INLINE EntityManager::view<T...> EntityManager::find_entities_with()
 {
-    return EntityManager::view_trait<T...>(*this);
+    return EntityManager::view<T...>(*this);
 }
 
-INLINE EntityManager::view EntityManager::find_entities()
+template<typename ... T>
+INLINE EntityManager::const_view<T...> EntityManager::find_entities_with() const
 {
-    return EntityManager::view(*this, ComponentMask());
+    return EntityManager::const_view<T...>(*this);
 }
 
 INLINE void EntityManager::accomodate_entity(uint32_t index)
@@ -258,63 +293,88 @@ EntityManager::object_chunks<T>* EntityManager::get_chunks()
 
 // INCLUDED METHODS OF ENTITY VIEW AND ITERATOR
 template<typename T>
-INLINE void EntityManager::t_iterator<T>::find_next_available()
+EntityManager::iterator_t<T>::iterator_t(T& manager, Entity::index_type index, ComponentMask mask)
+: _world(manager), _index(index), _mask(mask)
 {
-    while(
-        _index < _world._versions.size() &&
-        ((_world._versions[_index] & 0x1) == 0 ||
-         (_world._components_mask[_index] & _mask) != _mask))
-    {
-        _index ++;
-    }
-
-    if( _index == _world._versions.size() )
-        _index = Entity::invalid;
+    if( !is_match(_index) )
+        find_next_available();
 }
 
 template<typename T>
-INLINE EntityManager::t_iterator<T>& EntityManager::t_iterator<T>::operator ++ ()
+INLINE void EntityManager::iterator_t<T>::find_next_available()
 {
-    ENSURE( _index != Entity::invalid );
 
-    _index ++;
+    while( _index < _world._versions.size() )
+    {
+        _index ++;
+        if( is_match(_index) ) break;
+    }
+}
+
+template<typename T>
+INLINE bool EntityManager::iterator_t<T>::is_match(Entity::index_type index)
+{
+    return
+        index < _world._versions.size() &&
+        (_world._versions[index] & 0x1) != 0 &&
+        (_world._components_mask[index] & _mask) == _mask;
+}
+
+template<typename T>
+INLINE EntityManager::iterator_t<T>& EntityManager::iterator_t<T>::operator ++ ()
+{
     find_next_available();
     return *this;
 }
 
 template<typename T>
-INLINE bool EntityManager::t_iterator<T>::operator == (const EntityManager::t_iterator<T>& rh) const
+INLINE EntityManager::iterator_t<T> EntityManager::iterator_t<T>::operator ++ (int dummy)
 {
-    return &_world == &rh._world && _index == rh._index;
+    auto tmp = *this;
+    find_next_available();
+    return tmp;
 }
 
 template<typename T>
-INLINE bool EntityManager::t_iterator<T>::operator != (const EntityManager::t_iterator<T>& rh) const
+INLINE bool EntityManager::iterator_t<T>::operator == (const EntityManager::iterator_t<T>& rhs) const
 {
-    return &_world != &rh._world || _index != rh._index;
+    return
+        (&_world == &rhs._world) &&
+        ((_index >= _world._versions.size())  == (rhs._index >= _world._versions.size()));
 }
 
 template<typename T>
-INLINE Entity EntityManager::t_iterator<T>::operator * () const
+INLINE bool EntityManager::iterator_t<T>::operator != (const EntityManager::iterator_t<T>& rhs) const
+{
+    return !(*this == rhs);
+}
+
+template<typename T>
+INLINE Entity EntityManager::iterator_t<T>::operator * () const
 {
     return Entity(_index, _world._versions[_index]);
 }
 
-template<typename T>
-INLINE EntityManager::t_iterator<T> EntityManager::t_view<T>::begin() const
-{
-    return EntityManager::t_iterator<T>(_world, 0, _mask);
-}
+template<typename T, typename ... Args>
+EntityManager::view_t<T, Args...>::view_t(T& manager)
+: _world(manager), _mask(manager.template get_components_mask<Args...>())
+{}
 
-template<typename T>
-INLINE EntityManager::t_iterator<T> EntityManager::t_view<T>::end() const
+template<typename T, typename ... Args>
+INLINE EntityManager::iterator_t<T> EntityManager::view_t<T, Args...>::begin() const
 {
-    return EntityManager::t_iterator<T>(_world, Entity::invalid, _mask);
+    return EntityManager::iterator_t<T>(_world, 0, _mask);
 }
 
 template<typename T, typename ... Args>
-INLINE void EntityManager::t_view_trait<T, Args...>::visit(const visitor& cb)
+INLINE EntityManager::iterator_t<T> EntityManager::view_t<T, Args...>::end() const
+{
+    return EntityManager::iterator_t<T>(_world, Entity::invalid, _mask);
+}
+
+template<typename T, typename ... Args>
+INLINE void EntityManager::view_t<T, Args...>::visit(const visitor& cb)
 {
     for( auto cursor : *this )
-        cb(cursor, *t_view<T>::_world.template get_component<Args>(cursor) ...);
+        cb(cursor, *view_t<T, Args...>::_world.template get_component<Args>(cursor) ...);
 }

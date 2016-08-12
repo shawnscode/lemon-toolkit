@@ -129,6 +129,8 @@ TEST_CASE_METHOD(Context, "TestComponentConstruction")
 
 TEST_CASE_METHOD(Context, "TestComponentIdsDiffer")
 {
+    REQUIRE( _world.get_components_mask<Position>() != _world.get_components_mask<Direction>() );
+    REQUIRE( (_world.get_components_mask<Position, Direction>()) != _world.get_components_mask<Direction>() );
     // REQUIRE( TypeID::value<ComponentBase, Position>() != TypeID::value<ComponentBase, Direction>() );
 }
 
