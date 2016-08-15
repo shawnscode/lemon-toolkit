@@ -3,14 +3,14 @@
 
 #pragma once
 
-#include <forward.hpp>
+#include <core/defines.hpp>
 #include <core/memory.hpp>
+#include <core/typeinfo.hpp>
 #include <core/event.hpp>
-#include <core/traits.hpp>
 
 // a fast, type-safe c++ entity component system based on [EntityX](https://github.com/alecthomas/entityx).
 
-NS_FLOW2D_BEGIN
+NS_FLOW2D_CORE_BEGIN
 
 typedef std::bitset<kEntMaxComponents> ComponentMask;
 
@@ -45,69 +45,90 @@ private:
     index_type      _version    = invalid;
 };
 
-struct ComponentBase
+#define SET_CHUNK_SIZE(size) static const size_t chunk_size = size;
+
+struct Component
 {
+    static const size_t chunk_size = kEntPoolChunkSize;
+
     // component memory is always managed by entity manager.
-    void operator delete(void*);
-    void operator delete[](void*);
+    void operator delete(void*) = delete;
+    void operator delete[](void*) = delete;
 
-    virtual void on_dispose(EntityManager&, Entity) {}
-    virtual void on_spawn(EntityManager&, Entity) {}
-};
+    virtual void on_dispose() {}
+    virtual void on_spawn() {}
 
-template<size_t s = kEntPoolChunkSize> struct Component : ComponentBase
-{
-    static const size_t chunk_size = s;
+    // assign a component to object, passing through component constructor arguments
+    template<typename T, typename ... Args> T* add_component(Args && ... args);
+    // retrieve a component assigned to object
+    template<typename T> T* get_component();
+    template<typename T> const T* get_component() const;
+    // remove a component from object
+    template<typename T> void remove_component();
+    // check if we have specified components
+    template<typename ...Args> bool has_components() const;
+    // get bitmask representation of components
+    ComponentMask get_components_mask() const;
+
+    Entity get_object() const { return _object; }
+    EntityManager* get_world() { return _world; }
+    const EntityManager* get_world() const { return _world; }
+
+private:
+    friend class EntityManager;
+    EntityManager* _world = nullptr;
+    Entity         _object;
 };
 
 // entity life-circle management and component assignments
 struct EntityManager
 {
     // an iterator over a specified view with components of the entites in an EntityManager.
-    struct iterator : public std::iterator<std::forward_iterator_tag, Entity>
+    template<typename T>
+    struct iterator_t : public std::iterator<std::forward_iterator_tag, Entity>
     {
-        iterator(EntityManager& manager, Entity::index_type index = Entity::invalid, ComponentMask mask = ComponentMask())
-        : _world(manager), _index(index), _mask(mask)
-        {
-            find_next_available();
-        }
+        iterator_t(T& manager, Entity::index_type, ComponentMask);
 
-        iterator&   operator ++ ();
-        bool        operator == (const iterator&) const;
-        bool        operator != (const iterator&) const;
+        iterator_t& operator ++ ();
+        iterator_t  operator ++ (int);
+
+        bool        operator == (const iterator_t&) const;
+        bool        operator != (const iterator_t&) const;
         Entity      operator * () const;
 
     protected:
         void find_next_available();
+        bool is_match(Entity::index_type);
 
-        EntityManager&      _world;
+        T&                  _world;
         ComponentMask       _mask;
         Entity::index_type  _index;
     };
 
-    struct view
-    {
-        view(EntityManager& manager, ComponentMask mask)
-        : _world(manager), _mask(mask) {}
+    using iterator = iterator_t<EntityManager>;
+    using const_iterator = iterator_t<const EntityManager>;
 
-        iterator begin() const;
-        iterator end() const;
+    template<typename T, typename ... Args> struct view_t
+    {
+        view_t(T& manager);
+
+        // range iteration interface
+        iterator_t<T> begin() const;
+        iterator_t<T> end() const;
+
+        // visit entities with specialized components
+        using visitor = std::function<void(Entity, Args& ...)>;
+        void visit(const visitor&);
 
     protected:
-        EntityManager&  _world;
+        T&              _world;
         ComponentMask   _mask;
     };
 
-    template<typename ...T> struct view_trait : public view
-    {
-        view_trait(EntityManager& manager)
-        : view(manager, manager.get_components_mask<T...>()) {}
+    template<typename ... Args> using view = view_t<EntityManager, Args...>;
+    template<typename ... Args> using const_view = view_t<const EntityManager, Args...>;
 
-        using visitor = std::function<void(Entity, T& ...)>;
-        void visit(const visitor&);
-    };
-
-    EntityManager();
+    EntityManager(EventManager&);
     ~EntityManager();
 
     // non-copyable
@@ -126,35 +147,39 @@ struct EntityManager
 
     // assign a component to an Entity::Uid, passing through component constructor arguments
     template<typename T, typename ... Args> T* add_component(Entity, Args && ... args);
-    // retrieve a component assigned to an Entity
-    template<typename T> T* get_component(Entity);
-    template<typename ... T> std::tuple<T*...> get_components(Entity);
     // remove a component from an Entity
     template<typename T> void remove_component(Entity);
     // check if an entity has a component
     template<typename T> bool has_component(Entity) const;
-    // get bitmask representation of components
-    ComponentMask get_components_mask(Entity) const;
+    template<typename ... Args> bool has_components(Entity) const;
+    // retrieve a component assigned to an Entity
+    template<typename T> T* get_component(Entity);
+    template<typename T> const T* get_component(Entity) const;
+    template<typename ... T> std::tuple<T*...> get_components(Entity);
+    template<typename ... T> std::tuple<const T*...> get_components(Entity) const;
 
     // find entities that have all of the specified components, returns a incremental iterator
-    template<typename ... T> view_trait<T...> find_entities_with();
-    view find_entities();
+    view<> find_entities();
+    const_view<> find_entities() const;
+    template<typename ... T> view<T...> find_entities_with();
+    template<typename ... T> const_view<T...> find_entities_with() const;
 
-    // utils of iterators
-    template<typename T> ComponentMask get_components_mask() const;
-    template<typename T1, typename T2, typename ...Args> ComponentMask get_components_mask() const;
-
-    // event dispatchers
-    EventManager& get_dispatcher();
-    
+    // get bitmask representation of components
+    ComponentMask get_components_mask(Entity) const;
+    template<typename ... Args> ComponentMask get_components_mask() const;
 
 protected:
+    template<typename T> ComponentMask get_components_mask_t() const;
+    template<typename T1, typename T2, typename ...Args> ComponentMask get_components_mask_t() const;
+    template<typename T> bool has_components_t(Entity) const;
+    template<typename T1, typename T2, typename ...Args> bool has_components_t(Entity) const;
+
     template<typename T> using object_chunks = IndexedObjectChunks<T, Entity::index_type, 8>;
     template<typename T> object_chunks<T>* get_chunks();
     void accomodate_entity(uint32_t);
 
-    // event dispatcher
-    std::unique_ptr<EventManager> _dispatcher;
+    // reference of event dispatcher
+    EventManager& _dispatcher;
     // incremented entity index for brand new and free slot
     Entity::index_type _incremental_index = 0;
     // each element in componets_pool corresponds to a Pool for a Component
@@ -173,42 +198,48 @@ protected:
 /// dispatched events during the whole life of event manager
 struct EvtEntityCreated
 {
-    explicit EvtEntityCreated(Entity entity) : entity(entity) {}
-    Entity entity;
+    explicit EvtEntityCreated(Entity object) : object(object) {}
+    Entity object;
 };
 
 struct EvtEntityDisposed
 {
-    explicit EvtEntityDisposed(Entity entity) : entity(entity) {}
-    Entity entity;
+    explicit EvtEntityDisposed(Entity object) : object(object) {}
+    Entity object;
+};
+
+struct EvtEntityModified
+{
+    explicit EvtEntityModified(Entity object) : object(object) {}
+    Entity object;
 };
 
 template<typename T> struct EvtComponentAdded
 {
-    EvtComponentAdded(Entity entity, T& component)
-    : entity(entity), component(component) {}
+    explicit EvtComponentAdded(Entity object, T& component)
+    : object(object), component(component) {}
 
-    Entity  entity;
-    T&      component;
+    Entity object;
+    T&     component;
 };
 
 template<typename T> struct EvtComponentRemoved
 {
-    EvtComponentRemoved(Entity entity, T& component)
-    : entity(entity), component(component) {}
+    explicit EvtComponentRemoved(Entity object, T& component)
+    : object(object), component(component) {}
 
-    Entity  entity;
-    T&      component;
+    Entity object;
+    T&     component;
 };
 
 #include <core/entity.inl>
-NS_FLOW2D_END
+NS_FLOW2D_CORE_END
 
 namespace std
 {
-    template<> struct hash<flow2d::Entity>
+    template<> struct hash<flow2d::core::Entity>
     {
-        std::size_t operator() (const flow2d::Entity& entity) const
+        std::size_t operator() (const flow2d::core::Entity& entity) const
         {
             return static_cast<std::size_t>((size_t)entity.get_index() ^ (size_t)entity.get_version());
         }

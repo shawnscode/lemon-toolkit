@@ -3,10 +3,9 @@
 
 #pragma once
 
-#include <math/math.hpp>
-#include <initializer_list>
+#include <math/defines.hpp>
 
-NS_FLOW2D_BEGIN
+NS_FLOW2D_MATH_BEGIN
 
 template<size_t N, typename T> struct Vector
 {
@@ -37,7 +36,7 @@ template<size_t N, typename T> struct Vector
     void unit(size_t);
 
 protected:
-    std::array<T, N> m_tuple;
+    T _tuple[N];
 };
 
 template<typename T>
@@ -45,15 +44,19 @@ using Vector2   = Vector<2, T>;
 using Vector2f  = Vector<2, float>;
 using Vector2i  = Vector<2, int>;
 
-static const Vector2f kVector2fZero = { 0.f, 0.f };
-static const Vector2f kVector2fInfinity = { math::inf<float>(), math::inf<float>() };
-static const Vector2f kVector2fNan = { math::nan<float>(), math::nan<float>() };
-static const Vector2f kVector2fOne  = { 1.f, 1.f };
-static const Vector2f kVector2fLeft = { -1.f, 0.f };
-static const Vector2f kVector2fRight = { 1.f, 0.f };
-static const Vector2f kVector2fUp = { 0.f, 1.f };
-static const Vector2f kVector2fDown = { 0.f, -1.f };
+template<typename T>
+using Vector3   = Vector<3, T>;
+using Vector3f  = Vector<3, float>;
+using Vector3i  = Vector<3, int>;
 
+template<typename T>
+using Vector4   = Vector<4, T>;
+using Vector4f  = Vector<4, float>;
+using Vector4i  = Vector<4, int>;
+
+// string serialization with stream
+template<size_t N, typename T>
+std::ostream& operator<< (std::ostream&, const Vector<N, T>&);
 
 // unary operations
 template<size_t N, typename T>
@@ -107,9 +110,6 @@ template<size_t N, typename T>
 bool equals (const Vector<N, T>&, const Vector<N, T>&, T epslion = std::numeric_limits<T>::epsilon());
 
 template<size_t N, typename T>
-T dot (const Vector<N, T>&, const Vector<N, T>&);
-
-template<size_t N, typename T>
 Vector<N, T> max(const Vector<N, T>&, T);
 
 template<size_t N, typename T>
@@ -123,6 +123,12 @@ Vector<N, T> min(const Vector<N, T>&, const Vector<N, T>&);
 
 template<size_t N, typename T>
 Vector<N, T> normalize (const Vector<N, T>&);
+
+template<size_t N, typename T>
+T dot (const Vector<N, T>&, const Vector<N, T>&);
+
+template<typename T>
+Vector3<T> cross(const Vector3<T>&, const Vector3<T>&);
 
 template<size_t N, typename T>
 Vector<N, T> abs (const Vector<N, T>&);
@@ -141,10 +147,10 @@ bool isinf (const Vector<N, T>&);
 
 // lift n-tuple v to homogeneous (n+1)-tuple (v,last).
 template<size_t N, typename T>
-Vector<N+1, T> hlift(const Vector<N, T>&, T last = (T)1);
+Vector<N+1, T> hlift(const Vector<N, T>&, T last = (T)0);
 // project homogeneous n-tuple v = (u,v[n-1]) to (n-1)-tuple u.
 template<size_t N, typename T>
 Vector<N-1, T> hproject(const Vector<N, T>&);
 
 #include <math/vector.inl>
-NS_FLOW2D_END
+NS_FLOW2D_MATH_END

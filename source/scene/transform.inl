@@ -1,106 +1,173 @@
 // @date 2016/07/01
 // @author Mao Jingkai(oammix@gmail.com)
 
-INLINE Transform::iterator& Transform::iterator::operator ++ ()
+/// IMPLEMNTATIONS OF TRANSFORM POSE
+INLINE TransformPose operator * (const TransformPose& lhs, const TransformPose& rhs)
 {
-    if( _cusor == nullptr )
-        return *this;
+    auto result = lhs;
+    return result *= rhs;
+}
 
-    if( _mode == iterator_mode::ANCESTORS )
+INLINE TransformPose operator / (const TransformPose& lhs, const TransformPose& rhs)
+{
+    auto result = lhs;
+    return result /= rhs;
+}
+
+INLINE TransformPose& operator *= (TransformPose& lhs, const TransformPose& rhs)
+{
+    lhs.position += rhs.position;
+    lhs.scale    *= rhs.scale;
+    lhs.rotation += rhs.rotation;
+    return lhs;
+}
+
+INLINE TransformPose& operator /= (TransformPose& lhs, const TransformPose& rhs)
+{
+    lhs.position -= rhs.position;
+    lhs.scale    /= rhs.scale;
+    lhs.rotation -= rhs.rotation;
+    return lhs;
+}
+
+/// IMPLEMENTATONS OF TRANSFORM ITERATOR
+template<typename T>
+Transform::iterator_t<T>::iterator_t(T* transform, iterate_mode mode, core::ComponentMask mask)
+:_start(transform), _mode(mode), _mask(mask)
+{
+    if( transform != nullptr )
     {
-        _cusor = _cusor->_parent;
-    }
-    else if( _mode == iterator_mode::CHILDREN )
-    {
-        _cusor = _cusor->_next_sibling;
-    }
-    else if( _mode == iterator_mode::CHILDREN_RECURSIVE )
-    {
-        if( _cusor->_first_child )
-            _cusor = _cusor->_first_child;
-        else if( _cusor->_next_sibling )
-            _cusor = _cusor->_next_sibling;
+        _start = transform;
+        if( mode == iterate_mode::ANCESTORS )
+            _cursor = transform->_parent;
         else
-        {
-            bool found_available_node = false;
-            while( _cusor->_parent != _start )
-            {
-                if( _cusor->_parent->_next_sibling )
-                {
-                    _cusor = _cusor->_parent->_next_sibling;
-                    found_available_node = true;
-                    break;
-                }
-                else
-                    _cusor = _cusor->_parent;
-            }
+            _cursor = transform->_first_child;
+        
+        if( _cursor != nullptr && (_cursor->get_components_mask() & _mask) != _mask )
+            find_next_available();
+    }
+    else
+        _start = _cursor = nullptr;
+}
 
-            if( !found_available_node )
-                _cusor = nullptr;
-        }
+template<typename T>
+void Transform::iterator_t<T>::find_next_available()
+{
+    if( _cursor == nullptr )
+        return;
+
+    if( _mode == iterate_mode::ANCESTORS )
+    {
+        _cursor = _cursor->_parent;
+        return;
     }
 
+    if( _mode == iterate_mode::CHILDREN )
+    {
+        _cursor = _cursor->_next_sibling;
+        return;
+    }
+
+    // deep first search when iterating children recursively
+    if( _cursor->_first_child )
+    {
+        _cursor = _cursor->_first_child;
+        return;
+    }
+
+    if( _cursor->_next_sibling )
+    {
+        _cursor = _cursor->_next_sibling;
+        return;
+    }
+
+    // travel back when we reach leaf-node
+    bool found_available_node = false;
+    while( _cursor->_parent != _start )
+    {
+        if( _cursor->_parent->_next_sibling )
+        {
+            _cursor = _cursor->_parent->_next_sibling;
+            found_available_node = true;
+            break;
+        }
+        else
+            _cursor = _cursor->_parent;
+    }
+
+    if( !found_available_node )
+        _cursor = nullptr;
+    return;
+}
+
+template<typename T>
+INLINE Transform::iterator_t<T>& Transform::iterator_t<T>::operator ++ ()
+{
+    while( _cursor != nullptr )
+    {
+        find_next_available();
+        if( (_cursor == nullptr) || (_cursor->get_components_mask() & _mask) == _mask )
+            break;
+    }
     return *this;
 }
 
-INLINE bool Transform::iterator::operator == (const Transform::iterator& rh) const
+template<typename T>
+INLINE Transform::iterator_t<T> Transform::iterator_t<T>::operator ++ (int dummy)
 {
-    return _cusor == rh._cusor && _mode == rh._mode;
+    auto tmp = *this;
+    ++(*this);
+    return tmp;
 }
 
-INLINE bool Transform::iterator::operator != (const Transform::iterator& rh) const
+template<typename T>
+INLINE bool Transform::iterator_t<T>::operator == (const Transform::iterator_t<T>& rh) const
+{
+    return _cursor == rh._cursor && _mode == rh._mode;
+}
+
+template<typename T>
+INLINE bool Transform::iterator_t<T>::operator != (const Transform::iterator_t<T>& rh) const
 {
     return !(*this == rh);
 }
 
-INLINE Transform& Transform::iterator::operator * () const
+template<typename T>
+INLINE T& Transform::iterator_t<T>::operator * ()
 {
-    return *_cusor;
+    return *_cursor;
 }
 
-INLINE Transform::iterator Transform::view::begin() const
+template<typename T, typename ... Args>
+Transform::view_t<T, Args...>::view_t(T* transform, iterate_mode mode)
+: _transform(transform), _mode(mode)
 {
-    return Transform::iterator(_start, _mode);
+    _mask = transform->get_world()->template get_components_mask<Args...>();
 }
 
-INLINE Transform::iterator Transform::view::end() const
+template<typename T, typename ... Args>
+INLINE Transform::iterator_t<T> Transform::view_t<T, Args...>::begin() const
 {
-    return Transform::iterator(nullptr, _mode);
+    return iterator_t<T>(_transform, _mode, _mask);
 }
 
-INLINE void Transform::view::visit(const visitor& cb)
+template<typename T, typename ... Args>
+INLINE Transform::iterator_t<T> Transform::view_t<T, Args...>::end() const
 {
-    for( auto iter = begin(); iter != end(); ++iter )
-        cb(*iter);
+    return iterator_t<T>(nullptr, _mode, _mask);
 }
 
-INLINE size_t Transform::view::count() const
+template<typename T, typename ... Args>
+INLINE void Transform::view_t<T, Args...>::visit(const visitor& cb)
 {
-    size_t result = 0;
-    for( auto iter = begin(); iter != end(); ++iter ) result++;
-    return result;
+    for( auto& iterator : *this ) cb(iterator);
 }
 
-template<typename ... T>
-INLINE void Transform::view_trait<T...>::visit(const visitor& cb)
+template<typename T, typename ... Args>
+INLINE unsigned Transform::view_t<T, Args...>::count() const
 {
-    for( auto iter = begin(); iter != end(); ++ iter )
-    {
-        auto mask = _start->_world->get_components_mask(_start->_object);
-        if( (mask & _mask) == _mask )
-            cb(*iter, *((*iter).template get_component<T>()) ...);
-    }
-}
-
-template<typename ... T>
-INLINE size_t Transform::view_trait<T...>::count() const
-{
-    size_t result = 0;
-    for( auto iter = begin(); iter != end(); ++ iter )
-    {
-        auto mask = _start->_world->get_components_mask(_start->_object);
-        if( (mask & _mask) == _mask ) result++;
-    }
+    unsigned result = 0;
+    for( auto& _iterator : *this ) result++;
     return result;
 }
 
@@ -114,17 +181,17 @@ INLINE bool Transform::operator != (const Transform& rh) const
     return get_object() != rh.get_object();
 }
 
-INLINE void Transform::scale(const Vector2f& scaler)
+INLINE void Transform::scale(const Vector3f& scaler)
 {
     set_scale(get_scale() * scaler);
 }
 
-INLINE void Transform::rotate(float rotation)
+INLINE void Transform::rotate(const Vector3f& rotation)
 {
     set_rotation(get_rotation() + rotation);
 }
 
-INLINE void Transform::translate(const Vector2f& translation)
+INLINE void Transform::translate(const Vector3f& translation)
 {
     set_position(get_position() + translation);
 }
@@ -144,27 +211,33 @@ INLINE Transform* Transform::get_parent()
     return _parent;
 }
 
-template<typename ... T>
-INLINE Transform::view_trait<T...> Transform::get_children_with(bool recursive)
+INLINE const Transform* Transform::get_parent() const
 {
-    return view_trait<T...>(this,
-        recursive ? iterator_mode::CHILDREN_RECURSIVE : iterator_mode::CHILDREN );
+    return _parent;
 }
 
-INLINE Matrix3f Transform::to_matrix(TransformSpace space) const
+template<typename ... T>
+INLINE Transform::view<T...> Transform::get_children_with(bool recursive)
+{
+    return view<T...>(this,
+        recursive ? iterate_mode::CHILDREN_RECURSIVE : iterate_mode::CHILDREN );
+}
+
+INLINE Matrix4f Transform::to_matrix(TransformSpace space) const
 {
     if( TransformSpace::WORLD == space )
     {
-        auto matrix = make_translation(_worldspace.position);
-        matrix *= hlift(make_rotation(_worldspace.rotation));
-        matrix *= hlift(make_scale(_worldspace.scale));
+        auto matrix = translation(_world_pose.position);
+        // matrix *= rotation(_world_pose.rotation);
+        // matrix *= scale(_world_pose.scale);
         return matrix;
     }
     else
     {
-        auto matrix = make_translation(_localspace.position);
-        matrix *= hlift(make_rotation(_localspace.rotation));
-        matrix *= hlift(make_scale(_localspace.scale));
+        auto matrix = translation(_pose.position);
+        // matrix *= hlift(rotation(_pose.rotation));
+        // matrix *= scale(_world_pose.scale);
+        // matrix *= hlift(scale(_pose.scale));
         return matrix;
     }
 }

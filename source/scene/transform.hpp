@@ -3,155 +3,149 @@
 
 #pragma once
 
-#include <forward.hpp>
-#include <core/components.hpp>
 #include <core/entity.hpp>
-#include <math/vector.hpp>
 #include <math/matrix.hpp>
 
 NS_FLOW2D_BEGIN
 
+using namespace math;
+
 // the coordinate space in which to operate
 enum class TransformSpace : uint8_t
 {
-    SELF,
+    LOCAL = 0,
     WORLD
 };
 
-struct TransformMatrix
+struct TransformPose
 {
-    Vector2f position;
-    Vector2f scale;
-    float    rotation;
+    Vector3f position;
+    Vector3f scale;
+    Vector3f rotation;
 
-    TransformMatrix(const Vector2f& position = {0.f, 0.f}, const Vector2f& scale = {1.f, 1.f}, float rotation = 0.f)
+    TransformPose(
+        const Vector3f& position = {0.f, 0.f, 0.f},
+        const Vector3f& scale = {1.f, 1.f, 1.f},
+        const Vector3f& rotation = {0.f, 0.f, 0.f})
     : position(position), scale(scale), rotation(rotation)
     {}
-
-    TransformMatrix(const TransformMatrix&) = default;
-    TransformMatrix& operator = (const TransformMatrix&) = default;
-
-    INLINE TransformMatrix operator * (const TransformMatrix& rh) const
-    {
-        return TransformMatrix(
-            position + rh.position,
-            { scale[0] * rh.scale[0], scale[1] * rh.scale[1] },
-            rotation + rh.rotation);
-    }
-
-    INLINE TransformMatrix operator / (const TransformMatrix& rh) const
-    {
-        return TransformMatrix(
-            position - rh.position,
-            { scale[0] / rh.scale[0], scale[1] / rh.scale[1] },
-            rotation - rh.rotation);
-    }
 };
 
-// transform component is used to allow entities to be coordinated in the world.
-struct Transform : public ComponentWithEnvironment<>
+TransformPose operator * (const TransformPose&, const TransformPose&);
+TransformPose operator / (const TransformPose&, const TransformPose&);
+
+TransformPose& operator *= (TransformPose&, const TransformPose&);
+TransformPose& operator /= (TransformPose&, const TransformPose&);
+
+// transform component is used to allow entities to be coordinated in the world
+// 
+struct Transform : public core::Component
 {
 protected:
-    enum class iterator_mode : uint8_t
+    enum class iterate_mode : uint8_t
     {
         ANCESTORS,
         CHILDREN,
         CHILDREN_RECURSIVE
     };
 
-    struct iterator : public std::iterator<std::forward_iterator_tag, int>
+    template<typename T> struct iterator_t : public std::iterator<std::forward_iterator_tag, T>
     {
-        iterator(Transform* t, iterator_mode m);
+        iterator_t(T*, iterate_mode, core::ComponentMask);
 
-        iterator&   operator ++ ();
-        bool        operator == (const iterator&) const;
-        bool        operator != (const iterator&) const;
-        Transform&  operator * () const;
+        iterator_t& operator ++ ();
+        iterator_t  operator ++ (int);
+        bool        operator == (const iterator_t&) const;
+        bool        operator != (const iterator_t&) const;
+        T&          operator * ();
 
     protected:
-        Transform*      _cusor, *_start;
-        iterator_mode   _mode;
+        void find_next_available();
+
+        T*                  _cursor = nullptr;
+        T*                  _start = nullptr;
+        iterate_mode        _mode;
+        core::ComponentMask _mask;
     };
 
-    struct view
+    using iterator = iterator_t<Transform>;
+    using const_iterator = iterator_t<const Transform>;
+
+    template<typename T, typename ... Args> struct view_t
     {
-        view(Transform* t, iterator_mode m) : _start(t), _mode(m) {}
+        view_t(T*, iterate_mode);
 
-        iterator begin() const;
-        iterator end() const;
+        iterator_t<T> begin() const;
+        iterator_t<T> end() const;
+        // returns the number of children in this hierachy
+        unsigned count() const;
 
-        using visitor = std::function<void(Transform&)>;
+        // visit the *iterator in sequences
+        using visitor = std::function<void(T&, Args&...)>;
         void visit(const visitor&);
-        // returns the number of direct _children in this hierarchy
-        virtual size_t count() const;
 
     protected:
-        Transform*      _start;
-        iterator_mode   _mode;
+        T*                  _transform = nullptr;
+        iterate_mode        _mode;
+        core::ComponentMask _mask;
     };
 
-    template<typename ... T> struct view_trait : public view
-    {
-        view_trait(Transform* t, iterator_mode m)
-        : view(t, m), _mask(t->_world->get_components_mask<T...>()) {};
-
-        using visitor = std::function<void(Transform&, T& ...)>;
-        void visit(const visitor&);
-        virtual size_t count() const override;
-
-    protected:
-        ComponentMask _mask;
-    };
+    template<typename ... Args> using view = view_t<Transform, Args...>;
+    template<typename ... Args> using const_view = view_t<const Transform, Args...>;
 
 public:
     Transform() = default;
     Transform(const Transform&) = delete;
     Transform& operator = (const Transform&) = delete;
 
-    Transform(const Vector2f& position, const Vector2f& scale = {1.0f, 1.0f}, float rotation = 0.f)
-    : _localspace(position, scale, rotation), _worldspace(position, scale, rotation)
+    Transform(
+        const Vector3f& position,
+        const Vector3f& scale = {1.f, 1.f, 1.f},
+        const Vector3f& rotation = {0.f, 0.f, 0.f})
+    : _pose(position, scale, rotation), _world_pose(position, scale, rotation)
     {}
 
-    void on_spawn(EntityManager&, Entity) override;
-    void on_dispose(EntityManager&, Entity) override;
+    void on_dispose() override { remove_from_parent(); }
 
     bool operator == (const Transform&) const;
     bool operator != (const Transform&) const;
 
     // setters and getters of transform properties in parents or world space
-    void set_scale(const Vector2f&, TransformSpace space = TransformSpace::SELF);
-    void set_position(const Vector2f&, TransformSpace space = TransformSpace::SELF);
-    void set_rotation(float, TransformSpace space = TransformSpace::SELF);
+    void set_scale(const Vector3f&, TransformSpace space = TransformSpace::LOCAL);
+    void set_position(const Vector3f&, TransformSpace space = TransformSpace::LOCAL);
+    void set_rotation(const Vector3f&, TransformSpace space = TransformSpace::LOCAL);
 
-    void scale(const Vector2f&);
-    void rotate(float);
-    void translate(const Vector2f&);
+    void scale(const Vector3f&);
+    void rotate(const Vector3f&);
+    void translate(const Vector3f&);
 
-    Vector2f get_scale(TransformSpace space = TransformSpace::SELF) const;
-    Vector2f get_position(TransformSpace space = TransformSpace::SELF) const;
-    float    get_rotation(TransformSpace space = TransformSpace::SELF) const;
+    Vector3f get_scale(TransformSpace space = TransformSpace::LOCAL) const;
+    Vector3f get_position(TransformSpace space = TransformSpace::LOCAL) const;
+    Vector3f get_rotation(TransformSpace space = TransformSpace::LOCAL) const;
 
     // transforms the position from local space to world space
-    Vector2f transform_point(const Vector2f&) const;
+    Vector3f transform_point(const Vector3f&) const;
     // the opposite of Transform::transform_point
-    Vector2f inverse_transform_point(const Vector2f&) const;
+    Vector3f inverse_transform_point(const Vector3f&) const;
     // transforms the vector from local space to world space,
     // this operation is not affected by position of the transform, but is is affected by scale.
-    Vector2f transform_vector(const Vector2f&) const;
+    Vector3f transform_vector(const Vector3f&) const;
     // ths opposite of Transform::transform_vector
-    Vector2f inverse_transform_vector(const Vector2f&) const;
+    Vector3f inverse_transform_vector(const Vector3f&) const;
     // transforms direction from local space to world space,
     // this operation is not affected by scale or position of the transform.
-    Vector2f transform_direction(const Vector2f&) const;
+    Vector3f transform_direction(const Vector3f&) const;
     // ths opposite of Transform::transform_direction
-    Vector2f inverse_transform_direction(const Vector2f&) const;
+    Vector3f inverse_transform_direction(const Vector3f&) const;
 
     // visit all of this object's ancestors/decenster,
     // in depth-first order if works with recursive mode.
-    view get_ancestors();
-    view get_children(bool recursive = false);
+    view<> get_ancestors();
+    const_view<> get_ancestors() const;
+    view<> get_children(bool recursive = false);
+    const_view<> get_children(bool recursive = false) const;
     // find children that have all of the specified components
-    template<typename ... T> view_trait<T...> get_children_with(bool recursive = false);
+    template<typename ... T> view<T...> get_children_with(bool recursive = false);
 
     // appends an entity to this hierarchy
     void append_child(Transform&, bool keep_world_pose = false);
@@ -162,18 +156,23 @@ public:
     // returns true if this is the leaf of a hierarchy, aka. has no children
     bool is_leaf() const;
     // returns true if target is one of the ancestor of this transfrom
-    bool is_ancestor(Transform&);
+    bool is_ancestor(Transform&) const;
     // returns parent entity
     Transform* get_parent();
+    const Transform* get_parent() const;
+    // returns root entity
+    Transform* get_root();
+    const Transform* get_root() const;
+
     // returns representation of matrix
-    Matrix3f to_matrix(TransformSpace space = TransformSpace::SELF) const;
+    Matrix4f to_matrix(TransformSpace space = TransformSpace::LOCAL) const;
 
 protected:
     // update the world pose of children
     void update_children();
 
-    TransformMatrix _localspace;
-    TransformMatrix _worldspace;
+    TransformPose _pose;
+    TransformPose _world_pose;
 
     Transform*  _parent         = nullptr;
     Transform*  _first_child    = nullptr;

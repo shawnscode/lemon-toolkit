@@ -3,22 +3,13 @@
 
 #include <core/entity.hpp>
 
-NS_FLOW2D_BEGIN
+NS_FLOW2D_CORE_BEGIN
 
-void ComponentBase::operator delete(void *)
-{
-    ASSERT(false, "[ECS] component memory is always managed by the EntityManager.");
-}
+size_t EventManager::index = 0;
 
-void ComponentBase::operator delete[](void *)
-{
-    ASSERT(false, "[ECS] component memory is always managed by the EntityManager.");
-}
-
-EntityManager::EntityManager()
-{
-    _dispatcher.reset(new EventManager());
-}
+EntityManager::EntityManager(EventManager& dispatcher)
+: _dispatcher(dispatcher)
+{}
 
 EntityManager::~EntityManager()
 {
@@ -60,7 +51,7 @@ Entity EntityManager::spawn()
 
     version = _versions[index];
     auto object = Entity(index, version);
-    _dispatcher->emit<EvtEntityCreated>(object);
+    _dispatcher.emit<EvtEntityCreated>(object);
     return object;
 }
 
@@ -72,7 +63,7 @@ void EntityManager::dispose(Entity object)
         return;
     }
 
-    _dispatcher->emit<EvtEntityDisposed>(object);
+    _dispatcher.emit<EvtEntityDisposed>(object);
 
     const auto mask = _components_mask[object._index];
     for( auto i=0; i<_components_pool.size(); i++ )
@@ -91,4 +82,4 @@ void EntityManager::dispose(Entity object)
     _freeslots.push_back(object._index);
 }
 
-NS_FLOW2D_END
+NS_FLOW2D_CORE_END

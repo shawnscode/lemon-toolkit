@@ -5,20 +5,14 @@ compiler: clang
 
 before_install:
     - brew tap homebrew/dupes
-    # - brew update
-    - brew install glfw3
+    - brew install sdl2
     - brew install glew
     - wget https://github.com/premake/premake-core/releases/download/v5.0.0-alpha7/premake-5.0.0-alpha7-macosx.tar.gz
     - tar -xf premake-5.0.0-alpha7-macosx.tar.gz
 
 script:
     - ./premake5 gmake
-    - cd build
-    - make
-    - cd test
+    - cd ./build/test
     - make
     - cd ../bin
-    - echo -n 'hahaha' > resource.txt
-    - cp resource.txt resource2.txt
-    - cp resource.txt resource3.txt
     - ./test

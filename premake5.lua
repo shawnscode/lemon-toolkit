@@ -36,10 +36,10 @@ workspace("chore")
     defines({ "DEBUG" })
     flags({ "Symbols" })
     kind( "ConsoleApp" )
-    libdirs({ "build/libs", "/usr/local/lib/" })
+    libdirs({ "/usr/local/lib/" })
 
-    sysincludedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/filesystem", "3rd/libtess2/Include" })
-    includedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/filesystem", "3rd/libtess2/Include" })
+    sysincludedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/libtess2/Include", "3rd/stb" })
+    includedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/libtess2/Include", "3rd/stb" })
 
     language( "C++" )
     buildoptions({"-std=c++11", "-stdlib=libc++"})
@@ -47,11 +47,12 @@ workspace("chore")
 
     project( "test" )
         location( "build/test" )
-        links({ "flow2d" })
-        files({ "test/*_test.cpp" })
+        links({ "glew", "SDL2" })
+        linkoptions { "-framework OpenGL", "-framework Cocoa", "-framework IOKit", "-framework CoreVideo" }
+        files({ "test/*_test.cpp", "source/**.cpp" })
 
     project( "example" )
         location( "build/example" )
-        links({ "glfw3", "glew", "flow2d", "tess2" })
+        links({ "glew", "SDL2" })
         linkoptions { "-framework OpenGL", "-framework Cocoa", "-framework IOKit", "-framework CoreVideo" }
         files({ "example/*.cpp", "source/**.cpp" })

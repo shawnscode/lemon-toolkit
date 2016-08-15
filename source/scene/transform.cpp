@@ -5,30 +5,29 @@
 
 NS_FLOW2D_BEGIN
 
-Transform::iterator::iterator(Transform* t, iterator_mode m)
-: _mode(m)
+Transform::view<> Transform::get_children(bool recursive)
 {
-    if( t != nullptr )
-    {
-        _start = t;
-        _cusor = t->_first_child;
-    }
-    else
-        _start = _cusor = nullptr;
+    return view<>(this,
+        recursive ? iterate_mode::CHILDREN_RECURSIVE : iterate_mode::CHILDREN);
 }
 
-Transform::view Transform::get_children(bool recursive)
+Transform::const_view<> Transform::get_children(bool recursive) const
 {
-    return view(this,
-        recursive ? iterator_mode::CHILDREN_RECURSIVE : iterator_mode::CHILDREN);
+    return const_view<>(this,
+        recursive ? iterate_mode::CHILDREN_RECURSIVE : iterate_mode::CHILDREN);
 }
 
-Transform::view Transform::get_ancestors()
+Transform::view<> Transform::get_ancestors()
 {
-    return view(_parent, iterator_mode::ANCESTORS);
+    return view<>(this, iterate_mode::ANCESTORS);
 }
 
-bool Transform::is_ancestor(Transform& target)
+Transform::const_view<> Transform::get_ancestors() const
+{
+    return const_view<>(this, iterate_mode::ANCESTORS);
+}
+
+bool Transform::is_ancestor(Transform& target) const
 {
     for( auto& ancestor : get_ancestors() )
         if( ancestor == target )
@@ -40,140 +39,143 @@ void Transform::update_children()
 {
     get_children(true).visit([](Transform& t)
     {
-        t._worldspace = t._parent->_worldspace * t._localspace;
+        t._world_pose = t._parent->_world_pose * t._pose;
     });
 }
 
-void Transform::set_scale(const Vector2f& scale, TransformSpace space)
+void Transform::set_scale(const Vector3f& scale, TransformSpace space)
 {
-    if( TransformSpace::SELF == space )
+    if( TransformSpace::LOCAL == space )
     {
-        _localspace.scale = scale;
+        _pose.scale = scale;
         if( _parent )
-            _worldspace = _parent->_worldspace * _localspace;
+            _world_pose = _parent->_world_pose * _pose;
         else
-            _worldspace = _localspace;
+            _world_pose = _pose;
     }
     else
     {
-        _worldspace.scale = scale;
+        _world_pose.scale = scale;
         if( _parent )
-            _localspace = _worldspace / _parent->_worldspace;
+            _pose = _world_pose / _parent->_world_pose;
         else
-            _localspace = _worldspace;
-    }
-
-    update_children();
-}
-
-void Transform::set_position(const Vector2f& position, TransformSpace space)
-{
-    if( TransformSpace::SELF == space )
-    {
-        _localspace.position = position;
-        if( _parent )
-            _worldspace = _parent->_worldspace * _localspace;
-        else
-            _worldspace = _localspace;
-    }
-    else
-    {
-        _worldspace.position = position;
-        if( _parent )
-            _localspace = _worldspace / _parent->_worldspace;
-        else
-            _localspace = _worldspace;
+            _pose = _world_pose;
     }
 
     update_children();
 }
 
-void Transform::set_rotation(float rotation, TransformSpace space)
+void Transform::set_position(const Vector3f& position, TransformSpace space)
 {
-    if( TransformSpace::SELF == space )
+    if( TransformSpace::LOCAL == space )
     {
-        _localspace.rotation = math::degree_to_radians(rotation);
+        _pose.position = position;
         if( _parent )
-            _worldspace = _parent->_worldspace * _localspace;
+            _world_pose = _parent->_world_pose * _pose;
         else
-            _worldspace = _localspace;
+            _world_pose = _pose;
     }
     else
     {
-        _worldspace.rotation = math::degree_to_radians(rotation);
+        _world_pose.position = position;
         if( _parent )
-            _localspace = _worldspace / _parent->_worldspace;
+            _pose = _world_pose / _parent->_world_pose;
         else
-            _localspace = _worldspace;
+            _pose = _world_pose;
     }
 
     update_children();
 }
 
-Vector2f Transform::get_scale(TransformSpace space) const
+void Transform::set_rotation(const Vector3f& rotation, TransformSpace space)
 {
-    if( TransformSpace::SELF == space )
-        return _localspace.scale;
+    if( TransformSpace::LOCAL == space )
+    {
+        _pose.rotation = rotation;
+        if( _parent )
+            _world_pose = _parent->_world_pose * _pose;
+        else
+            _world_pose = _pose;
+    }
     else
-        return _worldspace.scale;
+    {
+        _world_pose.rotation = rotation;
+        if( _parent )
+            _pose = _world_pose / _parent->_world_pose;
+        else
+            _pose = _world_pose;
+    }
+
+    update_children();
 }
 
-Vector2f Transform::get_position(TransformSpace space) const
+Vector3f Transform::get_scale(TransformSpace space) const
 {
-    if( TransformSpace::SELF == space )
-        return _localspace.position;
+    if( TransformSpace::LOCAL == space )
+        return _pose.scale;
     else
-        return _worldspace.position;
+        return _world_pose.scale;
 }
 
-float Transform::get_rotation(TransformSpace space) const
+Vector3f Transform::get_position(TransformSpace space) const
 {
-    if( TransformSpace::SELF == space )
-        return math::radians_to_degree(_localspace.rotation);
+    if( TransformSpace::LOCAL == space )
+        return _pose.position;
     else
-        return math::radians_to_degree(_worldspace.rotation);
+        return _world_pose.position;
 }
 
-Vector2f Transform::transform_point(const Vector2f& point) const
+Vector3f Transform::get_rotation(TransformSpace space) const
 {
-    return point + _worldspace.position;
+    if( TransformSpace::LOCAL == space )
+        return _pose.rotation;
+    else
+        return _world_pose.rotation;
 }
 
-Vector2f Transform::inverse_transform_point(const Vector2f& point) const
+Vector3f Transform::transform_point(const Vector3f& point) const
 {
-    return point - _worldspace.position;
+    return point + _world_pose.position;
 }
 
-Vector2f Transform::transform_vector(const Vector2f& v) const
+Vector3f Transform::inverse_transform_point(const Vector3f& point) const
 {
-    auto sn = std::sin(_worldspace.rotation);
-    auto cs = std::cos(_worldspace.rotation);
-
-    return Vector2f { v[0]*cs - v[1]*sn, v[0]*sn + v[1]*cs } * _worldspace.scale;
+    return point - _world_pose.position;
 }
 
-Vector2f Transform::inverse_transform_vector(const Vector2f& v) const
+Vector3f Transform::transform_vector(const Vector3f& v) const
 {
-    auto sn = std::sin(-_worldspace.rotation);
-    auto cs = std::cos(-_worldspace.rotation);
-
-    return Vector2f { v[0]*cs - v[1]*sn, v[0]*sn + v[1]*cs } / _worldspace.scale;
+    // auto sn = std::sin(_world_pose.rotation);
+    // auto cs = std::cos(_world_pose.rotation);
+    return v;
+    // return Vector3f { v[0]*cs - v[1]*sn, v[0]*sn + v[1]*cs } * _world_pose.scale;
 }
 
-Vector2f Transform::transform_direction(const Vector2f& d) const
+Vector3f Transform::inverse_transform_vector(const Vector3f& v) const
 {
-    auto sn = std::sin(_worldspace.rotation);
-    auto cs = std::cos(_worldspace.rotation);
+    // auto sn = std::sin(-_world_pose.rotation);
+    // auto cs = std::cos(-_world_pose.rotation);
 
-    return Vector2f { d[0]*cs - d[1]*sn, d[0]*sn + d[1]*cs };
+    // return Vector3f { v[0]*cs - v[1]*sn, v[0]*sn + v[1]*cs } / _world_pose.scale;
+    return v;
 }
 
-Vector2f Transform::inverse_transform_direction(const Vector2f& d) const
+Vector3f Transform::transform_direction(const Vector3f& d) const
 {
-    auto sn = std::sin(-_worldspace.rotation);
-    auto cs = std::cos(-_worldspace.rotation);
+    // auto sn = std::sin(_world_pose.rotation);
+    // auto cs = std::cos(_world_pose.rotation);
 
-    return Vector2f { d[0]*cs - d[1]*sn, d[0]*sn + d[1]*cs };
+    // return Vector3f { d[0]*cs - d[1]*sn, d[0]*sn + d[1]*cs };
+    return d;
+}
+
+Vector3f Transform::inverse_transform_direction(const Vector3f& d) const
+{
+    // auto sn = std::sin(-_world_pose.rotation);
+    // auto cs = std::cos(-_world_pose.rotation);
+
+    // return Vector3f { d[0]*cs - d[1]*sn, d[0]*sn + d[1]*cs };
+    return d;
 }
 
 void Transform::append_child(Transform& transform, bool keep_world_pose)
@@ -192,9 +194,9 @@ void Transform::append_child(Transform& transform, bool keep_world_pose)
     transform._parent = this;
 
     if( !keep_world_pose )
-        transform._worldspace = _worldspace * transform._localspace;
+        transform._world_pose = _world_pose * transform._pose;
     else
-        transform._localspace = transform._worldspace / _worldspace;
+        transform._pose = transform._world_pose / _world_pose;
 
     transform.update_children();
 }
@@ -223,16 +225,15 @@ void Transform::remove_from_parent()
     _next_sibling = nullptr;
 }
 
-/// MEMBER METHODS
-void Transform::on_spawn(EntityManager& world, Entity object)
+Transform* Transform::get_root()
 {
-    _world = &world;
-    _object = object;
-}
+    if( get_parent() == nullptr )
+        return nullptr;
 
-void Transform::on_dispose(EntityManager& world, Entity object)
-{
-    remove_from_parent();
+    auto parent = get_parent();
+    while( parent->get_parent() != nullptr )
+        parent = parent->get_parent();
+    return parent;
 }
 
 NS_FLOW2D_END

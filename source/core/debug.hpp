@@ -3,10 +3,9 @@
 
 #pragma once
 
-#include <forward.hpp>
-#include <cstdarg>
+#include <core/defines.hpp>
 
-NS_FLOW2D_BEGIN
+NS_FLOW2D_CORE_BEGIN
 
 enum class LogLevel
 {
@@ -20,7 +19,6 @@ struct Debug
 {
     static void log(LogLevel, const char* msg, va_list args);
     static void log(LogLevel, const char* msg, ...);
-    static void set_log_filter(LogLevel);
 
     // aborts the program execution and trys print the stacktrace
     static void abort(const char* file, int line, const char* format, ...);
@@ -45,4 +43,4 @@ struct Debug
 #define FLOW_FATAL(msg) FLOW_ASSERT(false, msg)
 #define FLOW_ENSURE(cond) FLOW_ASSERT(cond, "")
 
-NS_FLOW2D_END
+NS_FLOW2D_CORE_END

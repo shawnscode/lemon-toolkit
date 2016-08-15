@@ -3,12 +3,11 @@
 
 #pragma once
 
-#include <forward.hpp>
 #include <math/vector.hpp>
-#include <initializer_list>
 
-NS_FLOW2D_BEGIN
+NS_FLOW2D_MATH_BEGIN
 
+// row-major based matrix
 template<size_t R, size_t C, typename T> struct Matrix
 {
     Matrix();
@@ -17,12 +16,8 @@ template<size_t R, size_t C, typename T> struct Matrix
     Matrix(const Matrix&) = default;
     Matrix& operator = (const Matrix&) = default;
 
-    // index in row major
-    const T& operator() (size_t, size_t) const;
-    T& operator() (size_t, size_t);
-
-    const T& operator[](size_t) const;
-    T& operator[](size_t);
+    const Vector<C, T>& operator[](size_t) const;
+    Vector<C, T>& operator[](size_t);
 
     bool operator == (const Matrix&) const;
     bool operator != (const Matrix&) const;
@@ -32,7 +27,7 @@ template<size_t R, size_t C, typename T> struct Matrix
     void identity();
 
 protected:
-    std::array<std::array<T, C>, R> m_values;
+    Vector<R, Vector<C, T>> _values;
 };
 
 template<typename T>
@@ -117,20 +112,33 @@ Matrix<R+1, C+1, T> hlift(const Matrix<R, C, T>&);
 template<size_t N, typename T>
 Vector<N-1, T> operator * (const Matrix<N, N, T>& M, const Vector<N-1, T>& V);
 
+/// builds a scale 4 * 4 matrix created from scalars.
 template<size_t N, typename T>
-Matrix<N, N, T> make_scale(const Vector<N, T>&);
+Matrix<N+1, N+1, T> scale(const Vector<N, T>&);
 
-template<size_t N, typename T>
-Matrix<N, N, T> make_rotation(const Vector<N, T>&);
-
-template<size_t N, typename T>
-Matrix<N+1, N+1, T> make_translation(const Vector<N, T>&);
-
+// builds a rotation 4 * 4 matrix created from an angle.
 template<typename T>
-Matrix2<T> make_rotation(T radians);
+Matrix3<T> rotation(T degree);
 
+// builds a rotation 4 * 4 matrix created from an axis vector and an angle.
 template<typename T>
-Matrix3<T> make_ortho(T xmin, T xmax, T ymin, T ymax);
+Matrix4<T> rotation(T degree, const Vector3<T>&);
+
+// builds a translation 4 * 4 matrix created from a vector.
+template<size_t N, typename T>
+Matrix<N+1, N+1, T> translation(const Vector<N, T>&);
+
+// creates a matrix for a symetric perspective-view frustum based on the left handedness.
+template<typename T>
+Matrix4<T> perspective(T fov, T aspect, T znear, T zfar);
+
+// creates a matrix for an orthographic parallel viewing volume, using the left handedness.
+template<typename T>
+Matrix4<T> ortho(T left, T right, T bottom, T top, T znear, T zfar);
+
+// build a look at view matrix based on the left handedness.
+template<typename T>
+Matrix4<T> look_at(const Vector3<T>& eye, const Vector3<T>& center, const Vector3<T>& up);
 
 #include <math/matrix.inl>
-NS_FLOW2D_END
+NS_FLOW2D_MATH_END

@@ -12,72 +12,106 @@ Vector<N, T>::Vector(std::initializer_list<T> values)
     size_t i = 0;
     for( auto value : values )
     {
-        if( i < N ) m_tuple[i++] = value;
+        if( i < N ) _tuple[i++] = value;
         else break;
     }
 
-    for( ; i < N; ++i ) m_tuple[i] = (T)0;
+    for( ; i < N; ++i ) _tuple[i] = (T)0;
 }
 
 template<size_t N, typename T>
 INLINE const T& Vector<N, T>::operator[] (size_t i) const
 {
-    return m_tuple[i];
+    ENSURE( i < N );
+    return _tuple[i];
 }
 
 template<size_t N, typename T>
 INLINE T& Vector<N, T>::operator[] (size_t i)
 {
-    return m_tuple[i];
+    ENSURE( i < N );
+    return _tuple[i];
 }
 
 template<size_t N, typename T>
 INLINE bool Vector<N, T>::operator == (const Vector<N, T>& rh) const
 {
-    return m_tuple == rh.m_tuple;
+    for( size_t i = 0; i < N; i++ )
+        if( _tuple[i] != rh._tuple[i] )
+            return false;
+    return true;
 }
 
 template<size_t N, typename T>
 INLINE bool Vector<N, T>::operator != (const Vector<N, T>& rh) const
 {
-    return m_tuple != rh.m_tuple;
+    for( size_t i = 0; i < N; i++ )
+        if( _tuple[i] != rh._tuple[i] )
+            return true;
+    return false;
 }
 
 template<size_t N, typename T>
 INLINE bool Vector<N, T>::operator < (const Vector<N, T>& rh) const
 {
-    return m_tuple < rh.m_tuple;
+    for( size_t i = 0; i < N; i++ )
+        if( _tuple[i] < rh._tuple[i] )
+            return true;
+    return false;
 }
 
 template<size_t N, typename T>
 INLINE bool Vector<N, T>::operator <= (const Vector<N, T>& rh) const
 {
-    return m_tuple <= rh.m_tuple;
+    for( size_t i = 0; i < N; i++ )
+        if( _tuple[i] <= rh._tuple[i] )
+            return true;
+    return false;
 }
 
 template<size_t N, typename T>
 INLINE bool Vector<N, T>::operator > (const Vector<N, T>& rh) const
 {
-    return m_tuple > rh.m_tuple;
+    for( size_t i = 0; i < N; i++ )
+        if( _tuple[i] > rh._tuple[i] )
+            return true;
+    return false;
 }
 
 template<size_t N, typename T>
 INLINE bool Vector<N, T>::operator >= (const Vector<N, T>& rh) const
 {
-    return m_tuple >= rh.m_tuple;
+    for( size_t i = 0; i < N; i++ )
+        if( _tuple[i] >= rh._tuple[i] )
+            return true;
+    return false;
 }
 
 template<size_t N, typename T>
 INLINE void Vector<N, T>::zero()
 {
-    std::fill(m_tuple.begin(), m_tuple.end(), (T)0);
+    for( size_t i = 0; i < N; i++ )
+        _tuple[i] = (T)0;
 }
 
 template<size_t N, typename T>
 INLINE void Vector<N, T>::unit(size_t d)
 {
     zero();
-    if( 0 <= d && d < N ) m_tuple[d] = (T)1;
+    if( 0 <= d && d < N )
+        _tuple[d] = (T)1;
+}
+
+template<size_t N, typename T>
+std::ostream& operator<< (std::ostream& out, const Vector<N, T>& v)
+{
+    out << "Vector(";
+    for( size_t i = 0; i < N; i++ )
+    {
+        out << v[i];
+        if( i != N-1 ) out << ", ";
+    }
+    return out << ")";
 }
 
 template<size_t N, typename T>
@@ -90,7 +124,8 @@ template<size_t N, typename T>
 Vector<N, T> operator - (const Vector<N, T>& v)
 {
     Vector<N, T> result;
-    for( auto i = 0; i < N; ++i ) result[i] = -v[i];
+    for( auto i = 0; i < N; ++i )
+        result[i] = -v[i];
     return result;
 }
 
@@ -147,42 +182,48 @@ Vector<N, T> operator / (const Vector<N, T>& v, T scalar)
 template<size_t N, typename T>
 Vector<N, T>& operator += (Vector<N, T>& v0, const Vector<N, T>& v1)
 {
-    for( auto i = 0; i < N; i++ ) v0[i] += v1[i];
+    for( auto i = 0; i < N; i++ )
+        v0[i] += v1[i];
     return v0;
 }
 
 template<size_t N, typename T>
 Vector<N, T>& operator -= (Vector<N, T>& v0, const Vector<N, T>& v1)
 {
-    for( auto i = 0; i < N; i++ ) v0[i] -= v1[i];
+    for( auto i = 0; i < N; i++ )
+        v0[i] -= v1[i];
     return v0;
 }
 
 template<size_t N, typename T>
 Vector<N, T>& operator *= (Vector<N, T>& v0, const Vector<N, T>& v1)
 {
-    for( auto i = 0; i < N; i++ ) v0[i] *= v1[i];
+    for( auto i = 0; i < N; i++ )
+        v0[i] *= v1[i];
     return v0;
 }
 
 template<size_t N, typename T>
 Vector<N, T>& operator /= (Vector<N, T>& v0, const Vector<N, T>& v1)
 {
-    for( auto i = 0; i < N; i++ ) v0[i] /= v1[i];
+    for( auto i = 0; i < N; i++ )
+        v0[i] /= v1[i];
     return v0;
 }
 
 template<size_t N, typename T>
 Vector<N, T>& operator *= (Vector<N, T>& v, T scalar)
 {
-    for( auto i = 0; i < N; i++ ) v[i] *= scalar;
+    for( auto i = 0; i < N; i++ )
+        v[i] *= scalar;
     return v;
 }
 
 template<size_t N, typename T>
 Vector<N, T>& operator /= (Vector<N, T>& v, T scalar)
 {
-    for( auto i = 0; i < N; i++ ) v[i] /= scalar;
+    for( auto i = 0; i < N; i++ )
+        v[i] /= scalar;
     return v;
 }
 
@@ -212,14 +253,6 @@ bool equals (const Vector<N, T>& v0, const Vector<N, T>& v1, T epslion)
     for( auto i = 0; i < N; i++ )
         if( std::abs(v0[i] - v1[i]) >= epslion ) return false;
     return true;
-}
-
-template<size_t N, typename T>
-T dot (const Vector<N, T>& v0, const Vector<N, T>& v1)
-{
-    T result = (T)0;
-    for( auto i = 0; i < N; i++ ) result += v0[i] * v1[i];
-    return result;
 }
 
 template<size_t N, typename T>
@@ -264,6 +297,24 @@ Vector<N, T> normalize (const Vector<N, T>& v)
 }
 
 template<size_t N, typename T>
+T dot (const Vector<N, T>& v0, const Vector<N, T>& v1)
+{
+    T result = (T)0;
+    for( auto i = 0; i < N; i++ ) result += v0[i] * v1[i];
+    return result;
+}
+
+template<typename T>
+Vector3<T> cross(const Vector3<T>& v0, const Vector3<T>& v1)
+{
+    return {
+        v0[1] * v1[2] - v0[2] * v1[1],
+        v0[2] * v1[0] - v0[0] * v1[2],
+        v0[0] * v1[1] - v0[1] * v1[0]
+    };
+}
+
+template<size_t N, typename T>
 Vector<N, T> abs (const Vector<N, T>& v)
 {
     Vector<N, T> result = v;
@@ -295,6 +346,7 @@ Vector<N, T> clamp (const Vector<N, T>& source, const Vector<N, T>& v0, const Ve
 template<size_t N, typename T>
 bool isnan (const Vector<N, T>& v)
 {
+    static_assert(std::numeric_limits<T>::is_iec559, "'isnan' only accept floating-point inputs");
     for( auto i = 0; i < N; i++ )
         if( std::isnan(v[i]) ) return true;
     return false;
@@ -303,6 +355,7 @@ bool isnan (const Vector<N, T>& v)
 template<size_t N, typename T>
 bool isinf (const Vector<N, T>& v)
 {
+    static_assert(std::numeric_limits<T>::is_iec559, "'isinf' only accept floating-point inputs");
     for( auto i = 0; i < N; i++ )
         if( std::isinf(v[i]) ) return true;
     return false;

@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <ctime>
 
-USING_NS_FLOW2D;
+USING_NS_FLOW2D_CORE;
 
 const static size_t kChunkSize = 8;
 
@@ -94,7 +94,7 @@ TEST_CASE_METHOD(MemoryChunksFixture, "TestMemoryChunksReuse")
 }
 
 struct IndexedObjectChunksFixture;
-struct IntPosition : public Component<>
+struct IntPosition : public Component
 {
     IntPosition(IndexedObjectChunksFixture& f, int x, int y);
     ~IntPosition();
@@ -111,7 +111,7 @@ struct IndexedObjectChunksFixture : IndexedObjectChunks<IntPosition, Entity::ind
     size_t          dispose_count = 0;
 
     IndexedObjectChunksFixture()
-    : IndexedObjectChunks<IntPosition, Entity::index_type, 8>(kChunkSize)
+    : IndexedObjectChunks<IntPosition, Entity::index_type, 8>(kChunkSize), world(dispatcher)
     {}
 
     size_t capacity() const { return _objects.capacity(); }
