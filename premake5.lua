@@ -36,10 +36,10 @@ workspace("chore")
     defines({ "DEBUG" })
     flags({ "Symbols" })
     kind( "ConsoleApp" )
-    libdirs({ "build/libs", "/usr/local/lib/" })
+    libdirs({ "/usr/local/lib/" })
 
-    sysincludedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/libtess2/Include", "3rd" })
-    includedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/libtess2/Include", "3rd" })
+    sysincludedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/libtess2/Include", "3rd/stb" })
+    includedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/libtess2/Include", "3rd/stb" })
 
     language( "C++" )
     buildoptions({"-std=c++11", "-stdlib=libc++"})
@@ -47,7 +47,7 @@ workspace("chore")
 
     project( "test" )
         location( "build/test" )
-        links({ "glew", "SDL2", "z" })
+        links({ "glew", "SDL2" })
         linkoptions { "-framework OpenGL", "-framework Cocoa", "-framework IOKit", "-framework CoreVideo" }
         files({ "test/*_test.cpp", "source/**.cpp" })
 

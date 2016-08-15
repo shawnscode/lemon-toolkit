@@ -2,7 +2,6 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <resource/archives.hpp>
-#include <zlib.h>
 
 NS_FLOW2D_RES_BEGIN
 
