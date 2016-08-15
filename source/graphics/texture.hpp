@@ -46,7 +46,7 @@ enum class TextureFormat : uint8_t
     LUMINANCE_ALPHA
 };
 
-struct Texture : public GPUObject
+struct Texture : public GraphicsObject
 {
     Texture(Device& device, unsigned target);
 

@@ -97,13 +97,13 @@ struct DeviceContext
     SDL_GLContext   context = 0;
 };
 
-GPUObject::GPUObject(Device& device) : _device(device)
+GraphicsObject::GraphicsObject(Device& device) : _device(device)
 {
     _device.get_dispatcher().subscribe<EvtDeviceLost>(*this);
     _device.get_dispatcher().subscribe<EvtDeviceRestore>(*this);
 }
 
-GPUObject::~GPUObject()
+GraphicsObject::~GraphicsObject()
 {
     _device.get_dispatcher().unsubscribe<EvtDeviceLost>(*this);
     _device.get_dispatcher().unsubscribe<EvtDeviceRestore>(*this);

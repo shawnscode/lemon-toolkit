@@ -30,9 +30,9 @@ struct VertexAttribute
     unsigned            offset;
 };
 
-struct Shader : public GPUObject
+struct Shader : public GraphicsObject
 {
-    Shader(Device& device) : GPUObject(device) {}
+    Shader(Device& device) : GraphicsObject(device) {}
     virtual ~Shader() { release(); }
 
     void receive(const EvtDeviceRestore&) override { restore(); }

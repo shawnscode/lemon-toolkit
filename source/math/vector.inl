@@ -346,6 +346,7 @@ Vector<N, T> clamp (const Vector<N, T>& source, const Vector<N, T>& v0, const Ve
 template<size_t N, typename T>
 bool isnan (const Vector<N, T>& v)
 {
+    static_assert(std::numeric_limits<T>::is_iec559, "'isnan' only accept floating-point inputs");
     for( auto i = 0; i < N; i++ )
         if( std::isnan(v[i]) ) return true;
     return false;
@@ -354,6 +355,7 @@ bool isnan (const Vector<N, T>& v)
 template<size_t N, typename T>
 bool isinf (const Vector<N, T>& v)
 {
+    static_assert(std::numeric_limits<T>::is_iec559, "'isinf' only accept floating-point inputs");
     for( auto i = 0; i < N; i++ )
         if( std::isinf(v[i]) ) return true;
     return false;

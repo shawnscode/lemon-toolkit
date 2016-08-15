@@ -7,9 +7,9 @@
 
 NS_FLOW2D_GFX_BEGIN
 
-struct VertexBuffer : public GPUObject
+struct VertexBuffer : public GraphicsObject
 {
-    VertexBuffer(Device& device) : GPUObject(device) {}
+    VertexBuffer(Device& device) : GraphicsObject(device) {}
     virtual ~VertexBuffer() { release(); }
 
     void receive(const EvtDeviceRestore&) override { restore(); }

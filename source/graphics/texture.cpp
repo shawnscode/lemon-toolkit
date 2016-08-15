@@ -36,7 +36,7 @@ static GLenum GL_IMAGE_ELEMENT_FORMATS[] =
 };
 
 Texture::Texture(Device& device, unsigned target)
-: GPUObject(device), _target(target)
+: GraphicsObject(device), _target(target)
 {
     _parameter_dirty = true;
     _filter = TextureFilterMode::LINEAR;

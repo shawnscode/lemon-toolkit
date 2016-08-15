@@ -7,9 +7,9 @@
 
 NS_FLOW2D_GFX_BEGIN
 
-struct IndexBuffer : public GPUObject
+struct IndexBuffer : public GraphicsObject
 {
-    IndexBuffer(Device& device) : GPUObject(device) {}
+    IndexBuffer(Device& device) : GraphicsObject(device) {}
     virtual ~IndexBuffer() { release(); }
 
     void receive(const EvtDeviceRestore&) override { restore(); }

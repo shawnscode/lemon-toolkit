@@ -20,7 +20,7 @@ const static size_t kMaxVertexAttributes = 8;
 const static size_t kMaxTextures = 8;
 
 struct Device;
-struct GPUObject;
+struct GraphicsObject;
 struct IndexBuffer;
 struct VertexBuffer;
 struct Shader;

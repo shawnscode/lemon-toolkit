@@ -93,11 +93,11 @@ enum class ClearOption : uint8_t
 struct EvtDeviceLost {};
 struct EvtDeviceRestore {};
 
-// base class for gpu resources
-struct GPUObject
+// the GraphicsObject class is the abstract base class for resources, shaders
+struct GraphicsObject
 {
-    GPUObject(Device& device);
-    virtual ~GPUObject();
+    GraphicsObject(Device& device);
+    virtual ~GraphicsObject();
 
     virtual void receive(const EvtDeviceRestore&) {}
     virtual void receive(const EvtDeviceLost&) {}
@@ -176,7 +176,7 @@ struct Device : public core::Subsystem
 
     // restore gpu object and reinitialize state, returns a custom shared_ptr
     template<typename T> using spawn_return = typename std::enable_if<
-        std::is_base_of<GPUObject, T>::value,
+        std::is_base_of<GraphicsObject, T>::value,
         std::shared_ptr<T>>::type;
     template<typename T, typename ... Args> spawn_return<T> spawn(Args&& ...);
 
