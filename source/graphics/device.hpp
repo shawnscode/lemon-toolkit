@@ -99,8 +99,17 @@ struct GraphicsObject
     GraphicsObject(Device& device);
     virtual ~GraphicsObject();
 
-    virtual void receive(const EvtDeviceRestore&) {}
-    virtual void receive(const EvtDeviceLost&) {}
+    void receive(const EvtDeviceRestore&);
+    void receive(const EvtDeviceLost&);
+
+    using receiver = std::function<void(GraphicsObject&)>;
+    receiver on_device_restore = nullptr;
+    receiver on_device_release = nullptr;
+
+    virtual bool restore();
+    virtual void release();
+
+    unsigned get_graphic_object() const { return _object; }
 
 protected:
     Device&     _device;

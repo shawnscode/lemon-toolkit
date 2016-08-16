@@ -3,15 +3,22 @@
 
 NS_FLOW2D_GFX_BEGIN
 
-bool IndexBuffer::restore(unsigned count, unsigned size, bool dynamic)
+unsigned GL_INDEX_ELEMENT_SIZES[] =
 {
-    _count = count;
-    _size = size;
-    _dynamic = dynamic;
-    return restore();
+    1,
+    2
+};
+
+IndexBuffer::IndexBuffer(Device& device)
+: GraphicsObject(device)
+{
+    _dynamic    = false;
+    _shadowed   = false;
+    _index_count = 0;
 }
 
-bool IndexBuffer::restore()
+bool IndexBuffer::restore(const void* data,
+    unsigned vcount, IndexElementFormat format, bool dynamic)
 {
     if( _device.is_device_lost() )
     {
@@ -21,9 +28,6 @@ bool IndexBuffer::restore()
 
     release();
 
-    if( _count == 0 || _size == 0 )
-        return false;
-
     glGenBuffers(1, &_object);
     if( !_object )
     {
@@ -31,14 +35,39 @@ bool IndexBuffer::restore()
         return false;
     }
 
-    if( _shadowed_data )
+    _format         = _format;
+    _index_count    = vcount;
+    _dynamic        = dynamic;
+
+    if( get_stride() == 0 || vcount == 0 )
     {
-        _device.set_index_buffer(_object);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, _count*_size, _shadowed_data.get(), _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+        _shadowed_data.reset();
+        return true;
+    }
+
+    if( _shadowed )
+    {
+        _shadowed_data.reset( new uint8_t[get_size()] );
+        if( !_shadowed_data )
+        {
+            LOGW("failed to create shadowed data for index buffer.");
+            return false;
+        }
     }
 
     CHECK_GL_ERROR();
-    return true;
+    return update_data(data);
+}
+
+bool IndexBuffer::restore()
+{
+    if( !_shadowed_data )
+    {
+        LOGW("failed to restore index buffer without shadowed data.");
+        return false;
+    }
+
+    return restore(_shadowed_data.get(), _index_count, _format, _dynamic);
 }
 
 void IndexBuffer::release()
@@ -53,87 +82,99 @@ void IndexBuffer::release()
     _object = 0;
 }
 
-void IndexBuffer::bind_to_device()
+void IndexBuffer::set_shadowed(bool shadowed)
 {
-    if( !_object || _device.is_device_lost() )
+    if( _shadowed != shadowed )
     {
-        LOGW("failed to bind index buffer while device is lost.");
-        return;
-    }
-
-    _device.set_index_buffer(_object);
-}
-
-void IndexBuffer::set_shadowed(bool enable)
-{
-    if( (_shadowed_data != nullptr) != enable )
-    {
-        if( enable )
+        if( shadowed && get_size() > 0 )
         {
-            _shadowed_data.reset( new unsigned char[_count*_size] );
+            _shadowed_data.reset( new uint8_t[get_size()] );
             if( !_shadowed_data )
                 LOGW("failed to create shadowed data for index buffer.");
         }
         else
             _shadowed_data.reset();
     }
+
+    _shadowed = shadowed;
 }
 
-bool IndexBuffer::set_data(const void* data)
+bool IndexBuffer::update_data(const void* data)
 {
     if( !data )
     {
-        LOGW("index buffer data could not be null.");
+        LOGW("failed to update index buffer with null.");
         return false;
     }
 
     if( _shadowed_data && data != _shadowed_data.get() )
-        memcpy(_shadowed_data.get(), data, _count * _size );
+        memcpy(_shadowed_data.get(), data, get_size() );
 
     if( _object && !_device.is_device_lost() )
     {
         _device.set_index_buffer(_object);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, _count * _size, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, get_size(), data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
 
     CHECK_GL_ERROR();
     return true;
 }
 
-bool IndexBuffer::set_data_range(const void* data, unsigned start, unsigned count, bool discard)
+bool IndexBuffer::update_data_range(const void* data, unsigned start, unsigned vcount, bool discard)
 {
-    if( start == 0 && count == _count )
-        return set_data(data);
+    if( start == 0 && vcount == _index_count )
+        return update_data(data);
 
     if( !data )
     {
-        LOGW("index buffer data could not be null.");
+        LOGW("failed to update index buffer with null.");
         return false;
     }
     
-    if( start + count > _count )
+    if( start + vcount > _index_count )
     {
         LOGW("out-of-range while setting new index buffer data.");
         return false;
     }
 
-    if( !count )
+    if( !vcount )
         return true;
 
-    if( _shadowed_data && _shadowed_data.get() + start*_size != data )
-        memcpy(_shadowed_data.get() + start * _size, data, count * _size);
+    unsigned stride = get_stride();
+    if( _shadowed_data && _shadowed_data.get() + start*stride != data )
+        memcpy(_shadowed_data.get() + start * stride, data, vcount * stride);
 
     if( _object && !_device.is_device_lost() )
     {
         _device.set_index_buffer(_object);
         if( !discard || start != 0 )
-            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, start * _size, count * _size, data);
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, start * stride, vcount * stride, data);
         else
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, count*_size, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, vcount * stride, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
 
     CHECK_GL_ERROR();
     return true;
+}
+
+unsigned IndexBuffer::get_index_count() const
+{
+    return _index_count;
+}
+
+unsigned IndexBuffer::get_stride() const
+{
+    return GL_INDEX_ELEMENT_SIZES[to_value(_format)];
+}
+
+unsigned IndexBuffer::get_size() const
+{
+    return get_stride() * _index_count;
+}
+
+IndexElementFormat IndexBuffer::get_element_format() const
+{
+    return _format;
 }
 
 NS_FLOW2D_GFX_END

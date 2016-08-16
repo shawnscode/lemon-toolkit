@@ -27,12 +27,20 @@ static GLenum GL_TEXTURE_FORMATS[] =
     GL_LUMINANCE_ALPHA
 };
 
-static GLenum GL_IMAGE_ELEMENT_FORMATS[] =
+static GLenum GL_PIXEL_FORMATS[] =
 {
     GL_UNSIGNED_BYTE,
     GL_UNSIGNED_SHORT_5_6_5,
     GL_UNSIGNED_SHORT_4_4_4_4,
     GL_UNSIGNED_SHORT_5_5_5_1
+};
+
+static unsigned GL_PIXEL_SIZE[] =
+{
+    1,
+    2,
+    2,
+    2
 };
 
 Texture::Texture(Device& device, unsigned target)
@@ -42,9 +50,11 @@ Texture::Texture(Device& device, unsigned target)
     _filter = TextureFilterMode::LINEAR;
     _address[0] = _address[1] = _address[2] = TextureAddressMode::WRAP;
     _mipmap = false;
+    _width = _height = _depth = 0;
 }
 
-bool Texture::restore(TextureFormat format)
+bool Texture::restore(const void* pixels,
+    TextureFormat format, PixelFormat pixel_format, unsigned width, unsigned height, unsigned depth)
 {
     if( _device.is_device_lost() )
     {
@@ -61,11 +71,43 @@ bool Texture::restore(TextureFormat format)
         return false;
     }
 
-    _format = format;
-    if( _image != nullptr && !set_data(_image) )
+    if( !pixels || width == 0 || height == 0 || depth == 0 )
+    {
+        LOGW("failed to set data of texture with null image.");
         return false;
+    }
 
-    return true;
+    _pixel_format = pixel_format;
+    _format = format;
+    _width  = width;
+    _height = height;
+    _depth  = depth;
+
+    if( _shadowed )
+    {
+        unsigned size = _width*_height*_depth*GL_PIXEL_SIZE[to_value(pixel_format)];
+        _shadowed_pixels.reset( new uint8_t[size] );
+        if( !_shadowed_pixels )
+        {
+            LOGW("failed to create shadowed data for texture.");
+            return false;
+        }
+        memcpy(_shadowed_pixels.get(), pixels, size);
+    }
+
+    CHECK_GL_ERROR();
+    return set_texture_data(pixels);
+}
+
+bool Texture::restore()
+{
+    if( !_shadowed_pixels )
+    {
+        LOGW("failed to restore texture without shadowed data");
+        return false;
+    }
+
+    return restore(_shadowed_pixels.get(), _format, _pixel_format, _width, _height, _depth);
 }
 
 void Texture::release()
@@ -76,35 +118,22 @@ void Texture::release()
     _object = 0;
 }
 
-void Texture::bind_to_device(unsigned unit)
-{
-    if( !_object || _device.is_device_lost() )
-    {
-        LOGW("failed to bind texture while device is lost.");
-        return;
-    }
-
-    _device.set_texture(unit, _target, _object);
-}
-
 void Texture::set_shadowed(bool shadowed)
 {
-    if( _shadowed != shadowed )
-    {
-        if( !shadowed )
-            _image.reset();
-        _shadowed = shadowed;
-    }
+    _shadowed = shadowed;
+    if( !_shadowed && _shadowed_pixels != nullptr )
+        _shadowed_pixels.reset();
 }
 
 void Texture::set_mipmap(bool mipmap)
 {
-    _mipmap = mipmap;
-    if( _object && !_device.is_device_lost() && _image )
+    if( _object && !_device.is_device_lost() && _mipmap != mipmap && mipmap )
     {
         _device.set_texture(0, _target, _object);
-        if( mipmap ) glGenerateMipmap(_target);
+        glGenerateMipmap(_target);
+        _parameter_dirty = true;
     }
+    _mipmap = mipmap;
 }
 
 void Texture::set_filter_mode(TextureFilterMode mode)
@@ -161,17 +190,19 @@ Texture2D::Texture2D(Device& device)
 : Texture(device, GL_TEXTURE_2D)
 {}
 
-bool Texture2D::set_data(res::Image::ptr image)
+bool Texture2D::restore(TextureFormat format, res::Image::ptr image)
 {
-    if( !image )
-    {
-        LOGW("failed to set data of texture with null image.");
-        return false;
-    }
+    return Texture::restore(
+        image->get_data(),
+        format,
+        static_cast<PixelFormat>(image->get_element_format()),
+        image->get_width(),
+        image->get_height(),
+        1);
+}
 
-    if( _shadowed && _image != image )
-        _image = image;
-
+bool Texture2D::set_texture_data(const void* data)
+{
     if( _object && !_device.is_device_lost() )
     {
         _device.set_texture(0, _target, _object);
@@ -180,14 +211,15 @@ bool Texture2D::set_data(res::Image::ptr image)
             _target,
             0,
             GL_TEXTURE_FORMATS[to_value(_format)],
-            image->get_width(),
-            image->get_height(),
+            _width,
+            _height,
             0,
             GL_TEXTURE_FORMATS[to_value(_format)],
-            GL_IMAGE_ELEMENT_FORMATS[to_value(image->get_element_format())],
-            image->get_data());
+            GL_PIXEL_FORMATS[to_value(_pixel_format)],
+            data);
 
-        if( _mipmap ) glGenerateMipmap(_target);
+        if( _mipmap )
+            glGenerateMipmap(_target);
     }
 
     CHECK_GL_ERROR();

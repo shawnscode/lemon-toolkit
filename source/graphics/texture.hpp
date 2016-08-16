@@ -46,15 +46,29 @@ enum class TextureFormat : uint8_t
     LUMINANCE_ALPHA
 };
 
+enum class PixelFormat : uint8_t
+{
+    UBYTE = 0,
+    USHORT565,
+    USHORT4444,
+    USHORT5551
+};
+
 struct Texture : public GraphicsObject
 {
+    using ptr = std::shared_ptr<Texture>;
+    using weak_ptr = std::weak_ptr<Texture>;
+
     Texture(Device& device, unsigned target);
+    ~Texture() { release(); }
 
-    bool restore(TextureFormat);
-    void release();
+    bool restore(const void*, TextureFormat, PixelFormat, unsigned, unsigned, unsigned);
 
-    // bind texture to specified unit
-    void bind_to_device(unsigned);
+    // set data from an image and restore graphics state, return true if success
+    bool restore() override;
+    // release graphics resource and state
+    void release() override;
+
     // keep the shared-reference of image
     void set_shadowed(bool);
     // set number of requested mip levels
@@ -65,29 +79,35 @@ struct Texture : public GraphicsObject
     void set_address_mode(TextureCoordinate, TextureAddressMode);
     // update the changed parameters to device
     void update_parameters(bool force = false);
-    // return memory representation if we shadowed this texture
-    res::Image::ptr get_image() { return _image; }
-    // set data from an image, return true if success
-    virtual bool set_data(res::Image::ptr) = 0;
+
+    unsigned get_target() const { return _target; }
 
 protected:
+    virtual bool set_texture_data(const void*) = 0;
+
     const unsigned  _target;
     bool            _shadowed;
     bool            _mipmap;
-    TextureFormat   _format;
-    res::Image::ptr _image;
 
     // settings of texture
     bool                _parameter_dirty;
     TextureUsage        _usage;
     TextureFilterMode   _filter;
     TextureAddressMode  _address[3];
+
+    //
+    std::unique_ptr<uint8_t[]> _shadowed_pixels;
+    unsigned _width, _height, _depth;
+    TextureFormat _format;
+    PixelFormat _pixel_format;
 };
 
 struct Texture2D : public Texture
 {
     Texture2D(Device& device);
-    bool set_data(res::Image::ptr) override;
+
+    bool restore(TextureFormat, res::Image::ptr);
+    bool set_texture_data(const void*) override;
 };
 
 NS_FLOW2D_GFX_END

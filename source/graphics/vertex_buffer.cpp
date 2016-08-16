@@ -3,15 +3,35 @@
 
 NS_FLOW2D_GFX_BEGIN
 
-bool VertexBuffer::restore(unsigned count, unsigned size, bool dynamic)
+unsigned GL_ELEMENT_SIZES[] =
 {
-    _count = count;
-    _size = size;
-    _dynamic = dynamic;
-    return restore();
+    1,
+    1,
+    2,
+    2,
+    2,
+    4
+};
+
+VertexAttribute::VertexAttribute(unsigned size, ElementFormat format, bool normalized)
+: size(size), format(format), normalized(normalized)
+{}
+
+unsigned VertexAttribute::get_stride() const
+{
+    return size * GL_ELEMENT_SIZES[to_value(format)];
 }
 
-bool VertexBuffer::restore()
+VertexBuffer::VertexBuffer(Device& device)
+: GraphicsObject(device)
+{
+    _dynamic    = false;
+    _shadowed   = false;
+    _vertex_count       = 0;
+}
+
+bool VertexBuffer::restore(const void* data,
+    unsigned vcount, const vertex_attributes& attributes, bool dynamic)
 {
     if( _device.is_device_lost() )
     {
@@ -21,9 +41,6 @@ bool VertexBuffer::restore()
 
     release();
 
-    if( _count == 0 || _size == 0 )
-        return false;
-
     glGenBuffers(1, &_object);
     if( !_object )
     {
@@ -31,14 +48,46 @@ bool VertexBuffer::restore()
         return false;
     }
 
-    if( _shadowed_data )
+    _attributes     = attributes;
+    _vertex_count   = vcount;
+    _dynamic        = dynamic;
+
+    unsigned offset = 0;
+    for( auto& attr : _attributes )
     {
-        _device.set_vertex_buffer(_object);
-        glBufferData(GL_ARRAY_BUFFER, _count*_size, _shadowed_data.get(), _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+        attr.offset = offset;
+        offset += attr.get_stride();
+    }
+
+    if( get_stride() == 0 || vcount == 0 )
+    {
+        _shadowed_data.reset();
+        return true;
+    }
+
+    if( _shadowed )
+    {
+        _shadowed_data.reset( new uint8_t[get_size()] );
+        if( !_shadowed_data )
+        {
+            LOGW("failed to create shadowed data for vertex buffer.");
+            return false;
+        }
     }
 
     CHECK_GL_ERROR();
-    return true;
+    return update_data(data);
+}
+
+bool VertexBuffer::restore()
+{
+    if( !_shadowed_data )
+    {
+        LOGW("failed to restore vertex buffer without shadowed data.");
+        return false;
+    }
+
+    return restore(_shadowed_data.get(), _vertex_count, _attributes, _dynamic);
 }
 
 void VertexBuffer::release()
@@ -53,87 +102,108 @@ void VertexBuffer::release()
     _object = 0;
 }
 
-void VertexBuffer::bind_to_device()
+void VertexBuffer::set_shadowed(bool shadowed)
 {
-    if( !_object || _device.is_device_lost() )
+    if( _shadowed != shadowed )
     {
-        LOGW("failed to bind vertex buffer while device is lost.");
-        return;
-    }
-
-    _device.set_vertex_buffer(_object);
-}
-
-void VertexBuffer::set_shadowed(bool enable)
-{
-    if( (_shadowed_data != nullptr) != enable )
-    {
-        if( enable )
+        if( shadowed && get_size() > 0 )
         {
-            _shadowed_data.reset( new unsigned char[_count*_size] );
+            _shadowed_data.reset( new uint8_t[get_size()] );
             if( !_shadowed_data )
                 LOGW("failed to create shadowed data for vertex buffer.");
         }
         else
             _shadowed_data.reset();
     }
+
+    _shadowed = shadowed;
 }
 
-bool VertexBuffer::set_data(const void* data)
+bool VertexBuffer::update_data(const void* data)
 {
     if( !data )
     {
-        LOGW("vertex buffer data could not be null.");
+        LOGW("failed to update vertex buffer with null.");
         return false;
     }
 
     if( _shadowed_data && data != _shadowed_data.get() )
-        memcpy(_shadowed_data.get(), data, _count * _size );
+        memcpy(_shadowed_data.get(), data, get_size() );
 
     if( _object && !_device.is_device_lost() )
     {
         _device.set_vertex_buffer(_object);
-        glBufferData(GL_ARRAY_BUFFER, _count * _size, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, get_size(), data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
 
     CHECK_GL_ERROR();
     return true;
 }
 
-bool VertexBuffer::set_data_range(const void* data, unsigned start, unsigned count, bool discard)
+bool VertexBuffer::update_data_range(const void* data, unsigned start, unsigned vcount, bool discard)
 {
-    if( start == 0 && count == _count )
-        return set_data(data);
+    if( start == 0 && vcount == _vertex_count )
+        return update_data(data);
 
     if( !data )
     {
-        LOGW("vertex buffer data could not be null.");
+        LOGW("failed to update vertex buffer with null.");
         return false;
     }
     
-    if( start + count > _count )
+    if( start + vcount > _vertex_count )
     {
         LOGW("out-of-range while setting new vertex buffer data.");
         return false;
     }
 
-    if( !count )
+    if( !vcount )
         return true;
 
-    if( _shadowed_data && _shadowed_data.get() + start*_size != data )
-        memcpy(_shadowed_data.get() + start * _size, data, count * _size);
+    unsigned stride = get_stride();
+    if( _shadowed_data && _shadowed_data.get() + start*stride != data )
+        memcpy(_shadowed_data.get() + start * stride, data, vcount * stride);
 
     if( _object && !_device.is_device_lost() )
     {
         _device.set_vertex_buffer(_object);
         if( !discard || start != 0 )
-            glBufferSubData(GL_ARRAY_BUFFER, start * _size, count * _size, data);
+            glBufferSubData(GL_ARRAY_BUFFER, start * stride, vcount * stride, data);
         else
-            glBufferData(GL_ARRAY_BUFFER, count*_size, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, vcount * stride, data, _dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
 
     CHECK_GL_ERROR();
     return true;
+}
+
+VertexAttribute VertexBuffer::get_attribute_at(unsigned index) const
+{
+    ASSERT( index < _attributes.get_size(), "invalid attribute.");
+    return _attributes[index];
+}
+
+unsigned VertexBuffer::get_attribute_size() const
+{
+    return _attributes.get_size();
+}
+
+unsigned VertexBuffer::get_vertex_count() const
+{
+    return _vertex_count;
+}
+
+unsigned VertexBuffer::get_stride() const
+{
+    unsigned stride = 0;
+    for( auto attr : _attributes )
+        stride += attr.get_stride();
+    return stride;
+}
+
+unsigned VertexBuffer::get_size() const
+{
+    return get_stride() * _vertex_count;
 }
 
 NS_FLOW2D_GFX_END

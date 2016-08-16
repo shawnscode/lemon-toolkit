@@ -109,6 +109,32 @@ GraphicsObject::~GraphicsObject()
     _device.get_dispatcher().unsubscribe<EvtDeviceRestore>(*this);
 }
 
+void GraphicsObject::receive(const EvtDeviceRestore& evt)
+{
+    if( on_device_restore )
+        on_device_restore(*this);
+    else
+        restore();
+}
+
+void GraphicsObject::receive(const EvtDeviceLost& evt)
+{
+    if( on_device_release )
+        on_device_release(*this);
+    else
+        release();
+}
+
+bool GraphicsObject::restore()
+{
+    return true;
+}
+
+void GraphicsObject::release()
+{
+    _object = 0;
+}
+
 bool Device::initialize()
 {
     ENSURE( _context.has_subsystems<Application>() );

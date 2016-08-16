@@ -18,6 +18,7 @@ NS_FLOW2D_GFX_BEGIN
 
 const static size_t kMaxVertexAttributes = 8;
 const static size_t kMaxTextures = 8;
+const static size_t kMaxUniforms = 32;
 
 struct Device;
 struct GraphicsObject;

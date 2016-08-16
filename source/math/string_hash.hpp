@@ -18,6 +18,7 @@ struct StringHash
 
     StringHash(const StringHash&) = default;
     StringHash& operator = (const StringHash&) = default;
+    StringHash& operator = (std::nullptr_t) { _value = 0; return *this; }
 
     // test for equality with another hash
     bool operator == (const StringHash& rhs) const { return _value == rhs._value; }

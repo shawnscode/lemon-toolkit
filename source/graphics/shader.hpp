@@ -4,46 +4,24 @@
 #pragma once
 
 #include <graphics/device.hpp>
+#include <graphics/vertex_buffer.hpp>
+#include <graphics/texture.hpp>
 #include <math/matrix.hpp>
 #include <math/string_hash.hpp>
 
 NS_FLOW2D_GFX_BEGIN
-
-enum class ElementFormat : uint8_t
-{
-    BYTE = 0,
-    UBYTE,
-    SHORT,
-    USHORT,
-    FIXED,
-    FLOAT,
-};
-
-struct VertexAttribute
-{
-    math::StringHash    name;
-    unsigned            vbo = 0;
-    unsigned            size;
-    ElementFormat       format;
-    bool                normalized;
-    unsigned            stride;
-    unsigned            offset;
-};
 
 struct Shader : public GraphicsObject
 {
     Shader(Device& device) : GraphicsObject(device) {}
     virtual ~Shader() { release(); }
 
-    void receive(const EvtDeviceRestore&) override { restore(); }
-    void receive(const EvtDeviceLost&) override { release(); }
-
     bool restore(const char* vs, const char* ps);
     bool restore();
     void release();
 
     // bind this vertex buffer to graphic device
-    void bind_to_device();
+    void use();
 
     // set shader's uniform by name
     void set_uniform1f(const char*, const math::Vector<1, float>&);
@@ -53,19 +31,40 @@ struct Shader : public GraphicsObject
     void set_uniform2fm(const char*, const math::Matrix<2, 2, float>&);
     void set_uniform3fm(const char*, const math::Matrix<3, 3, float>&);
     void set_uniform4fm(const char*, const math::Matrix<4, 4, float>&);
-    // set texture uniform with unit index
-    void set_texture(const char*, unsigned);
 
+    // set texture uniform with unit index
+    void set_texture(const char*, Texture::ptr);
     // set vertex attribute
-    void set_vertex_attribute(const char*, unsigned, ElementFormat, unsigned, unsigned, bool normalized = false);
+    void set_vertex_attribute(const char*, VertexBuffer::ptr, unsigned);
 
 protected:
+    struct vertex_record
+    {
+        std::string         name;
+        VertexBuffer::ptr   vb;
+        unsigned            attribute_index;
+        int                 location = 0;
+    };
+
+    struct texture_record
+    {
+        std::string         name;
+        math::StringHash    hash;
+        Texture::ptr        texture;
+        int                 location = 0;
+    };
+
+    using attribute_table = core::CompactHashMap<math::StringHash, vertex_record, kMaxVertexAttributes>;
+    using texture_vector  = core::CompactVector<texture_record, kMaxTextures>;
+    using localtion_table = core::CompactHashMap<math::StringHash, int32_t, kMaxUniforms>;
+
     int32_t get_uniform_location(const char*);
 
-    std::string _fragment_shader, _vertex_shader;
-    std::vector<VertexAttribute> _attributes;
-    std::vector<std::pair<math::StringHash, int32_t>> _locations;
-
+    std::string     _fragment_shader;
+    std::string     _vertex_shader;
+    attribute_table _attributes;
+    texture_vector  _textures;
+    localtion_table _locations;
 #ifndef GL_ES_VERSION_2_0
     unsigned _vao = 0;
 #endif

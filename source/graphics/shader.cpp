@@ -122,51 +122,82 @@ void Shader::release()
 
     _object = 0;
     _vao = 0;
+
     _locations.clear();
+
+    for( auto& record : _attributes )
+        record.location = 0;
+
+    for( auto& record : _textures )
+        record.location = 0;
 }
 
-void Shader::bind_to_device()
+void Shader::use()
 {
     if( !_object || _device.is_device_lost() )
         return;
 
     _device.set_shader(_object);
 
+    unsigned unit = 0;
+    for( auto& record : _textures )
+    {
+        if( record.location == 0 )
+        {
+            auto location = get_uniform_location(record.name.c_str());
+            if( location == -1 )
+                continue;
+            record.location = location;
+            glUniform1i(location, unit);
+        }
+
+        _device.set_texture(unit++,
+            record.texture->get_target(),
+            record.texture->get_graphic_object());
+    }
+
 #ifndef GL_ES_VERSION_2_0
     glBindVertexArray(_vao);
 #endif
 
     unsigned vbo = 0;
-    for( unsigned i = 0; i < _attributes.size(); i++ )
+    for( auto& record : _attributes )
     {
-        auto& attribute = _attributes[i];
-        if( attribute.vbo != vbo )
+        if( vbo != record.vb->get_graphic_object() )
         {
-            _device.set_vertex_buffer(attribute.vbo);
-            vbo = attribute.vbo;
+            vbo = record.vb->get_graphic_object();
+            _device.set_vertex_buffer(vbo);
         }
 
+        if( record.location == 0 )
+        {
+            auto location = glGetAttribLocation(_object, record.name.c_str());
+            if( location == - 1 )
+            {
+                LOGW("failed to locate attribute %s.", record.name.c_str());
+                continue;
+            }
+            record.location = location;
+        }
+
+        // unsigned location = get_uniform_location
+        VertexAttribute attribute = record.vb->get_attribute_at(record.attribute_index);
         if( vbo != 0 )
         {
-            glEnableVertexAttribArray(i);
-            glVertexAttribPointer(i,
+            glEnableVertexAttribArray(record.location);
+            glVertexAttribPointer(record.location,
                 attribute.size,
                 GL_ELEMENT_FORMAT[to_value(attribute.format)],
                 attribute.normalized,
-                attribute.stride,
+                record.vb->get_stride(),
                 (uint8_t*)0+attribute.offset);
         }
-       else
-            glDisableVertexAttribArray(i);
+        else
+            glDisableVertexAttribArray(record.location);
     }
 }
 
-void Shader::set_vertex_attribute(const char* name,
-    unsigned size,
-    ElementFormat format,
-    unsigned stride,
-    unsigned offset,
-    bool normalized)
+void Shader::set_vertex_attribute(const char* name, VertexBuffer::ptr vb, unsigned index)
 {
     ASSERT( name, "invalid attribute name." );
 
@@ -176,25 +207,23 @@ void Shader::set_vertex_attribute(const char* name,
         return;
     }
 
-    auto vbo = _device.get_bound_vertex_buffer();
-    if( !vbo )
+    if( !vb )
     {
         LOGW("trying to set vertex attribute without a bound VBO.");
         return;
     }
 
-    for( unsigned i = 0; i < _attributes.size(); i++ )
+    vertex_record record;
+    record.name = name;
+    record.vb = vb;
+    record.attribute_index = index;
+
+    auto hash = math::StringHash(name);
+    auto found = _attributes.find(hash);
+    if( found != _attributes.end() )
     {
-        if( _attributes[i].name == name )
-        {
-            _attributes[i].vbo = vbo;
-            _attributes[i].size = size;
-            _attributes[i].format = format;
-            _attributes[i].normalized = normalized;
-            _attributes[i].stride = stride;
-            _attributes[i].offset = offset;
-            return;
-        }
+        *found = record;
+        return;
     }
 
     auto location = glGetAttribLocation(_object, name);
@@ -204,16 +233,8 @@ void Shader::set_vertex_attribute(const char* name,
         return;
     }
 
-    if( _attributes.size() <= location )
-        _attributes.resize(location+1);
-
-    _attributes[location].name = math::StringHash(name);
-    _attributes[location].vbo = vbo;
-    _attributes[location].size = size;
-    _attributes[location].format = format;
-    _attributes[location].normalized = normalized;
-    _attributes[location].stride = stride;
-    _attributes[location].offset = offset;
+    record.location = location;
+    _attributes.insert(std::make_pair(hash, record));
     CHECK_GL_ERROR();
 }
 
@@ -226,28 +247,45 @@ int32_t Shader::get_uniform_location(const char* name)
     }
 
     auto hash = math::StringHash(name);
-    for( auto& pair : _locations )
-    {
-        if( pair.first == hash )
-            return pair.second;
-    }
+    auto found = _locations.find(hash);
+    if( found != _locations.end() )
+        return *found;
 
     auto location = glGetUniformLocation(_object, name);
     if( location == -1 )
         LOGW("failed to locate uniform %s.", name);
 
-    _locations.push_back(std::make_pair(hash, location));
+    _locations.insert(std::make_pair(hash, location));
     return location;
 }
 
-void Shader::set_texture(const char* name, unsigned unit)
+void Shader::set_texture(const char* name, Texture::ptr texture)
 {
-    auto pos = get_uniform_location(name);
-    if( pos == -1 )
+    texture_record record;
+    record.texture = texture;
+    record.name = name;
+    record.hash = math::StringHash(name);
+
+    auto found = std::find_if(_textures.begin(), _textures.end(), [&](const texture_record& item)
+    {
+        return item.hash == record.hash;
+    });
+
+    if( found != _textures.end() )
+    {
+        *found = record;
         return;
+    }
 
     _device.set_shader(_object);
-    glUniform1i(pos, unit);
+    auto location = get_uniform_location(name);
+    if( location == -1 )
+        return;
+
+    glUniform1i(location, _textures.get_size());
+    record.location = location;
+    _textures.push_back(record);
+    CHECK_GL_ERROR();
 }
 
 void Shader::set_uniform1f(const char* name, const math::Vector<1, float>& value)
