@@ -155,3 +155,39 @@ TEST_CASE("TestRectMethods")
     // to_vector
     REQUIRE( to_vector(r) == (Vector<4, float>({0.f, 0.f, 1.f, 1.f})) );
 }
+
+TEST_CASE("TestQuaternionOperations")
+{
+    Quaternion q    = Quaternion(1.f, 1.f, 1.f, 1.f);
+    Quaternion q1   = Quaternion(1.f, 1.f, 1.f, 1.f);
+    Quaternion q2   = Quaternion(0.f, 1.f, 1.f, 1.f);
+
+    REQUIRE( q == q1 );
+    REQUIRE( q != q2 );
+
+    q   = Quaternion(1.f, 0.f, 1.f, 0.f);
+    q1  = Quaternion(1.f, 0.5f, 0.5f, 0.75f);
+
+    REQUIRE( q * q1 == Quaternion(0.5f, 1.25f, 1.5f, 0.25f) );
+    REQUIRE( q2 * 2.f == Quaternion(0.f, 2.f, 2.f, 2.f) );
+    REQUIRE( q + q1 == Quaternion(2.f, 0.5f, 1.5f, 0.75f) );
+    REQUIRE( conjugate(q) == Quaternion(1.f, 0.f, -1.f, 0.f) );
+}
+
+TEST_CASE("TestQuaternionAngle")
+{
+    Quaternion q = from_axis_angle(45.f, {0.f, 0.f, 1.f});
+    Quaternion n = normalize(q);
+    REQUIRE( length_square(n) == Approx(1.0f) );
+    REQUIRE( angle(n) == Approx(45.f) );
+
+    q = from_axis_angle(45.f, {0.f, 1.f, 1.f});
+    n = normalize(q);
+    REQUIRE( length_square(n) == Approx(1.0f) );
+    REQUIRE( angle(n) == Approx(45.f) );
+
+    q = from_axis_angle(45.f, {1.f, 2.f, 3.f});
+    n = normalize(q);
+    REQUIRE( length_square(n) == Approx(1.0f) );
+    REQUIRE( angle(n) == Approx(45.f) );
+}

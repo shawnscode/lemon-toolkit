@@ -87,7 +87,7 @@ void Transform::set_position(const Vector3f& position, TransformSpace space)
     update_children();
 }
 
-void Transform::set_rotation(const Vector3f& rotation, TransformSpace space)
+void Transform::set_rotation(const Quaternion& rotation, TransformSpace space)
 {
     if( TransformSpace::LOCAL == space )
     {
@@ -109,6 +109,11 @@ void Transform::set_rotation(const Vector3f& rotation, TransformSpace space)
     update_children();
 }
 
+void Transform::set_rotation(const Vector3f& rotation, TransformSpace space)
+{
+    set_rotation(from_euler_angles(rotation), space);
+}
+
 Vector3f Transform::get_scale(TransformSpace space) const
 {
     if( TransformSpace::LOCAL == space )
@@ -125,7 +130,7 @@ Vector3f Transform::get_position(TransformSpace space) const
         return _world_pose.position;
 }
 
-Vector3f Transform::get_rotation(TransformSpace space) const
+Quaternion Transform::get_rotation(TransformSpace space) const
 {
     if( TransformSpace::LOCAL == space )
         return _pose.rotation;

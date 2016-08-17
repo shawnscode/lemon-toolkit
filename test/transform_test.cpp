@@ -22,7 +22,7 @@ TEST_CASE_METHOD(TransformFixture, "TestConstructor")
     Transform* t3 = _world.add_component<Transform>(e3, Vector3f{40.f, 40.f}, Vector3f{2.0f, 2.0f});
 
     Entity e4 = _world.spawn();
-    Transform* t4 = _world.add_component<Transform>(e4, Vector3f{50.f, 50.f}, Vector3f{2.0f, 2.0f}, Vector3f{1.f, 2.f, 3.f});
+    Transform* t4 = _world.add_component<Transform>(e4, Vector3f{50.f, 50.f}, Vector3f{2.0f, 2.0f}, Quaternion());
 
     REQUIRE( equals(t2->get_position(), {20.f, 20.f}) );
     REQUIRE( equals(t1->get_scale(), t2->get_scale()) );
@@ -49,8 +49,10 @@ TEST_CASE_METHOD(TransformFixture, "TestOpsWithoutHierachy")
     REQUIRE( t1->get_scale() == Vector3f({3.f, 3.f}) );
     REQUIRE( t1->get_scale() == t1->get_scale(TransformSpace::WORLD) );
 
-    t1->set_rotation({1.f, 2.f});
-    REQUIRE( t1->get_rotation() == Vector3f({1.f, 2.f}));
+    t1->set_rotation({60.f, 45.f});
+    auto rotation = to_euler_angles(t1->get_rotation());
+    REQUIRE( rotation[0] == Approx(60.f) );
+    REQUIRE( rotation[1] == Approx(45.f) );
     REQUIRE( t1->get_rotation() == t1->get_rotation(TransformSpace::WORLD) );
 }
 

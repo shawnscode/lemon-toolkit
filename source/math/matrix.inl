@@ -51,6 +51,12 @@ INLINE Vector<C, T>& Matrix<R, C, T>::operator[] (size_t index)
 }
 
 template<size_t R, size_t C, typename T>
+INLINE Matrix<R, C, T>::operator Matrix<R+1, C+1, T> () const
+{
+    return hlift(*this);
+}
+
+template<size_t R, size_t C, typename T>
 INLINE bool Matrix<R, C, T>::operator == (const Matrix<R, C, T>& rh) const
 {
     return _values == rh._values;
@@ -274,9 +280,9 @@ Matrix<R+1, C+1, T> hlift(const Matrix<R, C, T>& M)
 }
 
 template<size_t N, typename T>
-Matrix<N+1, N+1, T> scale(const Vector<N, T>& V)
+Matrix<N, N, T> scale(const Vector<N, T>& V)
 {
-    Matrix<N+1, N+1, T> result;
+    Matrix<N, N, T> result;
     result.identity();
     for( auto i = 0; i < N; i++ )
         result[i][i] = V[i];
@@ -307,7 +313,7 @@ Matrix3<T> rotation(T degree)
 }
 
 template<typename T>
-Matrix4<T> rotation(T degree, const Vector3<T>& v)
+Matrix3<T> rotation(T degree, const Vector3<T>& v)
 {
     T cos = std::cos(to_radians(degree));
     T sin = std::sin(to_radians(degree));
@@ -315,7 +321,7 @@ Matrix4<T> rotation(T degree, const Vector3<T>& v)
     const Vector3<T> axis(normalize(v));
     const Vector3<T> temp((T(1) - cos) * axis);
 
-    Matrix4<T> result;
+    Matrix3<T> result;
     result.identity();
     result[0][0] = cos + temp[0] * axis[0];
     result[0][1] = temp[0] * axis[1] + sin * axis[2];

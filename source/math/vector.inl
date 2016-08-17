@@ -288,6 +288,18 @@ Vector<N, T> min (const Vector<N, T>& v0, const Vector<N, T>& v1)
 }
 
 template<size_t N, typename T>
+T length (const Vector<N, T>& lhs)
+{
+    return std::sqrt(dot(lhs, lhs));
+}
+
+template<size_t N, typename T>
+T length_square (const Vector<N, T>& lhs)
+{
+    return dot(lhs, lhs);
+}
+
+template<size_t N, typename T>
 Vector<N, T> normalize (const Vector<N, T>& v)
 {
     Vector<N, T> result = v;

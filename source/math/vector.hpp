@@ -122,6 +122,12 @@ template<size_t N, typename T>
 Vector<N, T> min(const Vector<N, T>&, const Vector<N, T>&);
 
 template<size_t N, typename T>
+T length (const Vector<N, T>&);
+
+template<size_t N, typename T>
+T length_square (const Vector<N, T>&);
+
+template<size_t N, typename T>
 Vector<N, T> normalize (const Vector<N, T>&);
 
 template<size_t N, typename T>

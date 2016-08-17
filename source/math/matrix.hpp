@@ -18,6 +18,7 @@ template<size_t R, size_t C, typename T> struct Matrix
 
     const Vector<C, T>& operator[](size_t) const;
     Vector<C, T>& operator[](size_t);
+    operator Matrix<R+1, C+1, T> () const;
 
     bool operator == (const Matrix&) const;
     bool operator != (const Matrix&) const;
@@ -114,7 +115,7 @@ Vector<N-1, T> operator * (const Matrix<N, N, T>& M, const Vector<N-1, T>& V);
 
 /// builds a scale 4 * 4 matrix created from scalars.
 template<size_t N, typename T>
-Matrix<N+1, N+1, T> scale(const Vector<N, T>&);
+Matrix<N, N, T> scale(const Vector<N, T>&);
 
 // builds a rotation 4 * 4 matrix created from an angle.
 template<typename T>
@@ -122,7 +123,7 @@ Matrix3<T> rotation(T degree);
 
 // builds a rotation 4 * 4 matrix created from an axis vector and an angle.
 template<typename T>
-Matrix4<T> rotation(T degree, const Vector3<T>&);
+Matrix3<T> rotation(T degree, const Vector3<T>&);
 
 // builds a translation 4 * 4 matrix created from a vector.
 template<size_t N, typename T>

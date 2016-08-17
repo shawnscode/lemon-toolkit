@@ -18,7 +18,7 @@ INLINE TransformPose& operator *= (TransformPose& lhs, const TransformPose& rhs)
 {
     lhs.position += rhs.position;
     lhs.scale    *= rhs.scale;
-    lhs.rotation += rhs.rotation;
+    lhs.rotation *= rhs.rotation;
     return lhs;
 }
 
@@ -26,7 +26,7 @@ INLINE TransformPose& operator /= (TransformPose& lhs, const TransformPose& rhs)
 {
     lhs.position -= rhs.position;
     lhs.scale    /= rhs.scale;
-    lhs.rotation -= rhs.rotation;
+    lhs.rotation /= rhs.rotation;
     return lhs;
 }
 
@@ -186,9 +186,9 @@ INLINE void Transform::scale(const Vector3f& scaler)
     set_scale(get_scale() * scaler);
 }
 
-INLINE void Transform::rotate(const Vector3f& rotation)
+INLINE void Transform::rotate(const Quaternion& rotation)
 {
-    set_rotation(get_rotation() + rotation);
+    set_rotation(get_rotation() * rotation);
 }
 
 INLINE void Transform::translate(const Vector3f& translation)
@@ -228,16 +228,15 @@ INLINE Matrix4f Transform::to_matrix(TransformSpace space) const
     if( TransformSpace::WORLD == space )
     {
         auto matrix = translation(_world_pose.position);
-        // matrix *= rotation(_world_pose.rotation);
-        // matrix *= scale(_world_pose.scale);
+        matrix *= (Matrix4f)to_rotation_matrix(_world_pose.rotation);
+        matrix *= (Matrix4f)math::scale(_world_pose.scale);
         return matrix;
     }
     else
     {
         auto matrix = translation(_pose.position);
-        // matrix *= hlift(rotation(_pose.rotation));
-        // matrix *= scale(_world_pose.scale);
-        // matrix *= hlift(scale(_pose.scale));
+        matrix *= (Matrix4f)to_rotation_matrix(_pose.rotation);
+        matrix *= (Matrix4f)math::scale(_pose.scale);
         return matrix;
     }
 }

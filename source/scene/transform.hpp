@@ -5,6 +5,7 @@
 
 #include <core/entity.hpp>
 #include <math/matrix.hpp>
+#include <math/quaternion.hpp>
 
 NS_FLOW2D_BEGIN
 
@@ -21,12 +22,12 @@ struct TransformPose
 {
     Vector3f position;
     Vector3f scale;
-    Vector3f rotation;
+    Quaternion rotation;
 
     TransformPose(
         const Vector3f& position = {0.f, 0.f, 0.f},
         const Vector3f& scale = {1.f, 1.f, 1.f},
-        const Vector3f& rotation = {0.f, 0.f, 0.f})
+        const Quaternion& quaternion = Quaternion(1.0f, 0.f, 0.f, 0.f))
     : position(position), scale(scale), rotation(rotation)
     {}
 };
@@ -38,7 +39,6 @@ TransformPose& operator *= (TransformPose&, const TransformPose&);
 TransformPose& operator /= (TransformPose&, const TransformPose&);
 
 // transform component is used to allow entities to be coordinated in the world
-// 
 struct Transform : public core::Component
 {
 protected:
@@ -101,7 +101,7 @@ public:
     Transform(
         const Vector3f& position,
         const Vector3f& scale = {1.f, 1.f, 1.f},
-        const Vector3f& rotation = {0.f, 0.f, 0.f})
+        const Quaternion& rotation = Quaternion(1.f, 0.f, 0.f, 0.f))
     : _pose(position, scale, rotation), _world_pose(position, scale, rotation)
     {}
 
@@ -114,14 +114,15 @@ public:
     void set_scale(const Vector3f&, TransformSpace space = TransformSpace::LOCAL);
     void set_position(const Vector3f&, TransformSpace space = TransformSpace::LOCAL);
     void set_rotation(const Vector3f&, TransformSpace space = TransformSpace::LOCAL);
+    void set_rotation(const Quaternion&, TransformSpace space = TransformSpace::LOCAL);
 
     void scale(const Vector3f&);
-    void rotate(const Vector3f&);
+    void rotate(const Quaternion&);
     void translate(const Vector3f&);
 
     Vector3f get_scale(TransformSpace space = TransformSpace::LOCAL) const;
     Vector3f get_position(TransformSpace space = TransformSpace::LOCAL) const;
-    Vector3f get_rotation(TransformSpace space = TransformSpace::LOCAL) const;
+    Quaternion get_rotation(TransformSpace space = TransformSpace::LOCAL) const;
 
     // transforms the position from local space to world space
     Vector3f transform_point(const Vector3f&) const;
