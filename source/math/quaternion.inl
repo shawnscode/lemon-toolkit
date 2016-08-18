@@ -72,15 +72,6 @@ INLINE Quaternion operator * (const Quaternion& lhs, quat_value_type v)
     return Quaternion(lhs[0]*v, lhs[1]*v, lhs[2]*v, lhs[3]*v);
 }
 
-INLINE Vector3T operator * (const Quaternion& lhs, const Vector3T& rhs)
-{
-    Vector3T qvec = {rhs[1], rhs[2], rhs[3]};
-    Vector3T cross1 = cross(qvec, rhs);
-    Vector3T cross2 = cross(qvec, cross1);
-
-    return rhs + (quat_value_type)2.0 * (cross1 * rhs[0] + cross2);
-}
-
 INLINE Quaternion& operator += (Quaternion& lhs, const Quaternion& rhs)
 {
     lhs = lhs + rhs;
@@ -109,6 +100,20 @@ INLINE Quaternion& operator *= (Quaternion& lhs, quat_value_type rhs)
 {
     lhs = lhs * rhs;
     return lhs;
+}
+
+INLINE Vector3T operator * (const Vector3T& lhs, const Quaternion& rhs)
+{
+    Vector3T qvec = {rhs[1], rhs[2], rhs[3]};
+    Vector3T cross1 = cross(qvec, lhs);
+    Vector3T cross2 = cross(qvec, cross1);
+
+    return lhs + (quat_value_type)2.0 * (cross1 * rhs[0] + cross2);
+}
+
+INLINE Vector3T operator / (const Vector3T& lhs, const Quaternion& rhs)
+{
+    return lhs * inverse(rhs);
 }
 
 INLINE bool equals(const Quaternion& lhs, const Quaternion& rhs, quat_value_type epsilon)
@@ -156,7 +161,7 @@ INLINE Quaternion inverse(const Quaternion& rhs)
     quat_value_type slen = length_square(rhs);
     if( slen == (quat_value_type)1 )
         return conjugate(rhs);
-    else if( slen > epsilon<quat_value_type>() )
+    else if( slen >= epsilon<quat_value_type>() )
         return conjugate(rhs) * ((quat_value_type)1/slen);
     else
         return Quaternion();

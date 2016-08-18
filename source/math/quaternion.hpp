@@ -47,13 +47,15 @@ Quaternion operator - (const Quaternion&, const Quaternion&);
 Quaternion operator * (const Quaternion&, const Quaternion&);
 Quaternion operator / (const Quaternion&, const Quaternion&);
 Quaternion operator * (const Quaternion&, quat_value_type);
-Vector3T   operator * (const Quaternion&, const Vector3T&);
 
 Quaternion& operator += (Quaternion&, const Quaternion&);
 Quaternion& operator -= (Quaternion&, const Quaternion&);
 Quaternion& operator *= (Quaternion&, const Quaternion&);
 Quaternion& operator /= (Quaternion&, const Quaternion&);
 Quaternion& operator *= (Quaternion&, quat_value_type);
+
+Vector3T   operator * (const Vector3T&, const Quaternion&);
+Vector3T   operator / (const Vector3T&, const Quaternion&);
 
 // comparison with epslion
 //bool equals(const Quaternion&, const Quaternion&, quat_value_type epsilon = epsilon<quat_value_type>());

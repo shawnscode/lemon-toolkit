@@ -27,7 +27,7 @@ struct TransformPose
     TransformPose(
         const Vector3f& position = {0.f, 0.f, 0.f},
         const Vector3f& scale = {1.f, 1.f, 1.f},
-        const Quaternion& quaternion = Quaternion(1.0f, 0.f, 0.f, 0.f))
+        const Quaternion& rotation = Quaternion(1.0f, 0.f, 0.f, 0.f))
     : position(position), scale(scale), rotation(rotation)
     {}
 };
@@ -129,7 +129,7 @@ public:
     // the opposite of Transform::transform_point
     Vector3f inverse_transform_point(const Vector3f&) const;
     // transforms the vector from local space to world space,
-    // this operation is not affected by position of the transform, but is is affected by scale.
+    // this operation is not affected by position of the transform, but is is affected by scale and rotation.
     Vector3f transform_vector(const Vector3f&) const;
     // ths opposite of Transform::transform_vector
     Vector3f inverse_transform_vector(const Vector3f&) const;
