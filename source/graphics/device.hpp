@@ -196,6 +196,9 @@ struct Device : public core::Subsystem
     unsigned get_bound_index_buffer() const { return _bound_ibo; }
     unsigned get_bound_shader() const { return _bound_program; }
 
+    math::Vector2i get_window_position() const { return _position; }
+    math::Vector2i get_window_size() const { return _size; }
+
 protected:
     // window options and status
     int             _multisamples = 0;

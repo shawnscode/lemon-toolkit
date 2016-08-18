@@ -3,7 +3,6 @@
 
 #include <graphics/device.hpp>
 #include <graphics/opengl.hpp>
-#include <core/application.hpp>
 
 NS_FLOW2D_GFX_BEGIN
 
@@ -137,8 +136,6 @@ void GraphicsObject::release()
 
 bool Device::initialize()
 {
-    ENSURE( _context.has_subsystems<Application>() );
-
     _device = new (std::nothrow) DeviceContext;
     if( !_device )
     {

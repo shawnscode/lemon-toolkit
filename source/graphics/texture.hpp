@@ -104,6 +104,9 @@ protected:
 
 struct Texture2D : public Texture
 {
+    using ptr = std::shared_ptr<Texture2D>;
+    using weak_ptr = std::weak_ptr<Texture2D>;
+
     Texture2D(Device& device);
 
     bool restore(TextureFormat, res::Image::ptr);
