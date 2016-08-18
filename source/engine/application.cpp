@@ -12,13 +12,15 @@ Application::Application() : _exitcode(0)
 int Application::run()
 {
     setup();
-    if( _exitcode ) return _exitcode;
+    if( _exitcode != 0 )
+        return _exitcode;
 
     add_subsystem<Engine>();
     auto& engine = get_subsystem<Engine>();
 
     start();
-    if( _exitcode ) return _exitcode;
+    if( _exitcode != 0 )
+        return _exitcode;
 
     while( engine.is_running() )
         engine.run_one_frame();

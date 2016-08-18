@@ -45,21 +45,21 @@ void Engine::dispose()
 
 void Engine::run_one_frame()
 {
-    emit<EvtBeginFrame>();
-
-    auto& input = get_subsystem<Input>();
+    auto& device = get_subsystem<graphics::Device>();
 
     process_message();
+    if( !_running )
+        return;
 
     // if pause when minimized-mode is in use, stop update
-    if( !_pause_minimized || !input.is_minimized() )
+    if( !_pause_minimized || !device.is_minimized() )
         update(_timestep);
 
     render();
 
     // perform waiting loop if maximum fps set
     auto max_fps = _max_fps;
-    if( !input.has_focus() )
+    if( device.get_window_flags() & SDL_WINDOW_INPUT_FOCUS )
         max_fps = std::min(_max_inactive_fps, max_fps);
 
     if( max_fps > 0 )
@@ -103,8 +103,6 @@ void Engine::run_one_frame()
     }
     else
         _timestep = _previous_timesteps.back();
-
-    emit<EvtEndFrame>();
 }
 
 void Engine::update(duration dt)
@@ -127,18 +125,24 @@ void Engine::render()
 
 void Engine::process_message()
 {
+    auto& input = get_subsystem<Input>();
+    auto& device = get_subsystem<graphics::Device>();
+    input.begin_frame();
+
     SDL_Event event;
     while( SDL_PollEvent( &event ) )
     {
-        switch(event.type)
+        if( event.type == SDL_QUIT )
         {
-            case SDL_QUIT :
-            {
-                _running = false;
-                return;
-            }
+            _running = false;
+            return;
         }
+
+        input.process_message(&event);
+        device.process_message(&event);
     }
+
+    input.end_frame();
 }
 
 void Engine::set_min_fps(unsigned fps)

@@ -156,6 +156,53 @@ void Device::dispose()
     }
 }
 
+unsigned Device::get_window_flags() const
+{
+    return _device->window ? SDL_GetWindowFlags(_device->window) : 0;
+}
+
+void* Device::get_window() const
+{
+    return _device->window;
+}
+
+void Device::process_message(void* data)
+{
+    SDL_Event& event = *static_cast<SDL_Event*>(data);
+    if( event.type != SDL_WINDOWEVENT )
+        return;
+
+    switch( event.window.event )
+    {
+        case SDL_WINDOWEVENT_MINIMIZED:
+            _minimized = true;
+            break;
+
+        case SDL_WINDOWEVENT_MAXIMIZED:
+        case SDL_WINDOWEVENT_RESTORED:
+#if defined(PLATFORM_IOS) || defined (PLATFORM_ANDROID)
+            // on iOS we never lose the GL context,
+            // but may have done GPU object changes that could not be applied yet. Apply them now
+            // on Android the old GL context may be lost already,
+            // restore GPU objects to the new GL context
+            graphics_->restore_context();
+#endif
+            _minimized = false;
+            break;
+
+        case SDL_WINDOWEVENT_RESIZED:
+            SDL_GL_GetDrawableSize(_device->window, &_size[0], &_size[1]);
+            break;
+
+        case SDL_WINDOWEVENT_MOVED:
+            SDL_GetWindowPosition(_device->window, &_position[0], &_position[1]);
+            break;
+
+        default:
+            break;
+    }
+}
+
 void Device::set_orientations(Orientation orientation)
 {
     _orientation = orientation;

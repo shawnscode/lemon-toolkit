@@ -40,7 +40,7 @@ struct Engine : public core::Subsystem
     void set_time_smoothing_step(unsigned);
     // set whether to pause update when minimized
     void set_pause_minimized(bool);
-
+    // return if engine is exiting
     bool is_running() const { return _running; }
 
 protected:
@@ -59,9 +59,6 @@ protected:
     // exiting flag
     bool _running;
 };
-
-// frame begin event
-struct EvtBeginFrame {};
 
 // application-wide logic update event
 struct EvtUpdate
@@ -93,8 +90,5 @@ struct EvtPostRenderUpdate
 
 // frame render event
 struct EvtRender {};
-
-// frame end event
-struct EvtEndFrame {};
 
 NS_FLOW2D_END

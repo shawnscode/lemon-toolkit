@@ -128,6 +128,9 @@ struct Device : public core::Subsystem
     bool initialize() override;
     void dispose() override;
 
+    // handle window messages, called from engine
+    void process_message(void*);
+
     // restore OpenGL context and reinitialize state, requires an open window. returns true if successful
     bool restore_context();
     // release OpenGL context and handle the device lost of GPU resources
@@ -196,8 +199,15 @@ struct Device : public core::Subsystem
     unsigned get_bound_index_buffer() const { return _bound_ibo; }
     unsigned get_bound_shader() const { return _bound_program; }
 
+    // return window position/size
     math::Vector2i get_window_position() const { return _position; }
     math::Vector2i get_window_size() const { return _size; }
+    // return window flags
+    unsigned get_window_flags() const;
+    // return window internal representation
+    void* get_window() const;
+    // return whether application window is minimized
+    bool is_minimized() const { return _minimized; }
 
 protected:
     // window options and status
@@ -207,6 +217,7 @@ protected:
     WindowOption    _options = WindowOption::NONE;
     DeviceContext*  _device = nullptr;
     int32_t         _system_frame_object = 0;
+    bool            _minimized = false;
 
     // render states
     unsigned        _bound_fbo = 0;
