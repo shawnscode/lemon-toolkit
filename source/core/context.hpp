@@ -26,10 +26,18 @@ struct Subsystem
     template<typename S> const S& get_subsystem() const;
     // check if we have specified subsystems
     template<typename ... Args> bool has_subsystems() const;
+    // emit event with default dispatcher
+    template<typename E> void emit(const E&);
+    template<typename E, typename ... Args> void emit(Args && ... args);
+    // subscribe/unsubscribe this to receive events of type E
+    template<typename T, typename E> void subscribe();
+    template<typename T, typename E> void unsubscribe();
 
+    // return default entity manager
     EntityManager& get_world();
-    EventManager&  get_dispatcher();
     const EntityManager& get_world() const;
+    // return default event dispatcher
+    EventManager&  get_dispatcher();
     const EventManager&  get_dispatcher() const;
 
 protected:
@@ -154,6 +162,32 @@ template<typename S>
 INLINE const S& Subsystem::get_subsystem() const
 {
     return _context.get_subsystem<S>();
+}
+
+template<typename E>
+INLINE void Subsystem::emit(const E& evt)
+{
+    get_dispatcher().emit<E>(evt);
+}
+
+template<typename E, typename ... Args>
+INLINE void Subsystem::emit(Args && ... args)
+{
+    get_dispatcher().emit<E>(std::forward<Args>(args)...);
+}
+
+template<typename T, typename E>
+INLINE void Subsystem::subscribe()
+{
+    ENSURE( dynamic_cast<T*>(this) != nullptr );
+    get_dispatcher().subscribe<E>(*static_cast<T*>(this));
+}
+
+template<typename T, typename E>
+INLINE void Subsystem::unsubscribe()
+{
+    ENSURE( dynamic_cast<T*>(this) != nullptr );
+    get_dispatcher().unsubscribe<E>(*static_cast<T*>(this));
 }
 
 template<typename ... Args>

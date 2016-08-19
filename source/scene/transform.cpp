@@ -140,47 +140,32 @@ Quaternion Transform::get_rotation(TransformSpace space) const
 
 Vector3f Transform::transform_point(const Vector3f& point) const
 {
-    return point + _world_pose.position;
+    return ((point * _world_pose.rotation) * _world_pose.scale) + _world_pose.position;
 }
 
 Vector3f Transform::inverse_transform_point(const Vector3f& point) const
 {
-    return point - _world_pose.position;
+    return ((point - _world_pose.position) / _world_pose.scale) / _world_pose.rotation;
 }
 
 Vector3f Transform::transform_vector(const Vector3f& v) const
 {
-    // auto sn = std::sin(_world_pose.rotation);
-    // auto cs = std::cos(_world_pose.rotation);
-    return v;
-    // return Vector3f { v[0]*cs - v[1]*sn, v[0]*sn + v[1]*cs } * _world_pose.scale;
+    return (v * _world_pose.rotation) * _world_pose.scale;
 }
 
 Vector3f Transform::inverse_transform_vector(const Vector3f& v) const
 {
-    // auto sn = std::sin(-_world_pose.rotation);
-    // auto cs = std::cos(-_world_pose.rotation);
-
-    // return Vector3f { v[0]*cs - v[1]*sn, v[0]*sn + v[1]*cs } / _world_pose.scale;
-    return v;
+    return (v / _world_pose.scale) / _world_pose.rotation;
 }
 
 Vector3f Transform::transform_direction(const Vector3f& d) const
 {
-    // auto sn = std::sin(_world_pose.rotation);
-    // auto cs = std::cos(_world_pose.rotation);
-
-    // return Vector3f { d[0]*cs - d[1]*sn, d[0]*sn + d[1]*cs };
-    return d;
+    return d * _world_pose.rotation;
 }
 
 Vector3f Transform::inverse_transform_direction(const Vector3f& d) const
 {
-    // auto sn = std::sin(-_world_pose.rotation);
-    // auto cs = std::cos(-_world_pose.rotation);
-
-    // return Vector3f { d[0]*cs - d[1]*sn, d[0]*sn + d[1]*cs };
-    return d;
+    return d / _world_pose.rotation;
 }
 
 void Transform::append_child(Transform& transform, bool keep_world_pose)

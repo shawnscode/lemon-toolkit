@@ -13,6 +13,9 @@ NS_FLOW2D_GFX_BEGIN
 
 struct Shader : public GraphicsObject
 {
+    using ptr = std::shared_ptr<Shader>;
+    using weak_ptr = std::weak_ptr<Shader>;
+
     Shader(Device& device) : GraphicsObject(device) {}
     virtual ~Shader() { release(); }
 

@@ -28,6 +28,53 @@ TEST_CASE_METHOD(TransformFixture, "TestConstructor")
     REQUIRE( equals(t1->get_scale(), t2->get_scale()) );
 }
 
+TEST_CASE_METHOD(TransformFixture, "TestTransform")
+{
+    Entity e1 = _world.spawn();
+    Transform* t1 = _world.add_component<Transform>(e1, Vector3f{10.f, 10.f, 0.f});
+    REQUIRE( t1->transform_point({0.f, 5.f, 0.f}) == (Vector3f{10.f, 15.f, 0.f}) );
+    REQUIRE( t1->inverse_transform_point({0.f, 5.f, 0.f}) == (Vector3f{-10.f, -5.f, 0.f}) );
+    REQUIRE( t1->transform_vector({0.f, 5.f, 0.f}) == (Vector3f{0.f, 5.f, 0.f}) );
+    REQUIRE( t1->inverse_transform_vector({0.f, 5.f, 0.f}) == (Vector3f{0.f, 5.f, 0.f}) );
+    REQUIRE( t1->transform_direction({0.f, 5.f, 0.f}) == (Vector3f{0.f, 5.f, 0.f}) );
+    REQUIRE( t1->inverse_transform_direction({0.f, 5.f, 0.f}) == (Vector3f{0.f, 5.f, 0.f}) );
+
+    t1->set_position({0.f, 0.f, 0.f});
+    t1->set_scale({2.0f, 0.5f, 1.0f});
+    REQUIRE( t1->transform_point({10.f, 10.f, 10.f}) == (Vector3f{20.f, 5.f, 10.f}) );
+    REQUIRE( t1->inverse_transform_point({10.f, 10.f, 10.f}) == (Vector3f{5.f, 20.f, 10.f}) );
+    REQUIRE( t1->transform_vector({10.f, 10.f, 10.f}) == (Vector3f{20.f, 5.f, 10.f}) );
+    REQUIRE( t1->inverse_transform_vector({10.f, 10.f, 10.f}) == (Vector3f{5.f, 20.f, 10.f}) );
+    REQUIRE( t1->transform_direction({10.f, 10.f, 10.f}) == (Vector3f{10.f, 10.f, 10.f}) );
+    REQUIRE( t1->inverse_transform_direction({10.f, 10.f, 10.f}) == (Vector3f{10.f, 10.f, 10.f}) );
+
+    t1->set_position({10.f, 5.f, 0.f});
+    REQUIRE( t1->transform_point({10.f, 10.f, 10.f}) == (Vector3f{30.f, 10.f, 10.f}) );
+    REQUIRE( t1->inverse_transform_point({10.f, 10.f, 10.f}) == (Vector3f{0.f, 10.f, 10.f}) );
+    REQUIRE( t1->transform_vector({10.f, 10.f, 10.f}) == (Vector3f{20.f, 5.f, 10.f}) );
+    REQUIRE( t1->inverse_transform_vector({10.f, 10.f, 10.f}) == (Vector3f{5.f, 20.f, 10.f}) );
+    REQUIRE( t1->transform_direction({10.f, 10.f, 10.f}) == (Vector3f{10.f, 10.f, 10.f}) );
+    REQUIRE( t1->inverse_transform_direction({10.f, 10.f, 10.f}) == (Vector3f{10.f, 10.f, 10.f}) );
+
+    t1->set_position({0.f, 0.f, 0.f});
+    t1->set_scale({1.f, 1.f, 1.f});
+    t1->set_rotation(from_euler_angles({0.f, 90.f, 0.f}));
+    REQUIRE( equals(t1->transform_point({0.f, 0.f, 1.f}), {1.f, 0.f, 0.f}) );
+    REQUIRE( equals(t1->inverse_transform_point({1.f, 0.f, 0.f}), {0.f, 0.f, 1.f}, 1e-5f) );
+
+    t1->set_scale({2.f, 1.f, 1.f});
+    REQUIRE( equals(t1->transform_point({0.f, 0.f, 1.f}), {2.f, 0.f, 0.f}, 1e-5f) );
+    REQUIRE( equals(t1->inverse_transform_point({1.f, 0.f, 0.f}), {0.f, 0.f, 0.5f}, 1e-5f) );
+    REQUIRE( equals(t1->transform_direction({0.f, 0.f, 1.f}), {1.f, 0.f, 0.f}, 1e-5f));
+    REQUIRE( equals(t1->inverse_transform_direction({1.f, 0.f, 0.f}), {0.f, 0.f, 1.f}, 1e-5f));
+
+    t1->set_position({10.f, 0.f, 0.f});
+    REQUIRE( equals(t1->transform_point({0.f, 0.f, 1.f}), {12.f, 0.f, 0.f}, 1e-5f) );
+    REQUIRE( equals(t1->inverse_transform_point({1.f, 0.f, 0.f}), {0.f, 0.f, -4.5f}, 1e-5f) );
+    REQUIRE( equals(t1->transform_direction({0.f, 0.f, 1.f}), {1.f, 0.f, 0.f}, 1e-5f));
+    REQUIRE( equals(t1->inverse_transform_direction({1.f, 0.f, 0.f}), {0.f, 0.f, 1.f}, 1e-5f));
+}
+
 TEST_CASE_METHOD(TransformFixture, "TestOpsWithoutHierachy")
 {
     Entity e1 = _world.spawn();

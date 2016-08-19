@@ -66,6 +66,14 @@ struct EnableBitMaskOperators
 
 NS_FLOW2D_CORE_END
 
+struct EnumerationHash
+{
+    template <typename T> std::size_t operator()(T t) const
+    {
+        return static_cast<std::size_t>(t);
+    }
+};
+
 template<typename Enum> using UReturns = typename std::enable_if<
     std::is_enum<Enum>::value,
     typename std::underlying_type<Enum>::type>::type;
