@@ -301,7 +301,7 @@ template<typename S> void Context::remove_subsystem()
     auto found = _subsystems.find(id);
     if( found != _subsystems.end() )
     {
-        found.second->dispose();
+        found->second->dispose();
         delete found->second;
         _subsystems.erase(found);
     }

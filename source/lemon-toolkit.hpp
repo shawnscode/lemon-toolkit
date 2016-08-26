@@ -5,6 +5,7 @@
 #include <core/event.hpp>
 #include <core/memory.hpp>
 #include <core/typeinfo.hpp>
+#include <core/scheduler.hpp>
 
 #include <math/vector.hpp>
 #include <math/matrix.hpp>

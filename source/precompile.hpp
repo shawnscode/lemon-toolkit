@@ -12,6 +12,7 @@
 #include <vector>
 #include <array>
 #include <list>
+#include <queue>
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
@@ -22,4 +23,3 @@
 #include <algorithm>
 #include <sstream>
 #include <fstream>
-#include <future>

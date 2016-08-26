@@ -6,6 +6,7 @@
 #include <graphics/device.hpp>
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
+#include <core/scheduler.hpp>
 
 #include <SDL2/SDL.h>
 
@@ -24,6 +25,7 @@ bool Engine::initialize()
     _context.add_subsystem<res::ArchiveCollection>();
     _context.add_subsystem<res::ResourceCache>();
     _context.add_subsystem<Input>();
+    _context.add_subsystem<core::TaskScheduler>(4);
 
     _timestep.zero();
     _last_frame_timepoint = clock::now();
@@ -39,6 +41,7 @@ bool Engine::initialize()
 
 void Engine::dispose()
 {
+    _context.remove_subsystem<core::TaskScheduler>();
     // shutdown SDL now
     SDL_Quit();
 }
