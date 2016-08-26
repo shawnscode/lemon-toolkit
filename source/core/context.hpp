@@ -124,6 +124,9 @@ protected:
     std::unordered_map<TypeInfo::index_type, Subsystem*> _subsystems;
 };
 
+template<typename T> struct EvtAddSubsystem {};
+template<typename T> struct EvtRemoveSubsystem {};
+
 ///
 
 INLINE EntityManager& Subsystem::get_world()
@@ -288,6 +291,8 @@ template<typename S, typename ... Args> void Context::add_subsystem(Args&& ... a
     auto sys = new (std::nothrow) S(*this, std::forward<Args>(args) ...);
     ASSERT( sys->initialize(), "failed to initialize subsystem: %s.", S::name );
     _subsystems.insert(std::make_pair(id, sys));
+
+    _dispatcher.emit<EvtAddSubsystem<S>>();
 }
 
 template<typename S> void Context::remove_subsystem()
@@ -300,6 +305,8 @@ template<typename S> void Context::remove_subsystem()
         delete found->second;
         _subsystems.erase(found);
     }
+
+    _dispatcher.emit<EvtRemoveSubsystem<S>>();
 }
 
 template<typename S> bool Context::has_subsystems() const

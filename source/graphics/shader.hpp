@@ -20,10 +20,10 @@ struct Shader : public GraphicsObject
     virtual ~Shader() { release(); }
 
     bool restore(const char* vs, const char* ps);
-    bool restore();
-    void release();
+    bool restore() override;
+    void release() override;
 
-    // bind this vertex buffer to graphic device
+    // bind this shader and corresponding states to graphic device
     void use();
 
     // set shader's uniform by name

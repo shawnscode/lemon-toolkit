@@ -36,6 +36,11 @@ using Rect2  = Rect<2, T>;
 using Rect2f = Rect<2, float>;
 using Rect2i = Rect<2, int>;
 
+template<typename T>
+using Rect3  = Rect<3, T>;
+using Rect3f = Rect<3, float>;
+using Rect3i = Rect<3, int>;
+
 // string serialization with stream
 template<size_t N, typename T>
 std::ostream& operator<< (std::ostream&, const Rect<N, T>&);

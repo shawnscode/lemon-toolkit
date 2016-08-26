@@ -190,7 +190,7 @@ Texture2D::Texture2D(Device& device)
 : Texture(device, GL_TEXTURE_2D)
 {}
 
-bool Texture2D::restore(TextureFormat format, res::Image::ptr image)
+bool Texture2D::restore(res::Image::ptr image, TextureFormat format)
 {
     return Texture::restore(
         image->get_data(),

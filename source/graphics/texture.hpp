@@ -108,8 +108,9 @@ struct Texture2D : public Texture
     using weak_ptr = std::weak_ptr<Texture2D>;
 
     Texture2D(Device& device);
+    bool restore(res::Image::ptr, TextureFormat);
 
-    bool restore(TextureFormat, res::Image::ptr);
+protected:
     bool set_texture_data(const void*) override;
 };
 

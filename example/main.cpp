@@ -42,7 +42,7 @@ struct Example : public Application
         ////
         image = cache.get<res::Image>("view.jpeg");
         texture = device.spawn<Texture2D>();
-        texture->restore(TextureFormat::RGB, image);
+        texture->restore(image, TextureFormat::RGB);
         texture->set_mipmap(true);
         texture->update_parameters();
 
@@ -66,7 +66,7 @@ struct Example : public Application
         shader->set_vertex_attribute("position", vb, 0);
         shader->set_vertex_attribute("uv", vb, 1);
         shader->set_texture("sampler", texture);
-        
+
         ///
         subscribe<Example, EvtUpdate>();
         subscribe<Example, EvtRender>();

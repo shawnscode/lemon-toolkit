@@ -12,9 +12,11 @@ NS_FLOW2D_GFX_BEGIN
 #if defined(PLATFORM_ANDROID)
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#define GL_ES_VERSION_2_0
 #elif defined(PLATFORM_IOS)
 #include <OpenGLES/ES2/gl.h>
 #include <OpenGLES/ES2/glext.h>
+#define GL_ES_VERSION_2_0
 #else
 #include <GL/glew.h>
 #endif
