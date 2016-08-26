@@ -6,7 +6,7 @@
 #include <resource/path.hpp>
 #include <core/context.hpp>
 
-NS_FLOW2D_FS_BEGIN
+NS_LEMON_FILESYSTEM_BEGIN
 
 enum class FileMode : uint16_t
 {
@@ -71,6 +71,6 @@ protected:
 // construct and open a filesystem directory view
 Directory scan(const Path&, ScanMode mode = ScanMode::FILES);
 
-NS_FLOW2D_FS_END
+NS_LEMON_FILESYSTEM_END
 ENABLE_BITMASK_OPERATORS(lemon::fs::FileMode);
 ENABLE_BITMASK_OPERATORS(lemon::fs::ScanMode);

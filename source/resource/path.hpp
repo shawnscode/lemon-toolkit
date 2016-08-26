@@ -5,7 +5,7 @@
 
 #include <resource/defines.hpp>
 
-NS_FLOW2D_FS_BEGIN
+NS_LEMON_FILESYSTEM_BEGIN
 
 // operation system independent path.
 struct Path
@@ -89,4 +89,4 @@ protected:
 std::ostream& operator << (std::ostream&, const Path&);
 std::string to_string(const Path&);
 
-NS_FLOW2D_FS_END
+NS_LEMON_FILESYSTEM_END

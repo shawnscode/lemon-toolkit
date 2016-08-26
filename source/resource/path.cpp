@@ -3,7 +3,7 @@
 
 #include <resource/path.hpp>
 
-NS_FLOW2D_FS_BEGIN
+NS_LEMON_FILESYSTEM_BEGIN
 
 std::ostream& operator << (std::ostream& os, const Path& path)
 {
@@ -310,4 +310,4 @@ Path Path::get_root() const
     return _pathname.substr(0, found+1);
 }
 
-NS_FLOW2D_FS_END
+NS_LEMON_FILESYSTEM_END

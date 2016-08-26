@@ -267,14 +267,14 @@ bool Device::spawn_window(int width, int height, int multisample, WindowOption o
     if( to_value(options & WindowOption::RESIZABLE) ) flags |= SDL_WINDOW_RESIZABLE;
     if( to_value(options & WindowOption::HIGHDPI) ) flags |= SDL_WINDOW_ALLOW_HIGHDPI;
 
-    _device->window = SDL_CreateWindow("FLOW2D", position[0], position[1], width, height, flags);
+    _device->window = SDL_CreateWindow("LEMON-TOOLKIT", position[0], position[1], width, height, flags);
     // if failed width multisampling, retry first without it
     if( !_device->window && multisample > 1 )
     {
         multisample = 1;
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
-        _device->window = SDL_CreateWindow("FLOW2D", position[0], position[1], width, height, flags);
+        _device->window = SDL_CreateWindow("LEMON-TOOLKIT", position[0], position[1], width, height, flags);
     }
 
     if( !_device->window )

@@ -8,8 +8,8 @@
 #define NS_LEMON_RESOURCE_BEGIN namespace lemon { namespace res {
 #define NS_LEMON_RESOURCE_END } }
 
-#define NS_FLOW2D_FS_BEGIN namespace lemon { namespace fs {
-#define NS_FLOW2D_FS_END }}
+#define NS_LEMON_FILESYSTEM_BEGIN namespace lemon { namespace fs {
+#define NS_LEMON_FILESYSTEM_END }}
 
 NS_LEMON_RESOURCE_BEGIN
 
@@ -21,11 +21,11 @@ struct ArchiveCollection;
 
 NS_LEMON_RESOURCE_END
 
-NS_FLOW2D_FS_BEGIN
+NS_LEMON_FILESYSTEM_BEGIN
 
 const static unsigned kMaxPath = 256;
 struct Path;
 struct File;
 struct Filesystem;
 
-NS_FLOW2D_FS_END
+NS_LEMON_FILESYSTEM_END

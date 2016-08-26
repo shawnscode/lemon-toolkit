@@ -12,7 +12,7 @@
 #include <errno.h>
 #endif
 
-NS_FLOW2D_FS_BEGIN
+NS_LEMON_FILESYSTEM_BEGIN
 
 static void replace(std::string& str, const char* from, const char* to)
 {
@@ -360,4 +360,4 @@ bool Directory::scan(const Path& path, ScanMode mode)
     return scan_directory(_nodes, path, mode);
 }
 
-NS_FLOW2D_FS_END
+NS_LEMON_FILESYSTEM_END
