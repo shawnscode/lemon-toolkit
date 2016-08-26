@@ -204,4 +204,4 @@ protected:
 };
 
 NS_FLOW2D_END
-ENABLE_BITMASK_OPERATORS(flow2d::KeyboardQualifier);
+ENABLE_BITMASK_OPERATORS(lemon::KeyboardQualifier);

@@ -1,8 +1,8 @@
 #include <iostream>
-#include <flow2d.hpp>
+#include <lemon-toolkit.hpp>
 
-using namespace flow2d;
-using namespace flow2d::graphics;
+using namespace lemon;
+using namespace lemon::graphics;
 
 const char* vs =
 "#version 330 core\n"

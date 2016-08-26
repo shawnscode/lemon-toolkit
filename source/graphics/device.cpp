@@ -6,7 +6,7 @@
 
 NS_FLOW2D_GFX_BEGIN
 
-using namespace flow2d::core;
+using namespace lemon::core;
 
 static const char* orientation_tostring(Orientation orientation)
 {

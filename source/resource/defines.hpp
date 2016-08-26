@@ -5,10 +5,10 @@
 
 #include <defines.hpp>
 
-#define NS_FLOW2D_RES_BEGIN namespace flow2d { namespace res {
+#define NS_FLOW2D_RES_BEGIN namespace lemon { namespace res {
 #define NS_FLOW2D_RES_END } }
 
-#define NS_FLOW2D_FS_BEGIN namespace flow2d { namespace fs {
+#define NS_FLOW2D_FS_BEGIN namespace lemon { namespace fs {
 #define NS_FLOW2D_FS_END }}
 
 NS_FLOW2D_RES_BEGIN

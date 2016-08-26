@@ -1,8 +1,8 @@
 #include <catch.hpp>
-#include <flow2d.hpp>
+#include <lemon-toolkit.hpp>
 
 using namespace std;
-using namespace flow2d::core;
+using namespace lemon::core;
 
 template<typename T> int size(const T& t)
 {

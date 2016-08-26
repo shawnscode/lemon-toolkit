@@ -237,9 +237,9 @@ NS_FLOW2D_CORE_END
 
 namespace std
 {
-    template<> struct hash<flow2d::core::Entity>
+    template<> struct hash<lemon::core::Entity>
     {
-        std::size_t operator() (const flow2d::core::Entity& entity) const
+        std::size_t operator() (const lemon::core::Entity& entity) const
         {
             return static_cast<std::size_t>((size_t)entity.get_index() ^ (size_t)entity.get_version());
         }

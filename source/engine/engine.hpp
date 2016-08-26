@@ -7,7 +7,7 @@
 
 NS_FLOW2D_BEGIN
 
-// flow2d engine, creates the other subsystems
+// lemon engine, creates the other subsystems
 struct Engine : public core::Subsystem
 {
     using timepoint = std::chrono::time_point<std::chrono::high_resolution_clock>;

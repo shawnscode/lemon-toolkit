@@ -257,5 +257,5 @@ Device::spawn_return<T> Device::spawn(Args&& ... args)
 
 NS_FLOW2D_GFX_END
 
-ENABLE_BITMASK_OPERATORS(flow2d::graphics::WindowOption);
-ENABLE_BITMASK_OPERATORS(flow2d::graphics::ClearOption);
+ENABLE_BITMASK_OPERATORS(lemon::graphics::WindowOption);
+ENABLE_BITMASK_OPERATORS(lemon::graphics::ClearOption);

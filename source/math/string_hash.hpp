@@ -39,9 +39,9 @@ NS_FLOW2D_MATH_END
 
 namespace std
 {
-    template<> struct hash<flow2d::math::StringHash>
+    template<> struct hash<lemon::math::StringHash>
     {
-        std::size_t operator() (const flow2d::math::StringHash& hash) const
+        std::size_t operator() (const lemon::math::StringHash& hash) const
         {
             return static_cast<std::size_t>(hash.get_hash());
         }

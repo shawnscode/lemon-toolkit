@@ -5,7 +5,7 @@
 
 #include <defines.hpp>
 
-#define NS_FLOW2D_GFX_BEGIN namespace flow2d { namespace graphics {
+#define NS_FLOW2D_GFX_BEGIN namespace lemon { namespace graphics {
 #define NS_FLOW2D_GFX_END } }
 
 NS_FLOW2D_GFX_BEGIN

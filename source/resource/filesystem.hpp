@@ -72,5 +72,5 @@ protected:
 Directory scan(const Path&, ScanMode mode = ScanMode::FILES);
 
 NS_FLOW2D_FS_END
-ENABLE_BITMASK_OPERATORS(flow2d::fs::FileMode);
-ENABLE_BITMASK_OPERATORS(flow2d::fs::ScanMode);
+ENABLE_BITMASK_OPERATORS(lemon::fs::FileMode);
+ENABLE_BITMASK_OPERATORS(lemon::fs::ScanMode);

@@ -2,7 +2,7 @@
 
 #include <precompile.hpp>
 
-#define NS_FLOW2D_BEGIN namespace flow2d {
+#define NS_FLOW2D_BEGIN namespace lemon {
 #define NS_FLOW2D_END }
 
 #if defined(IOS)

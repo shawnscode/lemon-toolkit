@@ -31,9 +31,9 @@
 #include <engine/engine.hpp>
 #include <engine/application.hpp>
 
-#define USING_NS_FLOW2D using namespace flow2d;
-#define USING_NS_FLOW2D_CORE using namespace flow2d::core;
-#define USING_NS_FLOW2D_MATH using namespace flow2d::math;
-#define USING_NS_FLOW2D_GRAPHICS using namespace flow2d::graphics;
-#define USING_NS_FLOW2D_RESOURCE using namespace flow2d::res;
-#define USING_NS_FLOW2D_FILESYSTEM using namespace flow2d::fs;
+#define USING_NS_FLOW2D using namespace lemon;
+#define USING_NS_FLOW2D_CORE using namespace lemon::core;
+#define USING_NS_FLOW2D_MATH using namespace lemon::math;
+#define USING_NS_FLOW2D_GRAPHICS using namespace lemon::graphics;
+#define USING_NS_FLOW2D_RESOURCE using namespace lemon::res;
+#define USING_NS_FLOW2D_FILESYSTEM using namespace lemon::fs;

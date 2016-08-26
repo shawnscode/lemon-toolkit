@@ -62,7 +62,7 @@ struct EnableBitMaskOperators
 };
 
 #define ENABLE_BITMASK_OPERATORS(E)  \
-    template<> struct flow2d::core::EnableBitMaskOperators<E> { static const bool enable = true; }; \
+    template<> struct lemon::core::EnableBitMaskOperators<E> { static const bool enable = true; }; \
 
 NS_FLOW2D_CORE_END
 
@@ -84,7 +84,7 @@ template<typename Enum> UReturns<Enum> to_value (Enum e)
 }
 
 template<typename Enum> using MaskReturns = typename std::enable_if<
-    flow2d::core::EnableBitMaskOperators<Enum>::enable,
+    lemon::core::EnableBitMaskOperators<Enum>::enable,
     Enum>::type;
 
 template<typename Enum> MaskReturns<Enum> operator ~ (Enum lhs)

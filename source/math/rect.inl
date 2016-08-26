@@ -9,7 +9,7 @@ Rect<N, T>::Rect()
 
 template<size_t N, typename T>
 Rect<N, T>::Rect(const Vector<N, T>& min, const Vector<N, T>& max)
-: min(min), max(flow2d::math::max(min, max))
+: min(min), max(lemon::math::max(min, max))
 {}
 
 template<size_t N, typename T>

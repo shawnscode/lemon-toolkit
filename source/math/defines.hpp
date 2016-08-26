@@ -5,7 +5,7 @@
 
 #include <defines.hpp>
 
-#define NS_FLOW2D_MATH_BEGIN namespace flow2d { namespace math {
+#define NS_FLOW2D_MATH_BEGIN namespace lemon { namespace math {
 #define NS_FLOW2D_MATH_END } }
 
 NS_FLOW2D_MATH_BEGIN

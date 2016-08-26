@@ -5,7 +5,7 @@
 
 #include <defines.hpp>
 
-#define NS_FLOW2D_CORE_BEGIN namespace flow2d { namespace core {
+#define NS_FLOW2D_CORE_BEGIN namespace lemon { namespace core {
 #define NS_FLOW2D_CORE_END } }
 
 NS_FLOW2D_CORE_BEGIN

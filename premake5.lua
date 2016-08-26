@@ -1,4 +1,4 @@
-workspace("flow2d")
+workspace("lemon-toolkit")
     configurations({ "debug", "release" })
     location( "build" )
 
@@ -10,7 +10,7 @@ workspace("flow2d")
         defines({ "NDEBUG" })
         optimize( "On" )
 
-    project("flow2d")
+    project("lemon-toolkit")
         kind( "StaticLib" )
         language( "C++" )
         buildoptions({"-std=c++11", "-stdlib=libc++"})
