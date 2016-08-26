@@ -5,7 +5,7 @@
 
 #include <math/vector.hpp>
 
-NS_FLOW2D_MATH_BEGIN
+NS_LEMON_MATH_BEGIN
 
 template<size_t N, typename T> struct Rect
 {
@@ -74,4 +74,4 @@ Vector<N*2, T> to_vector(const Rect<N, T>&);
 
 #include <math/rect.inl>
 
-NS_FLOW2D_MATH_END
+NS_LEMON_MATH_END

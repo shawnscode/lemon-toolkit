@@ -1,7 +1,7 @@
 #include <core/debug.hpp>
 #include <cassert>
 
-NS_FLOW2D_CORE_BEGIN
+NS_LEMON_CORE_BEGIN
 
 static LogLevel s_filter    = LogLevel::INFORMATION;
 static bool     s_exception = false;
@@ -158,9 +158,9 @@ void Debug::traceback()
     free(symbollist);
 }
 
-NS_FLOW2D_CORE_END
+NS_LEMON_CORE_END
 
-NS_FLOW2D_BEGIN
+NS_LEMON_BEGIN
 
 void ABORT(const char* file, int line, const char* format, ...)
 {
@@ -200,4 +200,4 @@ void SET_DEBUG_CONFIG(int filter, bool exception)
     core::s_exception = exception;
 }
 
-NS_FLOW2D_END
+NS_LEMON_END

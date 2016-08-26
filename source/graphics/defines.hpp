@@ -5,10 +5,10 @@
 
 #include <defines.hpp>
 
-#define NS_FLOW2D_GFX_BEGIN namespace lemon { namespace graphics {
-#define NS_FLOW2D_GFX_END } }
+#define NS_LEMON_GRAPHICS_BEGIN namespace lemon { namespace graphics {
+#define NS_LEMON_GRAPHICS_END } }
 
-NS_FLOW2D_GFX_BEGIN
+NS_LEMON_GRAPHICS_BEGIN
 
 const static size_t kMaxVertexAttributes = 8;
 const static size_t kMaxTextures = 8;
@@ -22,4 +22,4 @@ struct Shader;
 struct Texture;
 struct Texture2D;
 
-NS_FLOW2D_GFX_END
+NS_LEMON_GRAPHICS_END

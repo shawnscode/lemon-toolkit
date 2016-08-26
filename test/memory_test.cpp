@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <ctime>
 
-USING_NS_FLOW2D_CORE;
+USING_NS_LEMON_CORE;
 
 const static size_t kChunkSize = 8;
 

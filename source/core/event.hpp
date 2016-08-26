@@ -6,7 +6,7 @@
 #include <core/defines.hpp>
 #include <core/typeinfo.hpp>
 
-NS_FLOW2D_CORE_BEGIN
+NS_LEMON_CORE_BEGIN
 
 // handles event subscription and delivery.
 // subscriptions are automatically removed when receivers are destroyed.
@@ -90,4 +90,4 @@ INLINE void EventManager::emit(Args && ... args)
     }
 }
 
-NS_FLOW2D_CORE_END
+NS_LEMON_CORE_END

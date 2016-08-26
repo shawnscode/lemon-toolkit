@@ -1,7 +1,7 @@
 #include <catch.hpp>
 #include <lemon-toolkit.hpp>
 
-USING_NS_FLOW2D_MATH;
+USING_NS_LEMON_MATH;
 
 TEST_CASE("TestVectorInitializerList")
 {

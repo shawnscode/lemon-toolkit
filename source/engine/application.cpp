@@ -4,7 +4,7 @@
 #include <engine/application.hpp>
 #include <engine/engine.hpp>
 
-NS_FLOW2D_BEGIN
+NS_LEMON_BEGIN
 
 Application::Application() : _exitcode(0)
 {}
@@ -35,4 +35,4 @@ void Application::terminate_with_error(const std::string& message)
     _exitcode = -1;
 }
 
-NS_FLOW2D_END
+NS_LEMON_END

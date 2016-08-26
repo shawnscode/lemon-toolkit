@@ -9,7 +9,7 @@
 #include <math/matrix.hpp>
 #include <math/string_hash.hpp>
 
-NS_FLOW2D_GFX_BEGIN
+NS_LEMON_GRAPHICS_BEGIN
 
 struct Shader : public GraphicsObject
 {
@@ -73,4 +73,4 @@ protected:
 #endif
 };
 
-NS_FLOW2D_GFX_END
+NS_LEMON_GRAPHICS_END

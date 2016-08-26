@@ -5,7 +5,7 @@
 
 #include <core/context.hpp>
 
-NS_FLOW2D_BEGIN
+NS_LEMON_BEGIN
 
 // lemon engine, creates the other subsystems
 struct Engine : public core::Subsystem
@@ -91,4 +91,4 @@ struct EvtPostRenderUpdate
 // frame render event
 struct EvtRender {};
 
-NS_FLOW2D_END
+NS_LEMON_END

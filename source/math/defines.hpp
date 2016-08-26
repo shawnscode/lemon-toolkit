@@ -5,10 +5,10 @@
 
 #include <defines.hpp>
 
-#define NS_FLOW2D_MATH_BEGIN namespace lemon { namespace math {
-#define NS_FLOW2D_MATH_END } }
+#define NS_LEMON_MATH_BEGIN namespace lemon { namespace math {
+#define NS_LEMON_MATH_END } }
 
-NS_FLOW2D_MATH_BEGIN
+NS_LEMON_MATH_BEGIN
 
 const static float pi       = 3.1415926535f;
 const static float pi_div_2 = pi / 2.f;
@@ -25,4 +25,4 @@ T to_radians(T degree) { return std::fmod(degree, (T)360) / (T)180 * pi; }
 template<typename T>
 T to_degree(T radians) { return std::fmod(radians, (T)pi*2) * (T)180 / pi; }
 
-NS_FLOW2D_MATH_END
+NS_LEMON_MATH_END

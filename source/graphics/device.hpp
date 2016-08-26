@@ -9,7 +9,7 @@
 #include <math/rect.hpp>
 #include <math/color.hpp>
 
-NS_FLOW2D_GFX_BEGIN
+NS_LEMON_GRAPHICS_BEGIN
 
 enum class PrimitiveType : uint8_t
 {
@@ -255,7 +255,7 @@ Device::spawn_return<T> Device::spawn(Args&& ... args)
     return std::shared_ptr<T>(object);
 }
 
-NS_FLOW2D_GFX_END
+NS_LEMON_GRAPHICS_END
 
 ENABLE_BITMASK_OPERATORS(lemon::graphics::WindowOption);
 ENABLE_BITMASK_OPERATORS(lemon::graphics::ClearOption);

@@ -6,7 +6,7 @@
 #include <graphics/device.hpp>
 #include <resource/image.hpp>
 
-NS_FLOW2D_GFX_BEGIN
+NS_LEMON_GRAPHICS_BEGIN
 
 enum class TextureUsage : uint8_t
 {
@@ -114,4 +114,4 @@ protected:
     bool set_texture_data(const void*) override;
 };
 
-NS_FLOW2D_GFX_END
+NS_LEMON_GRAPHICS_END

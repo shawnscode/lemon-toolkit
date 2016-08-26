@@ -5,7 +5,7 @@
 
 #include <math/defines.hpp>
 
-NS_FLOW2D_MATH_BEGIN
+NS_LEMON_MATH_BEGIN
 
 template<size_t N, typename T> struct Vector
 {
@@ -159,4 +159,4 @@ template<size_t N, typename T>
 Vector<N-1, T> hproject(const Vector<N, T>&);
 
 #include <math/vector.inl>
-NS_FLOW2D_MATH_END
+NS_LEMON_MATH_END

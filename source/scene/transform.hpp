@@ -7,7 +7,7 @@
 #include <math/matrix.hpp>
 #include <math/quaternion.hpp>
 
-NS_FLOW2D_BEGIN
+NS_LEMON_BEGIN
 
 using namespace math;
 
@@ -182,4 +182,4 @@ protected:
 };
 
 #include <scene/transform.inl>
-NS_FLOW2D_END
+NS_LEMON_END

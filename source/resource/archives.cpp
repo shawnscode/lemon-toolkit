@@ -3,7 +3,7 @@
 
 #include <resource/archives.hpp>
 
-NS_FLOW2D_RES_BEGIN
+NS_LEMON_RESOURCE_BEGIN
 
 FilesystemArchive::FilesystemArchive(ArchiveCollection& collection,
     const fs::Path& path)
@@ -89,4 +89,4 @@ std::fstream ArchiveCollection::open(const fs::Path& path, fs::FileMode mode)
     return std::fstream();
 }
 
-NS_FLOW2D_RES_END
+NS_LEMON_RESOURCE_END

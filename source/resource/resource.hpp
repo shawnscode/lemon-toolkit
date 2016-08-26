@@ -8,7 +8,7 @@
 #include <math/string_hash.hpp>
 #include <core/context.hpp>
 
-NS_FLOW2D_RES_BEGIN
+NS_LEMON_RESOURCE_BEGIN
 
 struct Resource
 {
@@ -110,4 +110,4 @@ ResourceCache::return_type<T> ResourceCache::get(const fs::Path& name)
     return nullptr;
 }
 
-NS_FLOW2D_RES_END
+NS_LEMON_RESOURCE_END

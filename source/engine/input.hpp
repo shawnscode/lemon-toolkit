@@ -7,7 +7,7 @@
 #include <core/typeinfo.hpp>
 #include <math/vector.hpp>
 
-NS_FLOW2D_BEGIN
+NS_LEMON_BEGIN
 
 enum class KeyboardCode
 {
@@ -203,5 +203,5 @@ protected:
     std::unordered_set<int> _mouse_press;
 };
 
-NS_FLOW2D_END
+NS_LEMON_END
 ENABLE_BITMASK_OPERATORS(lemon::KeyboardQualifier);

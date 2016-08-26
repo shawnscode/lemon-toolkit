@@ -6,7 +6,7 @@
 #include <math/vector.hpp>
 #include <math/matrix.hpp>
 
-NS_FLOW2D_MATH_BEGIN
+NS_LEMON_MATH_BEGIN
 
 // a quaternion is given by q = x*i + y*j + z*k + w, where x, y, z and w are real numbers.
 struct Quaternion
@@ -98,4 +98,4 @@ Quaternion lerp(const Quaternion&, const Quaternion&, float, bool shortest = fal
 Quaternion slerp(const Quaternion&, const Quaternion&, float);
 
 #include <math/quaternion.inl>
-NS_FLOW2D_MATH_END
+NS_LEMON_MATH_END

@@ -1,6 +1,6 @@
 #include <math/string_hash.hpp>
 
-NS_FLOW2D_MATH_BEGIN
+NS_LEMON_MATH_BEGIN
 
 // BKDR hash function
 uint32_t StringHash::calculate(const char* str)
@@ -21,4 +21,4 @@ std::ostream& operator << (std::ostream& out, const StringHash& hash)
     return out << "StringHash(" << hash.get_hash() << ")";
 }
 
-NS_FLOW2D_MATH_END
+NS_LEMON_MATH_END

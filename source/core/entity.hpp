@@ -10,7 +10,7 @@
 
 // a fast, type-safe c++ entity component system based on [EntityX](https://github.com/alecthomas/entityx).
 
-NS_FLOW2D_CORE_BEGIN
+NS_LEMON_CORE_BEGIN
 
 typedef std::bitset<kEntMaxComponents> ComponentMask;
 
@@ -233,7 +233,7 @@ template<typename T> struct EvtComponentRemoved
 };
 
 #include <core/entity.inl>
-NS_FLOW2D_CORE_END
+NS_LEMON_CORE_END
 
 namespace std
 {

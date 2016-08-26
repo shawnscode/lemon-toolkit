@@ -4,7 +4,7 @@
 #include <graphics/shader.hpp>
 #include <graphics/opengl.hpp>
 
-NS_FLOW2D_GFX_BEGIN
+NS_LEMON_GRAPHICS_BEGIN
 
 static const unsigned GL_ELEMENT_FORMAT[] =
 {
@@ -366,4 +366,4 @@ void Shader::set_uniform4fm(const char* name, const math::Matrix<4, 4, float>& v
     CHECK_GL_ERROR();
 }
 
-NS_FLOW2D_GFX_END
+NS_LEMON_GRAPHICS_END

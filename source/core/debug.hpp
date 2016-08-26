@@ -5,7 +5,7 @@
 
 #include <core/defines.hpp>
 
-NS_FLOW2D_CORE_BEGIN
+NS_LEMON_CORE_BEGIN
 
 enum class LogLevel
 {
@@ -43,4 +43,4 @@ struct Debug
 #define FLOW_FATAL(msg) FLOW_ASSERT(false, msg)
 #define FLOW_ENSURE(cond) FLOW_ASSERT(cond, "")
 
-NS_FLOW2D_CORE_END
+NS_LEMON_CORE_END

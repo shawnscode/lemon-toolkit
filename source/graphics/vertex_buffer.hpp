@@ -6,7 +6,7 @@
 #include <graphics/device.hpp>
 #include <core/compact.hpp>
 
-NS_FLOW2D_GFX_BEGIN
+NS_LEMON_GRAPHICS_BEGIN
 
 enum class ElementFormat : uint8_t
 {
@@ -67,4 +67,4 @@ protected:
     std::unique_ptr<uint8_t[]> _shadowed_data;
 };
 
-NS_FLOW2D_GFX_END
+NS_LEMON_GRAPHICS_END

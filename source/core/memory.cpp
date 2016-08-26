@@ -3,7 +3,7 @@
 
 #include <core/memory.hpp>
 
-NS_FLOW2D_CORE_BEGIN
+NS_LEMON_CORE_BEGIN
 
 const MemoryChunks::index_type MemoryChunks::invalid = std::numeric_limits<index_type>::max();
 
@@ -83,4 +83,4 @@ void MemoryChunks::free(void* element)
     _available ++;
 }
 
-NS_FLOW2D_CORE_END
+NS_LEMON_CORE_END

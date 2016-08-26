@@ -4,7 +4,7 @@
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
 
-NS_FLOW2D_RES_BEGIN
+NS_LEMON_RESOURCE_BEGIN
 
 ResourceCache::ResourceCache(core::Context& ctx, unsigned threshold)
 : core::Subsystem(ctx), _threshold(threshold), _memusage(0)
@@ -94,4 +94,4 @@ std::ostream& operator << (std::ostream& out, const ResourceCache& cache)
     return out << usage << " byte(s)" <<std::endl;
 }
 
-NS_FLOW2D_RES_END
+NS_LEMON_RESOURCE_END

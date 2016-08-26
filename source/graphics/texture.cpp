@@ -4,7 +4,7 @@
 #include <graphics/texture.hpp>
 #include <graphics/opengl.hpp>
 
-NS_FLOW2D_GFX_BEGIN
+NS_LEMON_GRAPHICS_BEGIN
 
 static GLenum GL_WRAP_MODES[] =
 {
@@ -226,4 +226,4 @@ bool Texture2D::set_texture_data(const void* data)
     return true;
 }
 
-NS_FLOW2D_GFX_END
+NS_LEMON_GRAPHICS_END

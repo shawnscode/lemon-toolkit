@@ -9,7 +9,7 @@
 
 #include <SDL2/SDL.h>
 
-NS_FLOW2D_BEGIN
+NS_LEMON_BEGIN
 
 bool Engine::initialize()
 {
@@ -170,4 +170,4 @@ void Engine::set_pause_minimized(bool enable)
     _pause_minimized = enable;
 }
 
-NS_FLOW2D_END
+NS_LEMON_END

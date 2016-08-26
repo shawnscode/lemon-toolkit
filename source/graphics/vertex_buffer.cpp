@@ -1,7 +1,7 @@
 #include <graphics/vertex_buffer.hpp>
 #include <graphics/opengl.hpp>
 
-NS_FLOW2D_GFX_BEGIN
+NS_LEMON_GRAPHICS_BEGIN
 
 unsigned GL_ELEMENT_SIZES[] =
 {
@@ -206,4 +206,4 @@ unsigned VertexBuffer::get_size() const
     return get_stride() * _vertex_count;
 }
 
-NS_FLOW2D_GFX_END
+NS_LEMON_GRAPHICS_END

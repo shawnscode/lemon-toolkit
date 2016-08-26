@@ -3,7 +3,7 @@
 
 #include <math/quaternion.hpp>
 
-NS_FLOW2D_MATH_BEGIN
+NS_LEMON_MATH_BEGIN
 
 Quaternion from_euler_angles(const Vector3T& euler)
 {
@@ -169,4 +169,4 @@ Quaternion slerp(const Quaternion& lhs, const Quaternion& rhs, float t)
     }
 }
 
-NS_FLOW2D_MATH_END
+NS_LEMON_MATH_END

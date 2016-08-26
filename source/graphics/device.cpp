@@ -4,7 +4,7 @@
 #include <graphics/device.hpp>
 #include <graphics/opengl.hpp>
 
-NS_FLOW2D_GFX_BEGIN
+NS_LEMON_GRAPHICS_BEGIN
 
 using namespace lemon::core;
 
@@ -691,4 +691,4 @@ void check_device_error(const char* file, unsigned line)
         FATAL("GL_%s", to_string(error));
 }
 
-NS_FLOW2D_GFX_END
+NS_LEMON_GRAPHICS_END

@@ -3,7 +3,7 @@
 
 #include <core/entity.hpp>
 
-NS_FLOW2D_CORE_BEGIN
+NS_LEMON_CORE_BEGIN
 
 size_t EventManager::index = 0;
 
@@ -82,4 +82,4 @@ void EntityManager::dispose(Entity object)
     _freeslots.push_back(object._index);
 }
 
-NS_FLOW2D_CORE_END
+NS_LEMON_CORE_END

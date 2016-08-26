@@ -6,7 +6,7 @@
 #include <resource/resource.hpp>
 #include <math/color.hpp>
 
-NS_FLOW2D_RES_BEGIN
+NS_LEMON_RESOURCE_BEGIN
 
 enum class ImageElementFormat : uint8_t
 {
@@ -54,4 +54,4 @@ protected:
     ImageElementFormat _element_format = ImageElementFormat::UBYTE;
 };
 
-NS_FLOW2D_RES_END
+NS_LEMON_RESOURCE_END

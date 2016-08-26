@@ -5,7 +5,7 @@
 
 #include <core/defines.hpp>
 
-NS_FLOW2D_CORE_BEGIN
+NS_LEMON_CORE_BEGIN
 
 // provides a resizable, semi-contiguous pool of memory for constructing
 // objects in, which aims to provide cache-friendly iteration.
@@ -68,4 +68,4 @@ protected:
 };
 
 #include <core/memory.inl>
-NS_FLOW2D_CORE_END
+NS_LEMON_CORE_END

@@ -6,7 +6,7 @@
 #include <core/defines.hpp>
 #include <type_traits>
 
-NS_FLOW2D_CORE_BEGIN
+NS_LEMON_CORE_BEGIN
 ///
 struct TypeInfo
 {
@@ -64,7 +64,7 @@ struct EnableBitMaskOperators
 #define ENABLE_BITMASK_OPERATORS(E)  \
     template<> struct lemon::core::EnableBitMaskOperators<E> { static const bool enable = true; }; \
 
-NS_FLOW2D_CORE_END
+NS_LEMON_CORE_END
 
 struct EnumerationHash
 {

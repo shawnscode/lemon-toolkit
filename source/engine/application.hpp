@@ -5,7 +5,7 @@
 
 #include <core/context.hpp>
 
-NS_FLOW2D_BEGIN
+NS_LEMON_BEGIN
 
 struct Application
 {
@@ -159,4 +159,4 @@ INLINE void Application::unsubscribe()
     get_dispatcher().unsubscribe<E>(*static_cast<T*>(this));
 }
 
-NS_FLOW2D_END
+NS_LEMON_END

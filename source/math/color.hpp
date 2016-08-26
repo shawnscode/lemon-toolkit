@@ -5,7 +5,7 @@
 
 #include <math/defines.hpp>
 
-NS_FLOW2D_MATH_BEGIN
+NS_LEMON_MATH_BEGIN
 
 struct Color
 {
@@ -142,4 +142,4 @@ INLINE Color lerp(const Color& from, const Color& to, float t)
     return from + (to-from)*t;
 }
 
-NS_FLOW2D_MATH_END
+NS_LEMON_MATH_END

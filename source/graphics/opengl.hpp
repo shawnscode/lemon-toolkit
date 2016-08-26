@@ -7,7 +7,7 @@
 
 #include <graphics/defines.hpp>
 
-NS_FLOW2D_GFX_BEGIN
+NS_LEMON_GRAPHICS_BEGIN
 
 #if defined(PLATFORM_ANDROID)
 #include <GLES2/gl2.h>
@@ -27,4 +27,4 @@ extern void check_device_error(const char* file, unsigned line);
 
 #define CHECK_GL_ERROR() check_device_error(__FILE__, __LINE__);
 
-NS_FLOW2D_GFX_END
+NS_LEMON_GRAPHICS_END

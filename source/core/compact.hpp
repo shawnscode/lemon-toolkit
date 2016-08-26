@@ -6,7 +6,7 @@
 #include <core/defines.hpp>
 #include <math/defines.hpp>
 
-NS_FLOW2D_CORE_BEGIN
+NS_LEMON_CORE_BEGIN
 
 template<typename K, typename V, size_t Size> struct CompactHashMap
 {
@@ -101,4 +101,4 @@ protected:
 };
 
 #include <core/compact.inl>
-NS_FLOW2D_CORE_END
+NS_LEMON_CORE_END

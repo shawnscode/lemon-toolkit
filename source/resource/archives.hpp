@@ -5,7 +5,7 @@
 
 #include <resource/filesystem.hpp>
 
-NS_FLOW2D_RES_BEGIN
+NS_LEMON_RESOURCE_BEGIN
 
 struct Archive
 {
@@ -82,4 +82,4 @@ ArchiveCollection::boolean<T> ArchiveCollection::add_archive(Args&& ... args)
     return false;
 }
 
-NS_FLOW2D_RES_END
+NS_LEMON_RESOURCE_END

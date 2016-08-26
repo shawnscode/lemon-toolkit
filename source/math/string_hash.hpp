@@ -5,7 +5,7 @@
 
 #include <math/defines.hpp>
 
-NS_FLOW2D_MATH_BEGIN
+NS_LEMON_MATH_BEGIN
 
 // 32-bit hash value for a string
 struct StringHash
@@ -35,7 +35,7 @@ protected:
 
 std::ostream& operator << (std::ostream&, const StringHash&);
 
-NS_FLOW2D_MATH_END
+NS_LEMON_MATH_END
 
 namespace std
 {

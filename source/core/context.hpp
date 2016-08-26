@@ -7,7 +7,7 @@
 #include <core/entity.hpp>
 #include <core/typeinfo.hpp>
 
-NS_FLOW2D_CORE_BEGIN
+NS_LEMON_CORE_BEGIN
 
 //
 #define SUBSYSTEM(NAME) constexpr static char const* const name = NAME;
@@ -322,4 +322,4 @@ bool Context::has_subsystems() const
     return has_subsystems<S1>() | has_subsystems<S2, Args...>();
 }
 
-NS_FLOW2D_CORE_END
+NS_LEMON_CORE_END

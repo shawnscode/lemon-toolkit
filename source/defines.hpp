@@ -2,8 +2,8 @@
 
 #include <precompile.hpp>
 
-#define NS_FLOW2D_BEGIN namespace lemon {
-#define NS_FLOW2D_END }
+#define NS_LEMON_BEGIN namespace lemon {
+#define NS_LEMON_END }
 
 #if defined(IOS)
 #define PLATFORM_IOS
@@ -15,7 +15,7 @@
 #define PLATFORM_UNIX
 #endif
 
-NS_FLOW2D_BEGIN
+NS_LEMON_BEGIN
 
 #define INLINE inline
 
@@ -43,4 +43,4 @@ const static int LOG_ERROR = 3;
 ///
 #define NOTUSED(v) for(;;) { (void)(1 ? (void)0 : ((void)v)); break; }
 
-NS_FLOW2D_END
+NS_LEMON_END

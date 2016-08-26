@@ -8,7 +8,7 @@
 #include <stb_image.h>
 #include <stb_image_write.h>
 
-NS_FLOW2D_RES_BEGIN
+NS_LEMON_RESOURCE_BEGIN
 
 bool Image::read(std::istream& in)
 {
@@ -196,4 +196,4 @@ math::Color Image::get_pixel_linear(float x, float y) const
     return lerp(top, bottom, yd);
 }
 
-NS_FLOW2D_RES_END
+NS_LEMON_RESOURCE_END

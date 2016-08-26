@@ -1,9 +1,9 @@
 #include <catch.hpp>
 #include <lemon-toolkit.hpp>
 
-USING_NS_FLOW2D;
-USING_NS_FLOW2D_CORE;
-USING_NS_FLOW2D_MATH;
+USING_NS_LEMON;
+USING_NS_LEMON_CORE;
+USING_NS_LEMON_MATH;
 
 struct TransformFixture : core::Context
 {

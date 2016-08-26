@@ -3,7 +3,7 @@
 
 #include <math/color.hpp>
 
-NS_FLOW2D_MATH_BEGIN
+NS_LEMON_MATH_BEGIN
 
 const Color Color::WHITE        = { 1.f, 1.f, 1.f, 1.f };
 const Color Color::GRAY         = { 0.5f, 0.5f, 0.5f, 0.5f };
@@ -50,4 +50,4 @@ std::ostream& operator << (std::ostream& out, const Color& c)
     return out;
 }
 
-NS_FLOW2D_MATH_END
+NS_LEMON_MATH_END

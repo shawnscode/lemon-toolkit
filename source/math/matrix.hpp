@@ -5,7 +5,7 @@
 
 #include <math/vector.hpp>
 
-NS_FLOW2D_MATH_BEGIN
+NS_LEMON_MATH_BEGIN
 
 // row-major based matrix
 template<size_t R, size_t C, typename T> struct Matrix
@@ -146,4 +146,4 @@ template<typename T>
 Matrix4<T> look_at(const Vector3<T>& eye, const Vector3<T>& center, const Vector3<T>& up);
 
 #include <math/matrix.inl>
-NS_FLOW2D_MATH_END
+NS_LEMON_MATH_END

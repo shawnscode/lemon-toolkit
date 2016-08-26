@@ -1,7 +1,7 @@
 #include <graphics/index_buffer.hpp>
 #include <graphics/opengl.hpp>
 
-NS_FLOW2D_GFX_BEGIN
+NS_LEMON_GRAPHICS_BEGIN
 
 unsigned GL_INDEX_ELEMENT_SIZES[] =
 {
@@ -177,4 +177,4 @@ IndexElementFormat IndexBuffer::get_element_format() const
     return _format;
 }
 
-NS_FLOW2D_GFX_END
+NS_LEMON_GRAPHICS_END

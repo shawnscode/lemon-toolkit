@@ -6,7 +6,7 @@
 
 #include <SDL2/SDL.h>
 
-NS_FLOW2D_BEGIN
+NS_LEMON_BEGIN
 
 static int SDL_KEYBOARD_CODES[] = 
 {
@@ -303,4 +303,4 @@ bool Input::get_mouse_button_press(MouseCode code) const
     return _mouse_press.find(SDL_KEYBOARD_CODES[to_value(code)]) != _mouse_press.end();
 }
 
-NS_FLOW2D_END
+NS_LEMON_END
