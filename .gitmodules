@@ -7,3 +7,6 @@
 [submodule "3rd/stb"]
 	path = 3rd/stb
 	url = https://github.com/nothings/stb.git
+[submodule "3rd/hayai"]
+	path = 3rd/hayai
+	url = https://github.com/nickbruun/hayai.git

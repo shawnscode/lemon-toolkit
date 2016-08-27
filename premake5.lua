@@ -38,8 +38,8 @@ workspace("chore")
     kind( "ConsoleApp" )
     libdirs({ "/usr/local/lib/" })
 
-    sysincludedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/libtess2/Include", "3rd/stb" })
-    includedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/libtess2/Include", "3rd/stb" })
+    sysincludedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/libtess2/Include", "3rd/stb", "3rd/hayai/src" })
+    includedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/libtess2/Include", "3rd/stb", "3rd/hayai/src" })
 
     language( "C++" )
     buildoptions({"-std=c++11", "-stdlib=libc++"})

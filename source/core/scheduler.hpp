@@ -12,10 +12,12 @@
 
 NS_LEMON_CORE_BEGIN
 
-// a light-weight task scheduler
+// a light-weight task scheduler with automatic load balancing,
+// the dependencies between tasks are addressed as parent-child relationships.
 struct TaskScheduler : core::Subsystem
 {
     SUBSYSTEM("TaskScheduler");
+
     TaskScheduler(core::Context& c, unsigned thread) : Subsystem(c), _thread_count(thread) {}
     virtual ~TaskScheduler() {}
 
@@ -25,6 +27,9 @@ struct TaskScheduler : core::Subsystem
 
     template<typename F, typename ... Args>
     std::future<typename std::result_of<F(Args ...)>::type> add_task(F&&, Args&&...);
+
+    // return the number of working thread
+    unsigned get_worker_count() const { return _thread_count; }
 
 public:
     // several callbacks instended for profilers
@@ -55,10 +60,11 @@ std::future<typename std::result_of<F(Args ...)>::type> TaskScheduler::add_task(
     auto task = std::shared_ptr<task_type>(new task_type( functor_with_env ));
 
     auto result = task->get_future();
+
     {
         std::unique_lock<std::mutex> lock(_task_mutex);
         if( _stop )
-            throw std::runtime_error("");
+            throw std::runtime_error("task insertion happens when scheduler disposed.");
 
         _tasks.emplace([task]() { (*task)(); });
     }

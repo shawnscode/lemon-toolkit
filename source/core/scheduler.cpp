@@ -55,13 +55,12 @@ void TaskScheduler::thread_run(unsigned index, TaskScheduler& scheduler)
 
         if( scheduler.on_wait_stop )
             scheduler.on_wait_stop(index);
+
         task();
     }
 
     if( scheduler.on_thread_stop )
         scheduler.on_thread_stop(index);
 }
-
-
 
 NS_LEMON_CORE_END
