@@ -43,7 +43,7 @@ static unsigned GL_PIXEL_SIZE[] =
     2
 };
 
-Texture::Texture(Device& device, unsigned target)
+Texture::Texture(Backend& device, unsigned target)
 : GraphicsObject(device), _target(target)
 {
     _parameter_dirty = true;
@@ -186,7 +186,7 @@ void Texture::update_parameters(bool force)
     _parameter_dirty = false;
 }
 
-Texture2D::Texture2D(Device& device)
+Texture2D::Texture2D(Backend& device)
 : Texture(device, GL_TEXTURE_2D)
 {}
 

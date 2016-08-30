@@ -22,7 +22,7 @@ unsigned VertexAttribute::get_stride() const
     return size * GL_ELEMENT_SIZES[to_value(format)];
 }
 
-VertexBuffer::VertexBuffer(Device& device)
+VertexBuffer::VertexBuffer(Backend& device)
 : GraphicsObject(device)
 {
     _dynamic    = false;

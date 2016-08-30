@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <graphics/device.hpp>
+#include <graphics/backend.hpp>
 #include <graphics/vertex_buffer.hpp>
 #include <graphics/texture.hpp>
 #include <math/matrix.hpp>
@@ -16,7 +16,7 @@ struct Shader : public GraphicsObject
     using ptr = std::shared_ptr<Shader>;
     using weak_ptr = std::weak_ptr<Shader>;
 
-    Shader(Device& device) : GraphicsObject(device) {}
+    Shader(Backend& device) : GraphicsObject(device) {}
     virtual ~Shader() { release(); }
 
     bool restore(const char* vs, const char* ps);

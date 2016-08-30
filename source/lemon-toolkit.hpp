@@ -14,7 +14,7 @@
 #include <math/color.hpp>
 #include <math/string_hash.hpp>
 
-#include <graphics/device.hpp>
+#include <graphics/backend.hpp>
 #include <graphics/shader.hpp>
 #include <graphics/index_buffer.hpp>
 #include <graphics/vertex_buffer.hpp>

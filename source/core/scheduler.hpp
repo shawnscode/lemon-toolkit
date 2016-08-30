@@ -32,7 +32,7 @@ struct TaskScheduler : core::Subsystem
     unsigned get_worker_count() const { return _thread_count; }
 
 public:
-    // several callbacks instended for profilers
+    // several callbacks instended for thread initialization and profilers
     using thread_callback = std::function<void(unsigned)>;
     thread_callback on_thread_start;
     thread_callback on_thread_stop;

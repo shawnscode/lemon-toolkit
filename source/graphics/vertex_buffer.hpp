@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <graphics/device.hpp>
+#include <graphics/backend.hpp>
 #include <core/compact.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
@@ -37,7 +37,7 @@ struct VertexBuffer : public GraphicsObject
     using ptr = std::shared_ptr<VertexBuffer>;
     using weak_ptr = std::weak_ptr<VertexBuffer>;
 
-    VertexBuffer(Device&);
+    VertexBuffer(Backend&);
     virtual ~VertexBuffer() { release(); }
 
     bool restore(const void*, unsigned vcount, const vertex_attributes&, bool dynamic = false);

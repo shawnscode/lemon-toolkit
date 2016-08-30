@@ -31,7 +31,7 @@ struct Example : public Application
         auto& engine = get_subsystem<Engine>();
         auto& collection = get_subsystem<res::ArchiveCollection>();
         auto& cache = get_subsystem<res::ResourceCache>();
-        auto& device = get_subsystem<graphics::Device>();
+        auto& device = get_subsystem<graphics::Backend>();
 
         engine.set_time_smoothing_step(10);
         engine.set_max_fps(25);
@@ -88,7 +88,7 @@ struct Example : public Application
 
     void receive(const EvtRender& evt)
     {
-        auto& device = get_subsystem<graphics::Device>();
+        auto& device = get_subsystem<graphics::Backend>();
         auto size = device.get_window_size();
 
         auto transform = math::look_at(math::Vector3f{0, 0, -10+x*10}, math::Vector3f {0, 0, 0}, math::Vector3f {0, 1, 0});

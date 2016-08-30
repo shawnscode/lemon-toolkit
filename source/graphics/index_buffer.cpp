@@ -9,7 +9,7 @@ unsigned GL_INDEX_ELEMENT_SIZES[] =
     2
 };
 
-IndexBuffer::IndexBuffer(Device& device)
+IndexBuffer::IndexBuffer(Backend& device)
 : GraphicsObject(device)
 {
     _dynamic    = false;
