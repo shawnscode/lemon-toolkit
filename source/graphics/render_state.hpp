@@ -55,13 +55,14 @@ enum class BlendFactor : uint8_t
     ZERO = 0,
     ONE,
     SRC_COLOR,
-    ONE_MINUS_SRC_COLOR,
+    INV_SRC_COLOR,
     DST_COLOR,
-    ONE_MINUS_DST_COLOR,
+    INV_DST_COLOR,
     SRC_ALPHA,
-    ONE_MINUS_SRC_ALPHA,
+    INV_SRC_ALPHA,
     DST_ALPHA,
-    ONE_MINUS_DST_ALPHA,
+    INV_DST_ALPHA,
+    SRC_ALPHA_SATURATE
 };
 
 // specifies how source and destination colors are combined
@@ -148,7 +149,6 @@ struct ColorBlendOp
 struct RenderState
 {
     RenderState();
-
     CullTestOp          cull;
     ScissorTestOp       scissor;
 
@@ -162,7 +162,49 @@ struct RenderState
     ColorMask           color_write;
 };
 
+ScissorTestOp       scissor;
+
 void reset_render_state(RenderState&);
+
+// namespace state
+// {
+//     const static uint64_t WRITE_SHIFT       = 0;
+//     const static uint64_t WRITE_COLOR_RED   = 1 << (WRITE_SHIFT + 0);
+//     const static uint64_t WRITE_COLOR_BLUE  = 1 << (WRITE_SHIFT + 1);
+//     const static uint64_t WRITE_COLOR_GREEN = 1 << (WRITE_SHIFT + 2);
+//     const static uint64_t WRITE_COLOR_ALPHA = 1 << (WRITE_SHIFT + 3);
+//     const static uint64_t WRITE_DEPTH       = 1 << (WRITE_SHIFT + 4);
+//     const static uint64_t WRITE_STENCIL     = 1 << (WRITE_SHIFT + 5);
+
+//     const static uint64_t DEPTH_TEST_SHIFT      = 4;
+//     const static uint64_t DEPTH_TEST_NEVER      = (1 << DEPTH_TEST_SHIFT) + 0;
+//     const static uint64_t DEPTH_TEST_LESS       = (1 << DEPTH_TEST_SHIFT) + 1;
+//     const static uint64_t DEPTH_TEST_LEQUAL     = (1 << DEPTH_TEST_SHIFT) + 2;
+//     const static uint64_t DEPTH_TEST_GREATER    = (1 << DEPTH_TEST_SHIFT) + 3;
+//     const static uint64_t DEPTH_TEST_GEQUAL     = (1 << DEPTH_TEST_SHIFT) + 4;
+//     const static uint64_t DEPTH_TEST_EQUAL      = (1 << DEPTH_TEST_SHIFT) + 5;
+//     const static uint64_t DEPTH_TEST_NOTEQUAL   = (1 << DEPTH_TEST_SHIFT) + 6;
+//     const static uint64_t DEPTH_TEST_ALWAYS     = (1 << DEPTH_TEST_SHIFT) + 7;
+
+//     // stencil
+
+//     // blend
+//     const static uint64_t BLEND_SHIFT = 8;
+
+//     // cull
+
+
+
+
+
+//     const static uint64_t BLEND_SHIFT = 28;
+//     const static uint64_t CULL_TEST_SHIFT = 36;
+//     const static uint64_t PRIMITIVE_TYPE_SHIFT = 40;
+//     const static uint64_t POINT_SIZE_SHIFT = 48;
+//     const static uint64_t RASTERIZATION_SHIFT = 61;
+// }
+
+uint64_t render_state_compress(RenderState&);
 
 NS_LEMON_GRAPHICS_END
 

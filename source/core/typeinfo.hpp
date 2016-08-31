@@ -78,7 +78,7 @@ template<typename Enum> using UReturns = typename std::enable_if<
     std::is_enum<Enum>::value,
     typename std::underlying_type<Enum>::type>::type;
 
-template<typename Enum> UReturns<Enum> to_value (Enum e)
+template<typename Enum> constexpr UReturns<Enum> to_value (Enum e)
 {
     return static_cast<typename std::underlying_type<Enum>::type>(e);
 }

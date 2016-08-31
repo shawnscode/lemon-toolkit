@@ -37,9 +37,14 @@ void reset_render_state(RenderState& state)
     state.blend.enable = false;
     state.blend.equation = BlendEquation::ADD;
     state.blend.source_factor = BlendFactor::SRC_ALPHA;
-    state.blend.destination_factor = BlendFactor::ONE_MINUS_SRC_ALPHA;
+    state.blend.destination_factor = BlendFactor::INV_SRC_ALPHA;
 
     state.color_write = ColorMask::ALL;
+}
+
+uint64_t render_state_compress(RenderState& state)
+{
+    return 0;
 }
 
 NS_LEMON_GRAPHICS_END

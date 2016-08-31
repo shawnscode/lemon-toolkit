@@ -85,7 +85,7 @@ protected:
 struct BackendContext;
 struct Backend : public core::Subsystem
 {
-    SUBSYSTEM("Graphics'Backend")
+    SUBSYSTEM("lemon::graphics::Backend")
 
     Backend(core::Context& c) : Subsystem(c) {}
     virtual ~Backend() {}

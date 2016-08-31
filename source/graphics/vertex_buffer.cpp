@@ -3,7 +3,7 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-unsigned GL_ELEMENT_SIZES[] =
+uint16_t SIZE_OF_COMPONENT_FORMAT[] =
 {
     1,
     1,
@@ -13,13 +13,51 @@ unsigned GL_ELEMENT_SIZES[] =
     4
 };
 
-VertexAttribute::VertexAttribute(unsigned size, ElementFormat format, bool normalized)
-: size(size), format(format), normalized(normalized)
-{}
+const uint16_t VertexAttributeLayout::invalid = 0xffff;
 
-unsigned VertexAttribute::get_stride() const
+VertexAttributeLayout::VertexAttributeLayout()
 {
-    return size * GL_ELEMENT_SIZES[to_value(format)];
+    _stride = 0;
+    memset(_attributes, 0xff, sizeof(_attributes));
+    memset(_offset, 0, sizeof(_offset));
+}
+
+VertexAttributeLayout& VertexAttributeLayout::append(VertexAttributeData& data)
+{
+    ASSERT( data.num >= 1 && data.num <= 4,
+        "the number of components per generic vertex attribute, must be 1, 2, 3, or 4." );
+
+    const uint8_t type = (to_value(data.component) & 7);
+    const uint8_t number = (to_value(data.num) & 3) << 3;
+    const uint8_t normalize = (data.normalize ? 1 : 0) << 5;
+
+    _attributes[to_value(data.attribute)] = type | number | normalize;
+    _offset[to_value(data.attribute)] = _stride;
+    _stride += SIZE_OF_COMPONENT_FORMAT[data.component] * data.num;
+    return *this;
+}
+
+VertexAttributeLayout& VertexAttributeLayout::append(VertexSkipData& data)
+{
+    _stride += data.value;
+    return *this;
+}
+
+VertexAttributeLayout& VertexAttributeLayout::end()
+{
+    // todo: calculation hash value
+    return *this;
+}
+
+VertexAttributeData VertexAttributeLayout::get_attribute(VertexAttribute index) const
+{
+    const uint8_t encode = _attributes[index];
+    return {
+        index,
+        static_cast<AttributeComponentFormat>(encode & 7),
+        (encode >> 3) & 3,
+        static_cast<bool>((encode >> 5) & 1)
+    };
 }
 
 VertexBuffer::VertexBuffer(Backend& device)

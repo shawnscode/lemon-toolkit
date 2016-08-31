@@ -79,7 +79,8 @@ static const unsigned GL_BLEND_FACTOR[] =
     GL_SRC_ALPHA,
     GL_ONE_MINUS_SRC_ALPHA,
     GL_DST_ALPHA,
-    GL_ONE_MINUS_DST_ALPHA
+    GL_ONE_MINUS_DST_ALPHA,
+    GL_SRC_ALPHA_SATURATE
 };
 
 static const unsigned GL_BLEND_EQUATION_FUNC[] =
