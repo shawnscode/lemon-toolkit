@@ -6,7 +6,7 @@
 #include <resource/defines.hpp>
 #include <resource/path.hpp>
 #include <math/string_hash.hpp>
-#include <core/context.hpp>
+#include <core/subsystem.hpp>
 
 NS_LEMON_RESOURCE_BEGIN
 
@@ -36,7 +36,7 @@ struct ResourceCache : public core::Subsystem
 {
     SUBSYSTEM("ResourceCache");
 
-    ResourceCache( core::Context&, unsigned threshold = kCacheDefaultThreshold);
+    ResourceCache(unsigned threshold = kCacheDefaultThreshold);
     ~ResourceCache();
 
     bool initialize() override;

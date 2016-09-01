@@ -140,7 +140,7 @@ void Input::begin_frame()
 
 void Input::end_frame()
 {
-    auto& device = get_subsystem<graphics::Device>();
+    auto& device = core::get_subsystem<graphics::Device>();
 
     // check for focus change this frame
     if( device.get_window_flags() & SDL_WINDOW_INPUT_FOCUS )

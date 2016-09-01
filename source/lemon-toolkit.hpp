@@ -1,11 +1,11 @@
 #pragma once
 
-#include <core/context.hpp>
+#include <core/subsystem.hpp>
 #include <core/entity.hpp>
 #include <core/event.hpp>
 #include <core/memory.hpp>
 #include <core/typeinfo.hpp>
-#include <core/scheduler.hpp>
+#include <core/task.hpp>
 
 #include <math/vector.hpp>
 #include <math/matrix.hpp>

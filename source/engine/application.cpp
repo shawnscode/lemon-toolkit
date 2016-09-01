@@ -15,8 +15,10 @@ int Application::run()
     if( _exitcode != 0 )
         return _exitcode;
 
-    add_subsystem<Engine>();
-    auto& engine = get_subsystem<Engine>();
+    core::subsystem::initialize();
+    core::task::initialize();
+
+    auto& engine = core::add_subsystem<Engine>();
 
     start();
     if( _exitcode != 0 )

@@ -98,14 +98,14 @@ struct DeviceContext
 
 GraphicsObject::GraphicsObject(Device& device) : _device(device)
 {
-    _device.get_dispatcher().subscribe<EvtDeviceLost>(*this);
-    _device.get_dispatcher().subscribe<EvtDeviceRestore>(*this);
+    // _device.get_dispatcher().subscribe<EvtDeviceLost>(*this);
+    // _device.get_dispatcher().subscribe<EvtDeviceRestore>(*this);
 }
 
 GraphicsObject::~GraphicsObject()
 {
-    _device.get_dispatcher().unsubscribe<EvtDeviceLost>(*this);
-    _device.get_dispatcher().unsubscribe<EvtDeviceRestore>(*this);
+    // _device.get_dispatcher().unsubscribe<EvtDeviceLost>(*this);
+    // _device.get_dispatcher().unsubscribe<EvtDeviceRestore>(*this);
 }
 
 void GraphicsObject::receive(const EvtDeviceRestore& evt)
@@ -376,13 +376,13 @@ bool Device::restore_context()
     LOGI("GL_SHADING_LANGUAGE_VERSION:  %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
     //
-    get_dispatcher().emit<EvtDeviceRestore>();
+    // get_dispatcher().emit<EvtDeviceRestore>();
     return true;
 }
 
 void Device::release_context()
 {
-    get_dispatcher().emit<EvtDeviceLost>();
+    // get_dispatcher().emit<EvtDeviceLost>();
 
     //
     if( _device->window != nullptr && _device->context != 0 )

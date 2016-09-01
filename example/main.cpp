@@ -28,10 +28,10 @@ struct Example : public Application
 {
     void start() override
     {
-        auto& engine = get_subsystem<Engine>();
-        auto& collection = get_subsystem<res::ArchiveCollection>();
-        auto& cache = get_subsystem<res::ResourceCache>();
-        auto& device = get_subsystem<graphics::Device>();
+        auto& engine = core::get_subsystem<Engine>();
+        auto& collection = core::get_subsystem<res::ArchiveCollection>();
+        auto& cache = core::get_subsystem<res::ResourceCache>();
+        auto& device = core::get_subsystem<graphics::Device>();
 
         engine.set_time_smoothing_step(10);
         engine.set_max_fps(25);
@@ -68,13 +68,13 @@ struct Example : public Application
         shader->set_texture("sampler", texture);
 
         ///
-        subscribe<Example, EvtUpdate>();
-        subscribe<Example, EvtRender>();
+        // subscribe<Example, EvtUpdate>();
+        // subscribe<Example, EvtRender>();
     }
 
     void receive(const EvtUpdate& evt)
     {
-        auto& input = get_subsystem<Input>();
+        auto& input = core::get_subsystem<Input>();
 
         if( input.get_key_press(KeyboardCode::D) )
             x += 0.1f;
@@ -88,7 +88,7 @@ struct Example : public Application
 
     void receive(const EvtRender& evt)
     {
-        auto& device = get_subsystem<graphics::Device>();
+        auto& device = core::get_subsystem<graphics::Device>();
         auto size = device.get_window_size();
 
         auto transform = math::look_at(math::Vector3f{0, 0, -10+x*10}, math::Vector3f {0, 0, 0}, math::Vector3f {0, 1, 0});

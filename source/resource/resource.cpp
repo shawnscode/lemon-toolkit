@@ -6,8 +6,8 @@
 
 NS_LEMON_RESOURCE_BEGIN
 
-ResourceCache::ResourceCache(core::Context& ctx, unsigned threshold)
-: core::Subsystem(ctx), _threshold(threshold), _memusage(0)
+ResourceCache::ResourceCache(unsigned threshold)
+: _threshold(threshold), _memusage(0)
 {}
 
 ResourceCache::~ResourceCache()
@@ -15,7 +15,7 @@ ResourceCache::~ResourceCache()
 
 bool ResourceCache::initialize()
 {
-    ENSURE( has_subsystems<ArchiveCollection>() );
+    ENSURE( core::has_subsystems<ArchiveCollection>() );
     return true;
 }
 
@@ -76,7 +76,7 @@ void ResourceCache::touch(math::StringHash hash)
 
 std::fstream ResourceCache::get_file(const fs::Path& path)
 {
-    return get_subsystem<ArchiveCollection>().open(path, fs::FileMode::READ);
+    return core::get_subsystem<ArchiveCollection>().open(path, fs::FileMode::READ);
 }
 
 std::ostream& operator << (std::ostream& out, const ResourceCache& cache)

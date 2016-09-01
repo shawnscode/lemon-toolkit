@@ -145,7 +145,7 @@ enum class KeyboardQualifier
 struct Input : public core::Subsystem
 {
     SUBSYSTEM("Input");
-    Input(core::Context& c) : Subsystem(c) {}
+    Input() {}
     virtual ~Input() {}
 
     bool initialize() override;

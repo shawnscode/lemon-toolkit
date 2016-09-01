@@ -53,7 +53,7 @@ struct ArchiveCollection : core::Subsystem
 {
     SUBSYSTEM("ArchiveCollection");
 
-    ArchiveCollection(core::Context& c) : Subsystem(c) {}
+    ArchiveCollection() {}
     virtual ~ArchiveCollection();
 
     template<typename T> using boolean = typename std::enable_if<
