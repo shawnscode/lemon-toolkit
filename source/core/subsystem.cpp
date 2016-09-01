@@ -22,7 +22,7 @@ namespace subsystem
         return s_context != nullptr;
     }
 
-    void shutdown()
+    void dispose()
     {
         delete s_context;
         s_context = nullptr;

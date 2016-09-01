@@ -25,7 +25,6 @@ bool Engine::initialize()
     core::add_subsystem<res::ArchiveCollection>();
     core::add_subsystem<res::ResourceCache>();
     core::add_subsystem<Input>();
-    core::add_subsystem<core::TaskScheduler>(4);
 
     _timestep.zero();
     _last_frame_timepoint = clock::now();
@@ -41,7 +40,6 @@ bool Engine::initialize()
 
 void Engine::dispose()
 {
-    core::remove_subsystem<core::TaskScheduler>();
     // shutdown SDL now
     SDL_Quit();
 }

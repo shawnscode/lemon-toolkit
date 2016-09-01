@@ -70,7 +70,7 @@ template<typename S> struct EventRemoveSubsystem {};
 namespace subsystem
 {
     bool initialize();
-    void shutdown();
+    void dispose();
 }
 
 #include <core/subsystem.inl>
