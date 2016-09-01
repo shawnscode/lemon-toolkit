@@ -18,6 +18,7 @@ int Application::run()
     if( _exitcode != 0 )
         return _exitcode;
 
+    core::event::initialize();
     core::subsystem::initialize();
     core::task::initialize();
 
@@ -33,6 +34,7 @@ int Application::run()
     stop();
     core::task::dispose();
     core::subsystem::dispose();
+    core::event::dispose();
     return _exitcode;
 }
 

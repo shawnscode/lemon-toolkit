@@ -219,6 +219,8 @@ namespace task
 
     bool initialize(uint32_t nworker)
     {
+        ASSERT( s_scheduler == nullptr, "duplicated initialization of task scheduler." );
+
         if( nworker == 0 )
             nworker = get_cpu_core_count() - 1;
 

@@ -128,7 +128,7 @@ struct EntityManager
     template<typename ... Args> using view = view_t<EntityManager, Args...>;
     template<typename ... Args> using const_view = view_t<const EntityManager, Args...>;
 
-    EntityManager(EventManager&);
+    EntityManager();
     ~EntityManager();
 
     // non-copyable
@@ -178,8 +178,6 @@ protected:
     template<typename T> object_chunks<T>* get_chunks();
     void accomodate_entity(uint32_t);
 
-    // reference of event dispatcher
-    EventManager& _dispatcher;
     // incremented entity index for brand new and free slot
     Entity::index_type _incremental_index = 0;
     // each element in componets_pool corresponds to a Pool for a Component

@@ -8,86 +8,71 @@
 
 NS_LEMON_CORE_BEGIN
 
-// handles event subscription and delivery.
-// subscriptions are automatically removed when receivers are destroyed.
-struct EventManager
+// subscribe an object to receive events of type E
+template<typename E, typename R> void subscribe(R&);
+template<typename E, typename R> void unsubscribe(R&);
+
+// emit a constructed to all subscribtions
+template<typename E> void emit(const E&);
+template<typename E, typename ... Args> void emit(Args && ... args);
+
+
+namespace event
 {
-    // non-copyable
-    EventManager() = default;
-    EventManager(const EventManager&) = delete;
-    EventManager& operator=(const EventManager&) = delete;
+    bool initialize();
+    void dispose();
 
-    // subscribe an object to receive events of type E
-    template<typename E, typename R> void subscribe(R&);
-    template<typename E, typename R> void unsubscribe(R&);
-
-    template<typename E> void emit(const E&);
-    template<typename E, typename ... Args> void emit(Args && ... args);
-
-protected:
-    using closure       = std::function<void(const void*)>;
-    using dispatcher    = std::unordered_map<size_t, closure>;
-    std::vector<dispatcher> m_dispatchers;
-
-    // not thread-safe
-    template<typename T> static size_t get_event_index() { static size_t eid = index++; return eid; }
-    static size_t index;
-};
-
-template<typename E, typename R>
-INLINE void EventManager::subscribe(R& receiver)
-{
-    static_assert( sizeof(size_t) == sizeof(&receiver), "size of size_t is different with void*" );
-
-    auto index = get_event_index<E>();
-    auto id = (size_t)(&receiver);
-
-    if( m_dispatchers.size() <= index )
-        m_dispatchers.resize(index+1);
-
-    m_dispatchers[get_event_index<E>()][id] = [&](const void* event)
+    extern uint32_t s_event_index;
+    template<typename T> uint32_t get_event_index()
     {
-        receiver.receive(*static_cast<const E*>(event));
-    };
+        static uint32_t index = s_event_index++;
+        return index;
+    }
+
+    using closure = std::function<void(const void*)>;
+    void subscribe(uint32_t, size_t, closure);
+    void unsubscribe(uint32_t, size_t);
+    void emit(uint32_t, const void*);
 }
 
 template<typename E, typename R>
-INLINE void EventManager::unsubscribe(R& receiver)
+INLINE void subscribe(R& receiver)
 {
     static_assert( sizeof(size_t) == sizeof(&receiver), "size of size_t is different with void*" );
 
-    auto index = get_event_index<E>();
+    auto index = event::get_event_index<E>();
     auto id = (size_t)(&receiver);
 
-    if( m_dispatchers.size() > index )
+    event::subscribe(index, id, [&](const void* event)
     {
-        auto found = m_dispatchers[index].find(id);
-        if( found != m_dispatchers[index].end() )
-            m_dispatchers[index].erase(found);
-    }
+        receiver.receive(*static_cast<const E*>(event));
+    });
+}
+
+template<typename E, typename R>
+INLINE void unsubscribe(R& receiver)
+{
+    static_assert( sizeof(size_t) == sizeof(&receiver), "size of size_t is different with void*" );
+
+    auto index = event::get_event_index<E>();
+    auto id = (size_t)(&receiver);
+
+    event::unsubscribe(index, id);
 }
 
 template<typename E>
-INLINE void EventManager::emit(const E& evt)
+INLINE void emit(const E& evt)
 {
-    auto index = get_event_index<E>();
-    if( m_dispatchers.size() > index )
-    {
-        for( auto pair : m_dispatchers[index] )
-            pair.second(static_cast<const void*>(&evt));
-    }
+    auto index = event::get_event_index<E>();
+    event::emit(index, static_cast<const void*>(&evt));
 }
 
 template<typename E, typename ... Args>
-INLINE void EventManager::emit(Args && ... args)
+INLINE void emit(Args && ... args)
 {
-    auto index = get_event_index<E>();
-    if( m_dispatchers.size() > index )
-    {
-        E evt = E(std::forward<Args>(args) ...);
-        for( auto pair : m_dispatchers[index] )
-            pair.second(static_cast<void*>(&evt));
-    }
+    auto index = event::get_event_index<E>();
+    E evt = E(std::forward<Args>(args)...);
+    event::emit(index, static_cast<const void*>(&evt));
 }
 
 NS_LEMON_CORE_END

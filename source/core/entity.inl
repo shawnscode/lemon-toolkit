@@ -118,8 +118,8 @@ T* EntityManager::add_component(Entity object, Args&& ... args)
     component->_object = object;
     component->on_spawn();
 
-    _dispatcher.emit<EvtComponentAdded<T>>(object, *component);
-    _dispatcher.emit<EvtEntityModified>(object);
+    emit<EvtComponentAdded<T>>(object, *component);
+    emit<EvtEntityModified>(object);
     return component;
 }
 
@@ -155,8 +155,8 @@ void EntityManager::remove_component(Entity object)
         // remove the bit mask for this component
         _components_mask[object._index].reset(id);
         // broadcast this to listeners
-        _dispatcher.emit<EvtComponentRemoved<T>>(object, *component);
-        _dispatcher.emit<EvtEntityModified>(object);
+        emit<EvtComponentRemoved<T>>(object, *component);
+        emit<EvtEntityModified>(object);
         // call destructor
         get_chunks<T>()->dispose(object.get_index());
     }
@@ -281,7 +281,7 @@ EntityManager::object_chunks<T>* EntityManager::get_chunks()
             auto component = chunks->find(object.get_index());
             if( component != nullptr )
             {
-                _dispatcher.emit<EvtComponentRemoved<T>>(object, *component);
+                emit<EvtComponentRemoved<T>>(object, *component);
                 component->on_dispose();
                 chunks->dispose(object.get_index());
             }

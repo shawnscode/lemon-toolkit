@@ -5,11 +5,7 @@
 
 NS_LEMON_CORE_BEGIN
 
-size_t EventManager::index = 0;
-
-EntityManager::EntityManager(EventManager& dispatcher)
-: _dispatcher(dispatcher)
-{}
+EntityManager::EntityManager() {}
 
 EntityManager::~EntityManager()
 {
@@ -51,7 +47,7 @@ Entity EntityManager::spawn()
 
     version = _versions[index];
     auto object = Entity(index, version);
-    _dispatcher.emit<EvtEntityCreated>(object);
+    emit<EvtEntityCreated>(object);
     return object;
 }
 
@@ -63,7 +59,7 @@ void EntityManager::dispose(Entity object)
         return;
     }
 
-    _dispatcher.emit<EvtEntityDisposed>(object);
+    emit<EvtEntityDisposed>(object);
 
     const auto mask = _components_mask[object._index];
     for( auto i=0; i<_components_pool.size(); i++ )

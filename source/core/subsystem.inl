@@ -1,44 +1,44 @@
-// template<typename ... Args>
-// bool SubsystemWithEntities<Args...>::initialize()
-// {
-//     auto& world = _context.get_world();
-//     for( auto object : world.template find_entities_with<Args...>() )
-//         _entities[object] = world.template get_components<Args...>(object);
+template<typename ... Args>
+bool SubsystemWithEntities<Args...>::initialize()
+{
+    // auto& world = _context.get_world();
+    // for( auto object : world.template find_entities_with<Args...>() )
+        // _entities[object] = world.template get_components<Args...>(object);
 
-//     _context.get_dispatcher().template subscribe<EvtEntityModified>(*this);
-//     return true;
-// }
+    subscribe<EvtEntityModified>(*this);
+    return true;
+}
 
-// template<typename ... Args>
-// void SubsystemWithEntities<Args...>::dispose()
-// {
-//     _context.get_dispatcher().template unsubscribe<EvtEntityModified>(*this);
-// }
+template<typename ... Args>
+void SubsystemWithEntities<Args...>::dispose()
+{
+    unsubscribe<EvtEntityModified>(*this);
+}
 
-// template<typename ... Args>
-// void SubsystemWithEntities<Args...>::receive(const EvtEntityModified& evt)
-// {
-//     auto& world = _context.get_world();
-//     auto mask = world.template get_components_mask<Args...>();
-//     if( (world.get_components_mask(evt.object) & mask) == mask )
-//         _entities[evt.object] = world.template get_components<Args...>(evt.object);
-//     else
-//         _entities.erase(evt.object);
-// }
+template<typename ... Args>
+void SubsystemWithEntities<Args...>::receive(const EvtEntityModified& evt)
+{
+    // auto& world = _context.get_world();
+    // auto mask = world.template get_components_mask<Args...>();
+    // if( (world.get_components_mask(evt.object) & mask) == mask )
+    //     _entities[evt.object] = world.template get_components<Args...>(evt.object);
+    // else
+    //     _entities.erase(evt.object);
+}
 
-// template<typename Func, typename Tup, std::size_t... index>
-// void visit_with_unpack(Func&& cb, Entity object, Tup&& tuple, integer_sequence<size_t, index...>)
-// {
-//     return cb(object, *std::get<index>(std::forward<Tup>(tuple))...);
-// }
+template<typename Func, typename Tup, std::size_t... index>
+void visit_with_unpack(Func&& cb, Entity object, Tup&& tuple, integer_sequence<size_t, index...>)
+{
+    return cb(object, *std::get<index>(std::forward<Tup>(tuple))...);
+}
 
-// template<typename ... Args>
-// void SubsystemWithEntities<Args...>::visit(const visitor& cb)
-// {
-//     constexpr auto Size = std::tuple_size<typename std::decay<tuple>::type>::value;
-//     for( auto pair : *this )
-//         visit_with_unpack(cb, pair.first, pair.second, make_integer_sequence<size_t, Size>{});
-// }
+template<typename ... Args>
+void SubsystemWithEntities<Args...>::visit(const visitor& cb)
+{
+    constexpr auto Size = std::tuple_size<typename std::decay<tuple>::type>::value;
+    for( auto pair : *this )
+        visit_with_unpack(cb, pair.first, pair.second, make_integer_sequence<size_t, Size>{});
+}
 
 Subsystem* get_subsystem(TypeInfo::index_type);
 void add_subsystem(TypeInfo::index_type, Subsystem*);
@@ -65,14 +65,12 @@ template<typename S, typename ... Args> S& add_subsystem(Args&& ... args)
 
     add_subsystem(index, sys);
     return *sys;
-    // emit<EvtAddSubsystem<S>>();
 }
 
 template<typename S> void remove_subsystem()
 {
     auto index = TypeInfo::id<Subsystem, S>();
     remove_subsystem(index);
-    // emit<EvtRemoveSubsystem<S>>();
 }
 
 template<typename S> bool has_subsystems()
