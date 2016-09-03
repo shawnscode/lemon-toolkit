@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <core/entity.hpp>
+#include <core/ecs.hpp>
 #include <math/matrix.hpp>
 #include <math/quaternion.hpp>
 

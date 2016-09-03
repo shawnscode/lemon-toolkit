@@ -3,14 +3,12 @@
 
 #pragma once
 
-#include <core/subsystem.hpp>
-#include <thread>
-#include <future>
-#include <mutex>
-#include <condition_variable>
-#include <stdexcept>
+#include <core/defines.hpp>
 
 NS_LEMON_CORE_BEGIN
+
+#define MARK_AS_MAIN_THREAD_ONLY() \
+    ASSERT( lemon::core::task::is_main_thread(), "main thread only." );
 
 // a light-weight task scheduler with automatic load balancing and dynamic
 // parallelism supports

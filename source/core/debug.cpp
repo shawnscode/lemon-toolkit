@@ -1,4 +1,5 @@
 #include <core/debug.hpp>
+#include <core/task.hpp>
 #include <cassert>
 
 NS_LEMON_CORE_BEGIN
@@ -198,6 +199,12 @@ void SET_DEBUG_CONFIG(int filter, bool exception)
 {
     core::s_filter = static_cast<core::LogLevel>(filter);
     core::s_exception = exception;
+}
+
+void ASSERT_MAIN_THREAD(const char* message)
+{
+    if( !core::task::is_main_thread() )
+        LOGE(message);
 }
 
 NS_LEMON_END

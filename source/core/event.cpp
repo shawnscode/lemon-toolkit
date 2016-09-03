@@ -2,7 +2,6 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <core/event.hpp>
-#include <core/task.hpp>
 
 NS_LEMON_CORE_BEGIN
 
@@ -59,8 +58,6 @@ namespace event
 
     void subscribe(uint32_t index, size_t id, closure cb)
     {
-        ENSURE( task::is_main_thread() );
-
         if( s_dispatcher->table.size() <= index )
             s_dispatcher->table.resize(index+1);
 
@@ -69,8 +66,6 @@ namespace event
 
     void unsubscribe(uint32_t index, size_t id)
     {
-        ENSURE( task::is_main_thread() );
-
         if( s_dispatcher->table.size() > index )
         {
             auto found = s_dispatcher->table[index].find(id);
@@ -81,8 +76,6 @@ namespace event
 
     void emit(uint32_t index, const void* evt)
     {
-        ENSURE( task::is_main_thread() );
-
         if( s_dispatcher->table.size() > index )
         {
             for( auto& pair : s_dispatcher->table[index] )

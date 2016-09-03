@@ -2,7 +2,6 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <core/subsystem.hpp>
-#include <core/event.hpp>
 
 NS_LEMON_CORE_BEGIN
 
@@ -40,11 +39,15 @@ Subsystem* get_subsystem(TypeInfo::index_type index)
 
 void add_subsystem(TypeInfo::index_type index, Subsystem* subsystem)
 {
+    ASSERT_MAIN_THREAD("add_subsystem");
+
     s_context->subsystems.insert(std::make_pair(index, subsystem));
 }
 
 void remove_subsystem(TypeInfo::index_type index)
 {
+    ASSERT_MAIN_THREAD("remove_subsystem");
+
     auto found = s_context->subsystems.find(index);
     if( found != s_context->subsystems.end() )
     {

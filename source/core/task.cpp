@@ -2,6 +2,11 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <core/task.hpp>
+
+#include <mutex>
+#include <thread>
+#include <condition_variable>
+
 #include <SDL2/SDL.h>
 
 NS_LEMON_CORE_BEGIN

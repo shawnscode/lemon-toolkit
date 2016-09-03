@@ -38,6 +38,8 @@ namespace event
 template<typename E, typename R>
 INLINE void subscribe(R& receiver)
 {
+    ASSERT_MAIN_THREAD("subscribe");
+
     static_assert( sizeof(size_t) == sizeof(&receiver), "size of size_t is different with void*" );
 
     auto index = event::get_event_index<E>();
@@ -52,6 +54,8 @@ INLINE void subscribe(R& receiver)
 template<typename E, typename R>
 INLINE void unsubscribe(R& receiver)
 {
+    ASSERT_MAIN_THREAD("unsubscribe");
+
     static_assert( sizeof(size_t) == sizeof(&receiver), "size of size_t is different with void*" );
 
     auto index = event::get_event_index<E>();
@@ -63,6 +67,8 @@ INLINE void unsubscribe(R& receiver)
 template<typename E>
 INLINE void emit(const E& evt)
 {
+    ASSERT_MAIN_THREAD("emit");
+
     auto index = event::get_event_index<E>();
     event::emit(index, static_cast<const void*>(&evt));
 }
@@ -70,6 +76,8 @@ INLINE void emit(const E& evt)
 template<typename E, typename ... Args>
 INLINE void emit(Args && ... args)
 {
+    ASSERT_MAIN_THREAD("emit");
+
     auto index = event::get_event_index<E>();
     E evt = E(std::forward<Args>(args)...);
     event::emit(index, static_cast<const void*>(&evt));

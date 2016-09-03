@@ -24,6 +24,7 @@ extern void ABORT(const char* file, int line, const char* format, ...);
 extern void LOGI(const char* format, ...);
 extern void LOGW(const char* format, ...);
 extern void LOGE(const char* format, ...);
+extern void ASSERT_MAIN_THREAD(const char* message);
 extern void SET_DEBUG_CONFIG(int filter, bool exception);
 
 const static int LOG_VERBOSE = 0;
