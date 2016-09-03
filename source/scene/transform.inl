@@ -43,7 +43,7 @@ Transform::iterator_t<T>::iterator_t(T* transform, iterate_mode mode, core::Comp
         else
             _cursor = transform->_first_child;
         
-        if( _cursor != nullptr && (_cursor->get_components_mask() & _mask) != _mask )
+        if( _cursor != nullptr && (core::get_components_mask(*_cursor) & _mask) != _mask )
             find_next_available();
     }
     else
@@ -106,7 +106,7 @@ INLINE Transform::iterator_t<T>& Transform::iterator_t<T>::operator ++ ()
     while( _cursor != nullptr )
     {
         find_next_available();
-        if( (_cursor == nullptr) || (_cursor->get_components_mask() & _mask) == _mask )
+        if( (_cursor == nullptr) || (core::get_components_mask(*_cursor) & _mask) == _mask )
             break;
     }
     return *this;
@@ -142,7 +142,7 @@ template<typename T, typename ... Args>
 Transform::view_t<T, Args...>::view_t(T* transform, iterate_mode mode)
 : _transform(transform), _mode(mode)
 {
-    _mask = transform->get_world()->template get_components_mask<Args...>();
+    _mask = core::get_components_mask<Args...>();
 }
 
 template<typename T, typename ... Args>
@@ -173,12 +173,12 @@ INLINE unsigned Transform::view_t<T, Args...>::count() const
 
 INLINE bool Transform::operator == (const Transform& rh) const
 {
-    return get_object() == rh.get_object();
+    return object == rh.object;
 }
 
 INLINE bool Transform::operator != (const Transform& rh) const
 {
-    return get_object() != rh.get_object();
+    return object != rh.object;
 }
 
 INLINE void Transform::scale(const Vector3f& scaler)

@@ -8,6 +8,7 @@
 #include <resource/archives.hpp>
 #include <core/task.hpp>
 
+#include <thread>
 #include <SDL2/SDL.h>
 
 NS_LEMON_BEGIN

@@ -64,8 +64,7 @@ INLINE void unsubscribe(R& receiver)
     event::unsubscribe(index, id);
 }
 
-template<typename E>
-INLINE void emit(const E& evt)
+template<typename E> INLINE void emit(const E& evt)
 {
     ASSERT_MAIN_THREAD("emit");
 
@@ -73,8 +72,7 @@ INLINE void emit(const E& evt)
     event::emit(index, static_cast<const void*>(&evt));
 }
 
-template<typename E, typename ... Args>
-INLINE void emit(Args && ... args)
+template<typename E, typename ... Args> INLINE void emit(Args && ... args)
 {
     ASSERT_MAIN_THREAD("emit");
 

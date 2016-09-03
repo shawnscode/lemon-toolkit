@@ -7,6 +7,11 @@ INLINE MemoryChunks::index_type MemoryChunks::size() const
     return _total_elements - _available;
 }
 
+INLINE MemoryChunks::index_type MemoryChunks::capacity() const
+{
+    return _total_elements;
+}
+
 INLINE MemoryChunks::index_type MemoryChunks::chunk_size() const
 {
     return _chunk_size;

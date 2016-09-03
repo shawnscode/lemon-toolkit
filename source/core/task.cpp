@@ -150,6 +150,8 @@ void run_task(TaskHandle handle)
         std::unique_lock<std::mutex> L(s_scheduler->mutex);
         s_scheduler->alive_tasks.push(handle);
     }
+
+    s_scheduler->condition.notify_one();
 }
 
 void wait_task(TaskHandle handle)
@@ -159,8 +161,9 @@ void wait_task(TaskHandle handle)
 
     while( !completed_task(handle) )
     {
-        if( !_execute_one_task() )
-            break;
+        // std::this_thread::yield();
+        //if( !_execute_one_task() )
+            //break;
     }
 }
 

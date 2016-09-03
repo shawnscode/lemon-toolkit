@@ -204,7 +204,7 @@ void SET_DEBUG_CONFIG(int filter, bool exception)
 void ASSERT_MAIN_THREAD(const char* message)
 {
     if( !core::task::is_main_thread() )
-        LOGE(message);
+        LOGE("%s only run on the main thread.", message);
 }
 
 NS_LEMON_END

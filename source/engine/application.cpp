@@ -21,6 +21,7 @@ int Application::run()
     core::event::initialize();
     core::subsystem::initialize();
     core::task::initialize();
+    core::ecs::initialize();
 
     auto& engine = core::add_subsystem<Engine>();
 
@@ -32,6 +33,8 @@ int Application::run()
         engine.run_one_frame();
 
     stop();
+
+    core::ecs::dispose();
     core::task::dispose();
     core::subsystem::dispose();
     core::event::dispose();

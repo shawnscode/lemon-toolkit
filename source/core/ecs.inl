@@ -35,38 +35,38 @@ INLINE void Entity::invalidate()
 
 // INCLUDED METHODS OF ENTITY MANAGER
 
-template<typename T> void register_component()
+template<typename T, typename ... Args> Entity spawn_with(Args && ... args)
 {
-    MARK_AS_MAIN_THREAD_ONLY();
-
-    auto destructor = [](Entity object, void* chunk)
-    {
-        T* component = static_cast<T*>(chunk);
-        component->dispose();
-        component->~T();
-    };
-
-    const auto id = TypeInfo::id<Component, T>();
-    return ecs::register_component(id, sizeof(T), T::chunk_size, destructor);
+    auto object = spawn();
+    add_component<T>(object, std::forward<Args>(args)...);
+    return object;
 }
 
 template<typename T, typename ... Args> T* add_component(Entity object, Args&& ... args)
 {
-    ASSERT( alive(object), "invalid operation: dead entity." );
-    ASSERT( !has_components<T>(object), "invalid operation: duplicated component." );
+    ASSERT_MAIN_THREAD( "add_component" );
 
     const auto id = TypeInfo::id<Component, T>();
+    if( !ecs::has_component_registered(id) )
+        ecs::register_component<T>();
+
+    ASSERT( alive(object), "invalid operation: dead entity." );
+    ASSERT( !has_components<T>(object), "invalid operation: duplicated component %s.", T::name );
+
     auto component = static_cast<T*>(ecs::add_component(id, object));
     if( component == nullptr )
         return nullptr;
 
     ::new(component) T(std::forward<Args>(args)...);
+    const_cast<Entity&>(component->object) = object;
+    emit<EvtComponentAdded<T>>(object, *component);
+    emit<EvtEntityModified>(object);
+
     if( !component->initialize() )
     {
-        ecs::remove_component(object, id);
+        ecs::remove_component(id, object);
         return nullptr;
     }
-
     return component;
 }
 
@@ -83,6 +83,7 @@ template<typename ... T> INLINE std::tuple<T*...> get_components(Entity object)
 
 template<typename T> INLINE void remove_component(Entity object)
 {
+    ASSERT_MAIN_THREAD( "remove_component" );
     const auto id = TypeInfo::id<Component, T>();
     ecs::remove_component(id, object);
 }
@@ -94,7 +95,7 @@ template<> INLINE bool has_components(Entity object)
 
 template<typename ... Args> INLINE bool has_components(Entity object)
 {
-    return ecs::has_components_t<Args ...>();
+    return ecs::has_components_t<Args ...>(object);
 }
 
 template<> INLINE ComponentMask get_components_mask()
@@ -107,8 +108,35 @@ template<typename ... Args> INLINE ComponentMask get_components_mask()
     return ecs::get_components_mask_t<Args...>();
 }
 
+INLINE ecs::view<> find_entities()
+{
+    return ecs::view<>();
+}
+
+template<typename ... T> INLINE ecs::view<T...> find_entities_with()
+{
+    return ecs::view<T...>();
+}
+
 namespace ecs
 {
+    template<typename T> bool register_component()
+    {
+        auto destructor = [](Entity object, void* chunk)
+        {
+            T* component = static_cast<T*>(chunk);
+
+            emit<EvtComponentRemoved<T>>(object, *component);
+            emit<EvtEntityModified>(object);
+
+            component->dispose();
+            component->~T();
+        };
+
+        const auto id = TypeInfo::id<Component, T>();
+        return ecs::register_component(id, sizeof(T), T::chunk_size, destructor);
+    }
+
     template<typename T>
     INLINE bool has_components_t(Entity object)
     {

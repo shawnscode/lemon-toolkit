@@ -4,7 +4,7 @@
 #pragma once
 
 #include <core/defines.hpp>
-#include <core/task.hpp>
+#include <core/event.hpp>
 #include <core/typeinfo.hpp>
 
 #include <bitset>
@@ -38,13 +38,13 @@ private:
     index_type _version = invalid;
 };
 
-#define SET_CHUNK_SIZE(size) static const size_t chunk_size = size;
+#define SET_CHUNK_SIZE(SIZE) static const size_t chunk_size = SIZE;
+#define SET_COMPONENT_NAME(NAME) static const char* name = NAME;
 
 struct Component
 {
-    static const size_t chunk_size = kEntPoolChunkSize;
-
-    Component(Entity object) : object(object) {}
+    constexpr static const size_t chunk_size = kEntPoolChunkSize;
+    constexpr static const char* const name = "Component";
 
     const Entity object;
     operator Entity () const { return object; }
@@ -52,6 +52,9 @@ struct Component
     // static dispatch instead of virtual table
     bool initialize() { return true; }
     void dispose() {}
+
+protected:
+    Component() : object({}) {}
 
     // component memory is always managed by entity manager.
     void operator delete(void*) = delete;
@@ -98,18 +101,17 @@ namespace ecs
     template<typename T1, typename T2, typename ... Args> bool has_components_t(Entity);
 
     template<typename T> ComponentMask get_components_mask_t();
-    template<typename T1, typename T2, typename ... Args> ComponentMask get_components_mask_t(Entity);
+    template<typename T1, typename T2, typename ... Args> ComponentMask get_components_mask_t();
 }
 
 // spawn a new entity identifier
 Entity spawn();
+template<typename T, typename ... Args> Entity spawn_with(Args&&...);
 // recycle entity identifier and its components
 void recycle(Entity);
 // returns true if the entity identifier is current alive
 bool alive(Entity);
 
-// initialize component storage and type informations
-template<typename T> bool register_component();
 // assign a component to object, passing through component constructor arguments
 template<typename T, typename ... Args> T* add_component(Entity, Args && ... args);
 // retrieve a component assigned to object
@@ -134,10 +136,16 @@ namespace ecs
     void dispose();
     // returns the count of current alive entities
     size_t size();
+    // dispose all the alive objects
+    void reset();
+
+    // initialize component storage and type informations
+    template<typename T> bool register_component();
+    bool has_component_registered(TypeInfo::index_type);
 
     // private ecs specialization to avoid ambiguous resolve
     using destructor = std::function<void(Entity, void*)>;
-    bool register_component(TypeInfo::index_type, size_t, const destructor&);
+    bool register_component(TypeInfo::index_type, size_t, size_t, const destructor&);
     void* add_component(TypeInfo::index_type, Entity);
     void* get_component(TypeInfo::index_type, Entity);
     void remove_component(TypeInfo::index_type, Entity);
@@ -145,21 +153,15 @@ namespace ecs
 
     Entity::index_type find_next_available(Entity::index_type, ComponentMask, bool self = false);
     Entity get(Entity::index_type);
+
+    namespace test_mem
+    {
+        size_t size(TypeInfo::index_type);
+        size_t capacity(TypeInfo::index_type);
+    }
 }
 
 /// dispatched events during the whole life of event manager
-struct EvtEntityCreated
-{
-    explicit EvtEntityCreated(Entity object) : object(object) {}
-    Entity object;
-};
-
-struct EvtEntityDisposed
-{
-    explicit EvtEntityDisposed(Entity object) : object(object) {}
-    Entity object;
-};
-
 struct EvtEntityModified
 {
     explicit EvtEntityModified(Entity object) : object(object) {}

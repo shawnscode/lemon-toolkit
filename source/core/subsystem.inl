@@ -1,10 +1,8 @@
 template<typename ... Args>
 bool SubsystemWithEntities<Args...>::initialize()
 {
-    // auto& world = _context.get_world();
-    // for( auto object : world.template find_entities_with<Args...>() )
-        // _entities[object] = world.template get_components<Args...>(object);
-
+    for( auto object : find_entities_with<Args...>() )
+        _entities[object] = get_components<Args...>(object);
     subscribe<EvtEntityModified>(*this);
     return true;
 }
@@ -19,11 +17,11 @@ template<typename ... Args>
 void SubsystemWithEntities<Args...>::receive(const EvtEntityModified& evt)
 {
     // auto& world = _context.get_world();
-    // auto mask = world.template get_components_mask<Args...>();
-    // if( (world.get_components_mask(evt.object) & mask) == mask )
-    //     _entities[evt.object] = world.template get_components<Args...>(evt.object);
-    // else
-    //     _entities.erase(evt.object);
+    auto mask = get_components_mask<Args...>();
+    if( (get_components_mask(evt.object) & mask) == mask )
+        _entities[evt.object] = get_components<Args...>(evt.object);
+    else
+        _entities.erase(evt.object);
 }
 
 template<typename Func, typename Tup, std::size_t... index>

@@ -12,7 +12,9 @@ struct ECSWorld
     {
         IndexedMemoryChunks(ECSWorld& world, size_t size, size_t chunk_size, const ecs::destructor& cb)
         : _world(world), _destructor(cb), MemoryChunks(size, chunk_size)
-        {}
+        {
+            _objects.resize(8, nullptr);
+        }
 
         ~IndexedMemoryChunks()
         {
@@ -33,7 +35,7 @@ struct ECSWorld
 
             if( !_fallback )
             {
-                for( unsigned i = 0; i < 8; i++ )
+                for( unsigned i = 0; i < _objects.size(); i++ )
                 {
                     if( _objects[i] == nullptr )
                     {
@@ -114,6 +116,11 @@ struct ECSWorld
 
     ~ECSWorld()
     {
+        reset();
+    }
+
+    void reset()
+    {
         for( Entity::index_type i = 0; i < _components.size(); i++ )
         {
             if( _components[i] != nullptr )
@@ -121,6 +128,17 @@ struct ECSWorld
                 delete _components[i];
                 _components[i] = nullptr;
             }
+        }
+
+        for( unsigned i = 0; i < _versions.size(); i++ )
+        {
+            if( (_versions[i] & 0x1) == 1 )
+                _versions[i] ++;
+        }
+
+        for( unsigned i = 0; i < _masks.size(); i++ )
+        {
+            _masks[i].reset();
         }
     }
 
@@ -204,12 +222,17 @@ struct ECSWorld
         return true;
     }
 
+    bool has_component_registered(TypeInfo::index_type id)
+    {
+        return _components.size() > id && _components[id] != nullptr;
+    }
+
     void* add_component(TypeInfo::index_type id, Entity object)
     {
         if( !alive(object) )
             return nullptr;
 
-        ASSERT( _components.size() < id && _components[id] != nullptr,
+        ASSERT( _components.size() > id && _components[id] != nullptr,
             "can't add component without register it first." );
 
         auto chunk = _components[id]->malloc_with_index(object.get_index());
@@ -222,10 +245,10 @@ struct ECSWorld
         if( !alive(object) )
             return nullptr;
 
-        if( _components.size() >= id || _components[id] == nullptr )
+        if( _components.size() <= id || _components[id] == nullptr )
             return nullptr;
 
-        return _components[id]->get(id);
+        return _components[id]->get(object.get_index());
     }
 
     void remove_component(TypeInfo::index_type id, Entity object)
@@ -263,7 +286,7 @@ struct ECSWorld
 
         for( Entity::index_type i = self ? index : index + 1; i < Entity::invalid; i++ )
         {
-            if( index < _versions.size() && (_versions[index] & 0x1) == 1 )
+            if( i < _versions.size() && (_versions[i] & 0x1) == 1 )
             {
                 if( (_masks[i] & mask) == mask )
                     return Entity(i, _versions[i]);
@@ -271,6 +294,18 @@ struct ECSWorld
         }
 
         return Entity();
+    }
+
+    INLINE size_t size(TypeInfo::index_type id)
+    {
+        return (_components.size() > id && _components[id] != nullptr) ?
+            _components[id]->size() : 0;
+    }
+
+    INLINE size_t capacity(TypeInfo::index_type id)
+    {
+        return (_components.size() > id && _components[id] != nullptr) ?
+            _components[id]->capacity() : 0;   
     }
 
 protected:
@@ -339,6 +374,16 @@ namespace ecs
         return s_world->size();
     }
 
+    void reset()
+    {
+        s_world->reset();
+    }
+
+    bool has_component_registered(TypeInfo::index_type id)
+    {
+        return s_world->has_component_registered(id);
+    }
+
     bool register_component(TypeInfo::index_type id, size_t size, size_t chunk_size, const destructor& cb)
     {
         return s_world->register_component(id, size, chunk_size, cb);
@@ -372,6 +417,19 @@ namespace ecs
     Entity get(Entity::index_type index)
     {
         return s_world->get(index);
+    }
+
+    namespace test_mem
+    {
+        size_t size(TypeInfo::index_type id)
+        {
+            return s_world->size(id);
+        }
+
+        size_t capacity(TypeInfo::index_type id)
+        {
+            return s_world->capacity(id);
+        }
     }
 }
 
