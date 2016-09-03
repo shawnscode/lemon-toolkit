@@ -3,6 +3,7 @@
 #include <cstdio>
 
 USING_NS_LEMON;
+USING_NS_LEMON_CORE;
 USING_NS_LEMON_RESOURCE;
 USING_NS_LEMON_FILESYSTEM;
 
@@ -132,12 +133,15 @@ TEST_CASE("TestFilesystem")
     REQUIRE( set_current_directory(pwd) );
 }
 
-struct ArchiveFixture : core::Context
+struct ArchiveFixture
 {
     ArchiveFixture()
     {
-        SET_DEBUG_CONFIG(LOG_ERROR, true);
+        event::initialize();
+        subsystem::initialize();
+        task::initialize();
 
+        SET_DEBUG_CONFIG(LOG_ERROR, true);
         pwd = get_current_directory();
         set_current_directory("../../test");
         add_subsystem<ArchiveCollection>();
@@ -146,6 +150,10 @@ struct ArchiveFixture : core::Context
     ~ArchiveFixture()
     {
         set_current_directory(pwd);
+
+        task::dispose();
+        subsystem::dispose();
+        event::dispose();
     }
 
     Path pwd;
@@ -197,12 +205,15 @@ struct Text : public Resource
     std::string text;
 };
 
-struct ResourceCacheFixture : core::Context
+struct ResourceCacheFixture
 {
     ResourceCacheFixture()
     {
-        // SET_DEBUG_CONFIG(LOG_ERROR, true);
+        event::initialize();
+        subsystem::initialize();
+        task::initialize();
 
+        SET_DEBUG_CONFIG(LOG_ERROR, true);
         pwd = get_current_directory();
         set_current_directory("../../test");
         add_subsystem<ArchiveCollection>();
@@ -226,6 +237,10 @@ struct ResourceCacheFixture : core::Context
     {
         remove("tmp", true);
         set_current_directory(pwd);
+
+        task::dispose();
+        subsystem::dispose();
+        event::dispose();
     }
 
     Path pwd;

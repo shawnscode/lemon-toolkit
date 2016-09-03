@@ -35,93 +35,114 @@ struct Direction : public Component
     float x, y;
 };
 
+struct Context
+{
+    Context()
+    {
+        event::initialize();
+        subsystem::initialize();
+        task::initialize();
+        ecs::initialize();
+    }
+
+    ~Context()
+    {
+        ecs::dispose();
+        task::dispose();
+        subsystem::dispose();
+        event::dispose();
+    }
+};
+
 TEST_CASE_METHOD(Context, "TestCreateEntity")
 {
-    REQUIRE( _world.size() == 0UL );
+    ecs::size();
 
-    auto e2 = _world.spawn();
-    REQUIRE( _world.is_alive(e2) );
-    REQUIRE( _world.size() == 1UL );
+    REQUIRE( ecs::size() == 0UL );
+
+    auto e2 = spawn();
+    REQUIRE( alive(e2) );
+    REQUIRE( ecs::size() == 1UL );
 
     Entity e1 = e2;
-    REQUIRE( _world.is_alive(e1) );
+    REQUIRE( alive(e1) );
 }
 
 // its complex to implementation a generic clone senario,
 // when take hierarchy into consideration.
 // TEST_CASE_METHOD(Context, "TestEntityCreateFromCopy")
 // {
-//     auto e = _world.spawn();
-//     auto ep = _world.add_component<Position>(e, 1, 2);
+//     auto e = spawn();
+//     auto ep = add_component<Position>(e, 1, 2);
 
 //     auto f = _world.clone(e);
-//     auto fp = _world.get_component<Position>(f);
+//     auto fp = get_component<Position>(f);
 
 //     REQUIRE( ep != fp );
 //     REQUIRE( ep->x == fp->x );
 //     REQUIRE( ep->y == fp->y );
 
 //     REQUIRE( e != f );
-//     REQUIRE( _world.get_components_mask(e) == _world.get_components_mask(f) );
+//     REQUIRE( get_components_mask(e) == get_components_mask(f) );
 
-//     REQUIRE( _world.size() == 2 );
+//     REQUIRE( ecs::size() == 2 );
 // }
 
 TEST_CASE_METHOD(Context, "TestEntityAsBoolean")
 {
-    REQUIRE( _world.size() == 0UL );
+    REQUIRE( ecs::size() == 0UL );
 
-    auto e = _world.spawn();
-    REQUIRE( _world.is_alive(e) );
-    REQUIRE( _world.size() == 1UL );
+    auto e = spawn();
+    REQUIRE( alive(e) );
+    REQUIRE( ecs::size() == 1UL );
 
-    _world.dispose(e);
-    REQUIRE( _world.size() == 0UL );
-    REQUIRE( !_world.is_alive(e) );
+    recycle(e);
+    REQUIRE( ecs::size() == 0UL );
+    REQUIRE( !alive(e) );
 }
 
 TEST_CASE_METHOD(Context, "TestEntityReuse")
 {
-    auto e1 = _world.spawn();
+    auto e1 = spawn();
     auto e2 = e1;
     auto index = e1.get_index();
     auto version = e1.get_version();
-    REQUIRE( _world.is_alive(e1) );
-    REQUIRE( _world.is_alive(e2) );
+    REQUIRE( alive(e1) );
+    REQUIRE( alive(e2) );
 
-    _world.add_component<Position>(e1);
-    _world.dispose(e1);
-    REQUIRE( !_world.is_alive(e1) );
-    REQUIRE( !_world.is_alive(e2) );
+    add_component<Position>(e1);
+    recycle(e1);
+    REQUIRE( !alive(e1) );
+    REQUIRE( !alive(e2) );
 
-    auto e3 = _world.spawn();
+    auto e3 = spawn();
     REQUIRE( e3.get_index() == index );
     REQUIRE( e3.get_version() != version );
-    REQUIRE( !_world.has_component<Position>(e3) );
+    REQUIRE( !has_components<Position>(e3) );
 
-    _world.add_component<Position>(e3);
-    REQUIRE( _world.has_component<Position>(e3) );
+    add_component<Position>(e3);
+    REQUIRE( has_components<Position>(e3) );
 }
 
 TEST_CASE_METHOD(Context, "TestEntityAssignment")
 {
-    Entity a = _world.spawn();
+    Entity a = spawn();
     Entity b = a;
     REQUIRE( a == b );
 
     a.invalidate();
     REQUIRE( a != b );
 
-    REQUIRE( !_world.is_alive(a) );
-    REQUIRE( _world.is_alive(b) );
+    REQUIRE( !alive(a) );
+    REQUIRE( alive(b) );
 }
 
 TEST_CASE_METHOD(Context, "TestComponentConstruction")
 {
-    auto e = _world.spawn();
-    auto p = _world.add_component<Position>(e, 1, 2);
+    auto e = spawn();
+    auto p = add_component<Position>(e, 1, 2);
 
-    auto cp = _world.get_component<Position>(e);
+    auto cp = get_component<Position>(e);
     REQUIRE( p == cp );
     REQUIRE( cp->x == Approx(1.0f) );
     REQUIRE( cp->y == Approx(2.0f) );
@@ -129,98 +150,99 @@ TEST_CASE_METHOD(Context, "TestComponentConstruction")
 
 TEST_CASE_METHOD(Context, "TestComponentIdsDiffer")
 {
-    REQUIRE( _world.get_components_mask<Position>() != _world.get_components_mask<Direction>() );
-    REQUIRE( (_world.get_components_mask<Position, Direction>()) != _world.get_components_mask<Direction>() );
+    REQUIRE( get_components_mask<Position>() != get_components_mask<Direction>() );
+    REQUIRE( (get_components_mask<Position, Direction>()) != get_components_mask<Direction>() );
     // REQUIRE( TypeID::value<ComponentBase, Position>() != TypeID::value<ComponentBase, Direction>() );
 }
 
 TEST_CASE_METHOD(Context, "TestComponentHandleInvalidatedWhenEntityDestroyed") {
-    auto a = _world.spawn();
-    auto position = _world.add_component<Position>(a, 1, 2);
+    auto a = spawn();
+    auto position = add_component<Position>(a, 1, 2);
     REQUIRE(position);
     REQUIRE(position->x == 1);
     REQUIRE(position->y == 2);
 
-    _world.dispose(a);
-    REQUIRE( !_world.has_component<Position>(a) );
+    recycle(a);
+    REQUIRE( !has_components<Position>(a) );
 }
 
 TEST_CASE_METHOD(Context, "TestComponentAssignmentFromCopy")
 {
-    auto e = _world.spawn();
+    auto e = spawn();
     auto p = Position(1, 2);
-    auto h = _world.add_component<Position>(e, p);
+    auto h = add_component<Position>(e, p);
 
     REQUIRE( h );
     REQUIRE( h->x == p.x );
     REQUIRE( h->y == p.y );
 
-    _world.dispose(e);
-    REQUIRE( !_world.has_component<Position>(e) );
+    recycle(e);
+    REQUIRE( !has_components<Position>(e) );
 }
 
 TEST_CASE_METHOD(Context, "TestDestroyEntity")
 {
-    auto e = _world.spawn();
-    auto f = _world.spawn();
+    auto e = spawn();
+    auto f = spawn();
 
-    _world.add_component<Position>(e);
-    _world.add_component<Position>(f);
+    add_component<Position>(e);
+    add_component<Position>(f);
 
-    _world.add_component<Direction>(e);
-    _world.add_component<Direction>(f);
+    add_component<Direction>(e);
+    add_component<Direction>(f);
 
-    REQUIRE( _world.is_alive(e) );
-    REQUIRE( _world.is_alive(f) );
-    REQUIRE( _world.get_component<Position>(e) != nullptr );
-    REQUIRE( _world.get_component<Direction>(e) != nullptr );
-    REQUIRE( _world.get_component<Position>(f) != nullptr );
-    REQUIRE( _world.get_component<Direction>(f) != nullptr );
-    REQUIRE( _world.has_component<Position>(e) );
-    REQUIRE( _world.has_component<Position>(f) );
+    REQUIRE( alive(e) );
+    REQUIRE( alive(f) );
+    REQUIRE( get_component<Position>(e) != nullptr );
+    REQUIRE( get_component<Direction>(e) != nullptr );
+    REQUIRE( get_component<Position>(f) != nullptr );
+    REQUIRE( get_component<Direction>(f) != nullptr );
+    REQUIRE( has_components<Position>(e) );
+    REQUIRE( has_components<Position>(f) );
 
-    _world.dispose(e);
-    REQUIRE( !_world.is_alive(e) );
-    REQUIRE( _world.is_alive(f) );
-    REQUIRE( _world.get_component<Position>(f) != nullptr );
-    REQUIRE( _world.get_component<Direction>(f) != nullptr );
-    REQUIRE( _world.has_component<Position>(f) );
+    recycle(e);
+    REQUIRE( !alive(e) );
+    REQUIRE( alive(f) );
+    REQUIRE( get_component<Position>(f) != nullptr );
+    REQUIRE( get_component<Direction>(f) != nullptr );
+    REQUIRE( has_components<Position>(f) );
 }
 
 TEST_CASE_METHOD(Context, "TestEntityDestroyAll")
 {
-    auto e = _world.spawn();
-    auto f = _world.spawn();
-    _world.reset();
-    REQUIRE( !_world.is_alive(e) );
-    REQUIRE( !_world.is_alive(f) );
+    auto e = spawn();
+    auto f = spawn();
+    ecs::reset();
+
+    REQUIRE( !alive(e) );
+    REQUIRE( !alive(f) );
 }
 
 TEST_CASE_METHOD(Context, "TestEntityDestroyHole") {
     std::vector<Entity> entities;
 
     auto count = [this]()->int {
-        auto view = _world.find_entities_with<Position>();
+        auto view = find_entities_with<Position>();
         auto cursor = view.begin();
         return std::count_if(view.begin(), view.end(), [](const Entity &) { return true; });
     };
 
     for (int i = 0; i < 5000; i++) {
-        auto e = _world.spawn();
-        _world.add_component<Position>(e);
+        auto e = spawn();
+        add_component<Position>(e);
         entities.push_back(e);
     }
 
     REQUIRE(count() ==  5000);
-    _world.dispose(entities[2500]);
+    recycle(entities[2500]);
     REQUIRE(count() ==  4999);
 }
 
 TEST_CASE_METHOD(Context, "TestEntityInStdSet")
 {
-    auto a = _world.spawn();
-    auto b = _world.spawn();
-    auto c = _world.spawn();
+    auto a = spawn();
+    auto b = spawn();
+    auto c = spawn();
     set<Entity> entitySet;
     
     REQUIRE( entitySet.insert(a).second );
@@ -230,9 +252,9 @@ TEST_CASE_METHOD(Context, "TestEntityInStdSet")
 
 TEST_CASE_METHOD(Context, "TestEntityInStdMap")
 {
-    auto a = _world.spawn();
-    auto b = _world.spawn();
-    auto c = _world.spawn();
+    auto a = spawn();
+    auto b = spawn();
+    auto c = spawn();
     map<Entity, int> entityMap;
     REQUIRE( entityMap.insert(pair<Entity, int>(a, 1)).second );
     REQUIRE( entityMap.insert(pair<Entity, int>(b, 2)).second );
@@ -244,39 +266,39 @@ TEST_CASE_METHOD(Context, "TestEntityInStdMap")
 
 TEST_CASE_METHOD(Context, "TestGetEntitiesWithComponent")
 {
-    auto e = _world.spawn();
-    auto f = _world.spawn();
-    auto g = _world.spawn();
+    auto e = spawn();
+    auto f = spawn();
+    auto g = spawn();
 
-    _world.add_component<Position>(e, 1, 2);
-    _world.add_component<Direction>(e);
-    _world.add_component<Position>(f, 3, 4);
-    _world.add_component<Direction>(g);
+    add_component<Position>(e, 1, 2);
+    add_component<Direction>(e);
+    add_component<Position>(f, 3, 4);
+    add_component<Direction>(g);
 
-    REQUIRE( 2 == size(_world.find_entities_with<Position>()) );
-    REQUIRE( 2 == size(_world.find_entities_with<Direction>()) );
-    REQUIRE( 1 == size(_world.find_entities_with<Position, Direction>()) );
+    REQUIRE( 2 == size(find_entities_with<Position>()) );
+    REQUIRE( 2 == size(find_entities_with<Direction>()) );
+    REQUIRE( 1 == size(find_entities_with<Position, Direction>()) );
 
-    _world.reset();
+    ecs::reset();
 
     for( auto i=0; i<150; i++ )
     {
-        auto h = _world.spawn();
-        if( i % 2 == 0 ) _world.add_component<Position>(h);
-        if( i % 3 == 0 ) _world.add_component<Direction>(h);
+        auto h = spawn();
+        if( i % 2 == 0 ) add_component<Position>(h);
+        if( i % 3 == 0 ) add_component<Direction>(h);
     }
 
-    REQUIRE( 50 == size(_world.find_entities_with<Direction>()) );
-    REQUIRE( 75 == size(_world.find_entities_with<Position>()) );
-    REQUIRE( 25 == size(_world.find_entities_with<Direction, Position>()) );
+    REQUIRE( 50 == size(find_entities_with<Direction>()) );
+    REQUIRE( 75 == size(find_entities_with<Position>()) );
+    REQUIRE( 25 == size(find_entities_with<Direction, Position>()) );
 }
 
 TEST_CASE_METHOD(Context, "TestGetComponentsAsTuple") {
-    auto e = _world.spawn();
-    _world.add_component<Position>(e, 1, 2);
-    _world.add_component<Direction>(e, 3, 4);
+    auto e = spawn();
+    add_component<Position>(e, 1, 2);
+    add_component<Direction>(e, 3, 4);
 
-    auto components = _world.get_components<Position, Direction>(e);
+    auto components = get_components<Position, Direction>(e);
     REQUIRE(std::get<0>(components)->x == 1);
     REQUIRE(std::get<0>(components)->y == 2);
     REQUIRE(std::get<1>(components)->x == 3);
@@ -285,13 +307,13 @@ TEST_CASE_METHOD(Context, "TestGetComponentsAsTuple") {
 
 TEST_CASE_METHOD(Context, "TestEntityIteration")
 {
-    auto e = _world.spawn();
-    auto f = _world.spawn();
+    auto e = spawn();
+    auto f = spawn();
 
-    _world.add_component<Position>(e, 1, 2);
+    add_component<Position>(e, 1, 2);
 
     auto count = 0;
-    _world.find_entities_with<Position>().visit([&](Entity entity, Position& position)
+    find_entities_with<Position>().visit([&](Entity entity, Position& position)
     {
         count ++;
         REQUIRE( position.x == 1 );
@@ -301,39 +323,39 @@ TEST_CASE_METHOD(Context, "TestEntityIteration")
 
     REQUIRE( count == 1 );
 
-    for( auto ne : _world.find_entities_with<Position>() )
+    for( auto ne : find_entities_with<Position>() )
         count ++;
     REQUIRE( count == 2 );
 }
 
 TEST_CASE_METHOD(Context, "TestIterateAllEntitiesSkipsDestroyed") {
-    auto e = _world.spawn();
-    auto f = _world.spawn();
-    auto g = _world.spawn();
+    auto e = spawn();
+    auto f = spawn();
+    auto g = spawn();
 
-    _world.dispose(f);
-    auto it = _world.find_entities().begin();
+    recycle(f);
+    auto it = find_entities().begin();
 
     REQUIRE( *it == e );
     ++it;
     REQUIRE( *it == g );
     ++it;
 
-    REQUIRE( it == _world.find_entities().end() );
+    REQUIRE( it == find_entities().end() );
 }
 
 TEST_CASE_METHOD(Context, "TestComponentsRemovedFromReusedEntities")
 {
-  auto e = _world.spawn();
+  auto e = spawn();
   auto eversion = e.get_version();
   auto eindex = e.get_index();
-  _world.add_component<Position>(e, 1, 2);
-  _world.dispose(e);
+  add_component<Position>(e, 1, 2);
+  recycle(e);
 
-  auto f = _world.spawn();
+  auto f = spawn();
   REQUIRE( eindex == f.get_index() );
   REQUIRE( eversion < f.get_version() );
-  REQUIRE( !_world.has_component<Position>(f) );
+  REQUIRE( !has_components<Position>(f) );
 }
 
 struct FreedSentinel : public Component
@@ -346,9 +368,9 @@ struct FreedSentinel : public Component
 TEST_CASE_METHOD(Context, "TestComponentDestruction")
 {
     bool freed = false;
-    auto e = _world.spawn();
-    _world.add_component<FreedSentinel>(e, freed);
-    _world.remove_component<FreedSentinel>(e);
+    auto e = spawn();
+    add_component<FreedSentinel>(e, freed);
+    remove_component<FreedSentinel>(e);
 
     REQUIRE( freed );
 }
@@ -358,8 +380,8 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
     bool freed = false;
     {
         Context context;
-        auto e = context.get_world().spawn();
-        context.get_world().add_component<FreedSentinel>(e, freed);
+        auto e = spawn();
+        add_component<FreedSentinel>(e, freed);
         REQUIRE( !freed );
     }
     REQUIRE( freed );
@@ -368,10 +390,10 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
 TEST_CASE_METHOD(Context, "TestComponentDestructorCalledWhenEntityDestroyed")
 {
     bool freed = false;
-    auto e = _world.spawn();
-    _world.add_component<FreedSentinel>(e, freed);
+    auto e = spawn();
+    add_component<FreedSentinel>(e, freed);
     REQUIRE( !freed );
-    _world.dispose(e);
+    recycle(e);
     REQUIRE( freed );
 }
 
@@ -387,13 +409,13 @@ TEST_CASE_METHOD(Context, "TestComponentDestructorCalledWhenEntityDestroyed")
 
 // TEST_CASE_METHOD(Context, "TestTraitComponent")
 // {
-//     auto e = _world.spawn();
-//     _world.add_component<Derived>(e);
+//     auto e = spawn();
+//     add_component<Derived>(e);
 
-//     REQUIRE( _world.has_component<Base::Trait>(e) );
+//     REQUIRE( has_components<Base::Trait>(e) );
 
 //     int c = 0;
-//     auto bt = _world.get_component<Base::Trait>(e);
+//     auto bt = get_component<Base::Trait>(e);
 //     (*bt)->add(c);
 
 //     REQUIRE( c == 1 );
@@ -407,10 +429,9 @@ struct Counter : public Component
 
 struct MovementSystem : public SubsystemWithEntities<Position, Direction>
 {
-    explicit MovementSystem(Context& c, string label = "")
-    : SubsystemWithEntities(c), label(label) {}
+    explicit MovementSystem(string label = "") : label(label) {}
 
-    void update(float dt) override
+    void update(float dt)
     {
         for( auto pair : *this )
         {
@@ -424,9 +445,7 @@ struct MovementSystem : public SubsystemWithEntities<Position, Direction>
 
 struct CounterSystem : public SubsystemWithEntities<Counter>
 {
-    CounterSystem(Context& c) : SubsystemWithEntities(c) {}
-
-    void update(float dt) override
+    void update(float dt)
     {
         visit([&](Entity object, Counter& c)
         {
@@ -443,23 +462,33 @@ TEST_CASE_METHOD(Context, "TestConstructSystemWithArgs")
 
 TEST_CASE_METHOD(Context, "TestApplySystem")
 {
-    add_subsystem<MovementSystem>();
 
     std::vector<Entity> created_entities;
-    for (int i = 0; i < 150; ++i)
+    for (int i = 0; i < 75; ++i)
     {
-        auto e = _world.spawn();
+        auto e = spawn();
         created_entities.push_back(e);
-        if (i % 2 == 0) _world.add_component<Position>(e, 1, 2);
-        if (i % 3 == 0) _world.add_component<Direction>(e, 1, 1);
-        _world.add_component<Counter>(e, 0);
+        if (i % 2 == 0) add_component<Position>(e, 1, 2);
+        if (i % 3 == 0) add_component<Direction>(e, 1, 1);
+        add_component<Counter>(e, 0);
     }
 
-    update(0.0f);
+    add_subsystem<MovementSystem>();
+    for (int i = 0; i < 75; ++i)
+    {
+        auto e = spawn();
+        created_entities.push_back(e);
+        if (i % 2 == 0) add_component<Position>(e, 1, 2);
+        if (i % 3 == 0) add_component<Direction>(e, 1, 1);
+        add_component<Counter>(e, 0);
+    }
+
+    get_subsystem<MovementSystem>().update(0.f);
+
     for (auto entity : created_entities)
     {
-        auto position = _world.get_component<Position>(entity);
-        auto direction = _world.get_component<Direction>(entity);
+        auto position = get_component<Position>(entity);
+        auto direction = get_component<Direction>(entity);
 
         if (position && direction)
         {
@@ -478,22 +507,24 @@ TEST_CASE_METHOD(Context, "TestApplyAllSystems")
 {
     std::vector<Entity> created_entities;
     for (int i = 0; i < 150; ++i) {
-        auto e = _world.spawn();
+        auto e = spawn();
         created_entities.push_back(e);
-        if (i % 2 == 0) _world.add_component<Position>(e, 1, 2);
-        if (i % 3 == 0) _world.add_component<Direction>(e, 1, 1);
-        _world.add_component<Counter>(e, 0);
+        if (i % 2 == 0) add_component<Position>(e, 1, 2);
+        if (i % 3 == 0) add_component<Direction>(e, 1, 1);
+        add_component<Counter>(e, 0);
     }
 
     add_subsystem<MovementSystem>();
     add_subsystem<CounterSystem>();
-    update(0.f);
+
+    get_subsystem<MovementSystem>().update(0.f);
+    get_subsystem<CounterSystem>().update(0.f);
 
     for (auto entity : created_entities)
     {
-        auto position   = _world.get_component<Position>(entity);
-        auto direction  = _world.get_component<Direction>(entity);
-        auto counter    = _world.get_component<Counter>(entity);
+        auto position   = get_component<Position>(entity);
+        auto direction  = get_component<Direction>(entity);
+        auto counter    = get_component<Counter>(entity);
 
         if (position && direction)
         {

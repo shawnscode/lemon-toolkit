@@ -2,63 +2,74 @@
 #include <hayai.hpp>
 #include <lemon-toolkit.hpp>
 
+#include <thread>
+
 using namespace lemon;
 
 std::mutex  s_mutex;
 
-static unsigned fib(unsigned& out, unsigned index)
+static void fib(unsigned& out, unsigned index)
 {
     // some heavy works might
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
     // 
     std::lock_guard<std::mutex> u(s_mutex);
     out += index;
-    return out;
 }
 
-TEST_CASE_METHOD(core::Context, "TestSchedulerParalle")
+struct Context
 {
-    add_subsystem<core::TaskScheduler>(4);
-    auto& scheduler = get_subsystem<core::TaskScheduler>();
+    Context()
+    {
+        core::task::initialize(4);
+    }
 
+    ~Context()
+    {
+        core::task::dispose();
+    }
+};
+
+TEST_CASE_METHOD(Context, "TestSchedulerParalle")
+{
     unsigned result = 0, cmp = 0;
     for( unsigned i = 1; i < 10; i++ )
     {
         cmp += i;
-        REQUIRE( scheduler.add_task(fib, std::ref(result), i).get() == cmp );
+        auto handle = core::create_task("worker", fib, std::ref(result), i);
+        core::run_task(handle);
+        core::wait_task(handle);
+        REQUIRE( cmp == result );
     }
     REQUIRE( cmp == result );
 
-    std::vector<std::future<unsigned>> futures;
+    auto master = core::create_task("master", fib, std::ref(result), 0);
     for( unsigned i = 1; i < 10; i++ )
     {
         cmp += i;
-        futures.emplace_back( scheduler.add_task(fib, std::ref(result), i) );
+        auto handle = core::create_task_as_child(master, "slaver", fib, std::ref(result), i);
+        core::run_task(handle);
     }
-    for( auto& future : futures ) future.wait();
+    core::run_task(master);
+    core::wait_task(master);
     REQUIRE( cmp == result );
 }
 
 BENCHMARK(TaskScheduler, Sequence, 2, 5)
 {
-    core::Context context;
-    context.add_subsystem<core::TaskScheduler>(4);
-    auto& scheduler = context.get_subsystem<core::TaskScheduler>();
-
     unsigned result = 0;
     for( unsigned i = 1; i < 10; i++ )
-        scheduler.add_task(fib, std::ref(result), i).get();
+        fib(result, i);
 }
 
 BENCHMARK(TaskScheduler, Paralle, 2, 5)
 {
-    core::Context context;
-    context.add_subsystem<core::TaskScheduler>(4);
-    auto& scheduler = context.get_subsystem<core::TaskScheduler>();
+    Context context;
 
     unsigned result = 0;
-    std::vector<std::future<unsigned>> futures;
+    auto master = core::create_task("master", fib, std::ref(result), 0);
     for( unsigned i = 1; i < 10; i++ )
-        futures.emplace_back( scheduler.add_task(fib, std::ref(result), i) );
-    for( auto& future : futures ) future.wait();
+        core::run_task(core::create_task_as_child(master, "worker", fib, std::ref(result), i));
+    core::run_task(master);
+    core::wait_task(master);
 }

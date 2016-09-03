@@ -5,24 +5,38 @@ USING_NS_LEMON;
 USING_NS_LEMON_CORE;
 USING_NS_LEMON_MATH;
 
-struct TransformFixture : core::Context
+struct TransformFixture
 {
-    
+    TransformFixture()
+    {
+        event::initialize();
+        subsystem::initialize();
+        task::initialize();
+        ecs::initialize();
+    }
+
+    ~TransformFixture()
+    {
+        ecs::dispose();
+        task::dispose();
+        subsystem::dispose();
+        event::dispose();
+    }
 };
 
 TEST_CASE_METHOD(TransformFixture, "TestConstructor")
 {
-    Entity e1 = _world.spawn();
-    Transform* t1 = _world.add_component<Transform>(e1, Vector3f{10.f, 10.f});
+    Entity e1 = spawn();
+    Transform* t1 = add_component<Transform>(e1, Vector3f{10.f, 10.f});
 
-    Entity e2 = _world.spawn();
-    Transform* t2 = _world.add_component<Transform>(e2, Vector3f{20.f, 20.f});
+    Entity e2 = spawn();
+    Transform* t2 = add_component<Transform>(e2, Vector3f{20.f, 20.f});
 
-    Entity e3 = _world.spawn();
-    Transform* t3 = _world.add_component<Transform>(e3, Vector3f{40.f, 40.f}, Vector3f{2.0f, 2.0f});
+    Entity e3 = spawn();
+    Transform* t3 = add_component<Transform>(e3, Vector3f{40.f, 40.f}, Vector3f{2.0f, 2.0f});
 
-    Entity e4 = _world.spawn();
-    Transform* t4 = _world.add_component<Transform>(e4, Vector3f{50.f, 50.f}, Vector3f{2.0f, 2.0f}, Quaternion());
+    Entity e4 = spawn();
+    Transform* t4 = add_component<Transform>(e4, Vector3f{50.f, 50.f}, Vector3f{2.0f, 2.0f}, Quaternion());
 
     REQUIRE( equals(t2->get_position(), {20.f, 20.f}) );
     REQUIRE( equals(t1->get_scale(), t2->get_scale()) );
@@ -30,8 +44,8 @@ TEST_CASE_METHOD(TransformFixture, "TestConstructor")
 
 TEST_CASE_METHOD(TransformFixture, "TestTransform")
 {
-    Entity e1 = _world.spawn();
-    Transform* t1 = _world.add_component<Transform>(e1, Vector3f{10.f, 10.f, 0.f});
+    Entity e1 = spawn();
+    Transform* t1 = add_component<Transform>(e1, Vector3f{10.f, 10.f, 0.f});
     REQUIRE( t1->transform_point({0.f, 5.f, 0.f}) == (Vector3f{10.f, 15.f, 0.f}) );
     REQUIRE( t1->inverse_transform_point({0.f, 5.f, 0.f}) == (Vector3f{-10.f, -5.f, 0.f}) );
     REQUIRE( t1->transform_vector({0.f, 5.f, 0.f}) == (Vector3f{0.f, 5.f, 0.f}) );
@@ -77,8 +91,8 @@ TEST_CASE_METHOD(TransformFixture, "TestTransform")
 
 TEST_CASE_METHOD(TransformFixture, "TestOpsWithoutHierachy")
 {
-    Entity e1 = _world.spawn();
-    Transform* t1 = _world.add_component<Transform>(e1, Vector3f{10.f, 10.f});
+    Entity e1 = spawn();
+    Transform* t1 = add_component<Transform>(e1, Vector3f{10.f, 10.f});
 
     t1->set_position({20.f, 20.f});
     REQUIRE( t1->get_position() == Vector3f({20.f, 20.f}) );
@@ -105,17 +119,17 @@ TEST_CASE_METHOD(TransformFixture, "TestOpsWithoutHierachy")
 
 TEST_CASE_METHOD(TransformFixture, "TestHierachy")
 {
-    Entity e1 = _world.spawn();
-    Transform* t1 = _world.add_component<Transform>(e1, Vector3f{10.f, 10.f});
+    Entity e1 = spawn();
+    Transform* t1 = add_component<Transform>(e1, Vector3f{10.f, 10.f});
 
-    Entity e2 = _world.spawn();
-    Transform* t2 = _world.add_component<Transform>(e2, Vector3f{20.f, 20.f});
+    Entity e2 = spawn();
+    Transform* t2 = add_component<Transform>(e2, Vector3f{20.f, 20.f});
 
-    Entity e3 = _world.spawn();
-    Transform* t3 = _world.add_component<Transform>(e3, Vector3f{40.f, 40.f}, Vector3f{2.0f, 2.0f});
+    Entity e3 = spawn();
+    Transform* t3 = add_component<Transform>(e3, Vector3f{40.f, 40.f}, Vector3f{2.0f, 2.0f});
 
-    Entity e4 = _world.spawn();
-    Transform* t4 = _world.add_component<Transform>(e4, Vector3f{-50.f, -10.f}, Vector3f{3.0f, 3.0f});
+    Entity e4 = spawn();
+    Transform* t4 = add_component<Transform>(e4, Vector3f{-50.f, -10.f}, Vector3f{3.0f, 3.0f});
 
     t1->append_child(*t2);
     REQUIRE( t1->get_children().count() == 1 );
@@ -145,17 +159,17 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachy")
 
 TEST_CASE_METHOD(TransformFixture, "TestHierachyReconstructWhenDispose")
 {
-    Entity e1 = _world.spawn_with<Transform>(Vector3f{10.f, 10.f});
-    Transform* t1 = _world.get_component<Transform>(e1);
+    Entity e1 = spawn_with<Transform>(Vector3f{10.f, 10.f});
+    Transform* t1 = get_component<Transform>(e1);
 
-    Entity e2 = _world.spawn_with<Transform>(Vector3f{10.f, 10.f});
-    Transform* t2 = _world.get_component<Transform>(e2);
+    Entity e2 = spawn_with<Transform>(Vector3f{10.f, 10.f});
+    Transform* t2 = get_component<Transform>(e2);
 
-    Entity e3 = _world.spawn_with<Transform>(Vector3f{10.f, 10.f});
-    Transform* t3 = _world.get_component<Transform>(e3);
+    Entity e3 = spawn_with<Transform>(Vector3f{10.f, 10.f});
+    Transform* t3 = get_component<Transform>(e3);
 
-    Entity e4 = _world.spawn_with<Transform>(Vector3f{10.f, 10.f});
-    Transform* t4 = _world.get_component<Transform>(e4);
+    Entity e4 = spawn_with<Transform>(Vector3f{10.f, 10.f});
+    Transform* t4 = get_component<Transform>(e4);
 
     t1->append_child(*t2);
     t1->append_child(*t3);
@@ -194,7 +208,7 @@ static void dump_heriachy(Transform* t, int index = 1, int level = 0)
         printf("\t");
     printf("[%d]", index);
     for( auto& transform : t->get_children() )
-        printf("%d ", transform.get_object().get_index() );
+        printf("%d ", transform.object.get_index() );
     printf("\n");
 
     size_t count = 0;
@@ -207,8 +221,8 @@ TEST_CASE_METHOD(TransformFixture, "TestIteration")
     std::vector<Transform*> transforms;
     for( size_t i = 0; i < 255; i++ )
     {
-        auto e = _world.spawn_with<Transform>();
-        transforms.push_back(_world.get_component<Transform>(e));
+        auto e = spawn_with<Transform>();
+        transforms.push_back(get_component<Transform>(e));
     }
 
     std::srand(std::time(0));
@@ -262,17 +276,17 @@ TEST_CASE_METHOD(TransformFixture, "TestGenericIteration")
     std::vector<Transform*> transforms;
     std::vector<Widget*> widgets;
 
-    auto r = _world.spawn();
-    auto root = _world.add_component<Transform>(r);
+    auto r = spawn();
+    auto root = add_component<Transform>(r);
 
     for( size_t i = 0; i < 255; i++ )
     {
-        auto e = _world.spawn_with<Transform>();
-        transforms.push_back(_world.get_component<Transform>(e));
+        auto e = spawn_with<Transform>();
+        transforms.push_back(get_component<Transform>(e));
         root->append_child(*transforms.back());
 
         if( (i % 2) == 1 )
-            widgets.push_back( _world.add_component<Widget>(e) );
+            widgets.push_back( add_component<Widget>(e) );
     }
 
     REQUIRE( transforms.size() == root->get_children_with<Transform>(true).count() );
