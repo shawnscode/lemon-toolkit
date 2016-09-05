@@ -3,9 +3,8 @@
 
 #pragma once
 
-#include <core/defines.hpp>
+#include <codebase/type/typeinfo.hpp>
 #include <core/event.hpp>
-#include <core/typeinfo.hpp>
 
 #include <bitset>
 

@@ -4,8 +4,8 @@
 #pragma once
 
 #include <graphics/defines.hpp>
+#include <codebase/type/enumeration.hpp>
 #include <core/subsystem.hpp>
-#include <core/typeinfo.hpp>
 #include <math/rect.hpp>
 #include <math/color.hpp>
 

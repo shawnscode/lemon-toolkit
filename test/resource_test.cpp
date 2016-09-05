@@ -1,5 +1,6 @@
 #include <catch.hpp>
 #include <lemon-toolkit.hpp>
+#include <codebase/debug/log.hpp>
 #include <cstdio>
 
 USING_NS_LEMON;
@@ -141,7 +142,7 @@ struct ArchiveFixture
         subsystem::initialize();
         task::initialize();
 
-        SET_DEBUG_CONFIG(LOG_ERROR, true);
+        set_output_stream(LogLevel::ERROR, &std::cout);
         pwd = get_current_directory();
         set_current_directory("../../test");
         add_subsystem<ArchiveCollection>();
@@ -213,7 +214,7 @@ struct ResourceCacheFixture
         subsystem::initialize();
         task::initialize();
 
-        SET_DEBUG_CONFIG(LOG_ERROR, true);
+        set_output_stream(LogLevel::ERROR, &std::cout);
         pwd = get_current_directory();
         set_current_directory("../../test");
         add_subsystem<ArchiveCollection>();

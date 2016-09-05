@@ -187,7 +187,7 @@ void Shader::use()
             glEnableVertexAttribArray(record.location);
             glVertexAttribPointer(record.location,
                 attribute.size,
-                GL_ELEMENT_FORMAT[to_value(attribute.format)],
+                GL_ELEMENT_FORMAT[value(attribute.format)],
                 attribute.normalized,
                 record.vb->get_stride(),
                 (uint8_t*)0+attribute.offset);

@@ -3,19 +3,19 @@
 
 #pragma once
 
-#include <core/defines.hpp>
+#include <defines.hpp>
 
-NS_LEMON_CORE_BEGIN
+NS_LEMON_BEGIN
 
-// provides a resizable, semi-contiguous pool of memory for constructing
+// provides a 7 for constructing
 // objects in, which aims to provide cache-friendly iteration.
 // lookups are O(1), appends/recycles are amortized O(1).
-struct MemoryChunks
+struct FixedSizeAllocator
 {
     using index_type = size_t;
 
-    explicit MemoryChunks(index_type element_size, index_type chunk_size);
-    virtual ~MemoryChunks();
+    explicit FixedSizeAllocator(index_type element_size, index_type chunk_size);
+    virtual ~FixedSizeAllocator();
 
     index_type size() const;
     index_type capacity() const;
@@ -41,27 +41,27 @@ protected:
 };
 
 // INCLUDED METHODS OF POOL
-INLINE MemoryChunks::index_type MemoryChunks::size() const
+INLINE FixedSizeAllocator::index_type FixedSizeAllocator::size() const
 {
     return _total_elements - _available;
 }
 
-INLINE MemoryChunks::index_type MemoryChunks::capacity() const
+INLINE FixedSizeAllocator::index_type FixedSizeAllocator::capacity() const
 {
     return _total_elements;
 }
 
-INLINE MemoryChunks::index_type MemoryChunks::chunk_size() const
+INLINE FixedSizeAllocator::index_type FixedSizeAllocator::chunk_size() const
 {
     return _chunk_size;
 }
 
-INLINE MemoryChunks::index_type MemoryChunks::element_size() const
+INLINE FixedSizeAllocator::index_type FixedSizeAllocator::element_size() const
 {
     return _element_size;
 }
 
-INLINE void* MemoryChunks::get_element(index_type index)
+INLINE void* FixedSizeAllocator::get_element(index_type index)
 {
     if( index >= _total_elements )
         return nullptr;
@@ -69,7 +69,7 @@ INLINE void* MemoryChunks::get_element(index_type index)
     return static_cast<void*>(_chunks[index/_chunk_size] + (index%_chunk_size)*_element_size);
 }
 
-INLINE const void* MemoryChunks::get_element(index_type index) const
+INLINE const void* FixedSizeAllocator::get_element(index_type index) const
 {
     if( index >= _total_elements )
         return nullptr;
@@ -77,4 +77,4 @@ INLINE const void* MemoryChunks::get_element(index_type index) const
     return static_cast<void*>(_chunks[index/_chunk_size] + (index%_chunk_size)*_element_size);
 }
 
-NS_LEMON_CORE_END
+NS_LEMON_END

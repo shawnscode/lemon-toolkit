@@ -3,8 +3,6 @@
 #include <core/subsystem.hpp>
 #include <core/ecs.hpp>
 #include <core/event.hpp>
-#include <core/memory.hpp>
-#include <core/typeinfo.hpp>
 #include <core/task.hpp>
 
 #include <math/vector.hpp>

@@ -12,7 +12,6 @@ NS_LEMON_CORE_BEGIN
 
 static const size_t kEntPoolChunkSize = 512;
 static const size_t kEntMaxComponents = 128;
-static const size_t kDbgMaxTracebackFrames = 63;
 
 struct EntityManager;
 

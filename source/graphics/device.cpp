@@ -226,11 +226,11 @@ bool Device::spawn_window(int width, int height, int multisample, WindowOption o
     #endif
 
     // makes no sense to have boarderless in fullscreen, they are mutally exclusive
-    if( to_value(options & WindowOption::FULLSCREEN) )
+    if( value(options & WindowOption::FULLSCREEN) )
         options &= ~WindowOption::BORDERLESS;
 
     // fullscreen or borderless can not be resizable
-    if( to_value(options & WindowOption::FULLSCREEN) || to_value(options & WindowOption::BORDERLESS) )
+    if( value(options & WindowOption::FULLSCREEN) || value(options & WindowOption::BORDERLESS) )
         options &= ~WindowOption::RESIZABLE;
 
     width = std::max(width, 1);
@@ -246,7 +246,7 @@ bool Device::spawn_window(int width, int height, int multisample, WindowOption o
         width == _size[0] && height == _size[1] && multisample == _multisamples &&
         (options & ~WindowOption::VSYNC) == (_options & ~WindowOption::VSYNC) )
     {
-        SDL_GL_SetSwapInterval( to_value(options & WindowOption::VSYNC) ? 1 : 0 );
+        SDL_GL_SetSwapInterval( value(options & WindowOption::VSYNC) ? 1 : 0 );
         _options = options;
         return true;
     }
@@ -259,13 +259,13 @@ bool Device::spawn_window(int width, int height, int multisample, WindowOption o
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, multisample > 1 ? multisample : 0);
     SDL_SetHint(SDL_HINT_ORIENTATIONS, orientation_tostring(_orientation));
 
-    math::Vector2i position = to_value(options & WindowOption::FULLSCREEN) ? math::Vector2i({0, 0}) : _position;
+    math::Vector2i position = value(options & WindowOption::FULLSCREEN) ? math::Vector2i({0, 0}) : _position;
     unsigned flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
 
-    if( to_value(options & WindowOption::FULLSCREEN) ) flags |= SDL_WINDOW_FULLSCREEN;
-    if( to_value(options & WindowOption::BORDERLESS) ) flags |= SDL_WINDOW_BORDERLESS;
-    if( to_value(options & WindowOption::RESIZABLE) ) flags |= SDL_WINDOW_RESIZABLE;
-    if( to_value(options & WindowOption::HIGHDPI) ) flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+    if( value(options & WindowOption::FULLSCREEN) ) flags |= SDL_WINDOW_FULLSCREEN;
+    if( value(options & WindowOption::BORDERLESS) ) flags |= SDL_WINDOW_BORDERLESS;
+    if( value(options & WindowOption::RESIZABLE) ) flags |= SDL_WINDOW_RESIZABLE;
+    if( value(options & WindowOption::HIGHDPI) ) flags |= SDL_WINDOW_ALLOW_HIGHDPI;
 
     _device->window = SDL_CreateWindow("LEMON-TOOLKIT", position[0], position[1], width, height, flags);
     // if failed width multisampling, retry first without it
@@ -287,7 +287,7 @@ bool Device::spawn_window(int width, int height, int multisample, WindowOption o
         return false;
 
     // set vsync
-    SDL_GL_SetSwapInterval( to_value(options & WindowOption::VSYNC) ? 1 : 0 );
+    SDL_GL_SetSwapInterval( value(options & WindowOption::VSYNC) ? 1 : 0 );
 
     _size = { width, height };
     _position = position;
@@ -295,7 +295,7 @@ bool Device::spawn_window(int width, int height, int multisample, WindowOption o
     _options = options;
 
     SDL_GL_GetDrawableSize(_device->window, &_size[0], &_size[1]);
-    if( !to_value(options & WindowOption::FULLSCREEN) )
+    if( !value(options & WindowOption::FULLSCREEN) )
         SDL_GetWindowPosition(_device->window, &_position[0], &_position[1]);
 
     // reset rendertargets and viewport for the new mode
@@ -406,19 +406,19 @@ void Device::end_frame()
 void Device::clear(ClearOption options, const math::Color& color, float depth, unsigned stencil)
 {
     unsigned flags = 0;
-    if( to_value(options & ClearOption::COLOR) )
+    if( value(options & ClearOption::COLOR) )
     {
         flags |= GL_COLOR_BUFFER_BIT;
         glClearColor(color.r, color.g, color.b, color.a);
     }
 
-    if( to_value(options & ClearOption::DEPTH) )
+    if( value(options & ClearOption::DEPTH) )
     {
         flags |= GL_DEPTH_BUFFER_BIT;
         glClearDepth(depth);
     }
 
-    if( to_value(options & ClearOption::STENCIL) )
+    if( value(options & ClearOption::STENCIL) )
     {
         flags |= GL_STENCIL_BUFFER_BIT;
         glClearStencil(stencil);
@@ -477,8 +477,8 @@ void Device::set_blend_mode(BlendMode mode)
         else
         {
             glEnable(GL_BLEND);
-            glBlendFunc(GL_BLEND_SOURCE[to_value(mode)], GL_BLEND_DESTINATION[to_value(mode)]);
-            glBlendEquation(GL_BLEND_OP[to_value(mode)]);
+            glBlendFunc(GL_BLEND_SOURCE[value(mode)], GL_BLEND_DESTINATION[value(mode)]);
+            glBlendEquation(GL_BLEND_OP[value(mode)]);
         }
         _blend_mode = mode;
     }
@@ -529,7 +529,7 @@ void Device::set_stencil_test(bool enable, CompareMode mode, unsigned ref, unsig
 
     if( enable && (mode != _stencil_test_mode || ref != _stencil_ref || compare_mask != _stencil_compare_mask) )
     {
-        glStencilFunc(GL_COMPARE_FUNC[to_value(mode)], ref, compare_mask);
+        glStencilFunc(GL_COMPARE_FUNC[value(mode)], ref, compare_mask);
         _stencil_test_mode = mode;
         _stencil_ref = ref;
         _stencil_compare_mask = compare_mask;
@@ -548,7 +548,7 @@ void Device::set_stencil_write(StencilOp pass, StencilOp fail, StencilOp zfail, 
 
         if( pass != _stencil_pass_op || fail != _stencil_fail_op || zfail != _stencil_zfail_op )
         {
-            glStencilOp(GL_STENCIL_OP[to_value(fail)], GL_STENCIL_OP[to_value(zfail)], GL_STENCIL_OP[to_value(pass)]);
+            glStencilOp(GL_STENCIL_OP[value(fail)], GL_STENCIL_OP[value(zfail)], GL_STENCIL_OP[value(pass)]);
             _stencil_pass_op = pass;
             _stencil_fail_op = fail;
             _stencil_zfail_op = zfail;
@@ -567,7 +567,7 @@ void Device::set_depth_test(bool enable, CompareMode mode)
 
     if( enable && mode != _depth_test_mode )
     {
-        glDepthFunc(GL_COMPARE_FUNC[to_value(mode)]);
+        glDepthFunc(GL_COMPARE_FUNC[value(mode)]);
         _depth_test_mode = mode;
     }
 }
@@ -658,7 +658,7 @@ void Device::prepare_draw()
 
 void Device::draw(PrimitiveType type, unsigned start, unsigned count)
 {
-    glDrawArrays(GL_PRIMITIVE[to_value(type)], start, count);
+    glDrawArrays(GL_PRIMITIVE[value(type)], start, count);
     CHECK_GL_ERROR();
 }
 

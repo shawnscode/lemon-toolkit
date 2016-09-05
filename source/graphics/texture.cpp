@@ -85,7 +85,7 @@ bool Texture::restore(const void* pixels,
 
     if( _shadowed )
     {
-        unsigned size = _width*_height*_depth*GL_PIXEL_SIZE[to_value(pixel_format)];
+        unsigned size = _width*_height*_depth*GL_PIXEL_SIZE[value(pixel_format)];
         _shadowed_pixels.reset( new uint8_t[size] );
         if( !_shadowed_pixels )
         {
@@ -144,7 +144,7 @@ void Texture::set_filter_mode(TextureFilterMode mode)
 
 void Texture::set_address_mode(TextureCoordinate coord, TextureAddressMode mode)
 {
-    _address[to_value(coord)] = mode;
+    _address[value(coord)] = mode;
     _parameter_dirty = true;
 }
 
@@ -156,10 +156,10 @@ void Texture::update_parameters(bool force)
     if( !_object || _device.is_device_lost() )
         return;
 
-    glTexParameteri(_target, GL_TEXTURE_WRAP_S, GL_WRAP_MODES[to_value(_address[0])]);
-    glTexParameteri(_target, GL_TEXTURE_WRAP_T, GL_WRAP_MODES[to_value(_address[1])]);
+    glTexParameteri(_target, GL_TEXTURE_WRAP_S, GL_WRAP_MODES[value(_address[0])]);
+    glTexParameteri(_target, GL_TEXTURE_WRAP_T, GL_WRAP_MODES[value(_address[1])]);
 #ifndef GL_ES_VERSION_2_0
-    glTexParameteri(_target, GL_TEXTURE_WRAP_R, GL_WRAP_MODES[to_value(_address[2])]);
+    glTexParameteri(_target, GL_TEXTURE_WRAP_R, GL_WRAP_MODES[value(_address[2])]);
 #endif
 
     switch(_filter)
@@ -210,12 +210,12 @@ bool Texture2D::set_texture_data(const void* data)
         glTexImage2D(
             _target,
             0,
-            GL_TEXTURE_FORMATS[to_value(_format)],
+            GL_TEXTURE_FORMATS[value(_format)],
             _width,
             _height,
             0,
-            GL_TEXTURE_FORMATS[to_value(_format)],
-            GL_PIXEL_FORMATS[to_value(_pixel_format)],
+            GL_TEXTURE_FORMATS[value(_format)],
+            GL_PIXEL_FORMATS[value(_pixel_format)],
             data);
 
         if( _mipmap )

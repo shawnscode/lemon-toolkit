@@ -1,13 +1,13 @@
 // @date 2016/07/21
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <core/memory.hpp>
+#include <codebase/memory/allocator.hpp>
 
-NS_LEMON_CORE_BEGIN
+NS_LEMON_BEGIN
 
-const MemoryChunks::index_type MemoryChunks::invalid = std::numeric_limits<index_type>::max();
+const FixedSizeAllocator::index_type FixedSizeAllocator::invalid = std::numeric_limits<index_type>::max();
 
-MemoryChunks::MemoryChunks(index_type element_size, index_type chunk_size)
+FixedSizeAllocator::FixedSizeAllocator(index_type element_size, index_type chunk_size)
 : _chunk_size(chunk_size), _first_free_block(invalid), _available(0), _total_elements(0)
 {
     _element_size = element_size;
@@ -15,14 +15,14 @@ MemoryChunks::MemoryChunks(index_type element_size, index_type chunk_size)
         _element_size = sizeof(index_type);
 }
 
-MemoryChunks::~MemoryChunks()
+FixedSizeAllocator::~FixedSizeAllocator()
 {
     for( auto blocks : _chunks )
         ::free(blocks);
     _chunks.clear();
 }
 
-void* MemoryChunks::malloc()
+void* FixedSizeAllocator::malloc()
 {
     if( _first_free_block == invalid )
     {
@@ -57,7 +57,7 @@ void* MemoryChunks::malloc()
     return element;
 }
 
-void MemoryChunks::free(void* element)
+void FixedSizeAllocator::free(void* element)
 {
     // find block index of the element
     index_type index = invalid;
@@ -83,4 +83,4 @@ void MemoryChunks::free(void* element)
     _available ++;
 }
 
-NS_LEMON_CORE_END
+NS_LEMON_END

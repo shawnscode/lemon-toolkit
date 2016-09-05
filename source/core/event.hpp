@@ -3,8 +3,8 @@
 
 #pragma once
 
+#include <codebase/type/typeinfo.hpp>
 #include <core/defines.hpp>
-#include <core/typeinfo.hpp>
 
 NS_LEMON_CORE_BEGIN
 

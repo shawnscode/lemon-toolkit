@@ -4,7 +4,7 @@
 #pragma once
 
 #include <graphics/device.hpp>
-#include <core/compact.hpp>
+#include <codebase/memory/compact.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 

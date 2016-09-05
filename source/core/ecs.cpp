@@ -2,16 +2,16 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <core/ecs.hpp>
-#include <core/memory.hpp>
+#include <codebase/memory/allocator.hpp>
 
 NS_LEMON_CORE_BEGIN
 
 struct ECSWorld
 {
-    struct IndexedMemoryChunks : public MemoryChunks
+    struct IndexedMemoryChunks : public FixedSizeAllocator
     {
         IndexedMemoryChunks(ECSWorld& world, size_t size, size_t chunk_size, const ecs::destructor& cb)
-        : _world(world), _destructor(cb), MemoryChunks(size, chunk_size)
+        : _world(world), _destructor(cb), FixedSizeAllocator(size, chunk_size)
         {
             _objects.resize(8, nullptr);
         }
@@ -27,7 +27,7 @@ struct ECSWorld
 
         void* malloc_with_index(Entity::index_type index)
         {
-            auto object = MemoryChunks::malloc();
+            auto object = FixedSizeAllocator::malloc();
             if( object == nullptr )
                 return nullptr;
 
@@ -73,7 +73,7 @@ struct ECSWorld
                         if( _objects[i] != nullptr )
                         {
                             _destructor(_world.get(index), _objects[i]);
-                            MemoryChunks::free(_objects[i]);
+                            FixedSizeAllocator::free(_objects[i]);
                             _objects[i] = nullptr;
                         }
                         return;
@@ -85,7 +85,7 @@ struct ECSWorld
             if( _objects.size() > index && _objects[index] != nullptr )
             {
                 _destructor(_world.get(index), _objects[index]);
-                MemoryChunks::free(_objects[index]);
+                FixedSizeAllocator::free(_objects[index]);
                 _objects[index] = nullptr;
             }
         }

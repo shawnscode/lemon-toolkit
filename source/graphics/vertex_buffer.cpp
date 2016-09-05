@@ -19,7 +19,7 @@ VertexAttribute::VertexAttribute(unsigned size, ElementFormat format, bool norma
 
 unsigned VertexAttribute::get_stride() const
 {
-    return size * GL_ELEMENT_SIZES[to_value(format)];
+    return size * GL_ELEMENT_SIZES[value(format)];
 }
 
 VertexBuffer::VertexBuffer(Device& device)

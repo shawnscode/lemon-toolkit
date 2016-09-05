@@ -225,7 +225,7 @@ void Input::set_mouse_visible(bool visible)
 
 bool Input::get_key_down(KeyboardCode code) const
 {
-    return _key_down.find(SDL_KEYBOARD_CODES[to_value(code)]) != _key_down.end();
+    return _key_down.find(SDL_KEYBOARD_CODES[value(code)]) != _key_down.end();
 }
 
 bool Input::get_key_down(const char* name) const
@@ -235,7 +235,7 @@ bool Input::get_key_down(const char* name) const
 
 bool Input::get_key_press(KeyboardCode code) const
 {
-    return _key_press.find(SDL_KEYBOARD_CODES[to_value(code)]) != _key_press.end();
+    return _key_press.find(SDL_KEYBOARD_CODES[value(code)]) != _key_press.end();
 }
 
 bool Input::get_key_press(const char* name) const
@@ -246,11 +246,11 @@ bool Input::get_key_press(const char* name) const
 bool Input::get_qualifier_down(KeyboardQualifier qualifier) const
 {
     bool result = true;
-    if( to_value(qualifier & KeyboardQualifier::SHIFT) )
+    if( value(qualifier & KeyboardQualifier::SHIFT) )
         result &= (get_key_down(KeyboardCode::LSHIFT) || get_key_down(KeyboardCode::RSHIFT));
-    if( to_value(qualifier & KeyboardQualifier::CTRL) )
+    if( value(qualifier & KeyboardQualifier::CTRL) )
         result &= (get_key_down(KeyboardCode::LCTRL) || get_key_down(KeyboardCode::RCTRL));
-    if( to_value(qualifier & KeyboardQualifier::ALT) )
+    if( value(qualifier & KeyboardQualifier::ALT) )
         result &= (get_key_down(KeyboardCode::LALT) || get_key_down(KeyboardCode::RALT));
     return result;
 }
@@ -258,11 +258,11 @@ bool Input::get_qualifier_down(KeyboardQualifier qualifier) const
 bool Input::get_qualifier_press(KeyboardQualifier qualifier) const
 {
     bool result = true;
-    if( to_value(qualifier & KeyboardQualifier::SHIFT) )
+    if( value(qualifier & KeyboardQualifier::SHIFT) )
         result &= (get_key_press(KeyboardCode::LSHIFT) || get_key_press(KeyboardCode::RSHIFT));
-    if( to_value(qualifier & KeyboardQualifier::CTRL) )
+    if( value(qualifier & KeyboardQualifier::CTRL) )
         result &= (get_key_press(KeyboardCode::LCTRL) || get_key_press(KeyboardCode::RCTRL));
-    if( to_value(qualifier & KeyboardQualifier::ALT) )
+    if( value(qualifier & KeyboardQualifier::ALT) )
         result &= (get_key_press(KeyboardCode::LALT) || get_key_press(KeyboardCode::RALT));
     return result;
 }
@@ -295,12 +295,12 @@ math::Vector2i Input::get_mouse_delta() const
 
 bool Input::get_mouse_button_down(MouseCode code) const
 {
-    return _mouse_down.find(SDL_KEYBOARD_CODES[to_value(code)]) != _mouse_down.end();
+    return _mouse_down.find(SDL_KEYBOARD_CODES[value(code)]) != _mouse_down.end();
 }
 
 bool Input::get_mouse_button_press(MouseCode code) const
 {
-    return _mouse_press.find(SDL_KEYBOARD_CODES[to_value(code)]) != _mouse_press.end();
+    return _mouse_press.find(SDL_KEYBOARD_CODES[value(code)]) != _mouse_press.end();
 }
 
 NS_LEMON_END

@@ -3,10 +3,9 @@
 
 #pragma once
 
-#include <core/defines.hpp>
 #include <core/ecs.hpp>
 #include <core/event.hpp>
-#include <core/typeinfo.hpp>
+#include <codebase/type/tuple.hpp>
 
 NS_LEMON_CORE_BEGIN
 

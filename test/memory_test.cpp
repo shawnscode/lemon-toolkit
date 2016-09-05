@@ -4,13 +4,16 @@
 #include <cstdlib>
 #include <ctime>
 
+#include <codebase/memory/allocator.hpp>
+
+USING_NS_LEMON;
 USING_NS_LEMON_CORE;
 
 const static size_t kChunkSize = 8;
 
-struct MemoryChunksFixture : public MemoryChunks
+struct MemoryChunksFixture : public FixedSizeAllocator
 {
-    MemoryChunksFixture() : MemoryChunks(sizeof(int32_t), kChunkSize) {}
+    MemoryChunksFixture() : FixedSizeAllocator(sizeof(int32_t), kChunkSize) {}
 
     size_t get_memory_chunks() const { return _chunks.size(); }
     size_t get_memory_capacity() const { return _total_elements; }

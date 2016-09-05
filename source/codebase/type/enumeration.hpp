@@ -1,59 +1,11 @@
-// @date 2016/05/22
+// @date 2016/09/03
 // @author Mao Jingkai(oammix@gmail.com)
 
 #pragma once
 
-#include <core/defines.hpp>
-#include <type_traits>
+#include <defines.hpp>
 
-NS_LEMON_CORE_BEGIN
-///
-struct TypeInfo
-{
-    using index_type = size_t;
-
-    template<typename Base, typename Derived>
-    static index_type id()
-    {
-        static_assert( std::is_base_of<Base, Derived>::value, "D should be derived from B." );
-        static index_type sid = counter<Base>::value ++;
-        return sid;
-    }
-
-protected:
-    template<typename B> struct counter
-    {
-        static index_type value;
-    };
-};
-
-template<typename B> TypeInfo::index_type TypeInfo::counter<B>::value = 0;
-
-/// to support tuple unpacking
-template <typename T, T... ints>
-struct integer_sequence { };
-
-template <typename T, T N, typename = void>
-struct make_integer_sequence_impl
-{
-    template <typename>
-    struct tmp;
-
-    template <T... Prev>
-    struct tmp<integer_sequence<T, Prev...>>
-    {
-        using type = integer_sequence<T, Prev..., N-1>;
-    };
-
-    using type = typename tmp<typename make_integer_sequence_impl<T, N-1>::type>::type;
-};
-
-template <typename T, T N>
-struct make_integer_sequence_impl<T, N, typename std::enable_if<N==0>::type>
-{ using type = integer_sequence<T>; };
-
-template <typename T, T N>
-using make_integer_sequence = typename make_integer_sequence_impl<T, N>::type;
+NS_LEMON_BEGIN
 
 template<typename Enum>
 struct EnableBitMaskOperators
@@ -62,9 +14,9 @@ struct EnableBitMaskOperators
 };
 
 #define ENABLE_BITMASK_OPERATORS(E)  \
-    template<> struct lemon::core::EnableBitMaskOperators<E> { static const bool enable = true; }; \
+    template<> struct lemon::EnableBitMaskOperators<E> { static const bool enable = true; }; \
 
-NS_LEMON_CORE_END
+NS_LEMON_END
 
 struct EnumerationHash
 {
@@ -78,13 +30,13 @@ template<typename Enum> using UReturns = typename std::enable_if<
     std::is_enum<Enum>::value,
     typename std::underlying_type<Enum>::type>::type;
 
-template<typename Enum> UReturns<Enum> to_value (Enum e)
+template<typename Enum> UReturns<Enum> value (Enum e)
 {
     return static_cast<typename std::underlying_type<Enum>::type>(e);
 }
 
 template<typename Enum> using MaskReturns = typename std::enable_if<
-    lemon::core::EnableBitMaskOperators<Enum>::enable,
+    lemon::EnableBitMaskOperators<Enum>::enable,
     Enum>::type;
 
 template<typename Enum> MaskReturns<Enum> operator ~ (Enum lhs)
