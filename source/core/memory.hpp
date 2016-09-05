@@ -40,33 +40,41 @@ protected:
     index_type              _first_free_block;  // the index of first available chunk
 };
 
-template<typename T> struct ObjectChunks : public MemoryChunks
+// INCLUDED METHODS OF POOL
+INLINE MemoryChunks::index_type MemoryChunks::size() const
 {
-    // allocate and construct a instance of T
-    template<typename ... Args> T* spawn(Args&&...);
-    // destruct and recycle the memory useage
-    void dispose(T*);
-};
+    return _total_elements - _available;
+}
 
-template<typename T, typename I, size_t DS> struct IndexedObjectChunks : public MemoryChunks
+INLINE MemoryChunks::index_type MemoryChunks::capacity() const
 {
-    using index_type = I;
-    explicit IndexedObjectChunks(index_type chunk_size);
-    virtual ~IndexedObjectChunks();
+    return _total_elements;
+}
 
-    // allocate and construct a instance of T
-    template<typename ... Args> T* spawn(I, Args&&...);
-    // destruct and recycle the memory useage
-    void dispose(I);
-    // returns instance of T identified by index
-    T* find(I);
+INLINE MemoryChunks::index_type MemoryChunks::chunk_size() const
+{
+    return _chunk_size;
+}
 
-protected:
-    bool            _fallback = false;
-    size_t          _redirect_index[DS] = {};
-    size_t          _top = DS;
-    std::vector<T*> _objects;
-};
+INLINE MemoryChunks::index_type MemoryChunks::element_size() const
+{
+    return _element_size;
+}
 
-#include <core/memory.inl>
+INLINE void* MemoryChunks::get_element(index_type index)
+{
+    if( index >= _total_elements )
+        return nullptr;
+
+    return static_cast<void*>(_chunks[index/_chunk_size] + (index%_chunk_size)*_element_size);
+}
+
+INLINE const void* MemoryChunks::get_element(index_type index) const
+{
+    if( index >= _total_elements )
+        return nullptr;
+
+    return static_cast<void*>(_chunks[index/_chunk_size] + (index%_chunk_size)*_element_size);
+}
+
 NS_LEMON_CORE_END

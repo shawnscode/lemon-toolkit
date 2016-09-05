@@ -88,6 +88,12 @@ template<typename T> INLINE void remove_component(Entity object)
     ecs::remove_component(id, object);
 }
 
+template<typename T> INLINE bool has_component(Entity object)
+{
+    const auto id = TypeInfo::id<Component, T>();
+    return ecs::has_component(id, object);
+}
+
 template<> INLINE bool has_components(Entity object)
 {
     return true;

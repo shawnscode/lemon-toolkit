@@ -51,13 +51,13 @@ namespace task
 
     // several callbacks instended for thread initialization
     using thread_closure = std::function<void(uint32_t)>;
-    void set_on_thread_start(thread_closure&);
-    void set_on_thread_stop(thread_closure&);
+    void set_on_thread_start(const thread_closure&);
+    void set_on_thread_stop(const thread_closure&);
 
     // several callbacks instended for task based profiling
     using task_closure = std::function<void(uint32_t, const char*)>;
-    void set_on_wait_start(task_closure&);
-    void set_on_wait_stop(task_closure&);
+    void set_on_wait_start(const task_closure&);
+    void set_on_wait_stop(const task_closure&);
 
     // private task specialization to avoid ambiguous resolve
     TaskHandle create_task(const char* name, std::function<void()>);

@@ -120,6 +120,7 @@ template<typename ...Args> std::tuple<Args*...> get_components(Entity);
 // remove a component from object
 template<typename T> void remove_component(Entity);
 // check if we have specified components
+template<typename T> bool has_component(Entity);
 template<typename ...Args> bool has_components(Entity);
 // get bitmask representation of components
 ComponentMask get_components_mask(Entity);
