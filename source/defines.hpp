@@ -15,21 +15,19 @@
 #define PLATFORM_UNIX
 #endif
 
-NS_LEMON_BEGIN
-
 #define INLINE inline
+
+static const size_t kDbgMaxTracebackFrames = 63;
+
+
+NS_LEMON_BEGIN
 
 /// FORWARD DECLARATIONS
 extern void ABORT(const char* file, int line, const char* format, ...);
 extern void LOGI(const char* format, ...);
 extern void LOGW(const char* format, ...);
 extern void LOGE(const char* format, ...);
-extern void SET_DEBUG_CONFIG(int filter, bool exception);
-
-const static int LOG_VERBOSE = 0;
-const static int LOG_INFORMATION = 1;
-const static int LOG_WARNING = 2;
-const static int LOG_ERROR = 3;
+extern void ASSERT_MAIN_THREAD(const char* message);
 
 #define ASSERT(condition, format, ...) do { \
     if( !(condition) ) { \

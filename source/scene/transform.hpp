@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <core/entity.hpp>
+#include <core/ecs.hpp>
 #include <math/matrix.hpp>
 #include <math/quaternion.hpp>
 
@@ -105,7 +105,7 @@ public:
     : _pose(position, scale, rotation), _world_pose(position, scale, rotation)
     {}
 
-    void on_dispose() override { remove_from_parent(); }
+    void dispose() { remove_from_parent(); }
 
     bool operator == (const Transform&) const;
     bool operator != (const Transform&) const;

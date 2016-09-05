@@ -6,8 +6,9 @@
 #include <graphics/device.hpp>
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
-#include <core/scheduler.hpp>
+#include <core/task.hpp>
 
+#include <thread>
 #include <SDL2/SDL.h>
 
 NS_LEMON_BEGIN
@@ -21,18 +22,17 @@ bool Engine::initialize()
         return false;
     }
 
-    _context.add_subsystem<graphics::Device>();
-    _context.add_subsystem<res::ArchiveCollection>();
-    _context.add_subsystem<res::ResourceCache>();
-    _context.add_subsystem<Input>();
-    _context.add_subsystem<core::TaskScheduler>(4);
+    core::add_subsystem<graphics::Device>();
+    core::add_subsystem<res::ArchiveCollection>();
+    core::add_subsystem<res::ResourceCache>();
+    core::add_subsystem<Input>();
 
     _timestep.zero();
     _last_frame_timepoint = clock::now();
     _min_fps = _max_fps = _max_inactive_fps = 0;
     _running = true;
 
-    auto& device = _context.get_subsystem<graphics::Device>();
+    auto& device = core::get_subsystem<graphics::Device>();
     if( !device.spawn_window(512, 512, 1, graphics::WindowOption::RESIZABLE) )
         return false;
 
@@ -41,14 +41,13 @@ bool Engine::initialize()
 
 void Engine::dispose()
 {
-    _context.remove_subsystem<core::TaskScheduler>();
     // shutdown SDL now
     SDL_Quit();
 }
 
 void Engine::run_one_frame()
 {
-    auto& device = get_subsystem<graphics::Device>();
+    auto& device = core::get_subsystem<graphics::Device>();
 
     process_message();
     if( !_running )
@@ -110,26 +109,26 @@ void Engine::run_one_frame()
 
 void Engine::update(duration dt)
 {
-    emit<EvtUpdate>(dt);
-    emit<EvtPostUpdate>(dt);
-    emit<EvtRenderUpdate>(dt);
-    emit<EvtPostRenderUpdate>(dt);
+    // emit<EvtUpdate>(dt);
+    // emit<EvtPostUpdate>(dt);
+    // emit<EvtRenderUpdate>(dt);
+    // emit<EvtPostRenderUpdate>(dt);
 }
 
 void Engine::render()
 {
-    auto& device = get_subsystem<graphics::Device>();
+    auto& device = core::get_subsystem<graphics::Device>();
     if( !device.begin_frame() )
         return;
 
-    emit<EvtRender>();
+    // emit<EvtRender>();
     device.end_frame();
 }
 
 void Engine::process_message()
 {
-    auto& input = get_subsystem<Input>();
-    auto& device = get_subsystem<graphics::Device>();
+    auto& input = core::get_subsystem<Input>();
+    auto& device = core::get_subsystem<graphics::Device>();
     input.begin_frame();
 
     SDL_Event event;

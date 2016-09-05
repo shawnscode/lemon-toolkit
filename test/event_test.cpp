@@ -33,52 +33,60 @@ struct ExplosionSystem
     int damage_received = 0;
 };
 
-TEST_CASE("TestEmitReceive")
+struct Context
 {
-    EventManager em;
+    Context()
+    {
+        event::initialize();
+    }
+
+    ~Context()
+    {
+        event::dispose();
+    }
+};
+
+TEST_CASE_METHOD(Context, "TestEmitReceive")
+{
     ExplosionSystem explosion_system;
 
-    em.subscribe<Explosion>(explosion_system);
-    em.subscribe<Collision>(explosion_system);
+    subscribe<Explosion>(explosion_system);
+    subscribe<Collision>(explosion_system);
     REQUIRE(0 == explosion_system.damage_received);
 
-    em.emit<Explosion>(10);
+    emit<Explosion>(10);
     REQUIRE(1 == explosion_system.received_count);
     REQUIRE(10 == explosion_system.damage_received);
 
-    em.emit<Collision>(10);
+    emit<Collision>(10);
     REQUIRE(20 == explosion_system.damage_received);
     REQUIRE(2 == explosion_system.received_count);
 }
 
 
-TEST_CASE("TestUntypedEmitReceive")
+TEST_CASE_METHOD(Context, "TestUntypedEmitReceive")
 {
-    EventManager em;
     ExplosionSystem explosion_system;
 
-    em.subscribe<Explosion>(explosion_system);
+    subscribe<Explosion>(explosion_system);
     REQUIRE(0 == explosion_system.damage_received);
 
     Explosion explosion(10);
-    em.emit(explosion);
+    emit(explosion);
     REQUIRE(1 == explosion_system.received_count);
     REQUIRE(10 == explosion_system.damage_received);
 }
 
-TEST_CASE("TestUnsubscription") {
+TEST_CASE_METHOD(Context, "TestUnsubscription") {
     ExplosionSystem explosion_system;
-    {
-        EventManager em;
 
-        em.subscribe<Explosion>(explosion_system);
-        REQUIRE(explosion_system.damage_received == 0);
+    subscribe<Explosion>(explosion_system);
+    REQUIRE(explosion_system.damage_received == 0);
 
-        em.emit<Explosion>(1);
-        REQUIRE(explosion_system.damage_received == 1);
+    emit<Explosion>(1);
+    REQUIRE(explosion_system.damage_received == 1);
 
-        em.unsubscribe<Explosion>(explosion_system);
-        em.emit<Explosion>(1);
-        REQUIRE(explosion_system.damage_received == 1);
-    }
+    unsubscribe<Explosion>(explosion_system);
+    emit<Explosion>(1);
+    REQUIRE(explosion_system.damage_received == 1);
 }

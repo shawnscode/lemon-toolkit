@@ -64,22 +64,22 @@ static std::wstring to_win32(const char* str)
 int get_filemode(FileMode mode)
 {
     int mask = 0;
-    if( to_value(mode & FileMode::READ) )
+    if( value(mode & FileMode::READ) )
         mask |= std::ios::in;
 
-    if( to_value(mode & FileMode::WRITE) )
+    if( value(mode & FileMode::WRITE) )
         mask |= std::ios::out;
 
-    if( to_value(mode & FileMode::APPEND) )
+    if( value(mode & FileMode::APPEND) )
         mask |= std::ios::app;
 
-    if( to_value(mode & FileMode::BINARY) )
+    if( value(mode & FileMode::BINARY) )
         mask |= std::ios::binary;
 
-    if( to_value(mode & FileMode::ATEND) )
+    if( value(mode & FileMode::ATEND) )
         mask |= std::ios::ate;
 
-    if( to_value(mode & FileMode::TRUNCATE) )
+    if( value(mode & FileMode::TRUNCATE) )
         mask |= std::ios::trunc;
 
     return mask;
@@ -301,13 +301,13 @@ static bool scan_directory(std::vector<Path>& nodes, const Path& path, ScanMode 
                     continue;
                 if( info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
                 {
-                    if( to_value(mode & ScanMode::RECURSIVE) )
+                    if( value(mode & ScanMode::RECURSIVE) )
                         scan_directory(nodes, npath, mode);
 
-                    if( to_value(mode & ScanMode::DIRECTORIES) )
+                    if( value(mode & ScanMode::DIRECTORIES) )
                         nodes.push_back(std::move(npath));
                 }
-                else if( to_value(mode & ScanMode::FILES) )
+                else if( value(mode & ScanMode::FILES) )
                     nodes.push_back(std::move(npath));
             }
         }
@@ -330,7 +330,7 @@ static bool scan_directory(std::vector<Path>& nodes, const Path& path, ScanMode 
             if( strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0 )
                 continue;
 
-            if( !to_value(mode & ScanMode::HIDDEN) && de->d_name[0] == '.' )
+            if( !value(mode & ScanMode::HIDDEN) && de->d_name[0] == '.' )
                 continue;
 
             auto npath = (path / de->d_name);
@@ -338,13 +338,13 @@ static bool scan_directory(std::vector<Path>& nodes, const Path& path, ScanMode 
             {
                 if( st.st_mode & S_IFDIR )
                 {
-                    if( to_value(mode & ScanMode::RECURSIVE) )
+                    if( value(mode & ScanMode::RECURSIVE) )
                         scan_directory(nodes, npath, mode);
 
-                    if( to_value(mode & ScanMode::DIRECTORIES) )
+                    if( value(mode & ScanMode::DIRECTORIES) )
                         nodes.push_back(std::move(npath));
                 }
-                else if( to_value(mode & ScanMode::FILES) )
+                else if( value(mode & ScanMode::FILES) )
                     nodes.push_back(std::move(npath));
             }
         }

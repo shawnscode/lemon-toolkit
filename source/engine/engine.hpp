@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <core/context.hpp>
+#include <core/subsystem.hpp>
 
 NS_LEMON_BEGIN
 
@@ -15,7 +15,7 @@ struct Engine : public core::Subsystem
     using duration = std::chrono::high_resolution_clock::duration;
 
     SUBSYSTEM("Engine");
-    Engine(core::Context& c) : Subsystem(c) {}
+    Engine() {}
     virtual ~Engine() {}
 
     bool initialize() override;

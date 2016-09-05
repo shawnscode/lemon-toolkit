@@ -4,7 +4,7 @@
 #pragma once
 
 #include <engine/engine.hpp>
-#include <core/typeinfo.hpp>
+#include <codebase/type/enumeration.hpp>
 #include <math/vector.hpp>
 
 NS_LEMON_BEGIN
@@ -145,7 +145,7 @@ enum class KeyboardQualifier
 struct Input : public core::Subsystem
 {
     SUBSYSTEM("Input");
-    Input(core::Context& c) : Subsystem(c) {}
+    Input() {}
     virtual ~Input() {}
 
     bool initialize() override;

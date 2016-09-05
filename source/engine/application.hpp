@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <core/context.hpp>
+#include <core/subsystem.hpp>
 
 NS_LEMON_BEGIN
 
@@ -24,30 +24,8 @@ struct Application
     // show  an error message, terminate the main loop, and set failure exit code
     void terminate_with_error(const std::string&);
 
-    // spawn a new subsystem with type S and construct arguments
-    template<typename S, typename ... Args> void add_subsystem(Args&& ...);
-    // retrieve the registered system instance, existence should be guaranteed
-    template<typename S> S& get_subsystem();
-    template<typename S> const S& get_subsystem() const;
-    // check if we have specified subsystems
-    template<typename ... Args> bool has_subsystems() const;
-    // emit event with default dispatcher
-    template<typename E> void emit(const E&);
-    template<typename E, typename ... Args> void emit(Args && ... args);
-    // subscribe/unsubscribe this to receive events of type E
-    template<typename T, typename E> void subscribe();
-    template<typename T, typename E> void unsubscribe();
-
-    // return default entity manager
-    core::EntityManager& get_world();
-    const core::EntityManager& get_world() const;
-    // return default event dispatcher
-    core::EventManager&  get_dispatcher();
-    const core::EventManager&  get_dispatcher() const;
-
 protected:
-    core::Context   _context;
-    int             _exitcode;
+    int _exitcode;
 };
 
 // define a platform-specific main function, which in turn executes the user-defined function
@@ -87,76 +65,5 @@ int run_application() \
 } \
 DEFINE_MAIN(run_application());
 #endif
-
-/// IMPLEMENTATIONS of INLINE APPLICATION
-INLINE core::EntityManager& Application::get_world()
-{
-    return _context.get_world();
-}
-
-INLINE core::EventManager&  Application::get_dispatcher()
-{
-    return _context.get_dispatcher();
-}
-
-INLINE const core::EntityManager& Application::get_world() const
-{
-    return _context.get_world();
-}
-
-INLINE const core::EventManager&  Application::get_dispatcher() const
-{
-    return _context.get_dispatcher();
-}
-
-template<typename S, typename ... Args>
-INLINE void Application::add_subsystem(Args && ... args)
-{
-    _context.add_subsystem<S>(std::forward<Args>(args)...);
-}
-
-template<typename ... Args>
-INLINE bool Application::has_subsystems() const
-{
-    return _context.has_subsystems<Args...>();
-}
-
-template<typename S>
-INLINE S& Application::get_subsystem()
-{
-    return _context.get_subsystem<S>();
-}
-
-template<typename S>
-INLINE const S& Application::get_subsystem() const
-{
-    return _context.get_subsystem<S>();
-}
-
-template<typename E>
-INLINE void Application::emit(const E& evt)
-{
-    get_dispatcher().emit<E>(evt);
-}
-
-template<typename E, typename ... Args>
-INLINE void Application::emit(Args && ... args)
-{
-    get_dispatcher().emit<E>(std::forward<Args>(args)...);
-}
-
-template<typename T, typename E>
-INLINE void Application::subscribe()
-{
-    ENSURE( dynamic_cast<T*>(this) != nullptr );
-    get_dispatcher().subscribe<E>(*static_cast<T*>(this));
-}
-
-template<typename T, typename E>
-INLINE void Application::unsubscribe()
-{
-    ENSURE( dynamic_cast<T*>(this) != nullptr );
-    get_dispatcher().unsubscribe<E>(*static_cast<T*>(this));
-}
 
 NS_LEMON_END

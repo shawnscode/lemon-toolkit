@@ -4,7 +4,8 @@
 #pragma once
 
 #include <resource/path.hpp>
-#include <core/context.hpp>
+#include <codebase/type/enumeration.hpp>
+#include <core/subsystem.hpp>
 
 NS_LEMON_FILESYSTEM_BEGIN
 

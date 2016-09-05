@@ -4,8 +4,8 @@
 #pragma once
 
 #include <graphics/defines.hpp>
-#include <core/context.hpp>
-#include <core/typeinfo.hpp>
+#include <codebase/type/enumeration.hpp>
+#include <core/subsystem.hpp>
 #include <math/rect.hpp>
 #include <math/color.hpp>
 
@@ -122,7 +122,6 @@ struct Device : public core::Subsystem
 {
     SUBSYSTEM("Graphics'Device")
 
-    Device(core::Context& c) : Subsystem(c) {}
     virtual ~Device() {}
 
     bool initialize() override;

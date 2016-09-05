@@ -164,7 +164,7 @@ unsigned IndexBuffer::get_index_count() const
 
 unsigned IndexBuffer::get_stride() const
 {
-    return GL_INDEX_ELEMENT_SIZES[to_value(_format)];
+    return GL_INDEX_ELEMENT_SIZES[value(_format)];
 }
 
 unsigned IndexBuffer::get_size() const

@@ -100,5 +100,5 @@ protected:
     V           _values[Size];
 };
 
-#include <core/compact.inl>
+#include <codebase/memory/compact.inl>
 NS_LEMON_CORE_END
