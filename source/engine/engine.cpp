@@ -3,7 +3,7 @@
 
 #include <engine/engine.hpp>
 #include <engine/input.hpp>
-#include <graphics/device.hpp>
+#include <graphics/backend.hpp>
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
 #include <core/task.hpp>
@@ -22,7 +22,7 @@ bool Engine::initialize()
         return false;
     }
 
-    core::add_subsystem<graphics::Device>();
+    core::add_subsystem<graphics::Backend>();
     core::add_subsystem<res::ArchiveCollection>();
     core::add_subsystem<res::ResourceCache>();
     core::add_subsystem<Input>();
@@ -32,8 +32,8 @@ bool Engine::initialize()
     _min_fps = _max_fps = _max_inactive_fps = 0;
     _running = true;
 
-    auto& device = core::get_subsystem<graphics::Device>();
-    if( !device.spawn_window(512, 512, 1, graphics::WindowOption::RESIZABLE) )
+    auto& device = core::get_subsystem<graphics::Backend>();
+    if( !device.restore_window(512, 512, 1, graphics::WindowOption::RESIZABLE) )
         return false;
 
     return true;
@@ -47,7 +47,7 @@ void Engine::dispose()
 
 void Engine::run_one_frame()
 {
-    auto& device = core::get_subsystem<graphics::Device>();
+    auto& device = core::get_subsystem<graphics::Backend>();
 
     process_message();
     if( !_running )
@@ -117,7 +117,7 @@ void Engine::update(duration dt)
 
 void Engine::render()
 {
-    auto& device = core::get_subsystem<graphics::Device>();
+    auto& device = core::get_subsystem<graphics::Backend>();
     if( !device.begin_frame() )
         return;
 
@@ -128,7 +128,7 @@ void Engine::render()
 void Engine::process_message()
 {
     auto& input = core::get_subsystem<Input>();
-    auto& device = core::get_subsystem<graphics::Device>();
+    auto& device = core::get_subsystem<graphics::Backend>();
     input.begin_frame();
 
     SDL_Event event;
@@ -141,7 +141,7 @@ void Engine::process_message()
         }
 
         input.process_message(&event);
-        device.process_message(&event);
+        device.process_window_message(&event);
     }
 
     input.end_frame();

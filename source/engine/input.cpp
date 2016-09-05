@@ -2,7 +2,7 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <engine/input.hpp>
-#include <graphics/device.hpp>
+#include <graphics/backend.hpp>
 
 #include <SDL2/SDL.h>
 
@@ -140,7 +140,7 @@ void Input::begin_frame()
 
 void Input::end_frame()
 {
-    auto& device = core::get_subsystem<graphics::Device>();
+    auto& device = core::get_subsystem<graphics::Backend>();
 
     // check for focus change this frame
     if( device.get_window_flags() & SDL_WINDOW_INPUT_FOCUS )
@@ -167,7 +167,7 @@ void Input::end_frame()
     if( _input_focus && !_mouse_visible && !_touch_emulation )
     {
         auto size = device.get_window_size();
-        SDL_WarpMouseInWindow((SDL_Window*)device.get_window(), size[0]/2, size[1]/2);
+        SDL_WarpMouseInWindow((SDL_Window*)device.get_window_object(), size[0]/2, size[1]/2);
     }
 }
 

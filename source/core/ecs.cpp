@@ -258,7 +258,6 @@ struct ECSWorld
 
         if( _masks[object.get_index()].test(id) )
         {
-            void* component = _components[id]->get(object.get_index());
             _masks[object.get_index()].reset(id);
             _components[id]->free_with_index(object.get_index());
         }

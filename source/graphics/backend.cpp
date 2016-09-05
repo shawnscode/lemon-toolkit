@@ -1,7 +1,7 @@
 // @date 2016/07/30
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <graphics/device.hpp>
+#include <graphics/backend.hpp>
 #include <graphics/opengl.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
@@ -20,6 +20,19 @@ static const char* orientation_tostring(Orientation orientation)
     }
 }
 
+static const unsigned GL_CULL_FACE_FUNC[] =
+{
+    GL_FRONT,
+    GL_BACK,
+    GL_FRONT_AND_BACK
+};
+
+static const unsigned GL_FRONT_FACE_FUNC[] =
+{
+    GL_CW,
+    GL_CCW
+};
+
 static const unsigned GL_PRIMITIVE[] =
 {
     GL_POINTS,
@@ -33,52 +46,14 @@ static const unsigned GL_PRIMITIVE[] =
 
 static const unsigned GL_COMPARE_FUNC[] =
 {
-    GL_ALWAYS,
-    GL_EQUAL,
-    GL_NOTEQUAL,
+    GL_NEVER,
     GL_LESS,
     GL_LEQUAL,
     GL_GREATER,
-    GL_GEQUAL
-};
-
-static const unsigned GL_BLEND_SOURCE[] =
-{
-    GL_ONE,
-    GL_ONE,
-    GL_DST_COLOR,
-    GL_SRC_ALPHA,
-    GL_SRC_ALPHA,
-    GL_ONE,
-    GL_ONE_MINUS_DST_ALPHA,
-    GL_ONE,
-    GL_SRC_ALPHA
-};
-
-static const unsigned GL_BLEND_DESTINATION[] =
-{
-    GL_ZERO,
-    GL_ONE,
-    GL_ZERO,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_ONE,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_DST_ALPHA,
-    GL_ONE,
-    GL_ONE
-};
-
-static const unsigned GL_BLEND_OP[] =
-{
-    GL_FUNC_ADD,
-    GL_FUNC_ADD,
-    GL_FUNC_ADD,
-    GL_FUNC_ADD,
-    GL_FUNC_ADD,
-    GL_FUNC_ADD,
-    GL_FUNC_ADD,
-    GL_FUNC_REVERSE_SUBTRACT,
-    GL_FUNC_REVERSE_SUBTRACT
+    GL_GEQUAL,
+    GL_EQUAL,
+    GL_NOTEQUAL,
+    GL_ALWAYS
 };
 
 static const unsigned GL_STENCIL_OP[] =
@@ -86,29 +61,54 @@ static const unsigned GL_STENCIL_OP[] =
     GL_KEEP,
     GL_ZERO,
     GL_REPLACE,
+    GL_INCR,
     GL_INCR_WRAP,
-    GL_DECR_WRAP
+    GL_DECR,
+    GL_DECR_WRAP,
+    GL_INVERT
 };
 
-struct DeviceContext
+static const unsigned GL_BLEND_FACTOR[] =
+{
+    GL_ZERO,
+    GL_ONE,
+    GL_SRC_COLOR,
+    GL_ONE_MINUS_SRC_COLOR,
+    GL_DST_COLOR,
+    GL_ONE_MINUS_DST_COLOR,
+    GL_SRC_ALPHA,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_DST_ALPHA,
+    GL_ONE_MINUS_DST_ALPHA,
+    GL_SRC_ALPHA_SATURATE
+};
+
+static const unsigned GL_BLEND_EQUATION_FUNC[] =
+{
+    GL_FUNC_ADD,
+    GL_FUNC_SUBTRACT,
+    GL_FUNC_REVERSE_SUBTRACT
+};
+
+struct BackendContext
 {
     SDL_Window*     window = nullptr;
     SDL_GLContext   context = 0;
 };
 
-GraphicsObject::GraphicsObject(Device& device) : _device(device)
+GraphicsObject::GraphicsObject(Backend& device) : _device(device)
 {
-    // _device.get_dispatcher().subscribe<EvtDeviceLost>(*this);
-    // _device.get_dispatcher().subscribe<EvtDeviceRestore>(*this);
+    core::subscribe<EvtBackendLost>(*this);
+    core::subscribe<EvtBackendRestore>(*this);
 }
 
 GraphicsObject::~GraphicsObject()
 {
-    // _device.get_dispatcher().unsubscribe<EvtDeviceLost>(*this);
-    // _device.get_dispatcher().unsubscribe<EvtDeviceRestore>(*this);
+    core::unsubscribe<EvtBackendLost>(*this);
+    core::unsubscribe<EvtBackendRestore>(*this);
 }
 
-void GraphicsObject::receive(const EvtDeviceRestore& evt)
+void GraphicsObject::receive(const EvtBackendRestore& evt)
 {
     if( on_device_restore )
         on_device_restore(*this);
@@ -116,7 +116,7 @@ void GraphicsObject::receive(const EvtDeviceRestore& evt)
         restore();
 }
 
-void GraphicsObject::receive(const EvtDeviceLost& evt)
+void GraphicsObject::receive(const EvtBackendLost& evt)
 {
     if( on_device_release )
         on_device_release(*this);
@@ -134,9 +134,9 @@ void GraphicsObject::release()
     _object = 0;
 }
 
-bool Device::initialize()
+bool Backend::initialize()
 {
-    _device = new (std::nothrow) DeviceContext;
+    _device = new (std::nothrow) BackendContext;
     if( !_device )
     {
         LOGW("failed to create device context.");
@@ -147,7 +147,7 @@ bool Device::initialize()
     return true;
 }
 
-void Device::dispose()
+void Backend::dispose()
 {
     if( _device )
     {
@@ -156,67 +156,7 @@ void Device::dispose()
     }
 }
 
-unsigned Device::get_window_flags() const
-{
-    return _device->window ? SDL_GetWindowFlags(_device->window) : 0;
-}
-
-void* Device::get_window() const
-{
-    return _device->window;
-}
-
-void Device::process_message(void* data)
-{
-    SDL_Event& event = *static_cast<SDL_Event*>(data);
-    if( event.type != SDL_WINDOWEVENT )
-        return;
-
-    switch( event.window.event )
-    {
-        case SDL_WINDOWEVENT_MINIMIZED:
-            _minimized = true;
-            break;
-
-        case SDL_WINDOWEVENT_MAXIMIZED:
-        case SDL_WINDOWEVENT_RESTORED:
-#if defined(PLATFORM_IOS) || defined (PLATFORM_ANDROID)
-            // on iOS we never lose the GL context,
-            // but may have done GPU object changes that could not be applied yet. Apply them now
-            // on Android the old GL context may be lost already,
-            // restore GPU objects to the new GL context
-            graphics_->restore_context();
-#endif
-            _minimized = false;
-            break;
-
-        case SDL_WINDOWEVENT_RESIZED:
-            SDL_GL_GetDrawableSize(_device->window, &_size[0], &_size[1]);
-            break;
-
-        case SDL_WINDOWEVENT_MOVED:
-            SDL_GetWindowPosition(_device->window, &_position[0], &_position[1]);
-            break;
-
-        default:
-            break;
-    }
-}
-
-void Device::set_orientations(Orientation orientation)
-{
-    _orientation = orientation;
-    SDL_SetHint(SDL_HINT_ORIENTATIONS, orientation_tostring(orientation));
-}
-
-void Device::set_position(const math::Vector2i& position)
-{
-    _position = position;
-    if( _device->window )
-        SDL_SetWindowPosition(_device->window, position[0], position[1]);
-}
-
-bool Device::spawn_window(int width, int height, int multisample, WindowOption options)
+bool Backend::restore_window(int width, int height, int multisample, WindowOption options)
 {
     #ifdef PLATFORM_IOS
     // iOS app always take the fullscree (and with status bar hidden)
@@ -307,7 +247,7 @@ bool Device::spawn_window(int width, int height, int multisample, WindowOption o
     return true;
 }
 
-void Device::close_window()
+void Backend::release_window()
 {
     release_context();
     SDL_ShowCursor(SDL_TRUE);
@@ -319,7 +259,81 @@ void Device::close_window()
     }
 }
 
-bool Device::restore_context()
+void Backend::process_window_message(void* data)
+{
+    SDL_Event& event = *static_cast<SDL_Event*>(data);
+    if( event.type != SDL_WINDOWEVENT )
+        return;
+
+    switch( event.window.event )
+    {
+        case SDL_WINDOWEVENT_MINIMIZED:
+            _minimized = true;
+            break;
+
+        case SDL_WINDOWEVENT_MAXIMIZED:
+        case SDL_WINDOWEVENT_RESTORED:
+#if defined(PLATFORM_IOS) || defined (PLATFORM_ANDROID)
+            // on iOS we never lose the GL context,
+            // but may have done GPU object changes that could not be applied yet. Apply them now
+            // on Android the old GL context may be lost already,
+            // restore GPU objects to the new GL context
+            graphics_->restore_context();
+#endif
+            _minimized = false;
+            break;
+
+        case SDL_WINDOWEVENT_RESIZED:
+            SDL_GL_GetDrawableSize(_device->window, &_size[0], &_size[1]);
+            break;
+
+        case SDL_WINDOWEVENT_MOVED:
+            SDL_GetWindowPosition(_device->window, &_position[0], &_position[1]);
+            break;
+
+        default:
+            break;
+    }
+}
+
+void Backend::set_orientations(Orientation orientation)
+{
+    _orientation = orientation;
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, orientation_tostring(orientation));
+}
+
+void Backend::set_window_position(const math::Vector2i& position)
+{
+    _position = position;
+    if( _device->window )
+    {
+        SDL_SetWindowPosition(_device->window, position[0], position[1]);
+        SDL_GetWindowPosition(_device->window, &_position[0], &_position[1]);
+    }
+}
+
+void Backend::set_window_size(const math::Vector2i& size)
+{
+    _size = size;
+    if( _device->window )
+    {
+        SDL_SetWindowSize(_device->window, size[0], size[0]);
+        SDL_GL_GetDrawableSize(_device->window, &_size[0], &_size[1]);
+    }
+}
+
+void* Backend::get_window_object() const
+{
+    return _device->window;
+}
+
+unsigned Backend::get_window_flags() const
+{
+    return _device->window ? SDL_GetWindowFlags(_device->window) : 0;
+}
+
+
+bool Backend::restore_context()
 {
     if( _device->window == nullptr )
     {
@@ -374,17 +388,11 @@ bool Device::restore_context()
     LOGI("GL_RENDERER:                  %s", glGetString(GL_RENDERER));
     LOGI("GL_VERSION:                   %s", glGetString(GL_VERSION));
     LOGI("GL_SHADING_LANGUAGE_VERSION:  %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-
-    //
-    // get_dispatcher().emit<EvtDeviceRestore>();
     return true;
 }
 
-void Device::release_context()
+void Backend::release_context()
 {
-    // get_dispatcher().emit<EvtDeviceLost>();
-
-    //
     if( _device->window != nullptr && _device->context != 0 )
     {
         SDL_GL_DeleteContext(_device->context);
@@ -393,17 +401,17 @@ void Device::release_context()
     }
 }
 
-bool Device::begin_frame()
+bool Backend::begin_frame()
 {
     return _device->window != nullptr;
 }
 
-void Device::end_frame()
+void Backend::end_frame()
 {
     SDL_GL_SwapWindow(_device->window);
 }
 
-void Device::clear(ClearOption options, const math::Color& color, float depth, unsigned stencil)
+void Backend::clear(ClearOption options, const math::Color& color, float depth, unsigned stencil)
 {
     unsigned flags = 0;
     if( value(options & ClearOption::COLOR) )
@@ -427,188 +435,178 @@ void Device::clear(ClearOption options, const math::Color& color, float depth, u
     glClear(flags);
 }
 
-void Device::reset_cached_state()
+void Backend::reset_cached_state()
 {
     _bound_fbo = _system_frame_object;
     _bound_vbo = _bound_ibo = _bound_program = 0;
     _active_texunit = _bound_textype = _bound_texture = 0;
-
-    _blend_mode = BlendMode::REPLACE;
-    _cull_mode  = CullMode::NONE;
-
-    _color_write = true;
-
-    _scissor_test = false;
-    _scissor = { {0, 0}, {0, 0} };
-
-    // even if the depth buffer exists and the depth mask is non-zero,
-    // the depth buffer is not updated if the depth test is disabled.
-    // in order to unconditionally write to the depth buffer, the depth
-    // test should be enabled and set to GL_ALWAYS.
-    _depth_test = true;
-    _depth_test_mode = CompareMode::LESS;
-    _depth_constant_bias = 0.f;
-    _depth_slope_scaled_bias = 0.f;
-    _depth_write = true;
-
-    // 
-    _stencil_test = false;
-    _stencil_test_mode = CompareMode::ALWAYS;
-    _stencil_ref = 0;
-    _stencil_compare_mask = math::max<unsigned>();
-    _stencil_pass_op = _stencil_fail_op = _stencil_zfail_op = StencilOp::KEEP;
-    _stencil_write_mask = math::max<unsigned>();
 }
 
-void Device::set_viewport(const math::Rect2i& viewport)
+void Backend::set_cull_face(bool enable, CullFace face)
 {
-    // glViewport();
-    set_scissor_test(false);
-}
-
-void Device::set_blend_mode(BlendMode mode)
-{
-    if( mode != _blend_mode )
+    if( enable != _render_state.cull.enable )
     {
-        if( mode == BlendMode::REPLACE )
-        {
-            glDisable(GL_BLEND);
-        }
-        else
-        {
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_BLEND_SOURCE[value(mode)], GL_BLEND_DESTINATION[value(mode)]);
-            glBlendEquation(GL_BLEND_OP[value(mode)]);
-        }
-        _blend_mode = mode;
+        if( enable ) glEnable(GL_CULL_FACE);
+        else glDisable(GL_CULL_FACE);
+        _render_state.cull.enable = enable;
+    }
+
+    if( face != _render_state.cull.face )
+    {
+        if( enable ) glCullFace(GL_CULL_FACE_FUNC[value(face)]);
+        _render_state.cull.face = face;
     }
 }
 
-void Device::set_cull_mode(CullMode mode)
+void Backend::set_front_face(FrontFaceOrder winding)
 {
-    // OpenGL convention use ccw as front face
-    if( mode != _cull_mode )
+    if( _render_state.cull.winding != winding )
     {
-        if( mode == CullMode::NONE )
-        {
-            glDisable(GL_CULL_FACE);
-        }
-        else
-        {
-            glEnable(GL_CULL_FACE);
-            glCullFace(mode == CullMode::CCW ? GL_FRONT : GL_BACK);
-        }
-        _cull_mode = mode;
+        glFrontFace(GL_FRONT_FACE_FUNC[value(winding)]);
+        _render_state.cull.winding = winding;
     }
 }
 
-void Device::set_scissor_test(bool enable, const math::Rect2i& scissor)
+void Backend::set_scissor_test(bool enable, const math::Rect2i& scissor)
 {
-    if( enable != _scissor_test )
+    if( enable != _render_state.scissor.enable )
     {
-        if( !enable ) glDisable(GL_SCISSOR_TEST);
-        else glEnable(GL_SCISSOR_TEST);
-        _scissor_test = enable;
+        if( enable ) glEnable(GL_SCISSOR_TEST);
+        else glDisable(GL_SCISSOR_TEST);
+        _render_state.scissor.enable = enable;
     }
 
-    if( enable && scissor != _scissor )
+    if( scissor != _render_state.scissor.area )
     {
-        glScissor(scissor.min[0], scissor.min[0], scissor.length<0>(), scissor.length<1>());
-        _scissor = scissor;
+        if( enable ) glScissor(scissor.min[0], scissor.min[1], scissor.length<0>(), scissor.length<1>());
+        _render_state.scissor.area = scissor;
     }
 }
 
-void Device::set_stencil_test(bool enable, CompareMode mode, unsigned ref, unsigned compare_mask)
+void Backend::set_stencil_test(bool enable, CompareEquation equation, unsigned reference, unsigned mask)
 {
-    if( enable != _stencil_test )
+    if( enable != _render_state.stencil.enable )
     {
         if( enable ) glEnable(GL_STENCIL_TEST);
         else glDisable(GL_STENCIL_TEST);
-        _stencil_test = enable;
+        _render_state.stencil.enable = enable;
     }
 
-    if( enable && (mode != _stencil_test_mode || ref != _stencil_ref || compare_mask != _stencil_compare_mask) )
+    if( equation != _render_state.stencil.compare ||
+        reference != _render_state.stencil.reference ||
+        mask != _render_state.stencil.mask )
     {
-        glStencilFunc(GL_COMPARE_FUNC[value(mode)], ref, compare_mask);
-        _stencil_test_mode = mode;
-        _stencil_ref = ref;
-        _stencil_compare_mask = compare_mask;
+        if( enable ) glStencilFunc(GL_COMPARE_FUNC[value(equation)], reference, mask);
+        _render_state.stencil.compare = equation;
+        _render_state.stencil.reference = reference;
+        _render_state.stencil.mask = mask;
     }
 }
 
-void Device::set_stencil_write(StencilOp pass, StencilOp fail, StencilOp zfail, unsigned write_mask)
+void Backend::set_stencil_write(StencilWriteEquation sfail, StencilWriteEquation dpfail, StencilWriteEquation dppass, unsigned mask)
 {
-    if( _stencil_test )
+    if( sfail != _render_state.stencil_write.sfail ||
+        dpfail != _render_state.stencil_write.dpfail ||
+        dppass != _render_state.stencil_write.dppass )
     {
-        if( write_mask != _stencil_write_mask )
-        {
-            glStencilMask(write_mask);
-            _stencil_write_mask = write_mask;
-        }
+        glStencilOp(GL_STENCIL_OP[value(sfail)], GL_STENCIL_OP[value(dpfail)], GL_STENCIL_OP[value(dppass)]);
+        _render_state.stencil_write.sfail = sfail;
+        _render_state.stencil_write.dpfail = dpfail;
+        _render_state.stencil_write.dppass = dppass;
+    }
 
-        if( pass != _stencil_pass_op || fail != _stencil_fail_op || zfail != _stencil_zfail_op )
-        {
-            glStencilOp(GL_STENCIL_OP[value(fail)], GL_STENCIL_OP[value(zfail)], GL_STENCIL_OP[value(pass)]);
-            _stencil_pass_op = pass;
-            _stencil_fail_op = fail;
-            _stencil_zfail_op = zfail;
-        }
+    if( mask != _render_state.stencil_write.mask )
+    {
+        glStencilMask(mask);
+        _render_state.stencil_write.mask = mask;
     }
 }
 
-void Device::set_depth_test(bool enable, CompareMode mode)
+void Backend::set_depth_test(bool enable, CompareEquation equation)
 {
-    if( enable != _depth_test )
+    if( enable != _render_state.depth.enable )
     {
         if( enable ) glEnable(GL_DEPTH_TEST);
         else glDisable(GL_DEPTH_TEST);
-        _depth_test = enable;
+        _render_state.depth.enable = enable;
     }
 
-    if( enable && mode != _depth_test_mode )
+    if( equation != _render_state.depth.compare )
     {
-        glDepthFunc(GL_COMPARE_FUNC[value(mode)]);
-        _depth_test_mode = mode;
-    }
-}
-
-void Device::set_depth_write(bool write)
-{
-    if( _depth_test && write != _depth_write )
-    {
-        glDepthMask(write ? GL_TRUE : GL_FALSE);
-        _depth_write = write;
+        if( enable ) glDepthFunc(GL_COMPARE_FUNC[value(equation)]);
+        _render_state.depth.compare = equation;
     }
 }
 
-void Device::set_depth_bias(float slope_scaled, float constant)
+void Backend::set_depth_write(bool enable, float slope_scaled, float constant)
 {
-    if( _depth_slope_scaled_bias != slope_scaled || _depth_constant_bias != constant )
+    if( enable != _render_state.depth_write.enable )
     {
-        if( slope_scaled != 0.f || constant != 0.f )
+        if( enable ) glDepthMask(GL_TRUE);
+        else glDepthMask(GL_FALSE);
+    }
+
+    if( enable != _render_state.depth_write.enable ||
+        slope_scaled != _render_state.depth_write.bias_slope_scaled ||
+        constant != _render_state.depth_write.bias_constant )
+    {
+        if( enable && (slope_scaled != 0.f || constant != 0.f) )
         {
             glEnable(GL_POLYGON_OFFSET_FILL);
             glPolygonOffset(slope_scaled, constant);
         }
         else glDisable(GL_POLYGON_OFFSET_FILL);
-
-        _depth_slope_scaled_bias = slope_scaled;
-        _depth_constant_bias = constant;
     }
+
+    _render_state.depth_write.enable = enable;
+    _render_state.depth_write.bias_slope_scaled = slope_scaled;
+    _render_state.depth_write.bias_constant = constant;
 }
 
-void Device::set_color_write(bool write)
+void Backend::set_color_blend(bool enable, BlendEquation equation, BlendFactor src, BlendFactor dst)
 {
-    if( write != _color_write )
+    if( enable != _render_state.blend.enable )
     {
-        if( write ) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        else glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        if( enable ) glEnable(GL_BLEND);
+        else glDisable(GL_BLEND);
+        _render_state.blend.enable = enable;
+    }
 
-        _color_write = write;
+    if( equation != _render_state.blend.equation ||
+        src != _render_state.blend.source_factor ||
+        dst != _render_state.blend.destination_factor )
+    {
+        glBlendFunc(GL_BLEND_FACTOR[value(src)], GL_BLEND_FACTOR[value(dst)]);
+        glBlendEquation(GL_BLEND_EQUATION_FUNC[value(equation)]);
+        _render_state.blend.equation = equation;
+        _render_state.blend.source_factor = src;
+        _render_state.blend.destination_factor = dst;
     }
 }
 
-void Device::set_shader(unsigned program)
+void Backend::set_color_write(ColorMask mask)
+{
+    if( mask != _render_state.color_write )
+    {
+        GLboolean r = value(mask & ColorMask::RED) > 0 ? GL_TRUE : GL_FALSE;
+        GLboolean g = value(mask & ColorMask::GREEN) > 0 ? GL_TRUE : GL_FALSE;
+        GLboolean b = value(mask & ColorMask::BLUE) > 0 ? GL_TRUE : GL_FALSE;
+        GLboolean a = value(mask & ColorMask::ALPHA) > 0 ? GL_TRUE : GL_FALSE;
+        glColorMask(r, g, b, a);
+        _render_state.color_write = mask;
+    }
+}
+
+void Backend::set_viewport(const math::Rect2i& viewport)
+{
+    if( _viewport != viewport )
+    {
+        glViewport(viewport.min[0], viewport.min[1], viewport.length<0>(), viewport.length<1>());
+        _viewport = viewport;
+    }
+}
+
+void Backend::set_shader(unsigned program)
 {
     if( program != _bound_program )
     {
@@ -617,7 +615,7 @@ void Device::set_shader(unsigned program)
     }
 }
 
-void Device::set_index_buffer(unsigned ibo)
+void Backend::set_index_buffer(unsigned ibo)
 {
     if( ibo != _bound_ibo )
     {
@@ -626,7 +624,7 @@ void Device::set_index_buffer(unsigned ibo)
     }
 }
 
-void Device::set_vertex_buffer(unsigned vbo)
+void Backend::set_vertex_buffer(unsigned vbo)
 {
     if( vbo != _bound_vbo )
     {
@@ -635,7 +633,7 @@ void Device::set_vertex_buffer(unsigned vbo)
     }
 }
 
-void Device::set_texture(unsigned unit, unsigned type, unsigned object)
+void Backend::set_texture(unsigned unit, unsigned type, unsigned object)
 {
     if( _active_texunit != unit )
     {
@@ -651,18 +649,18 @@ void Device::set_texture(unsigned unit, unsigned type, unsigned object)
     }
 }
 
-void Device::prepare_draw()
+void Backend::prepare_draw()
 {
 
 }
 
-void Device::draw(PrimitiveType type, unsigned start, unsigned count)
+void Backend::draw(PrimitiveType type, unsigned start, unsigned count)
 {
     glDrawArrays(GL_PRIMITIVE[value(type)], start, count);
     CHECK_GL_ERROR();
 }
 
-bool Device::is_device_lost() const
+bool Backend::is_device_lost() const
 {
     return _device->window == nullptr || _device->context == 0;
 }

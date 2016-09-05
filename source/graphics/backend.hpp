@@ -4,6 +4,7 @@
 #pragma once
 
 #include <graphics/defines.hpp>
+#include <graphics/render_state.hpp>
 #include <codebase/type/enumeration.hpp>
 #include <core/subsystem.hpp>
 #include <math/rect.hpp>
@@ -22,52 +23,19 @@ enum class PrimitiveType : uint8_t
     TRIANGLE_FAN,
 };
 
+enum class RasterizationMode : uint8_t
+{
+    POINT,
+    LINE,
+    FILL
+};
+
 enum class Orientation : uint8_t
 {
     LANDSCAPE_LEFT = 0,
     LANDSCAPE_RIGHT,
     PORTRAIT,
     PORTRAIT_UPSIDE_DOWN
-};
-
-enum class CompareMode : uint8_t
-{
-    ALWAYS = 0,
-    EQUAL,
-    NOT_EQUAL,
-    LESS,
-    LESS_EQUAL,
-    GREATER,
-    GREATER_EQUAL,
-};
-
-enum class StencilOp : uint8_t
-{
-    KEEP = 0,
-    ZERO,
-    REF,
-    INCR,
-    DECR
-};
-
-enum class CullMode : uint8_t
-{
-    NONE = 0,
-    CCW,
-    CW
-};
-
-enum class BlendMode : uint8_t
-{
-    REPLACE = 0,
-    ADD,
-    MULTIPLY,
-    ALPHA,
-    ADDALPHA,
-    PREMULALPHA,
-    INVDESTALPHA,
-    SUBTRACT,
-    SUBTRACTALPHA
 };
 
 enum class WindowOption : uint16_t
@@ -90,17 +58,17 @@ enum class ClearOption : uint8_t
 };
 
 // device events
-struct EvtDeviceLost {};
-struct EvtDeviceRestore {};
+struct EvtBackendLost {};
+struct EvtBackendRestore {};
 
 // the GraphicsObject class is the abstract base class for resources, shaders
 struct GraphicsObject
 {
-    GraphicsObject(Device& device);
+    GraphicsObject(Backend& device);
     virtual ~GraphicsObject();
 
-    void receive(const EvtDeviceRestore&);
-    void receive(const EvtDeviceLost&);
+    void receive(const EvtBackendRestore&);
+    void receive(const EvtBackendLost&);
 
     using receiver = std::function<void(GraphicsObject&)>;
     receiver on_device_restore = nullptr;
@@ -112,23 +80,43 @@ struct GraphicsObject
     unsigned get_graphic_object() const { return _object; }
 
 protected:
-    Device&     _device;
+    Backend&     _device;
     unsigned    _object = 0;
 };
 
 // graphics device subsystem. manages the window device, renedering state and gpu resources
-struct DeviceContext;
-struct Device : public core::Subsystem
+struct BackendContext;
+struct Backend : public core::Subsystem
 {
-    SUBSYSTEM("Graphics'Device")
+    SUBSYSTEM("lemon::graphics::Backend")
 
-    virtual ~Device() {}
+    virtual ~Backend() {}
 
     bool initialize() override;
     void dispose() override;
 
+    // create window handle and main OpenGL context
+    bool restore_window(int, int, int multisample = 1, WindowOption options = WindowOption::NONE);
+    void release_window();
     // handle window messages, called from engine
-    void process_message(void*);
+    void process_window_message(void*);
+
+    // set allowed screen orientations as a space-separated way
+    void set_orientations(Orientation);
+    Orientation get_orientations() const { return _orientation; }
+    // set the initial left-upper position of window
+    void set_window_position(const math::Vector2i&);
+    math::Vector2i get_window_position() const { return _position; }
+    // set the window size if fullscreen not enable
+    void set_window_size(const math::Vector2i&);
+    math::Vector2i get_window_size() const { return _size; }
+
+    // return whether application window is minimized
+    bool is_minimized() const { return _minimized; }
+    // return window internal representation
+    void* get_window_object() const;
+    // return window flags
+    unsigned get_window_flags() const;
 
     // restore OpenGL context and reinitialize state, requires an open window. returns true if successful
     bool restore_context();
@@ -136,15 +124,6 @@ struct Device : public core::Subsystem
     void release_context();
     // reset all the graphics state to default
     void reset_cached_state();
-
-    // set allowed screen orientations as a space-separated way
-    void set_orientations(Orientation);
-    // set the initial left-upper position of window
-    void set_position(const math::Vector2i&);
-    // create window with width, height, and options. return true if successful
-    bool spawn_window(int, int, int multisample = 1, WindowOption options = WindowOption::NONE);
-    // close current window and release OpenGL context
-    void close_window();
 
     // begin frame rendering. return true if device available and can reneder
     bool begin_frame();
@@ -162,28 +141,33 @@ struct Device : public core::Subsystem
     // set texture
     void set_texture(unsigned, unsigned, unsigned);
 
+    // specify whether front- or back-facing polygons can be culled
+    void set_cull_face(bool, CullFace);
+    // define front- and back-facing polygons
+    void set_front_face(FrontFaceOrder);
+    // define the scissor box
+    void set_scissor_test(bool, const math::Rect2i& scissor = {{0, 0}, {0, 0}});
+    // set front and back function and reference value for stencil testing
+    void set_stencil_test(bool, CompareEquation, unsigned reference, unsigned mask);
+    // set front and back stencil write actions
+    void set_stencil_write(StencilWriteEquation sfail, StencilWriteEquation dpfail, StencilWriteEquation dppass, unsigned mask);
+    // specify the value used for depth buffer comparisons
+    void set_depth_test(bool, CompareEquation);
+    // enable or disable writing into the depth buffer with bias
+    void set_depth_write(bool, float slope_scaled = 0.f, float constant = 0.f);
+    // set blending mode
+    void set_color_blend(bool, BlendEquation, BlendFactor, BlendFactor);
+    // enable and disable writing of frame buffer color components
+    void set_color_write(ColorMask);
+    // set the viewport
+    void set_viewport(const math::Rect2i&);
+
     // prepare for draw call. setup corresponding frame/vertex buffer object
     void prepare_draw();
     // draw non-indexed geometry
     void draw(PrimitiveType, unsigned start, unsigned count);
     // draw indexed geometry
     void draw_index(PrimitiveType, unsigned start, unsigned count);
-
-    // set viewport
-    void set_viewport(const math::Rect2i&);
-    // set blending mode
-    void set_blend_mode(BlendMode);
-    // set hardware culling mode
-    void set_cull_mode(CullMode);
-
-    // per-sample processing
-    void set_scissor_test(bool, const math::Rect2i& scissor = {{0, 0}, {0, 0}});
-    void set_stencil_test(bool, CompareMode, unsigned ref = 0, unsigned compare_mask = math::max<unsigned>());
-    void set_stencil_write(StencilOp pass, StencilOp fail, StencilOp zfail, unsigned write_mask = math::max<unsigned>());
-    void set_depth_test(bool, CompareMode);
-    void set_depth_write(bool);
-    void set_depth_bias(float slope_scaled = 0.f, float constant = 0.f);
-    void set_color_write(bool);
 
     // restore gpu object and reinitialize state, returns a custom shared_ptr
     template<typename T> using spawn_return = typename std::enable_if<
@@ -198,57 +182,28 @@ struct Device : public core::Subsystem
     unsigned get_bound_index_buffer() const { return _bound_ibo; }
     unsigned get_bound_shader() const { return _bound_program; }
 
-    // return window position/size
-    math::Vector2i get_window_position() const { return _position; }
-    math::Vector2i get_window_size() const { return _size; }
-    // return window flags
-    unsigned get_window_flags() const;
-    // return window internal representation
-    void* get_window() const;
-    // return whether application window is minimized
-    bool is_minimized() const { return _minimized; }
-
 protected:
     // window options and status
     int             _multisamples = 0;
     math::Vector2i  _size = {1, 1}, _position = {0, 0};
     Orientation     _orientation = Orientation::PORTRAIT;
     WindowOption    _options = WindowOption::NONE;
-    DeviceContext*  _device = nullptr;
+    BackendContext*  _device = nullptr;
     int32_t         _system_frame_object = 0;
     bool            _minimized = false;
 
     // render states
+    RenderState     _render_state;
+    math::Rect2i    _viewport;
+
     unsigned        _bound_fbo = 0;
     unsigned        _bound_program = 0, _bound_vbo = 0, _bound_ibo = 0;
     unsigned        _active_texunit = 0, _bound_texture = 0, _bound_textype = 0;
-    BlendMode       _blend_mode;
-    CullMode        _cull_mode;
-
-    bool            _color_write;
-
-    bool            _scissor_test;
-    math::Rect2i    _scissor;
-
-    bool            _depth_test;
-    CompareMode     _depth_test_mode;
-    bool            _depth_write;
-    float           _depth_constant_bias;
-    float           _depth_slope_scaled_bias;
-
-    bool            _stencil_test;
-    CompareMode     _stencil_test_mode;
-    StencilOp       _stencil_pass_op;
-    StencilOp       _stencil_fail_op;
-    StencilOp       _stencil_zfail_op;
-    unsigned        _stencil_ref;
-    unsigned        _stencil_compare_mask;
-    unsigned        _stencil_write_mask;
 };
 
 ///
 template<typename T, typename ... Args>
-Device::spawn_return<T> Device::spawn(Args&& ... args)
+Backend::spawn_return<T> Backend::spawn(Args&& ... args)
 {
     auto object = new (std::nothrow) T(*this);
     return std::shared_ptr<T>(object);

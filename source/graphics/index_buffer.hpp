@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <graphics/device.hpp>
+#include <graphics/backend.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
@@ -15,7 +15,7 @@ enum class IndexElementFormat : uint8_t
 
 struct IndexBuffer : public GraphicsObject
 {
-    IndexBuffer(Device& device);
+    IndexBuffer(Backend& device);
     virtual ~IndexBuffer() { release(); }
 
     bool restore(const void*, unsigned, IndexElementFormat, bool dynamic = false);

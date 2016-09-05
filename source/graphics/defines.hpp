@@ -10,11 +10,11 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-const static size_t kMaxVertexAttributes = 8;
+const static size_t kMaxVertexAttributesId = 8;
 const static size_t kMaxTextures = 8;
 const static size_t kMaxUniforms = 32;
 
-struct Device;
+struct Backend;
 struct GraphicsObject;
 struct IndexBuffer;
 struct VertexBuffer;

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <graphics/device.hpp>
+#include <graphics/backend.hpp>
 #include <resource/image.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
@@ -59,7 +59,7 @@ struct Texture : public GraphicsObject
     using ptr = std::shared_ptr<Texture>;
     using weak_ptr = std::weak_ptr<Texture>;
 
-    Texture(Device& device, unsigned target);
+    Texture(Backend& device, unsigned target);
     ~Texture() { release(); }
 
     bool restore(const void*, TextureFormat, PixelFormat, unsigned, unsigned, unsigned);
@@ -107,7 +107,7 @@ struct Texture2D : public Texture
     using ptr = std::shared_ptr<Texture2D>;
     using weak_ptr = std::weak_ptr<Texture2D>;
 
-    Texture2D(Device& device);
+    Texture2D(Backend& device);
     bool restore(res::Image::ptr, TextureFormat);
 
 protected:
