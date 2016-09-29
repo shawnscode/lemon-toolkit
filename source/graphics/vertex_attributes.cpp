@@ -1,9 +1,9 @@
-#include <graphics/vertex_buffer.hpp>
+#include <graphics/vertex_attributes.hpp>
 #include <graphics/opengl.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
-uint8_t SIZE_OF_COMPONENT_FORMAT[] =
+static const uint8_t SIZE_OF_COMPONENT_FORMAT[] =
 {
     1,
     1,
@@ -11,6 +11,26 @@ uint8_t SIZE_OF_COMPONENT_FORMAT[] =
     2,
     2,
     4
+};
+
+static const char* s_attribute_names[] =
+{
+    "Position",
+    "Normal",
+    "Tangent",
+    "Bitangent",
+    "Color_0",
+    "Color_1",
+    "Indices",
+    "Weight",
+    "Texcoord_0",
+    "Texcoord_1",
+    "Texcoord_3",
+    "Texcoord_4",
+    "Texcoord_5",
+    "Texcoord_6",
+    "Texcoord_7",
+    "Texcoord_8"
 };
 
 const uint8_t VertexAttributeLayout::invalid = 0xff;
@@ -37,7 +57,7 @@ VertexAttributeLayout& VertexAttributeLayout::append(VertexAttributeData& data)
     return *this;
 }
 
-VertexAttributeLayout& VertexAttributeLayout::append(VertexSkipData& data)
+VertexAttributeLayout& VertexAttributeLayout::append(VertexIgnoreBytes& data)
 {
     _stride += data.value;
     return *this;
@@ -58,6 +78,22 @@ VertexAttributeData VertexAttributeLayout::get_attribute(VertexAttribute index) 
         static_cast<unsigned>((encode >> 4) & 0x7),
         static_cast<bool>((encode >> 7) & 1)
     };
+}
+
+std::ostream& operator << (std::ostream& out, VertexAttributeLayout& attributes)
+{
+    out << "VertexAttributeLayout(";
+    for( uint8_t i = 0; i < kVertexAttributeCount; i++ )
+    {
+        if( attributes.has((VertexAttribute)i) )
+            out << get_attribute_name((VertexAttribute)i) << ", ";
+    }
+    return out << ")";
+}
+
+const char * get_attribute_name(VertexAttribute va)
+{
+    return s_attribute_names[value(va)];
 }
 
 // VertexBuffer::VertexBuffer(Backend& device)

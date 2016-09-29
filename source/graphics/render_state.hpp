@@ -191,10 +191,6 @@ void reset_render_state(RenderState&);
 
 //     // cull
 
-
-
-
-
 //     const static uint64_t BLEND_SHIFT = 28;
 //     const static uint64_t CULL_TEST_SHIFT = 36;
 //     const static uint64_t PRIMITIVE_TYPE_SHIFT = 40;

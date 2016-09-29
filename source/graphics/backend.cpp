@@ -8,18 +8,6 @@ NS_LEMON_GRAPHICS_BEGIN
 
 using namespace lemon::core;
 
-static const char* orientation_tostring(Orientation orientation)
-{
-    switch( orientation )
-    {
-        case Orientation::LANDSCAPE_LEFT: return "LandscapeLeft";
-        case Orientation::LANDSCAPE_RIGHT: return "LandscapeRight";
-        case Orientation::PORTRAIT: return "Portrait";
-        case Orientation::PORTRAIT_UPSIDE_DOWN: return "PortraitUpsideDown";
-        default: FATAL("not supported orientation"); return "";
-    }
-}
-
 static const unsigned GL_CULL_FACE_FUNC[] =
 {
     GL_FRONT,
@@ -90,262 +78,21 @@ static const unsigned GL_BLEND_EQUATION_FUNC[] =
     GL_FUNC_REVERSE_SUBTRACT
 };
 
-struct BackendContext
+bool Backend::restore(SDL_Window* window)
 {
-    SDL_Window*     window = nullptr;
-    SDL_GLContext   context = 0;
-};
-
-GraphicsObject::GraphicsObject(Backend& device) : _device(device)
-{
-    core::subscribe<EvtBackendLost>(*this);
-    core::subscribe<EvtBackendRestore>(*this);
-}
-
-GraphicsObject::~GraphicsObject()
-{
-    core::unsubscribe<EvtBackendLost>(*this);
-    core::unsubscribe<EvtBackendRestore>(*this);
-}
-
-void GraphicsObject::receive(const EvtBackendRestore& evt)
-{
-    if( on_device_restore )
-        on_device_restore(*this);
-    else
-        restore();
-}
-
-void GraphicsObject::receive(const EvtBackendLost& evt)
-{
-    if( on_device_release )
-        on_device_release(*this);
-    else
-        release();
-}
-
-bool GraphicsObject::restore()
-{
-    return true;
-}
-
-void GraphicsObject::release()
-{
-    _object = 0;
-}
-
-bool Backend::initialize()
-{
-    _device = new (std::nothrow) BackendContext;
-    if( !_device )
-    {
-        LOGW("failed to create device context.");
-        return false;
-    }
-
-    reset_cached_state();
-    return true;
-}
-
-void Backend::dispose()
-{
-    if( _device )
-    {
-        delete _device;
-        _device = nullptr;
-    }
-}
-
-bool Backend::restore_window(int width, int height, int multisample, WindowOption options)
-{
-    #ifdef PLATFORM_IOS
-    // iOS app always take the fullscree (and with status bar hidden)
-    options |= WindowOption::FULLSCREEN;
-    // iOS window needs to be resizable to handle orientation changes properly
-    options |= WindowOption::RESIZABLE;
-    #endif
-
-    // makes no sense to have boarderless in fullscreen, they are mutally exclusive
-    if( value(options & WindowOption::FULLSCREEN) )
-        options &= ~WindowOption::BORDERLESS;
-
-    // fullscreen or borderless can not be resizable
-    if( value(options & WindowOption::FULLSCREEN) || value(options & WindowOption::BORDERLESS) )
-        options &= ~WindowOption::RESIZABLE;
-
-    width = std::max(width, 1);
-    height = std::max(height, 1);
-    multisample = std::max(std::min(multisample, 16), 1);
-
-    if( _device->window != nullptr &&
-        width == _size[0] && height == _size[1] && multisample == _multisamples && options == _options )
-        return true;
-
-    // if only vsync changes, there is no need to dispose and reinitialize the window
-    if( _device->window != nullptr &&
-        width == _size[0] && height == _size[1] && multisample == _multisamples &&
-        (options & ~WindowOption::VSYNC) == (_options & ~WindowOption::VSYNC) )
-    {
-        SDL_GL_SetSwapInterval( value(options & WindowOption::VSYNC) ? 1 : 0 );
-        _options = options;
-        return true;
-    }
-
-    // close the existing window and OpenGL context, mark GPU objects as lost
-    release_context();
-
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, multisample > 1 ? 1 : 0);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, multisample > 1 ? multisample : 0);
-    SDL_SetHint(SDL_HINT_ORIENTATIONS, orientation_tostring(_orientation));
-
-    math::Vector2i position = value(options & WindowOption::FULLSCREEN) ? math::Vector2i({0, 0}) : _position;
-    unsigned flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
-
-    if( value(options & WindowOption::FULLSCREEN) ) flags |= SDL_WINDOW_FULLSCREEN;
-    if( value(options & WindowOption::BORDERLESS) ) flags |= SDL_WINDOW_BORDERLESS;
-    if( value(options & WindowOption::RESIZABLE) ) flags |= SDL_WINDOW_RESIZABLE;
-    if( value(options & WindowOption::HIGHDPI) ) flags |= SDL_WINDOW_ALLOW_HIGHDPI;
-
-    _device->window = SDL_CreateWindow("LEMON-TOOLKIT", position[0], position[1], width, height, flags);
-    // if failed width multisampling, retry first without it
-    if( !_device->window && multisample > 1 )
-    {
-        multisample = 1;
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
-        _device->window = SDL_CreateWindow("LEMON-TOOLKIT", position[0], position[1], width, height, flags);
-    }
-
-    if( !_device->window )
-    {
-        LOGE("failed to create window, %s.", SDL_GetError());
-        return false;
-    }
-
-    if( !restore_context() )
-        return false;
-
-    // set vsync
-    SDL_GL_SetSwapInterval( value(options & WindowOption::VSYNC) ? 1 : 0 );
-
-    _size = { width, height };
-    _position = position;
-    _multisamples = multisample;
-    _options = options;
-
-    SDL_GL_GetDrawableSize(_device->window, &_size[0], &_size[1]);
-    if( !value(options & WindowOption::FULLSCREEN) )
-        SDL_GetWindowPosition(_device->window, &_position[0], &_position[1]);
-
-    // reset rendertargets and viewport for the new mode
-    // reset_render_targets();
-
-    // clear the initial window content to black
-    clear(ClearOption::COLOR);
-    SDL_GL_SwapWindow(_device->window);
-    return true;
-}
-
-void Backend::release_window()
-{
-    release_context();
-    SDL_ShowCursor(SDL_TRUE);
-
-    if( _device->window != nullptr )
-    {
-        SDL_DestroyWindow(_device->window);
-        _device->window = nullptr;
-    }
-}
-
-void Backend::process_window_message(void* data)
-{
-    SDL_Event& event = *static_cast<SDL_Event*>(data);
-    if( event.type != SDL_WINDOWEVENT )
-        return;
-
-    switch( event.window.event )
-    {
-        case SDL_WINDOWEVENT_MINIMIZED:
-            _minimized = true;
-            break;
-
-        case SDL_WINDOWEVENT_MAXIMIZED:
-        case SDL_WINDOWEVENT_RESTORED:
-#if defined(PLATFORM_IOS) || defined (PLATFORM_ANDROID)
-            // on iOS we never lose the GL context,
-            // but may have done GPU object changes that could not be applied yet. Apply them now
-            // on Android the old GL context may be lost already,
-            // restore GPU objects to the new GL context
-            graphics_->restore_context();
-#endif
-            _minimized = false;
-            break;
-
-        case SDL_WINDOWEVENT_RESIZED:
-            SDL_GL_GetDrawableSize(_device->window, &_size[0], &_size[1]);
-            break;
-
-        case SDL_WINDOWEVENT_MOVED:
-            SDL_GetWindowPosition(_device->window, &_position[0], &_position[1]);
-            break;
-
-        default:
-            break;
-    }
-}
-
-void Backend::set_orientations(Orientation orientation)
-{
-    _orientation = orientation;
-    SDL_SetHint(SDL_HINT_ORIENTATIONS, orientation_tostring(orientation));
-}
-
-void Backend::set_window_position(const math::Vector2i& position)
-{
-    _position = position;
-    if( _device->window )
-    {
-        SDL_SetWindowPosition(_device->window, position[0], position[1]);
-        SDL_GetWindowPosition(_device->window, &_position[0], &_position[1]);
-    }
-}
-
-void Backend::set_window_size(const math::Vector2i& size)
-{
-    _size = size;
-    if( _device->window )
-    {
-        SDL_SetWindowSize(_device->window, size[0], size[0]);
-        SDL_GL_GetDrawableSize(_device->window, &_size[0], &_size[1]);
-    }
-}
-
-void* Backend::get_window_object() const
-{
-    return _device->window;
-}
-
-unsigned Backend::get_window_flags() const
-{
-    return _device->window ? SDL_GetWindowFlags(_device->window) : 0;
-}
-
-
-bool Backend::restore_context()
-{
-    if( _device->window == nullptr )
+    if( window == nullptr )
     {
         LOGW("failed to restore OpenGL context due to the lack of window instance.");
         return false;
     }
 
-    // the context might be lost behind the scene as the application is minimized in Android
-    if( _device->context && !SDL_GL_GetCurrentContext() )
-        _device->context = 0;
+    _window = window;
 
-    if( _device->context == 0 )
+    // the context might be lost behind the scene as the application is minimized in Android
+    if( _context && !SDL_GL_GetCurrentContext() )
+        _context = 0;
+
+    if( _context == 0 )
     {
 #ifndef GL_ES_VERSION_2_0
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -356,7 +103,7 @@ bool Backend::restore_context()
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 0);
 #endif
-        _device->context = SDL_GL_CreateContext(_device->window);
+        _context = SDL_GL_CreateContext(_window);
     }
 
 #ifndef GL_ES_VERSION_2_0
@@ -369,7 +116,7 @@ bool Backend::restore_context()
     }
 #endif
 
-    if( _device->context == 0 )
+    if( _context == 0 )
     {
         LOGE("failed to create OpenGL context, %s.", SDL_GetError());
         return false;
@@ -391,24 +138,23 @@ bool Backend::restore_context()
     return true;
 }
 
-void Backend::release_context()
+void Backend::release()
 {
-    if( _device->window != nullptr && _device->context != 0 )
-    {
-        SDL_GL_DeleteContext(_device->context);
-        _device->context = 0;
-        _device->window = nullptr;
-    }
+    if( _window != nullptr && _context != 0 )
+        SDL_GL_DeleteContext(_context);
+
+    _context = 0;
+    _window = nullptr;
 }
 
 bool Backend::begin_frame()
 {
-    return _device->window != nullptr;
+    return _window != nullptr;
 }
 
 void Backend::end_frame()
 {
-    SDL_GL_SwapWindow(_device->window);
+    SDL_GL_SwapWindow(_window);
 }
 
 void Backend::clear(ClearOption options, const math::Color& color, float depth, unsigned stencil)
@@ -662,7 +408,7 @@ void Backend::draw(PrimitiveType type, unsigned start, unsigned count)
 
 bool Backend::is_device_lost() const
 {
-    return _device->window == nullptr || _device->context == 0;
+    return _window == nullptr || _context == 0;
 }
 
 static const char* to_string(GLenum error)

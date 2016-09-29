@@ -4,7 +4,6 @@
 #pragma once
 
 #include <graphics/backend.hpp>
-#include <codebase/memory/compact.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
@@ -42,6 +41,18 @@ enum class VertexAttribute : uint8_t
 
 constexpr const static size_t kVertexAttributeCount = 16;
 
+// the expected usage pattern of the data store
+enum class VertexBufferUsage : uint8_t
+{
+    // the data store contents will be modified once and used at most a few times
+    STREAM_DRAW = 0,
+    // the data store contents will be modified once and used many times
+    STATIC_DRAW,
+    // the data store contents will be modified repeatedly and used many times
+    DYNAMIC_DRAW
+};
+
+//
 struct VertexAttributeData
 {
     VertexAttributeData() {}
@@ -58,20 +69,21 @@ struct VertexAttributeData
     bool normalize = false;
 };
 
-struct VertexSkipData
+//
+struct VertexIgnoreBytes
 {
-    VertexSkipData(unsigned value) : value(value) {}
-    // specifies strip length
+    VertexIgnoreBytes(unsigned value) : value(value) {}
     unsigned value;
 };
 
+//
 struct VertexAttributeLayout
 {
     VertexAttributeLayout();
 
     // append attribute to this layout
     VertexAttributeLayout& append(VertexAttributeData&);
-    VertexAttributeLayout& append(VertexSkipData&);
+    VertexAttributeLayout& append(VertexIgnoreBytes&);
     VertexAttributeLayout& end();
 
     // returns true if this layout contains specified attribute
@@ -94,6 +106,10 @@ protected:
     uint8_t _attributes[kVertexAttributeCount];
 };
 
+std::ostream& operator << (std::ostream&, VertexAttributeLayout&);
+
+const char* get_attribute_name(VertexAttribute);
+
 /* facilities for vertex attribute layout generation.
 usage: make_attribute_layout(
     {VertexAttribute::POSITION, AttributeComponentFormat::FLOAT, 4},
@@ -102,29 +118,7 @@ usage: make_attribute_layout(
 */
 template<typename ... T> VertexAttributeLayout make_attribute_layout(T&& ...);
 
-// the expected usage pattern of the data store
-enum class VertexBufferUsage : uint8_t
-{
-    // the data store contents will be modified once and used at most a few times
-    STREAM_DRAW = 0,
-    // the data store contents will be modified once and used many times
-    STATIC_DRAW,
-    // the data store contents will be modified repeatedly and used many times
-    DYNAMIC_DRAW
-};
-
-// struct VertexBuffer
-// {
-//     unsigned object;
-//     unsigned size;
-//     VertexAttributeLayoutHandle declaration;
-//     VertexUsage usage;
-//     void initialize(const void* data, uint32_t, VertexAttributeLayoutHandle, VertexUsage);
-//     void dispose();
-//     void update();
-// };
-
-/// 
+//
 template<typename ... T>
 VertexAttributeLayout make_attribute_layout(T&& ... args)
 {

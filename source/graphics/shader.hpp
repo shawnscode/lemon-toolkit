@@ -4,7 +4,7 @@
 #pragma once
 
 #include <graphics/backend.hpp>
-#include <graphics/vertex_buffer.hpp>
+// #include <graphics/vertex_buffer.hpp>
 #include <graphics/texture.hpp>
 #include <math/matrix.hpp>
 #include <math/string_hash.hpp>

@@ -30,25 +30,6 @@ enum class RasterizationMode : uint8_t
     FILL
 };
 
-enum class Orientation : uint8_t
-{
-    LANDSCAPE_LEFT = 0,
-    LANDSCAPE_RIGHT,
-    PORTRAIT,
-    PORTRAIT_UPSIDE_DOWN
-};
-
-enum class WindowOption : uint16_t
-{
-    NONE        = 0x0,
-    FULLSCREEN  = 0x1,
-    BORDERLESS  = 0x2,
-    RESIZABLE   = 0x4,
-    HIGHDPI     = 0x8,
-    VSYNC       = 0x10,
-    TRIPLEBUF   = 0x20,
-};
-
 enum class ClearOption : uint8_t
 {
     NONE    = 0x0,
@@ -57,71 +38,19 @@ enum class ClearOption : uint8_t
     STENCIL = 0x4
 };
 
-// device events
-struct EvtBackendLost {};
-struct EvtBackendRestore {};
-
-// the GraphicsObject class is the abstract base class for resources, shaders
-struct GraphicsObject
-{
-    GraphicsObject(Backend& device);
-    virtual ~GraphicsObject();
-
-    void receive(const EvtBackendRestore&);
-    void receive(const EvtBackendLost&);
-
-    using receiver = std::function<void(GraphicsObject&)>;
-    receiver on_device_restore = nullptr;
-    receiver on_device_release = nullptr;
-
-    virtual bool restore();
-    virtual void release();
-
-    unsigned get_graphic_object() const { return _object; }
-
-protected:
-    Backend&     _device;
-    unsigned    _object = 0;
-};
-
 // graphics device subsystem. manages the window device, renedering state and gpu resources
-struct BackendContext;
+struct SDL_Window;
 struct Backend : public core::Subsystem
 {
     SUBSYSTEM("lemon::graphics::Backend")
 
     virtual ~Backend() {}
 
-    bool initialize() override;
-    void dispose() override;
-
-    // create window handle and main OpenGL context
-    bool restore_window(int, int, int multisample = 1, WindowOption options = WindowOption::NONE);
-    void release_window();
-    // handle window messages, called from engine
-    void process_window_message(void*);
-
-    // set allowed screen orientations as a space-separated way
-    void set_orientations(Orientation);
-    Orientation get_orientations() const { return _orientation; }
-    // set the initial left-upper position of window
-    void set_window_position(const math::Vector2i&);
-    math::Vector2i get_window_position() const { return _position; }
-    // set the window size if fullscreen not enable
-    void set_window_size(const math::Vector2i&);
-    math::Vector2i get_window_size() const { return _size; }
-
-    // return whether application window is minimized
-    bool is_minimized() const { return _minimized; }
-    // return window internal representation
-    void* get_window_object() const;
-    // return window flags
-    unsigned get_window_flags() const;
-
     // restore OpenGL context and reinitialize state, requires an open window. returns true if successful
-    bool restore_context();
+    bool restore(SDL_Window*);
     // release OpenGL context and handle the device lost of GPU resources
-    void release_context();
+    void release();
+
     // reset all the graphics state to default
     void reset_cached_state();
 
@@ -169,28 +98,13 @@ struct Backend : public core::Subsystem
     // draw indexed geometry
     void draw_index(PrimitiveType, unsigned start, unsigned count);
 
-    // restore gpu object and reinitialize state, returns a custom shared_ptr
-    template<typename T> using spawn_return = typename std::enable_if<
-        std::is_base_of<GraphicsObject, T>::value,
-        std::shared_ptr<T>>::type;
-    template<typename T, typename ... Args> spawn_return<T> spawn(Args&& ...);
-
     // check if we have valid window and OpenGL context
     bool is_device_lost() const;
 
-    unsigned get_bound_vertex_buffer() const { return _bound_vbo; }
-    unsigned get_bound_index_buffer() const { return _bound_ibo; }
-    unsigned get_bound_shader() const { return _bound_program; }
-
 protected:
-    // window options and status
-    int             _multisamples = 0;
-    math::Vector2i  _size = {1, 1}, _position = {0, 0};
-    Orientation     _orientation = Orientation::PORTRAIT;
-    WindowOption    _options = WindowOption::NONE;
-    BackendContext*  _device = nullptr;
-    int32_t         _system_frame_object = 0;
-    bool            _minimized = false;
+    SDL_Window* _window = nullptr;
+    void* _context = 0;
+    int32_t _system_frame_object = 0;
 
     // render states
     RenderState     _render_state;
@@ -201,15 +115,6 @@ protected:
     unsigned        _active_texunit = 0, _bound_texture = 0, _bound_textype = 0;
 };
 
-///
-template<typename T, typename ... Args>
-Backend::spawn_return<T> Backend::spawn(Args&& ... args)
-{
-    auto object = new (std::nothrow) T(*this);
-    return std::shared_ptr<T>(object);
-}
-
 NS_LEMON_GRAPHICS_END
 
-ENABLE_BITMASK_OPERATORS(lemon::graphics::WindowOption);
 ENABLE_BITMASK_OPERATORS(lemon::graphics::ClearOption);

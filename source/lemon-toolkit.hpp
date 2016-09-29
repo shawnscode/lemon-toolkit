@@ -1,8 +1,6 @@
 #pragma once
 
 #include <core/public.hpp>
-#include <core/entity.hpp>
-#include <core/subsystem.hpp>
 
 #include <math/vector.hpp>
 #include <math/matrix.hpp>
@@ -11,6 +9,7 @@
 #include <math/color.hpp>
 #include <math/string_hash.hpp>
 
+#include <graphics/window.hpp>
 #include <graphics/backend.hpp>
 #include <graphics/shader.hpp>
 #include <graphics/index_buffer.hpp>

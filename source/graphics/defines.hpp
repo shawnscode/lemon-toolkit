@@ -15,7 +15,6 @@ const static size_t kMaxTextures = 8;
 const static size_t kMaxUniforms = 32;
 
 struct Backend;
-struct GraphicsObject;
 struct IndexBuffer;
 struct VertexBuffer;
 struct Shader;

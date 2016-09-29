@@ -2,7 +2,7 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <engine/input.hpp>
-#include <graphics/backend.hpp>
+#include <graphics/window.hpp>
 #include <core/public.hpp>
 
 #include <SDL2/SDL.h>
@@ -141,7 +141,7 @@ void Input::begin_frame()
 
 void Input::end_frame()
 {
-    auto device = core::get_subsystem<graphics::Backend>();
+    auto device = core::get_subsystem<graphics::WindowDevice>();
 
     // check for focus change this frame
     if( device->get_window_flags() & SDL_WINDOW_INPUT_FOCUS )
