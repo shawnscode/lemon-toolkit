@@ -35,34 +35,28 @@ struct Direction : public Component
     float x, y;
 };
 
-struct Context
+struct TestContext
 {
-    Context()
+    TestContext()
     {
-        event::initialize();
-        subsystem::initialize();
-        task::initialize();
-        ecs::initialize();
+        initialize(0);
     }
 
-    ~Context()
+    ~TestContext()
     {
-        ecs::dispose();
-        task::dispose();
-        subsystem::dispose();
-        event::dispose();
+        dispose();
     }
 };
 
-TEST_CASE_METHOD(Context, "TestCreateEntity")
+TEST_CASE_METHOD(TestContext, "TestCreateEntity")
 {
-    ecs::size();
+    size_of_world();
 
-    REQUIRE( ecs::size() == 0UL );
+    REQUIRE( size_of_world() == 0UL );
 
     auto e2 = spawn();
     REQUIRE( alive(e2) );
-    REQUIRE( ecs::size() == 1UL );
+    REQUIRE( size_of_world() == 1UL );
 
     Entity e1 = e2;
     REQUIRE( alive(e1) );
@@ -70,7 +64,7 @@ TEST_CASE_METHOD(Context, "TestCreateEntity")
 
 // its complex to implementation a generic clone senario,
 // when take hierarchy into consideration.
-// TEST_CASE_METHOD(Context, "TestEntityCreateFromCopy")
+// TEST_CASE_METHOD(TestContext, "TestEntityCreateFromCopy")
 // {
 //     auto e = spawn();
 //     auto ep = add_component<Position>(e, 1, 2);
@@ -85,23 +79,23 @@ TEST_CASE_METHOD(Context, "TestCreateEntity")
 //     REQUIRE( e != f );
 //     REQUIRE( get_components_mask(e) == get_components_mask(f) );
 
-//     REQUIRE( ecs::size() == 2 );
+//     REQUIRE( size_of_world() == 2 );
 // }
 
-TEST_CASE_METHOD(Context, "TestEntityAsBoolean")
+TEST_CASE_METHOD(TestContext, "TestEntityAsBoolean")
 {
-    REQUIRE( ecs::size() == 0UL );
+    REQUIRE( size_of_world() == 0UL );
 
     auto e = spawn();
     REQUIRE( alive(e) );
-    REQUIRE( ecs::size() == 1UL );
+    REQUIRE( size_of_world() == 1UL );
 
     recycle(e);
-    REQUIRE( ecs::size() == 0UL );
+    REQUIRE( size_of_world() == 0UL );
     REQUIRE( !alive(e) );
 }
 
-TEST_CASE_METHOD(Context, "TestEntityReuse")
+TEST_CASE_METHOD(TestContext, "TestEntityReuse")
 {
     auto e1 = spawn();
     auto e2 = e1;
@@ -124,7 +118,7 @@ TEST_CASE_METHOD(Context, "TestEntityReuse")
     REQUIRE( has_components<Position>(e3) );
 }
 
-TEST_CASE_METHOD(Context, "TestEntityAssignment")
+TEST_CASE_METHOD(TestContext, "TestEntityAssignment")
 {
     Entity a = spawn();
     Entity b = a;
@@ -137,7 +131,7 @@ TEST_CASE_METHOD(Context, "TestEntityAssignment")
     REQUIRE( alive(b) );
 }
 
-TEST_CASE_METHOD(Context, "TestComponentConstruction")
+TEST_CASE_METHOD(TestContext, "TestComponentConstruction")
 {
     auto e = spawn();
     auto p = add_component<Position>(e, 1, 2);
@@ -148,14 +142,13 @@ TEST_CASE_METHOD(Context, "TestComponentConstruction")
     REQUIRE( cp->y == Approx(2.0f) );
 }
 
-TEST_CASE_METHOD(Context, "TestComponentIdsDiffer")
+TEST_CASE_METHOD(TestContext, "TestComponentIdsDiffer")
 {
     REQUIRE( get_components_mask<Position>() != get_components_mask<Direction>() );
     REQUIRE( (get_components_mask<Position, Direction>()) != get_components_mask<Direction>() );
-    // REQUIRE( TypeID::value<ComponentBase, Position>() != TypeID::value<ComponentBase, Direction>() );
 }
 
-TEST_CASE_METHOD(Context, "TestComponentHandleInvalidatedWhenEntityDestroyed") {
+TEST_CASE_METHOD(TestContext, "TestComponentHandleInvalidatedWhenEntityDestroyed") {
     auto a = spawn();
     auto position = add_component<Position>(a, 1, 2);
     REQUIRE(position);
@@ -166,7 +159,7 @@ TEST_CASE_METHOD(Context, "TestComponentHandleInvalidatedWhenEntityDestroyed") {
     REQUIRE( !has_components<Position>(a) );
 }
 
-TEST_CASE_METHOD(Context, "TestComponentAssignmentFromCopy")
+TEST_CASE_METHOD(TestContext, "TestComponentAssignmentFromCopy")
 {
     auto e = spawn();
     auto p = Position(1, 2);
@@ -180,7 +173,7 @@ TEST_CASE_METHOD(Context, "TestComponentAssignmentFromCopy")
     REQUIRE( !has_components<Position>(e) );
 }
 
-TEST_CASE_METHOD(Context, "TestDestroyEntity")
+TEST_CASE_METHOD(TestContext, "TestDestroyEntity")
 {
     auto e = spawn();
     auto f = spawn();
@@ -208,17 +201,17 @@ TEST_CASE_METHOD(Context, "TestDestroyEntity")
     REQUIRE( has_components<Position>(f) );
 }
 
-TEST_CASE_METHOD(Context, "TestEntityDestroyAll")
+TEST_CASE_METHOD(TestContext, "TestEntityDestroyAll")
 {
     auto e = spawn();
     auto f = spawn();
-    ecs::reset();
+    reset_world();
 
     REQUIRE( !alive(e) );
     REQUIRE( !alive(f) );
 }
 
-TEST_CASE_METHOD(Context, "TestEntityDestroyHole") {
+TEST_CASE_METHOD(TestContext, "TestEntityDestroyHole") {
     std::vector<Entity> entities;
 
     auto count = [this]()->int {
@@ -238,7 +231,7 @@ TEST_CASE_METHOD(Context, "TestEntityDestroyHole") {
     REQUIRE(count() ==  4999);
 }
 
-TEST_CASE_METHOD(Context, "TestEntityInStdSet")
+TEST_CASE_METHOD(TestContext, "TestEntityInStdSet")
 {
     auto a = spawn();
     auto b = spawn();
@@ -250,7 +243,7 @@ TEST_CASE_METHOD(Context, "TestEntityInStdSet")
     REQUIRE( entitySet.insert(c).second );
 }
 
-TEST_CASE_METHOD(Context, "TestEntityInStdMap")
+TEST_CASE_METHOD(TestContext, "TestEntityInStdMap")
 {
     auto a = spawn();
     auto b = spawn();
@@ -264,7 +257,7 @@ TEST_CASE_METHOD(Context, "TestEntityInStdMap")
     REQUIRE( entityMap[c] == 3 );
 }
 
-TEST_CASE_METHOD(Context, "TestGetEntitiesWithComponent")
+TEST_CASE_METHOD(TestContext, "TestGetEntitiesWithComponent")
 {
     auto e = spawn();
     auto f = spawn();
@@ -279,7 +272,7 @@ TEST_CASE_METHOD(Context, "TestGetEntitiesWithComponent")
     REQUIRE( 2 == size(find_entities_with<Direction>()) );
     REQUIRE( 1 == size(find_entities_with<Position, Direction>()) );
 
-    ecs::reset();
+    reset_world();
 
     for( auto i=0; i<150; i++ )
     {
@@ -293,7 +286,7 @@ TEST_CASE_METHOD(Context, "TestGetEntitiesWithComponent")
     REQUIRE( 25 == size(find_entities_with<Direction, Position>()) );
 }
 
-TEST_CASE_METHOD(Context, "TestGetComponentsAsTuple") {
+TEST_CASE_METHOD(TestContext, "TestGetComponentsAsTuple") {
     auto e = spawn();
     add_component<Position>(e, 1, 2);
     add_component<Direction>(e, 3, 4);
@@ -305,7 +298,7 @@ TEST_CASE_METHOD(Context, "TestGetComponentsAsTuple") {
     REQUIRE(std::get<1>(components)->y == 4);
 }
 
-TEST_CASE_METHOD(Context, "TestEntityIteration")
+TEST_CASE_METHOD(TestContext, "TestEntityIteration")
 {
     auto e = spawn();
     auto f = spawn();
@@ -328,7 +321,7 @@ TEST_CASE_METHOD(Context, "TestEntityIteration")
     REQUIRE( count == 2 );
 }
 
-TEST_CASE_METHOD(Context, "TestIterateAllEntitiesSkipsDestroyed") {
+TEST_CASE_METHOD(TestContext, "TestIterateAllEntitiesSkipsDestroyed") {
     auto e = spawn();
     auto f = spawn();
     auto g = spawn();
@@ -344,7 +337,7 @@ TEST_CASE_METHOD(Context, "TestIterateAllEntitiesSkipsDestroyed") {
     REQUIRE( it == find_entities().end() );
 }
 
-TEST_CASE_METHOD(Context, "TestComponentsRemovedFromReusedEntities")
+TEST_CASE_METHOD(TestContext, "TestComponentsRemovedFromReusedEntities")
 {
   auto e = spawn();
   auto eversion = e.get_version();
@@ -365,7 +358,7 @@ struct FreedSentinel : public Component
   bool &yes;
 };
 
-TEST_CASE_METHOD(Context, "TestComponentDestruction")
+TEST_CASE_METHOD(TestContext, "TestComponentDestruction")
 {
     bool freed = false;
     auto e = spawn();
@@ -379,7 +372,7 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
 {
     bool freed = false;
     {
-        Context context;
+        TestContext context;
         auto e = spawn();
         add_component<FreedSentinel>(e, freed);
         REQUIRE( !freed );
@@ -387,7 +380,7 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
     REQUIRE( freed );
 }
 
-TEST_CASE_METHOD(Context, "TestComponentDestructorCalledWhenEntityDestroyed")
+TEST_CASE_METHOD(TestContext, "TestComponentDestructorCalledWhenEntityDestroyed")
 {
     bool freed = false;
     auto e = spawn();
@@ -407,7 +400,7 @@ TEST_CASE_METHOD(Context, "TestComponentDestructorCalledWhenEntityDestroyed")
 //     virtual void add(int& v) override { v++; }
 // };
 
-// TEST_CASE_METHOD(Context, "TestTraitComponent")
+// TEST_CASE_METHOD(TestContext, "TestTraitComponent")
 // {
 //     auto e = spawn();
 //     add_component<Derived>(e);
@@ -454,13 +447,13 @@ struct CounterSystem : public SubsystemWithEntities<Counter>
     }
 };
 
-TEST_CASE_METHOD(Context, "TestConstructSystemWithArgs")
+TEST_CASE_METHOD(TestContext, "TestConstructSystemWithArgs")
 {
     add_subsystem<MovementSystem>("movement");
-    REQUIRE("movement" == get_subsystem<MovementSystem>().label);
+    REQUIRE("movement" == get_subsystem<MovementSystem>()->label);
 }
 
-TEST_CASE_METHOD(Context, "TestApplySystem")
+TEST_CASE_METHOD(TestContext, "TestApplySystem")
 {
 
     std::vector<Entity> created_entities;
@@ -483,7 +476,7 @@ TEST_CASE_METHOD(Context, "TestApplySystem")
         add_component<Counter>(e, 0);
     }
 
-    get_subsystem<MovementSystem>().update(0.f);
+    get_subsystem<MovementSystem>()->update(0.f);
 
     for (auto entity : created_entities)
     {
@@ -503,7 +496,7 @@ TEST_CASE_METHOD(Context, "TestApplySystem")
     }
 }
 
-TEST_CASE_METHOD(Context, "TestApplyAllSystems")
+TEST_CASE_METHOD(TestContext, "TestApplyAllSystems")
 {
     std::vector<Entity> created_entities;
     for (int i = 0; i < 150; ++i) {
@@ -517,8 +510,8 @@ TEST_CASE_METHOD(Context, "TestApplyAllSystems")
     add_subsystem<MovementSystem>();
     add_subsystem<CounterSystem>();
 
-    get_subsystem<MovementSystem>().update(0.f);
-    get_subsystem<CounterSystem>().update(0.f);
+    get_subsystem<MovementSystem>()->update(0.f);
+    get_subsystem<CounterSystem>()->update(0.f);
 
     for (auto entity : created_entities)
     {

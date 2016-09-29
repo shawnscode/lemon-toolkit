@@ -13,6 +13,4 @@ NS_LEMON_CORE_BEGIN
 static const size_t kEntPoolChunkSize = 512;
 static const size_t kEntMaxComponents = 128;
 
-struct EntityManager;
-
 NS_LEMON_CORE_END

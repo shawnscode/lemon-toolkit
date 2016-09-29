@@ -3,6 +3,7 @@
 
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
+#include <core/public.hpp>
 
 NS_LEMON_RESOURCE_BEGIN
 
@@ -76,7 +77,7 @@ void ResourceCache::touch(math::StringHash hash)
 
 std::fstream ResourceCache::get_file(const fs::Path& path)
 {
-    return core::get_subsystem<ArchiveCollection>().open(path, fs::FileMode::READ);
+    return core::get_subsystem<ArchiveCollection>()->open(path, fs::FileMode::READ);
 }
 
 std::ostream& operator << (std::ostream& out, const ResourceCache& cache)

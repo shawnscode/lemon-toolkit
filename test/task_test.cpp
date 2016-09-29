@@ -32,12 +32,12 @@ struct Context
 {
     Context()
     {
-        core::task::initialize(4);
+        core::initialize(4);
     }
 
     ~Context()
     {
-        core::task::dispose();
+        core::dispose();
     }
 };
 

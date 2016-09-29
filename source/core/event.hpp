@@ -1,84 +1,73 @@
-// @date 2016/05/24
+// @date 2016/09/29
 // @author Mao Jingkai(oammix@gmail.com)
 
 #pragma once
 
-#include <codebase/type/typeinfo.hpp>
 #include <core/defines.hpp>
+#include <codebase/type/typeinfo.hpp>
 
 NS_LEMON_CORE_BEGIN
 
-// subscribe an object to receive events of type E
+// subscribe/unsubscribe an object to receive events of type E
 template<typename E, typename R> void subscribe(R&);
 template<typename E, typename R> void unsubscribe(R&);
 
-// emit a constructed to all subscribtions
+// emit a constructed event to all subscribtions
 template<typename E> void emit(const E&);
 template<typename E, typename ... Args> void emit(Args && ... args);
 
-
-namespace event
+//
+// implementation of traits
+namespace internal
 {
-    bool initialize();
-    void dispose();
-
-    extern uint32_t s_event_index;
-    template<typename T> uint32_t get_event_index()
-    {
-        static uint32_t index = s_event_index++;
-        return index;
-    }
+    struct Event {};
 
     using closure = std::function<void(const void*)>;
-    void subscribe(uint32_t, size_t, closure);
-    void unsubscribe(uint32_t, size_t);
-    void emit(uint32_t, const void*);
+    void subscribe(TypeInfoGeneric::index_type, size_t, closure);
+    void unsubscribe(TypeInfoGeneric::index_type, size_t);
+    void emit(TypeInfoGeneric::index_type, const void*);
 }
 
 template<typename E, typename R>
-INLINE void subscribe(R& receiver)
+void subscribe(R& receiver)
 {
-    ASSERT_MAIN_THREAD("subscribe");
-
     static_assert( sizeof(size_t) == sizeof(&receiver), "size of size_t is different with void*" );
 
-    auto index = event::get_event_index<E>();
+    auto index = TypeInfoGeneric::id<internal::Event, E>();
     auto id = (size_t)(&receiver);
 
-    event::subscribe(index, id, [&](const void* event)
+    internal::subscribe(index, id, [&](const void* event)
     {
         receiver.receive(*static_cast<const E*>(event));
     });
 }
 
 template<typename E, typename R>
-INLINE void unsubscribe(R& receiver)
+void unsubscribe(R& receiver)
 {
     ASSERT_MAIN_THREAD("unsubscribe");
 
     static_assert( sizeof(size_t) == sizeof(&receiver), "size of size_t is different with void*" );
 
-    auto index = event::get_event_index<E>();
+    auto index = TypeInfoGeneric::id<internal::Event, E>();
     auto id = (size_t)(&receiver);
 
-    event::unsubscribe(index, id);
+    internal::unsubscribe(index, id);
 }
 
-template<typename E> INLINE void emit(const E& evt)
+template<typename E>
+void emit(const E& evt)
 {
-    ASSERT_MAIN_THREAD("emit");
-
-    auto index = event::get_event_index<E>();
-    event::emit(index, static_cast<const void*>(&evt));
+    auto index = TypeInfoGeneric::id<internal::Event, E>();
+    internal::emit(index, static_cast<const void*>(&evt));
 }
 
-template<typename E, typename ... Args> INLINE void emit(Args && ... args)
+template<typename E, typename ... Args>
+void emit(Args && ... args)
 {
-    ASSERT_MAIN_THREAD("emit");
-
-    auto index = event::get_event_index<E>();
+    auto index = TypeInfoGeneric::id<internal::Event, E>();
     E evt = E(std::forward<Args>(args)...);
-    event::emit(index, static_cast<const void*>(&evt));
+    internal::emit(index, static_cast<const void*>(&evt));
 }
 
 NS_LEMON_CORE_END

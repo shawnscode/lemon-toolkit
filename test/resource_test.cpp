@@ -138,9 +138,7 @@ struct ArchiveFixture
 {
     ArchiveFixture()
     {
-        event::initialize();
-        subsystem::initialize();
-        task::initialize();
+        initialize(0);
 
         set_output_stream(LogLevel::ERROR, &std::cout);
         pwd = get_current_directory();
@@ -151,10 +149,7 @@ struct ArchiveFixture
     ~ArchiveFixture()
     {
         set_current_directory(pwd);
-
-        task::dispose();
-        subsystem::dispose();
-        event::dispose();
+        dispose();
     }
 
     Path pwd;
@@ -164,21 +159,21 @@ TEST_CASE_METHOD(ArchiveFixture, "TestArchiveCollection")
 {
     remove("tmp", true);
 
-    auto& collection = get_subsystem<ArchiveCollection>();
-    REQUIRE( !collection.add_search_path("tmp") );
-    auto file = collection.open("resource.txt", FileMode::APPEND);
+    auto collection = get_subsystem<ArchiveCollection>();
+    REQUIRE( !collection->add_search_path("tmp") );
+    auto file = collection->open("resource.txt", FileMode::APPEND);
     REQUIRE( !file.is_open() );
 
     REQUIRE( create_directory("tmp") );
-    REQUIRE( collection.add_search_path("tmp") );
-    file = collection.open("resource.txt", FileMode::APPEND);
+    REQUIRE( collection->add_search_path("tmp") );
+    file = collection->open("resource.txt", FileMode::APPEND);
     REQUIRE( !file.is_open() );
 
     file = open("tmp/resource.txt", FileMode::APPEND);
     file.write("hahaha", 6);
     file.close();
 
-    file = collection.open("resource.txt", FileMode::APPEND);
+    file = collection->open("resource.txt", FileMode::APPEND);
     REQUIRE( file.is_open() );
     file.close();
 
@@ -210,9 +205,7 @@ struct ResourceCacheFixture
 {
     ResourceCacheFixture()
     {
-        event::initialize();
-        subsystem::initialize();
-        task::initialize();
+        initialize(0);
 
         set_output_stream(LogLevel::ERROR, &std::cout);
         pwd = get_current_directory();
@@ -239,9 +232,7 @@ struct ResourceCacheFixture
         remove("tmp", true);
         set_current_directory(pwd);
 
-        task::dispose();
-        subsystem::dispose();
-        event::dispose();
+        dispose();
     }
 
     Path pwd;
@@ -249,34 +240,34 @@ struct ResourceCacheFixture
 
 TEST_CASE_METHOD(ResourceCacheFixture, "")
 {
-    auto& cache = get_subsystem<ResourceCache>();
-    auto& collection = get_subsystem<ArchiveCollection>();
+    auto cache = get_subsystem<ResourceCache>();
+    auto collection = get_subsystem<ArchiveCollection>();
 
-    auto r = cache.get<Text>("./resource.txt");
+    auto r = cache->get<Text>("./resource.txt");
     REQUIRE( !r );
 
-    collection.add_search_path("tmp");
-    r = cache.get<Text>("./resource.txt");
+    collection->add_search_path("tmp");
+    r = cache->get<Text>("./resource.txt");
     REQUIRE( r );
 
     REQUIRE( r->text == "do" );
     REQUIRE( r.use_count() == 3 );
 
-    auto r2 = cache.get<Text>("./resource.txt");
+    auto r2 = cache->get<Text>("./resource.txt");
     REQUIRE( r2 == r );
     REQUIRE( r2.use_count() == 4 );
 
-    auto r3 = cache.get<Text>("./resource2.txt");
+    auto r3 = cache->get<Text>("./resource2.txt");
     REQUIRE( r3.use_count() == 3 );
-    REQUIRE( cache.get_memusage() == 2048 );
+    REQUIRE( cache->get_memusage() == 2048 );
     r3.reset();
 
-    auto r4 = cache.get<Text>("./resource3.txt");
-    REQUIRE( cache.get_memusage() == 2048 );
+    auto r4 = cache->get<Text>("./resource3.txt");
+    REQUIRE( cache->get_memusage() == 2048 );
 
-    r = cache.get<Text>("./resource.txt");
-    REQUIRE( cache.get_memusage() == 2048 );
+    r = cache->get<Text>("./resource.txt");
+    REQUIRE( cache->get_memusage() == 2048 );
 
-    r4 = cache.get<Text>("./resource2.txt");
-    REQUIRE( cache.get_memusage() == 3072 );
+    r4 = cache->get<Text>("./resource2.txt");
+    REQUIRE( cache->get_memusage() == 3072 );
 };

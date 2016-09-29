@@ -6,7 +6,7 @@
 #include <graphics/backend.hpp>
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
-#include <core/task.hpp>
+#include <core/public.hpp>
 
 #include <thread>
 #include <SDL2/SDL.h>
@@ -32,8 +32,8 @@ bool Engine::initialize()
     _min_fps = _max_fps = _max_inactive_fps = 0;
     _running = true;
 
-    auto& device = core::get_subsystem<graphics::Backend>();
-    if( !device.restore_window(512, 512, 1, graphics::WindowOption::RESIZABLE) )
+    auto device = core::get_subsystem<graphics::Backend>();
+    if( !device->restore_window(512, 512, 1, graphics::WindowOption::RESIZABLE) )
         return false;
 
     return true;
@@ -47,21 +47,21 @@ void Engine::dispose()
 
 void Engine::run_one_frame()
 {
-    auto& device = core::get_subsystem<graphics::Backend>();
+    auto device = core::get_subsystem<graphics::Backend>();
 
     process_message();
     if( !_running )
         return;
 
     // if pause when minimized-mode is in use, stop update
-    if( !_pause_minimized || !device.is_minimized() )
+    if( !_pause_minimized || !device->is_minimized() )
         update(_timestep);
 
     render();
 
     // perform waiting loop if maximum fps set
     auto max_fps = _max_fps;
-    if( device.get_window_flags() & SDL_WINDOW_INPUT_FOCUS )
+    if( device->get_window_flags() & SDL_WINDOW_INPUT_FOCUS )
         max_fps = std::min(_max_inactive_fps, max_fps);
 
     if( max_fps > 0 )
@@ -117,19 +117,19 @@ void Engine::update(duration dt)
 
 void Engine::render()
 {
-    auto& device = core::get_subsystem<graphics::Backend>();
-    if( !device.begin_frame() )
+    auto device = core::get_subsystem<graphics::Backend>();
+    if( !device->begin_frame() )
         return;
 
     // emit<EvtRender>();
-    device.end_frame();
+    device->end_frame();
 }
 
 void Engine::process_message()
 {
-    auto& input = core::get_subsystem<Input>();
-    auto& device = core::get_subsystem<graphics::Backend>();
-    input.begin_frame();
+    auto input = core::get_subsystem<Input>();
+    auto device = core::get_subsystem<graphics::Backend>();
+    input->begin_frame();
 
     SDL_Event event;
     while( SDL_PollEvent( &event ) )
@@ -140,11 +140,11 @@ void Engine::process_message()
             return;
         }
 
-        input.process_message(&event);
-        device.process_window_message(&event);
+        input->process_message(&event);
+        device->process_window_message(&event);
     }
 
-    input.end_frame();
+    input->end_frame();
 }
 
 void Engine::set_min_fps(unsigned fps)

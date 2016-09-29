@@ -1,9 +1,8 @@
 #pragma once
 
+#include <core/public.hpp>
+#include <core/entity.hpp>
 #include <core/subsystem.hpp>
-#include <core/ecs.hpp>
-#include <core/event.hpp>
-#include <core/task.hpp>
 
 #include <math/vector.hpp>
 #include <math/matrix.hpp>
@@ -15,7 +14,7 @@
 #include <graphics/backend.hpp>
 #include <graphics/shader.hpp>
 #include <graphics/index_buffer.hpp>
-#include <graphics/vertex_buffer.hpp>
+// #include <graphics/vertex_buffer.hpp>
 #include <graphics/texture.hpp>
 
 #include <resource/path.hpp>

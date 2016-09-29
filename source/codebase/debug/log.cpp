@@ -1,7 +1,7 @@
 #include <codebase/debug/log.hpp>
 #include <codebase/debug/stacktrace.hpp>
 
-#include <core/task.hpp>
+#include <core/public.hpp>
 
 NS_LEMON_BEGIN
 
@@ -90,7 +90,7 @@ void LOGE(const char* format, ...)
 
 void ASSERT_MAIN_THREAD(const char* message)
 {
-    if( !core::task::is_main_thread() )
+    if( !core::is_main_thread() )
         LOGE("%s only run on the main thread.", message);
 }
 
