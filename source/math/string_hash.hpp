@@ -5,6 +5,8 @@
 
 #include <math/math.hpp>
 
+#include <iostream>
+
 NS_LEMON_MATH_BEGIN
 
 // 32-bit hash value for a string

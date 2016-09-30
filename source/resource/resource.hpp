@@ -3,10 +3,13 @@
 
 #pragma once
 
-#include <defines.hpp>
+#include <forwards.hpp>
 #include <resource/path.hpp>
 #include <math/string_hash.hpp>
 #include <core/subsystem.hpp>
+
+#include <list>
+#include <fstream>
 
 NS_LEMON_RESOURCE_BEGIN
 

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <defines.hpp>
+#include <forwards.hpp>
 #include <graphics/render_state.hpp>
 #include <codebase/type/enumeration.hpp>
 #include <core/subsystem.hpp>

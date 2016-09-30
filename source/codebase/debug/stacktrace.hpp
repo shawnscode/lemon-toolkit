@@ -1,7 +1,8 @@
 // @date 2016/09/05
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <defines.hpp>
+#include <forwards.hpp>
+#include <iosfwd>
 
 NS_LEMON_BEGIN
 

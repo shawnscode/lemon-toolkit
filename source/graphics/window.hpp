@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <defines.hpp>
+#include <forwards.hpp>
 #include <core/subsystem.hpp>
 #include <codebase/type/enumeration.hpp>
 #include <math/vector.hpp>

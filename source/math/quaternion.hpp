@@ -31,8 +31,6 @@ using Matrix3T = Matrix3<Quaternion::value_type>;
 using Matrix4T = Matrix4<Quaternion::value_type>;
 using quat_value_type = Quaternion::value_type;
 
-std::ostream& operator << (std::ostream&, const Quaternion&);
-
 // test for (in)equality with another quaternion without epsilon
 bool operator == (const Quaternion&, const Quaternion&);
 bool operator != (const Quaternion&, const Quaternion&);

@@ -103,18 +103,6 @@ INLINE void Vector<N, T>::unit(size_t d)
 }
 
 template<size_t N, typename T>
-std::ostream& operator<< (std::ostream& out, const Vector<N, T>& v)
-{
-    out << "Vector(";
-    for( size_t i = 0; i < N; i++ )
-    {
-        out << v[i];
-        if( i != N-1 ) out << ", ";
-    }
-    return out << ")";
-}
-
-template<size_t N, typename T>
 Vector<N, T> operator + (const Vector<N, T>& v)
 {
     return v;

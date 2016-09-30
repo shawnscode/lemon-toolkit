@@ -5,6 +5,9 @@
 
 #include <core/task.hpp>
 
+#include <vector>
+#include <queue>
+#include <unordered_map>
 #include <mutex>
 #include <thread>
 #include <condition_variable>

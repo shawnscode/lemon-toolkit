@@ -45,10 +45,6 @@ using Matrix4f  = Matrix<4, 4, float>;
 
 static const Matrix2f kMatrix2fIdentity = { 1.0f, 0.0f, 1.0f, 0.0f };
 
-//
-template<size_t R, size_t C, typename T>
-std::ostream& operator << (std::ostream&, const Matrix<R, C, T>&);
-
 // unary operations
 template<size_t R, size_t C, typename T>
 Matrix<R, C, T> operator + (const Matrix<R, C, T>&);

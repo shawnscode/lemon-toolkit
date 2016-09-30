@@ -1,16 +1,6 @@
 // @date 2016/08/15
 // @author Mao Jingkai(oammix@gmail.com)
 
-INLINE std::ostream& operator << (std::ostream& out, const Quaternion& rhs)
-{
-    return out
-        << "Quaternion("
-        << rhs[0] << ", "
-        << rhs[1] << ","
-        << rhs[2] << ","
-        << rhs[3] << ")";
-}
-
 INLINE const quat_value_type& Quaternion::operator[](size_t index) const
 {
     return _tuple[index];

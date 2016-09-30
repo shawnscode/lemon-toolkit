@@ -3,7 +3,11 @@
 
 #pragma once
 
-#include <defines.hpp>
+#include <forwards.hpp>
+
+#include <cmath>
+#include <limits>
+#include <algorithm>
 
 NS_LEMON_MATH_BEGIN
 

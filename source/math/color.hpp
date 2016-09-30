@@ -45,8 +45,6 @@ struct Color
     static const Color TRANSPARENT;
 };
 
-std::ostream& operator << (std::ostream&, const Color&);
-
 Color operator + (const Color&, const Color&);
 Color operator - (const Color&, const Color&);
 Color operator * (const Color&, const Color&);

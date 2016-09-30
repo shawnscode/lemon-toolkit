@@ -3,16 +3,18 @@
 
 #include <codebase/memory/allocator.hpp>
 
+#include <cstdlib>
+
 NS_LEMON_BEGIN
 
-const FixedSizeAllocator::index_type FixedSizeAllocator::invalid = std::numeric_limits<index_type>::max();
+const size_t FixedSizeAllocator::invalid = std::numeric_limits<size_t>::max();
 
-FixedSizeAllocator::FixedSizeAllocator(index_type element_size, index_type chunk_size)
+FixedSizeAllocator::FixedSizeAllocator(size_t element_size, size_t chunk_size)
 : _chunk_size(chunk_size), _first_free_block(invalid), _available(0), _total_elements(0)
 {
     _element_size = element_size;
-    if( _element_size < sizeof(index_type) )
-        _element_size = sizeof(index_type);
+    if( _element_size < sizeof(size_t) )
+        _element_size = sizeof(size_t);
 }
 
 FixedSizeAllocator::~FixedSizeAllocator()
@@ -27,7 +29,7 @@ void* FixedSizeAllocator::malloc()
     if( _first_free_block == invalid )
     {
         ENSURE( _available == 0 );
-        ENSURE( _total_elements < std::numeric_limits<index_type>::max() - _chunk_size);
+        ENSURE( _total_elements < std::numeric_limits<size_t>::max() - _chunk_size);
 
         uint8_t* chunk = static_cast<uint8_t*>(::malloc(_chunk_size*_element_size));
         if( chunk == nullptr )
@@ -38,10 +40,10 @@ void* FixedSizeAllocator::malloc()
         }
 
         uint8_t* cursor = chunk;
-        index_type offset = _chunk_size * _chunks.size();
-        for( index_type i=1; i<_chunk_size; i++, cursor += _element_size )
-            *(index_type*)cursor = offset + i;
-        *(index_type*)cursor = invalid;
+        size_t offset = _chunk_size * _chunks.size();
+        for( size_t i=1; i<_chunk_size; i++, cursor += _element_size )
+            *(size_t*)cursor = offset + i;
+        *(size_t*)cursor = invalid;
 
         _total_elements += _chunk_size;
         _available += _chunk_size;
@@ -52,7 +54,7 @@ void* FixedSizeAllocator::malloc()
     void* element = get_element(_first_free_block);
     ENSURE( element != nullptr );
 
-    _first_free_block = *(index_type*)element;
+    _first_free_block = *(size_t*)element;
     _available --;
     return element;
 }
@@ -60,13 +62,13 @@ void* FixedSizeAllocator::malloc()
 void FixedSizeAllocator::free(void* element)
 {
     // find block index of the element
-    index_type index = invalid;
+    size_t index = invalid;
     for( auto i = 0; i < _chunks.size(); i++ )
     {
-        if( (index_type)element >= (index_type)_chunks[i] &&
-            (index_type)element < (index_type)(_chunks[i]+_element_size*_chunk_size) )
+        if( (size_t)element >= (size_t)_chunks[i] &&
+            (size_t)element < (size_t)(_chunks[i]+_element_size*_chunk_size) )
         {
-            index = i*_chunk_size + ((index_type)element - (index_type)_chunks[i])/_element_size;
+            index = i*_chunk_size + ((size_t)element - (size_t)_chunks[i])/_element_size;
             break;
         }
     }
@@ -78,7 +80,7 @@ void FixedSizeAllocator::free(void* element)
     }
 
     // recycle this memory block
-    *(index_type*)element = _first_free_block;
+    *(size_t*)element = _first_free_block;
     _first_free_block = index;
     _available ++;
 }

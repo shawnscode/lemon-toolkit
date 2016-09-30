@@ -8,6 +8,7 @@
 #include <math/rect.hpp>
 #include <math/color.hpp>
 #include <math/string_hash.hpp>
+#include <math/stringify.hpp>
 
 #include <graphics/window.hpp>
 #include <graphics/backend.hpp>

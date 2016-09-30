@@ -3,8 +3,11 @@
 
 #pragma once
 
-#include <defines.hpp>
+#include <forwards.hpp>
 #include <codebase/type/typeinfo.hpp>
+
+#include <functional>
+#include <unordered_map>
 
 NS_LEMON_CORE_BEGIN
 

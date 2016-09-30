@@ -5,6 +5,8 @@
 
 #include <graphics/backend.hpp>
 
+#include <iostream>
+
 NS_LEMON_GRAPHICS_BEGIN
 
 // 

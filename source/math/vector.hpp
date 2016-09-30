@@ -54,10 +54,6 @@ using Vector4   = Vector<4, T>;
 using Vector4f  = Vector<4, float>;
 using Vector4i  = Vector<4, int>;
 
-// string serialization with stream
-template<size_t N, typename T>
-std::ostream& operator<< (std::ostream&, const Vector<N, T>&);
-
 // unary operations
 template<size_t N, typename T>
 Vector<N, T> operator + (const Vector<N, T>&);

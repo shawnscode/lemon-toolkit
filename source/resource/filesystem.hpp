@@ -7,6 +7,9 @@
 #include <codebase/type/enumeration.hpp>
 #include <core/subsystem.hpp>
 
+#include <vector>
+#include <fstream>
+
 NS_LEMON_FILESYSTEM_BEGIN
 
 enum class FileMode : uint16_t

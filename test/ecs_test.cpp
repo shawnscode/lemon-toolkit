@@ -1,6 +1,8 @@
 #include <catch.hpp>
 #include <lemon-toolkit.hpp>
 
+#include <map>
+
 using namespace std;
 using namespace lemon::core;
 

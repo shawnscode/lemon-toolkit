@@ -3,7 +3,9 @@
 
 #pragma once
 
-#include <defines.hpp>
+#include <forwards.hpp>
+
+#include <type_traits>
 
 NS_LEMON_BEGIN
 

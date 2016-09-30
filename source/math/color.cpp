@@ -3,6 +3,8 @@
 
 #include <math/color.hpp>
 
+#include <iostream>
+
 NS_LEMON_MATH_BEGIN
 
 const Color Color::WHITE        = { 1.f, 1.f, 1.f, 1.f };
@@ -40,14 +42,6 @@ Color::Color(const Color& rh, float a)
 {
     *this = rh;
     a = a;
-}
-
-std::ostream& operator << (std::ostream& out, const Color& c)
-{
-    char buffer[32];
-    sprintf(buffer, "0x%08X", c.to_uint32());
-    out << "Color(" << buffer << ")";
-    return out;
 }
 
 NS_LEMON_MATH_END

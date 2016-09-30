@@ -41,10 +41,6 @@ using Rect3  = Rect<3, T>;
 using Rect3f = Rect<3, float>;
 using Rect3i = Rect<3, int>;
 
-// string serialization with stream
-template<size_t N, typename T>
-std::ostream& operator<< (std::ostream&, const Rect<N, T>&);
-
 // test for equality with another rect with epsilon
 template<size_t N, typename T>
 bool equals(const Rect<N, T>&, const Rect<N, T>&, T epslion = std::numeric_limits<T>::epsilon());
