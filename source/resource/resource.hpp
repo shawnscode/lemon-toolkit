@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <resource/defines.hpp>
+#include <defines.hpp>
 #include <resource/path.hpp>
 #include <math/string_hash.hpp>
 #include <core/subsystem.hpp>

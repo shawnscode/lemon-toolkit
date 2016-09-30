@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <math/vector.hpp>
 #include <math/matrix.hpp>
 
 NS_LEMON_MATH_BEGIN
@@ -58,7 +57,7 @@ Vector3T   operator * (const Vector3T&, const Quaternion&);
 Vector3T   operator / (const Vector3T&, const Quaternion&);
 
 // comparison with epslion
-//bool equals(const Quaternion&, const Quaternion&, quat_value_type epsilon = epsilon<quat_value_type>());
+bool equals(const Quaternion&, const Quaternion&, quat_value_type e = epsilon<quat_value_type>());
 
 // build a quaternion from euler angles(pitch, yaw, roll), in degree
 // order of rotations: Z first, then X, then Y

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <graphics/defines.hpp>
+#include <defines.hpp>
 #include <math/rect.hpp>
 #include <codebase/type/enumeration.hpp>
 

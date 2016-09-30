@@ -131,10 +131,10 @@ bool Backend::restore(SDL_Window* window)
 
     // ouput informations
     LOGI("Restore OpenGL context with:");
-    LOGI("GL_VENDOR:                    %s", glGetString(GL_VENDOR));
-    LOGI("GL_RENDERER:                  %s", glGetString(GL_RENDERER));
-    LOGI("GL_VERSION:                   %s", glGetString(GL_VERSION));
-    LOGI("GL_SHADING_LANGUAGE_VERSION:  %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    LOGI("      VENDOR: %s", glGetString(GL_VENDOR));
+    LOGI("    RENDERER: %s", glGetString(GL_RENDERER));
+    LOGI("     VERSION: %s", glGetString(GL_VERSION));
+    LOGI("GLSL VERSION: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
     return true;
 }
 

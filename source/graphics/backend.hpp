@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <graphics/defines.hpp>
+#include <defines.hpp>
 #include <graphics/render_state.hpp>
 #include <codebase/type/enumeration.hpp>
 #include <core/subsystem.hpp>
@@ -110,9 +110,13 @@ protected:
     RenderState     _render_state;
     math::Rect2i    _viewport;
 
-    unsigned        _bound_fbo = 0;
-    unsigned        _bound_program = 0, _bound_vbo = 0, _bound_ibo = 0;
-    unsigned        _active_texunit = 0, _bound_texture = 0, _bound_textype = 0;
+    unsigned _bound_fbo;
+    unsigned _bound_program = 0;
+    unsigned _bound_vbo = 0;
+    unsigned _bound_ibo = 0;
+    unsigned _active_texunit = 0;
+    unsigned _bound_texture = 0;
+    unsigned _bound_textype = 0;
 };
 
 NS_LEMON_GRAPHICS_END

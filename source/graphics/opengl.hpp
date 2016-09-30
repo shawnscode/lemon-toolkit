@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <graphics/defines.hpp>
+#include <defines.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <resource/defines.hpp>
+#include <defines.hpp>
 
 NS_LEMON_FILESYSTEM_BEGIN
 

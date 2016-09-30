@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <core/defines.hpp>
-#include <math/defines.hpp>
+#include <defines.hpp>
+#include <defines.hpp>
 
 NS_LEMON_CORE_BEGIN
 
