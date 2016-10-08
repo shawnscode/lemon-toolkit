@@ -43,17 +43,6 @@ enum class VertexAttribute : uint8_t
 
 constexpr const static size_t kVertexAttributeCount = 16;
 
-// the expected usage pattern of the data store
-enum class VertexBufferUsage : uint8_t
-{
-    // the data store contents will be modified once and used at most a few times
-    STREAM_DRAW = 0,
-    // the data store contents will be modified once and used many times
-    STATIC_DRAW,
-    // the data store contents will be modified repeatedly and used many times
-    DYNAMIC_DRAW
-};
-
 //
 struct VertexAttributeData
 {

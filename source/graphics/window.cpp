@@ -3,7 +3,7 @@
 
 #include <graphics/window.hpp>
 #include <graphics/backend.hpp>
-#include <graphics/opengl.hpp>
+#include <graphics/private/opengl.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 

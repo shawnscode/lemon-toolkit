@@ -8,6 +8,8 @@
 
 NS_LEMON_CORE_BEGIN
 
+const static unsigned kFallbackComponentSize = 8;
+
 struct World;
 struct IndexedMemoryChunks : public FixedSizeAllocator
 {
@@ -22,8 +24,8 @@ protected:
     World& _world;
     bool _fallback = false;
     internal::destructor _destructor;
-    unsigned _redirect[8];
-    unsigned _top = 8;
+    unsigned _redirect[kFallbackComponentSize];
+    unsigned _top = kFallbackComponentSize;
     std::vector<void*> _objects;
 };
 

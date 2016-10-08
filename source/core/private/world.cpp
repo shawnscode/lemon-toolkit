@@ -8,7 +8,7 @@ NS_LEMON_CORE_BEGIN
 IndexedMemoryChunks::IndexedMemoryChunks(World& world, size_t size, size_t chunk_size, const internal::destructor& cb)
 : _world(world), _destructor(cb), FixedSizeAllocator(size, chunk_size)
 {
-    _objects.resize(8, nullptr);
+    _objects.resize(kFallbackComponentSize, nullptr);
 }
 
 IndexedMemoryChunks::~IndexedMemoryChunks()
@@ -61,7 +61,7 @@ void IndexedMemoryChunks::free_with_index(Entity::index_type index)
 {
     if( !_fallback )
     {
-        for( unsigned i = 0; i < 8; i++ )
+        for( unsigned i = 0; i < kFallbackComponentSize; i++ )
         {
             if( _redirect[i] == (unsigned)index )
             {
@@ -89,7 +89,7 @@ void* IndexedMemoryChunks::get(Entity::index_type index)
 {
     if( !_fallback )
     {
-        for( unsigned i = 0; i < 8; i++ )
+        for( unsigned i = 0; i < kFallbackComponentSize; i++ )
         {
             if( _redirect[i] == (unsigned)index )
                 return _objects[i];
