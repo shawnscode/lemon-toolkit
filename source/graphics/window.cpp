@@ -5,6 +5,8 @@
 #include <graphics/backend.hpp>
 #include <graphics/private/opengl.hpp>
 
+#include <SDL2/SDL.h>
+
 NS_LEMON_GRAPHICS_BEGIN
 
 using namespace lemon::core;

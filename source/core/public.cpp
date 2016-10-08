@@ -82,6 +82,11 @@ namespace internal
     }
 }
 
+TaskHandle create_task(const char* name)
+{
+    return s_scheduler->create_task(name, nullptr);
+}
+
 void run_task(TaskHandle handle)
 {
     s_scheduler->run_task(handle);

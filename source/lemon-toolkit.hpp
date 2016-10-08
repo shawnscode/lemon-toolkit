@@ -12,9 +12,7 @@
 
 #include <graphics/window.hpp>
 #include <graphics/backend.hpp>
-#include <graphics/shader.hpp>
-#include <graphics/index_buffer.hpp>
-#include <graphics/texture.hpp>
+#include <graphics/frontend.hpp>
 
 #include <resource/path.hpp>
 #include <resource/filesystem.hpp>

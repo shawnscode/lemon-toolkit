@@ -15,8 +15,6 @@
 #include <GL/glew.h>
 #endif
 
-#include <SDL2/SDL.h>
-
 NS_LEMON_GRAPHICS_BEGIN
 
 extern void check_device_error(const char* file, unsigned line);

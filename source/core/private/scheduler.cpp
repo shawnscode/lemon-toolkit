@@ -181,7 +181,9 @@ bool Scheduler::execute_one_task(unsigned index, bool wait)
     if( on_task_start )
         on_task_start(index, task->name);
 
-    task->closure();
+    if( task->closure != nullptr )
+        task->closure();
+
     finish_task(handle);
 
     if( on_task_stop )

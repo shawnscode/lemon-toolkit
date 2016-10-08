@@ -10,6 +10,8 @@
 #include <math/rect.hpp>
 #include <math/color.hpp>
 
+struct SDL_Window;
+
 NS_LEMON_GRAPHICS_BEGIN
 
 enum class PrimitiveType : uint8_t
@@ -39,7 +41,6 @@ enum class ClearOption : uint8_t
 };
 
 // graphics device subsystem. manages the window device, renedering state and gpu resources
-struct SDL_Window;
 struct Backend : public core::Subsystem
 {
     SUBSYSTEM("lemon::graphics::Backend")

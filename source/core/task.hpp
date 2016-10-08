@@ -19,6 +19,7 @@ struct TaskHandle
 };
 
 // create_task
+TaskHandle create_task(const char*);
 template<typename F, typename ... Args> TaskHandle create_task(const char*, F&&, Args&& ...);
 
 // create_task_as_child comes with parent-child relationships:

@@ -8,6 +8,8 @@
 #include <codebase/type/enumeration.hpp>
 #include <math/vector.hpp>
 
+struct SDL_Window;
+
 NS_LEMON_GRAPHICS_BEGIN
 
 enum class Orientation : uint8_t
@@ -30,7 +32,6 @@ enum class WindowOption : uint16_t
 };
 
 // window subsystem, manages the window device states and messages
-struct SDL_Window;
 struct WindowDevice : public core::Subsystem
 {
     SUBSYSTEM("lemon::graphics::WindowDevice")
