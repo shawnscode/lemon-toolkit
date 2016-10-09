@@ -1,21 +1,21 @@
 // @date 2016/09/29
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <graphics/frontend.hpp>
+#include <graphics/renderer.hpp>
 #include <graphics/private/context.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
-bool Frontend::initialize()
+bool Renderer::initialize()
 {
-    _context.reset(new (std::nothrow) FrontendContext());
+    _context.reset(new (std::nothrow) RendererContext());
     if( _context == nullptr )
         return false;
 
     return true;
 }
 
-Handle Frontend::create_vertex_buffer(
+Handle Renderer::create_vertex_buffer(
     const void* data,
     size_t size,
     const VertexAttributeLayout& layout,
@@ -27,7 +27,7 @@ Handle Frontend::create_vertex_buffer(
     return handle;
 }
 
-bool Frontend::update_vertex_buffer(Handle handle, const void* data)
+bool Renderer::update_vertex_buffer(Handle handle, const void* data)
 {
     VertexBuffer* vb = _context->vertex_buffers.get(handle);
     if( vb == nullptr )
@@ -36,7 +36,7 @@ bool Frontend::update_vertex_buffer(Handle handle, const void* data)
     return vb->update_data(data);
 }
 
-bool Frontend::update_vertex_buffer(Handle handle, const void* data, unsigned start, unsigned size, bool discard)
+bool Renderer::update_vertex_buffer(Handle handle, const void* data, unsigned start, unsigned size, bool discard)
 {
     VertexBuffer* vb = _context->vertex_buffers.get(handle);
     if( vb == nullptr )
@@ -45,12 +45,12 @@ bool Frontend::update_vertex_buffer(Handle handle, const void* data, unsigned st
     return vb->update_data_range(data, start, size, discard);
 }
 
-void Frontend::free_vertex_buffer(Handle handle)
+void Renderer::free_vertex_buffer(Handle handle)
 {
     _context->vertex_buffers.free(handle);
 }
 
-Handle Frontend::create_index_buffer(
+Handle Renderer::create_index_buffer(
     const void* data,
     size_t size,
     IndexElementFormat format,
@@ -62,7 +62,7 @@ Handle Frontend::create_index_buffer(
     return handle;
 }
 
-bool Frontend::update_index_buffer(Handle handle, const void* data)
+bool Renderer::update_index_buffer(Handle handle, const void* data)
 {
     IndexBuffer* ib = _context->index_buffers.get(handle);
     if( ib == nullptr )
@@ -71,7 +71,7 @@ bool Frontend::update_index_buffer(Handle handle, const void* data)
     return ib->update_data(data);
 }
 
-bool Frontend::update_index_buffer(Handle handle, const void* data, unsigned start, unsigned size, bool discard)
+bool Renderer::update_index_buffer(Handle handle, const void* data, unsigned start, unsigned size, bool discard)
 {
     IndexBuffer* ib = _context->index_buffers.get(handle);
     if( ib == nullptr )
@@ -80,34 +80,34 @@ bool Frontend::update_index_buffer(Handle handle, const void* data, unsigned sta
     return ib->update_data_range(data, start, size, discard);
 }
 
-void Frontend::free_index_buffer(Handle handle)
+void Renderer::free_index_buffer(Handle handle)
 {
     _context->index_buffers.free(handle);
 }
 
-bool Frontend::begin_frame()
+bool Renderer::begin_frame()
 {
     _context->frame.clear();
     return true;
 }
 
-void Frontend::submit(RenderLayer layer, RenderState state, Handle program, Handle uniform, Handle vb, Handle ib, uint32_t depth)
+void Renderer::submit(RenderLayer layer, RenderState state, Handle program, Handle uniform, uint32_t depth, uint32_t start, uint32_t num)
 {
-    RenderDraw drawcall;
-    drawcall.program = program;
-    drawcall.uniform_buffer = uniform;
-    drawcall.vertex_buffer = vb;
-    drawcall.index_buffer = ib;
-    drawcall.state = state;
-    drawcall.sort_value = SortValue::encode(layer, program, depth);
+    // RenderDraw drawcall;
+    // drawcall.program = program;
+    // drawcall.uniform_buffer = uniform;
+    // drawcall.vertex_buffer = vb;
+    // drawcall.index_buffer = ib;
+    // drawcall.state = state;
+    // drawcall.sort_value = SortValue::encode(layer, program, depth);
 
-    {
-        std::unique_lock<std::mutex> L(_context->frame_mutex);
-        _context->frame.push_back(drawcall);
-    }
+    // {
+    //     std::unique_lock<std::mutex> L(_context->frame_mutex);
+    //     _context->frame.push_back(drawcall);
+    // }
 }
 
-void Frontend::flush()
+void Renderer::flush()
 {
     auto backend = core::get_subsystem<Backend>();
 
@@ -139,7 +139,7 @@ void Frontend::flush()
     _context->frame.clear();
 }
 
-void Frontend::end_frame()
+void Renderer::end_frame()
 {
     flush();
 }

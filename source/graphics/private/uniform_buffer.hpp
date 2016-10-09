@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <graphics/frontend.hpp>
+#include <graphics/renderer.hpp>
 #include <graphics/private/opengl.hpp>
 
 #include <string>

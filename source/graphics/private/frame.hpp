@@ -5,7 +5,7 @@
 
 #include <forwards.hpp>
 
-#include <graphics/frontend.hpp>
+#include <graphics/renderer.hpp>
 #include <graphics/render_state.hpp>
 
 #include <algorithm>

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <graphics/frontend.hpp>
+#include <graphics/renderer.hpp>
 #include <graphics/private/opengl.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN

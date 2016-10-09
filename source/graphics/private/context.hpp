@@ -14,7 +14,7 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-enum class FrontendCommand : uint8_t
+enum class RendererCommand : uint8_t
 {
     CreateVertexBuffer,
     CreateIndexBuffer,
@@ -110,7 +110,7 @@ protected:
     HandleSet<M> _handle_set;
 };
 
-struct FrontendContext
+struct RendererContext
 {
     RenderFrame frame;
     std::mutex frame_mutex;

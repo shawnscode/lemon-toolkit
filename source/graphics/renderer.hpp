@@ -5,6 +5,8 @@
 
 #include <graphics/vertex_attributes.hpp>
 #include <codebase/handle.hpp>
+#include <math/vector.hpp>
+#include <math/matrix.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
@@ -34,12 +36,31 @@ enum class RenderLayer : uint16_t
     OVERLAY = 4000
 };
 
-struct FrontendContext;
-struct Frontend : public core::Subsystem
+struct RendererContext;
+struct Renderer : public core::Subsystem
 {
-    SUBSYSTEM("lemon::graphics::Frontend")
+    SUBSYSTEM("lemon::graphics::Renderer")
 
     bool initialize() override;
+
+    // create program with vertex/pixel shader
+    Handle create_program(const char*, const char*);
+    // free program handle
+    void free_program(Handle);
+
+    // create uniform buffer associated with program
+    Handle create_uniform_buffer(Handle);
+    // set shader uniform parameter for draw primitive
+    void update_uniform_1f(Handle, const char*, const math::Vector<1, float>&);
+    void update_uniform_2f(Handle, const char*, const math::Vector<2, float>&);
+    void update_uniform_3f(Handle, const char*, const math::Vector<3, float>&);
+    void update_uniform_4f(Handle, const char*, const math::Vector<4, float>&);
+    void update_uniform_2fm(Handle, const char*, const math::Matrix<2, 2, float>&);
+    void update_uniform_3fm(Handle, const char*, const math::Matrix<3, 3, float>&);
+    void update_uniform_4fm(Handle, const char*, const math::Matrix<4, 4, float>&);
+    void update_uniform_texture(Handle, const char*, Handle);
+    // free uniform buffer handle
+    void free_uniform_buffer(Handle);
 
     // create vertex buffer
     Handle create_vertex_buffer(const void*, size_t, const VertexAttributeLayout&, BufferUsage);
@@ -59,34 +80,20 @@ struct Frontend : public core::Subsystem
     // free index buffer handle
     void free_index_buffer(Handle);
 
-    // create program
-    // Handle create_program(const char*, const char*);
-    // void free_program(Handle);
-
-    // create uniform buffer associated with program
-    // Handle create_uniform_buffer(Handle);
-    // update uniform vector value
-    // void update_uniform1f(Handle, const char*, const math::Vector<1, float>&);
-    // void update_uniform2f(Handle, const char*, const math::Vector<2, float>&);
-    // void update_uniform3f(Handle, const char*, const math::Vector<3, float>&);
-    // void update_uniform4f(Handle, const char*, const math::Vector<4, float>&);
-    // // update uniform matrix value
-    // void update_uniform2fm(Handle, const char*, const math::Matrix<2, 2, float>&);
-    // void update_uniform3fm(Handle, const char*, const math::Matrix<3, 3, float>&);
-    // void update_uniform4fm(Handle, const char*, const math::Matrix<4, 4, float>&);
-    // // update uniform texture value
-    // // void update_uniform_texture(const char*, Handle);
-    // void free_uniform_buffer(Handle);
-
-    // // create texture
-
+    // clear and start current frame
     bool begin_frame();
-    void submit(RenderLayer, RenderState, Handle program, Handle uniform, Handle vb, Handle ib, uint32_t depth);
+    // submit preparations for draw primitive
+    void set_vertex_buffer(Handle);
+    void set_index_buffer(Handle);
+    // submit primitive for rendering.
+    void submit(RenderLayer, RenderState, Handle program, Handle uniform, uint32_t depth, uint32_t start, uint32_t num);
+    // flush all cached draw calls
     void flush();
+    // finish current frame and flush all cached draw calls
     void end_frame();
 
 protected:
-    std::unique_ptr<FrontendContext> _context;
+    std::unique_ptr<RendererContext> _context;
 };
 
 NS_LEMON_GRAPHICS_END
