@@ -43,7 +43,7 @@
 //     2
 // };
 
-// Texture::Texture(Backend& device, unsigned target)
+// Texture::Texture(RendererBackend& device, unsigned target)
 // : GraphicsObject(device), _target(target)
 // {
 //     _parameter_dirty = true;
@@ -186,7 +186,7 @@
 //     _parameter_dirty = false;
 // }
 
-// Texture2D::Texture2D(Backend& device)
+// Texture2D::Texture2D(RendererBackend& device)
 // : Texture(device, GL_TEXTURE_2D)
 // {}
 

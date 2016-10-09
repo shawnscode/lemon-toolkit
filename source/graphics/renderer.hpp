@@ -5,6 +5,7 @@
 
 #include <graphics/vertex_attributes.hpp>
 #include <codebase/handle.hpp>
+#include <core/subsystem.hpp>
 #include <math/vector.hpp>
 #include <math/matrix.hpp>
 
@@ -82,6 +83,8 @@ struct Renderer : public core::Subsystem
 
     // clear and start current frame
     bool begin_frame();
+    // clear any or all of rendertarget, depth buffer and stencil buffer
+    void clear(ClearOption, const math::Color& color = {0.f, 0.f, 0.f, 0.f}, float depth = 1.f, unsigned stencil = 0);
     // submit preparations for draw primitive
     void set_vertex_buffer(Handle);
     void set_index_buffer(Handle);
@@ -91,6 +94,13 @@ struct Renderer : public core::Subsystem
     void flush();
     // finish current frame and flush all cached draw calls
     void end_frame();
+
+protected:
+    friend struct WindowDevice;
+    // restore OpenGL context and reinitialize state, requires an open window. returns true if successful
+    bool restore(SDL_Window*);
+    // release OpenGL context and handle the device lost of GPU resources
+    void release();
 
 protected:
     std::unique_ptr<RendererContext> _context;

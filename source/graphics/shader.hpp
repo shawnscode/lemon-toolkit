@@ -3,7 +3,7 @@
 
 // #pragma once
 
-// #include <graphics/backend.hpp>
+// #include <graphics/private/backend.hpp>
 // // #include <graphics/vertex_buffer.hpp>
 // #include <graphics/texture.hpp>
 // #include <math/matrix.hpp>
@@ -16,7 +16,7 @@
 // //     using ptr = std::shared_ptr<Shader>;
 // //     using weak_ptr = std::weak_ptr<Shader>;
 
-// //     Shader(Backend& device) : GraphicsObject(device) {}
+// //     Shader(RendererBackend& device) : GraphicsObject(device) {}
 // //     virtual ~Shader() { release(); }
 
 // //     bool restore(const char* vs, const char* ps);

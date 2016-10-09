@@ -8,6 +8,7 @@
 #include <graphics/private/index_buffer.hpp>
 #include <graphics/private/uniform_buffer.hpp>
 #include <graphics/private/frame.hpp>
+#include <graphics/private/backend.hpp>
 
 #include <array>
 #include <type_traits>
@@ -114,6 +115,8 @@ struct RendererContext
 {
     RenderFrame frame;
     std::mutex frame_mutex;
+
+    RendererBackend backend;
 
     ResourceAllocator<VertexBuffer, kMaxVertexBuffers> vertex_buffers;
     ResourceAllocator<IndexBuffer, kMaxVertexBuffers> index_buffers;

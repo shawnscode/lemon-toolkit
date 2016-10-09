@@ -1,7 +1,7 @@
 // @date 2016/07/30
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <graphics/backend.hpp>
+#include <graphics/private/backend.hpp>
 #include <graphics/private/opengl.hpp>
 
 #include <SDL2/SDL.h>
@@ -80,7 +80,7 @@ static const unsigned GL_BLEND_EQUATION_FUNC[] =
     GL_FUNC_REVERSE_SUBTRACT
 };
 
-bool Backend::restore(SDL_Window* window)
+bool RendererBackend::initialize(SDL_Window* window)
 {
     if( window == nullptr )
     {
@@ -140,7 +140,7 @@ bool Backend::restore(SDL_Window* window)
     return true;
 }
 
-void Backend::release()
+void RendererBackend::dispose()
 {
     if( _window != nullptr && _context != 0 )
         SDL_GL_DeleteContext(_context);
@@ -149,17 +149,17 @@ void Backend::release()
     _window = nullptr;
 }
 
-bool Backend::begin_frame()
+bool RendererBackend::begin_frame()
 {
     return _window != nullptr;
 }
 
-void Backend::end_frame()
+void RendererBackend::end_frame()
 {
     SDL_GL_SwapWindow(_window);
 }
 
-void Backend::clear(ClearOption options, const math::Color& color, float depth, unsigned stencil)
+void RendererBackend::clear(ClearOption options, const math::Color& color, float depth, unsigned stencil)
 {
     unsigned flags = 0;
     if( value(options & ClearOption::COLOR) )
@@ -183,14 +183,14 @@ void Backend::clear(ClearOption options, const math::Color& color, float depth, 
     glClear(flags);
 }
 
-void Backend::reset_cached_state()
+void RendererBackend::reset_cached_state()
 {
     _bound_fbo = _system_frame_object;
     _bound_vbo = _bound_ibo = _bound_program = 0;
     _active_texunit = _bound_textype = _bound_texture = 0;
 }
 
-void Backend::set_cull_face(bool enable, CullFace face)
+void RendererBackend::set_cull_face(bool enable, CullFace face)
 {
     if( enable != _render_state.cull.enable )
     {
@@ -206,7 +206,7 @@ void Backend::set_cull_face(bool enable, CullFace face)
     }
 }
 
-void Backend::set_front_face(FrontFaceOrder winding)
+void RendererBackend::set_front_face(FrontFaceOrder winding)
 {
     if( _render_state.cull.winding != winding )
     {
@@ -215,7 +215,7 @@ void Backend::set_front_face(FrontFaceOrder winding)
     }
 }
 
-void Backend::set_scissor_test(bool enable, const math::Rect2i& scissor)
+void RendererBackend::set_scissor_test(bool enable, const math::Rect2i& scissor)
 {
     if( enable != _render_state.scissor.enable )
     {
@@ -231,7 +231,7 @@ void Backend::set_scissor_test(bool enable, const math::Rect2i& scissor)
     }
 }
 
-void Backend::set_stencil_test(bool enable, CompareEquation equation, unsigned reference, unsigned mask)
+void RendererBackend::set_stencil_test(bool enable, CompareEquation equation, unsigned reference, unsigned mask)
 {
     if( enable != _render_state.stencil.enable )
     {
@@ -251,7 +251,7 @@ void Backend::set_stencil_test(bool enable, CompareEquation equation, unsigned r
     }
 }
 
-void Backend::set_stencil_write(StencilWriteEquation sfail, StencilWriteEquation dpfail, StencilWriteEquation dppass, unsigned mask)
+void RendererBackend::set_stencil_write(StencilWriteEquation sfail, StencilWriteEquation dpfail, StencilWriteEquation dppass, unsigned mask)
 {
     if( sfail != _render_state.stencil_write.sfail ||
         dpfail != _render_state.stencil_write.dpfail ||
@@ -270,7 +270,7 @@ void Backend::set_stencil_write(StencilWriteEquation sfail, StencilWriteEquation
     }
 }
 
-void Backend::set_depth_test(bool enable, CompareEquation equation)
+void RendererBackend::set_depth_test(bool enable, CompareEquation equation)
 {
     if( enable != _render_state.depth.enable )
     {
@@ -286,7 +286,7 @@ void Backend::set_depth_test(bool enable, CompareEquation equation)
     }
 }
 
-void Backend::set_depth_write(bool enable, float slope_scaled, float constant)
+void RendererBackend::set_depth_write(bool enable, float slope_scaled, float constant)
 {
     if( enable != _render_state.depth_write.enable )
     {
@@ -311,7 +311,7 @@ void Backend::set_depth_write(bool enable, float slope_scaled, float constant)
     _render_state.depth_write.bias_constant = constant;
 }
 
-void Backend::set_color_blend(bool enable, BlendEquation equation, BlendFactor src, BlendFactor dst)
+void RendererBackend::set_color_blend(bool enable, BlendEquation equation, BlendFactor src, BlendFactor dst)
 {
     if( enable != _render_state.blend.enable )
     {
@@ -332,7 +332,7 @@ void Backend::set_color_blend(bool enable, BlendEquation equation, BlendFactor s
     }
 }
 
-void Backend::set_color_write(ColorMask mask)
+void RendererBackend::set_color_write(ColorMask mask)
 {
     if( mask != _render_state.color_write )
     {
@@ -345,7 +345,7 @@ void Backend::set_color_write(ColorMask mask)
     }
 }
 
-void Backend::set_viewport(const math::Rect2i& viewport)
+void RendererBackend::set_viewport(const math::Rect2i& viewport)
 {
     if( _viewport != viewport )
     {
@@ -354,7 +354,7 @@ void Backend::set_viewport(const math::Rect2i& viewport)
     }
 }
 
-void Backend::set_shader(unsigned program)
+void RendererBackend::set_shader(unsigned program)
 {
     if( program != _bound_program )
     {
@@ -363,7 +363,7 @@ void Backend::set_shader(unsigned program)
     }
 }
 
-void Backend::set_index_buffer(unsigned ibo)
+void RendererBackend::set_index_buffer(unsigned ibo)
 {
     if( ibo != _bound_ibo )
     {
@@ -372,7 +372,7 @@ void Backend::set_index_buffer(unsigned ibo)
     }
 }
 
-void Backend::set_vertex_buffer(unsigned vbo)
+void RendererBackend::set_vertex_buffer(unsigned vbo)
 {
     if( vbo != _bound_vbo )
     {
@@ -381,7 +381,7 @@ void Backend::set_vertex_buffer(unsigned vbo)
     }
 }
 
-void Backend::set_texture(unsigned unit, unsigned type, unsigned object)
+void RendererBackend::set_texture(unsigned unit, unsigned type, unsigned object)
 {
     if( _active_texunit != unit )
     {
@@ -397,18 +397,18 @@ void Backend::set_texture(unsigned unit, unsigned type, unsigned object)
     }
 }
 
-void Backend::prepare_draw()
+void RendererBackend::prepare_draw()
 {
 
 }
 
-void Backend::draw(PrimitiveType type, unsigned start, unsigned count)
+void RendererBackend::draw(PrimitiveType type, unsigned start, unsigned count)
 {
     glDrawArrays(GL_PRIMITIVE[value(type)], start, count);
     CHECK_GL_ERROR();
 }
 
-bool Backend::is_device_lost() const
+bool RendererBackend::is_device_lost() const
 {
     return _window == nullptr || _context == 0;
 }

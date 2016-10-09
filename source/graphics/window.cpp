@@ -2,8 +2,7 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <graphics/window.hpp>
-#include <graphics/backend.hpp>
-#include <graphics/private/opengl.hpp>
+#include <graphics/renderer.hpp>
 
 #include <SDL2/SDL.h>
 
@@ -59,8 +58,8 @@ bool WindowDevice::open(int width, int height, int multisample, WindowOption opt
     }
 
     // close the existing window and OpenGL context, mark GPU objects as lost
-    auto backend = get_subsystem<Backend>();
-    backend->release();
+    auto frontend = get_subsystem<Renderer>();
+    frontend->release();
 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, multisample > 1 ? 1 : 0);
@@ -91,7 +90,7 @@ bool WindowDevice::open(int width, int height, int multisample, WindowOption opt
         return false;
     }
 
-    if( !backend->restore(_window) )
+    if( !frontend->restore(_window) )
         return false;
 
     // set vsync
@@ -110,14 +109,14 @@ bool WindowDevice::open(int width, int height, int multisample, WindowOption opt
     // reset_render_targets();
 
     // clear the initial window content to black
-    backend->clear(ClearOption::COLOR);
+    frontend->clear(ClearOption::COLOR);
     SDL_GL_SwapWindow(_window);
     return true;
 }
 
 void WindowDevice::close()
 {
-    get_subsystem<Backend>()->release();
+    get_subsystem<Renderer>()->release();
     SDL_ShowCursor(SDL_TRUE);
 
     if( _window != nullptr )
@@ -146,7 +145,7 @@ void WindowDevice::process_message(void* data)
             // but may have done GPU object changes that could not be applied yet. Apply them now
             // on Android the old GL context may be lost already,
             // restore GPU objects to the new GL context
-            get_subsystem<Backend>()->restore(_window);
+            get_subsystem<Renderer>()->restore(_window);
 #endif
             _minimized = false;
             break;

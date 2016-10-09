@@ -6,7 +6,6 @@
 #include <forwards.hpp>
 #include <graphics/render_state.hpp>
 #include <codebase/type/enumeration.hpp>
-#include <core/subsystem.hpp>
 #include <math/rect.hpp>
 #include <math/color.hpp>
 
@@ -41,16 +40,14 @@ enum class ClearOption : uint8_t
 };
 
 // graphics device subsystem. manages the window device, renedering state and gpu resources
-struct Backend : public core::Subsystem
+struct RendererBackend
 {
-    SUBSYSTEM("lemon::graphics::Backend")
-
-    virtual ~Backend() {}
+    virtual ~RendererBackend() {}
 
     // restore OpenGL context and reinitialize state, requires an open window. returns true if successful
-    bool restore(SDL_Window*);
+    bool initialize(SDL_Window*);
     // release OpenGL context and handle the device lost of GPU resources
-    void release();
+    void dispose();
 
     // reset all the graphics state to default
     void reset_cached_state();

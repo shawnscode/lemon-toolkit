@@ -4,7 +4,7 @@
 #include <engine/engine.hpp>
 #include <engine/input.hpp>
 #include <graphics/window.hpp>
-#include <graphics/backend.hpp>
+#include <graphics/private/backend.hpp>
 #include <graphics/renderer.hpp>
 #include <graphics/private/context.hpp>
 #include <resource/resource.hpp>
@@ -26,7 +26,6 @@ bool Engine::initialize()
     }
 
     auto device = core::add_subsystem<graphics::WindowDevice>();
-    core::add_subsystem<graphics::Backend>();
     core::add_subsystem<graphics::Renderer>();
     core::add_subsystem<res::ArchiveCollection>();
     core::add_subsystem<res::ResourceCache>();
@@ -121,15 +120,13 @@ void Engine::update(duration dt)
 
 void Engine::render()
 {
-    auto backend = core::get_subsystem<graphics::Backend>();
     auto renderer = core::get_subsystem<graphics::Renderer>();
 
-    if( !backend->begin_frame() || !renderer->begin_frame() )
+    if( !renderer->begin_frame() )
         return;
 
     // emit<EvtRender>();
     renderer->end_frame();
-    backend->end_frame();
 }
 
 void Engine::process_message()

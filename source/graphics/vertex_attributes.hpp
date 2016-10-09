@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <graphics/backend.hpp>
+#include <graphics/private/backend.hpp>
 
 #include <iostream>
 

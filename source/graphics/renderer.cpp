@@ -15,6 +15,16 @@ bool Renderer::initialize()
     return true;
 }
 
+bool Renderer::restore(SDL_Window* window)
+{
+    return _context->backend.initialize(window);
+}
+
+void Renderer::release()
+{
+    _context->backend.dispose();
+}
+
 Handle Renderer::create_vertex_buffer(
     const void* data,
     size_t size,
@@ -88,7 +98,12 @@ void Renderer::free_index_buffer(Handle handle)
 bool Renderer::begin_frame()
 {
     _context->frame.clear();
-    return true;
+    return _context->backend.begin_frame();
+}
+
+void Renderer::clear(ClearOption option, const math::Color& color, float depth, unsigned stencil)
+{
+    _context->backend.clear(option, color, depth, stencil);
 }
 
 void Renderer::submit(RenderLayer layer, RenderState state, Handle program, Handle uniform, uint32_t depth, uint32_t start, uint32_t num)
@@ -109,8 +124,6 @@ void Renderer::submit(RenderLayer layer, RenderState state, Handle program, Hand
 
 void Renderer::flush()
 {
-    auto backend = core::get_subsystem<Backend>();
-
     std::unique_lock<std::mutex> L(_context->frame_mutex);
     _context->frame.sort();
     for( auto& drawcall : _context->frame )
@@ -127,9 +140,9 @@ void Renderer::flush()
         //     program->get_vao_handle();
         // }
 
-        // backend->set_shader(program->get_opengl_handle());
-        // backend->set_vertex_attributes(vb->get_attributes());
-        // backend->set_
+        // _context->backend.set_shader(program->get_opengl_handle());
+        // _context->backend.set_vertex_attributes(vb->get_attributes());
+        // _context->backend.set_
 
 
         // ub->get_opengl_handle();
@@ -142,6 +155,7 @@ void Renderer::flush()
 void Renderer::end_frame()
 {
     flush();
+    _context->backend.end_frame();
 }
 
 NS_LEMON_GRAPHICS_END

@@ -11,7 +11,6 @@
 #include <math/stringify.hpp>
 
 #include <graphics/window.hpp>
-#include <graphics/backend.hpp>
 #include <graphics/renderer.hpp>
 
 #include <resource/path.hpp>
