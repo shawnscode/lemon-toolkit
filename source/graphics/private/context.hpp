@@ -7,6 +7,7 @@
 #include <graphics/private/vertex_buffer.hpp>
 #include <graphics/private/index_buffer.hpp>
 #include <graphics/private/uniform_buffer.hpp>
+#include <graphics/private/frame.hpp>
 
 #include <array>
 #include <type_traits>
@@ -111,9 +112,11 @@ protected:
 
 struct FrontendContext
 {
+    RenderFrame frame;
+    std::mutex frame_mutex;
+
     ResourceAllocator<VertexBuffer, kMaxVertexBuffers> vertex_buffers;
     ResourceAllocator<IndexBuffer, kMaxVertexBuffers> index_buffers;
-    ResourceAllocator<UniformBuffer, kMaxVertexBuffers> uniform_buffers;
 };
 
 NS_LEMON_GRAPHICS_END

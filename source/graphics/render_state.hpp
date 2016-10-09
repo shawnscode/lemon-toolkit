@@ -96,6 +96,33 @@ struct ScissorTestOp
     math::Rect2i area;
 };
 
+struct DepthTestOp
+{
+    // enable or disable depth buffer test
+    bool enable;
+    // specify the value used for depth buffer comparisons and test
+    CompareEquation compare;
+};
+
+struct DepthBufferWrite
+{
+    // enable or disable writing into the depth buffer
+    bool enable;
+    // set the scale and units used to calculate depth values
+    float bias_slope_scaled;
+    float bias_constant;
+};
+
+struct ColorBlendOp
+{
+    bool enable;
+    // specifies how source and destination colors are combined
+    BlendEquation equation;
+    // specifies how the red, green, blue, and alpha blending factors are computed
+    BlendFactor source_factor;
+    BlendFactor destination_factor;
+};
+
 // set front and back function and reference value for stencil testing,
 // reference is clamped to the range [0,2^n−1],
 // where n is the number of bitplanes in the stencil buffer.
@@ -120,85 +147,25 @@ struct StencilBufferWrite
     unsigned mask;
 };
 
-struct DepthTestOp
-{
-    // enable or disable depth buffer test
-    bool enable;
-    // specify the value used for depth buffer comparisons and test
-    CompareEquation compare;
-};
-
-struct DepthBufferWrite
-{
-    // enable or disable writing into the depth buffer
-    bool enable;
-    // set the scale and units used to calculate depth values
-    float bias_slope_scaled;
-    float bias_constant;
-};
-
-struct ColorBlendOp
-{
-    bool enable;
-    BlendEquation equation;
-    BlendFactor source_factor;
-    BlendFactor destination_factor;
-};
-
-// stateless render state used to address multi-thread draw call submittings
+// stateless render states used to address multi-thread draw call submittings
 struct RenderState
 {
     RenderState();
-    CullTestOp          cull;
-    ScissorTestOp       scissor;
 
-    StencilTestOp       stencil;
-    StencilBufferWrite  stencil_write;
+    CullTestOp cull;
+    ScissorTestOp scissor;
 
-    DepthTestOp         depth;
-    DepthBufferWrite    depth_write;
+    DepthTestOp depth;
+    DepthBufferWrite depth_write;
 
-    ColorBlendOp        blend;
-    ColorMask           color_write;
+    ColorBlendOp blend;
+    ColorMask color_write;
+
+    StencilTestOp stencil;
+    StencilBufferWrite stencil_write;
+
+    void reset();
 };
-
-void reset_render_state(RenderState&);
-
-// namespace state
-// {
-//     const static uint64_t WRITE_SHIFT       = 0;
-//     const static uint64_t WRITE_COLOR_RED   = 1 << (WRITE_SHIFT + 0);
-//     const static uint64_t WRITE_COLOR_BLUE  = 1 << (WRITE_SHIFT + 1);
-//     const static uint64_t WRITE_COLOR_GREEN = 1 << (WRITE_SHIFT + 2);
-//     const static uint64_t WRITE_COLOR_ALPHA = 1 << (WRITE_SHIFT + 3);
-//     const static uint64_t WRITE_DEPTH       = 1 << (WRITE_SHIFT + 4);
-//     const static uint64_t WRITE_STENCIL     = 1 << (WRITE_SHIFT + 5);
-
-//     const static uint64_t DEPTH_TEST_SHIFT      = 4;
-//     const static uint64_t DEPTH_TEST_NEVER      = (1 << DEPTH_TEST_SHIFT) + 0;
-//     const static uint64_t DEPTH_TEST_LESS       = (1 << DEPTH_TEST_SHIFT) + 1;
-//     const static uint64_t DEPTH_TEST_LEQUAL     = (1 << DEPTH_TEST_SHIFT) + 2;
-//     const static uint64_t DEPTH_TEST_GREATER    = (1 << DEPTH_TEST_SHIFT) + 3;
-//     const static uint64_t DEPTH_TEST_GEQUAL     = (1 << DEPTH_TEST_SHIFT) + 4;
-//     const static uint64_t DEPTH_TEST_EQUAL      = (1 << DEPTH_TEST_SHIFT) + 5;
-//     const static uint64_t DEPTH_TEST_NOTEQUAL   = (1 << DEPTH_TEST_SHIFT) + 6;
-//     const static uint64_t DEPTH_TEST_ALWAYS     = (1 << DEPTH_TEST_SHIFT) + 7;
-
-//     // stencil
-
-//     // blend
-//     const static uint64_t BLEND_SHIFT = 8;
-
-//     // cull
-
-//     const static uint64_t BLEND_SHIFT = 28;
-//     const static uint64_t CULL_TEST_SHIFT = 36;
-//     const static uint64_t PRIMITIVE_TYPE_SHIFT = 40;
-//     const static uint64_t POINT_SIZE_SHIFT = 48;
-//     const static uint64_t RASTERIZATION_SHIFT = 61;
-// }
-
-uint64_t render_state_compress(RenderState&);
 
 NS_LEMON_GRAPHICS_END
 

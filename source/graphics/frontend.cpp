@@ -85,33 +85,63 @@ void Frontend::free_index_buffer(Handle handle)
     _context->index_buffers.free(handle);
 }
 
+bool Frontend::begin_frame()
+{
+    _context->frame.clear();
+    return true;
+}
 
-// IndexBufferHandle Frontend::create_vertex_buffer(
-//     const uint8_t* data,
-//     size_t size,
-//     const VertexAttributeLayout& layout,
-//     BufferUsage usage)
-// {
-//     ASSERT_MAIN_THREAD("resource manipulation could only be done in main thread.");
+void Frontend::submit(RenderLayer layer, RenderState state, Handle program, Handle uniform, Handle vb, Handle ib, uint32_t depth)
+{
+    RenderDraw drawcall;
+    drawcall.program = program;
+    drawcall.uniform_buffer = uniform;
+    drawcall.vertex_buffer = vb;
+    drawcall.index_buffer = ib;
+    drawcall.state = state;
+    drawcall.sort_value = SortValue::encode(layer, program, depth);
 
-//     VertexBufferHandle handle;
-//     handle.index = _context->vertex_buffer_handle.allocate();
+    {
+        std::unique_lock<std::mutex> L(_context->frame_mutex);
+        _context->frame.push_back(drawcall);
+    }
+}
 
-//     if( is_valid(handle) )
-//     {
-//         // _vertexBuffers[handle.index]._
-//         _commands->write(FrontendCommand::CreateVertexBuffer);
-//         _commands->write(handle);
-//         _commands->write(size);
-//         _commands->write(data, size);
-//         _commands->write(usage);
-//     }
-//     else
-//     {
-//         LOGW("failed to allocate vertex buffer handle.");
-//     }
+void Frontend::flush()
+{
+    auto backend = core::get_subsystem<Backend>();
 
-//     return handle;
-// }
+    std::unique_lock<std::mutex> L(_context->frame_mutex);
+    _context->frame.sort();
+    for( auto& drawcall : _context->frame )
+    {
+        // auto program = _context->programs.get(drawcall.program);
+        // auto ub = _context->uniform_buffers.get(drawcall.uniform_buffer);
+        // auto vb = _context->vertex_buffers.get(drawcall.vertex_buffer);
+        // auto ib = _context->index_buffers.get(drawcall.index_buffer);
+
+        // auto hprogram = program->get_opengl_handle();
+
+        // if( _supportVao )
+        // {
+        //     program->get_vao_handle();
+        // }
+
+        // backend->set_shader(program->get_opengl_handle());
+        // backend->set_vertex_attributes(vb->get_attributes());
+        // backend->set_
+
+
+        // ub->get_opengl_handle();
+        // vb->get_opengl_handle();
+        // ib->get_opengl_handle();
+    }
+    _context->frame.clear();
+}
+
+void Frontend::end_frame()
+{
+    flush();
+}
 
 NS_LEMON_GRAPHICS_END

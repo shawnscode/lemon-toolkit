@@ -25,6 +25,15 @@ enum class IndexElementFormat : uint8_t
     USHORT
 };
 
+enum class RenderLayer : uint16_t
+{
+    BACKGROUND = 1000,
+    GEOMETRY = 2000,
+    ALPHATEST = 2500,
+    TRANSPARENCY = 3000,
+    OVERLAY = 4000
+};
+
 struct FrontendContext;
 struct Frontend : public core::Subsystem
 {
@@ -71,18 +80,10 @@ struct Frontend : public core::Subsystem
 
     // // create texture
 
-    bool begin_frame() { return true; }
-    void end_frame() {}
-    // // void submit(
-    // //     RenderState,
-    // //     ProgramHandle,
-    // //     UniformHandle,
-    // //     VertexBufferHandle,
-    // //     IndexBufferHandle,
-    // //     size_t,
-    // //     size_t);
-    // void flush();
-    // void end_frame();
+    bool begin_frame();
+    void submit(RenderLayer, RenderState, Handle program, Handle uniform, Handle vb, Handle ib, uint32_t depth);
+    void flush();
+    void end_frame();
 
 protected:
     std::unique_ptr<FrontendContext> _context;

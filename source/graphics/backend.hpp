@@ -108,8 +108,8 @@ protected:
     int32_t _system_frame_object = 0;
 
     // render states
-    RenderState     _render_state;
-    math::Rect2i    _viewport;
+    RenderState _render_state;
+    math::Rect2i _viewport;
 
     unsigned _bound_fbo;
     unsigned _bound_program = 0;

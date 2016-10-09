@@ -72,6 +72,8 @@ const static unsigned kMaxPrograms = 8;
 const static unsigned kMaxTextures = 8;
 const static unsigned kMaxUniforms = 32;
 
+const static unsigned kMaxTextureSamples = 4;
+
 NS_LEMON_GRAPHICS_END
 
 // FILESYSTEM COLLECTIONS
