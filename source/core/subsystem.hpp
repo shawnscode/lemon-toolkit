@@ -107,10 +107,10 @@ void SubsystemWithEntities<Args...>::visit(const visitor& cb)
 // implementation of traits
 namespace internal
 {
-    void add_subsystem(TypeInfo::index_type, Subsystem*);
-    void remove_subsystem(TypeInfo::index_type);
-    bool has_subsystem(TypeInfo::index_type);
-    Subsystem* get_subsystem(TypeInfo::index_type);
+    void add_subsystem(TypeInfo::index_t, Subsystem*);
+    void remove_subsystem(TypeInfo::index_t);
+    bool has_subsystem(TypeInfo::index_t);
+    Subsystem* get_subsystem(TypeInfo::index_t);
 }
 
 template<typename S>

@@ -14,27 +14,27 @@ NS_LEMON_CORE_BEGIN
 // represents an entity handle which is made up of components.
 struct Entity
 {
-    using index_type = uint16_t; // supports 60k+ entities and versions.
-    const static index_type invalid = std::numeric_limits<index_type>::max();
+    using index_t = uint16_t; // supports 60k+ entities and versions.
+    const static index_t invalid = std::numeric_limits<index_t>::max();
 
     Entity() = default;
     Entity(const Entity&) = default;
-    Entity(index_type index, index_type version) : _index(index), _version(version) {}
+    Entity(index_t index, index_t version) : _index(index), _version(version) {}
     Entity& operator = (const Entity&) = default;
 
     bool operator == (const Entity&) const;
     bool operator != (const Entity&) const;
     bool operator <  (const Entity&) const;
 
-    index_type get_index() const;
-    index_type get_version() const;
+    index_t get_index() const;
+    index_t get_version() const;
 
     // invalidate entity handle, disassociating it from entity manager.
     void invalidate();
 
 private:
-    index_type _index = invalid;
-    index_type _version = invalid;
+    index_t _index = invalid;
+    index_t _version = invalid;
 };
 
 #define SET_CHUNK_SIZE(SIZE) static const size_t chunk_size = SIZE;
@@ -67,7 +67,7 @@ namespace ecs
     // an iterator over a specified view with components of the entites in an EntityManager.
     struct iterator : public std::iterator<std::forward_iterator_tag, Entity>
     {
-        iterator(Entity::index_type, ComponentMask);
+        iterator(Entity::index_t, ComponentMask);
 
         iterator operator ++ (int);
         iterator& operator ++ ();
@@ -78,7 +78,7 @@ namespace ecs
 
     protected:
         ComponentMask       _mask;
-        Entity::index_type  _index;
+        Entity::index_t  _index;
     };
 
     template<typename ... Args> struct view
@@ -158,8 +158,8 @@ namespace internal
 {
     // initialize component storage and type informations
     using destructor = std::function<void(Entity, void*)>;
-    bool has_component_registered(TypeInfo::index_type);
-    bool register_component(TypeInfo::index_type, size_t, size_t, const destructor&);
+    bool has_component_registered(TypeInfo::index_t);
+    bool register_component(TypeInfo::index_t, size_t, size_t, const destructor&);
 
     //
     template<typename T> bool register_component()
@@ -180,16 +180,16 @@ namespace internal
    }
 
     //
-    void* add_component(TypeInfo::index_type, Entity);
-    void* get_component(TypeInfo::index_type, Entity);
+    void* add_component(TypeInfo::index_t, Entity);
+    void* get_component(TypeInfo::index_t, Entity);
 
     //
-    void remove_component(TypeInfo::index_type, Entity);
-    bool has_component(TypeInfo::index_type, Entity);
+    void remove_component(TypeInfo::index_t, Entity);
+    bool has_component(TypeInfo::index_t, Entity);
 
     //
-    Entity::index_type find_next_available(Entity::index_type, ComponentMask, bool self = false);
-    Entity get(Entity::index_type);
+    Entity::index_t find_next_available(Entity::index_t, ComponentMask, bool self = false);
+    Entity get(Entity::index_t);
 
     //
     template<typename T> INLINE bool has_components(Entity object)
@@ -216,8 +216,8 @@ namespace internal
 
     namespace test_mem
     {
-        size_t size(TypeInfo::index_type);
-        size_t capacity(TypeInfo::index_type);
+        size_t size(TypeInfo::index_t);
+        size_t capacity(TypeInfo::index_t);
     }
 }
 
@@ -237,12 +237,12 @@ INLINE bool Entity::operator < (const Entity& rh) const
     return _version == rh._version ? _index < rh._index : _version < rh._version;
 }
 
-INLINE Entity::index_type Entity::get_index() const
+INLINE Entity::index_t Entity::get_index() const
 {
     return _index;
 }
 
-INLINE Entity::index_type Entity::get_version() const
+INLINE Entity::index_t Entity::get_version() const
 {
     return _version;
 }
@@ -256,7 +256,7 @@ INLINE void Entity::invalidate()
 // INCLUDED METHODS OF ENTITY VIEW AND ITERATOR
 namespace ecs
 {
-    INLINE iterator::iterator(Entity::index_type index, ComponentMask mask)
+    INLINE iterator::iterator(Entity::index_t index, ComponentMask mask)
     : _index(index), _mask(mask)
     {
         _index = internal::find_next_available(_index, _mask, true);

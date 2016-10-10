@@ -26,9 +26,9 @@ namespace internal
     struct Event {};
 
     using closure = std::function<void(const void*)>;
-    void subscribe(TypeInfoGeneric::index_type, size_t, closure);
-    void unsubscribe(TypeInfoGeneric::index_type, size_t);
-    void emit(TypeInfoGeneric::index_type, const void*);
+    void subscribe(TypeInfoGeneric::index_t, size_t, closure);
+    void unsubscribe(TypeInfoGeneric::index_t, size_t);
+    void emit(TypeInfoGeneric::index_t, const void*);
 }
 
 template<typename E, typename R>

@@ -21,11 +21,11 @@ struct Dispatcher
     void dispose();
 
     // subscribe an object to receive events
-    void subscribe(TypeInfoGeneric::index_type, size_t, closure);
+    void subscribe(TypeInfoGeneric::index_t, size_t, closure);
     // unsubscribe an object from dispatcher
-    void unsubscribe(TypeInfoGeneric::index_type, size_t);
+    void unsubscribe(TypeInfoGeneric::index_t, size_t);
     // emit a contructed event to all subscribtions
-    void emit(TypeInfoGeneric::index_type, const void*);
+    void emit(TypeInfoGeneric::index_t, const void*);
 
 protected:
     std::vector<dispatcher> _table;

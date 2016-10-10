@@ -13,14 +13,14 @@ IndexedMemoryChunks::IndexedMemoryChunks(World& world, size_t size, size_t chunk
 
 IndexedMemoryChunks::~IndexedMemoryChunks()
 {
-    for( Entity::index_type i = 0; i < _objects.size(); i++ )
+    for( Entity::index_t i = 0; i < _objects.size(); i++ )
     {
         if( _objects[i] != nullptr )
             _destructor(_world.get(i), _objects[i]);
     }
 }
 
-void* IndexedMemoryChunks::malloc_with_index(Entity::index_type index)
+void* IndexedMemoryChunks::malloc_with_index(Entity::index_t index)
 {
     auto object = FixedSizeAllocator::malloc();
     if( object == nullptr )
@@ -57,7 +57,7 @@ void* IndexedMemoryChunks::malloc_with_index(Entity::index_type index)
     return object;
 }
 
-void IndexedMemoryChunks::free_with_index(Entity::index_type index)
+void IndexedMemoryChunks::free_with_index(Entity::index_t index)
 {
     if( !_fallback )
     {
@@ -85,7 +85,7 @@ void IndexedMemoryChunks::free_with_index(Entity::index_type index)
     }
 }
 
-void* IndexedMemoryChunks::get(Entity::index_type index)
+void* IndexedMemoryChunks::get(Entity::index_t index)
 {
     if( !_fallback )
     {
@@ -107,7 +107,7 @@ bool World::initialize()
 
 void World::dispose()
 {
-    for( Entity::index_type i = 0; i < _components.size(); i++ )
+    for( Entity::index_t i = 0; i < _components.size(); i++ )
     {
         if( _components[i] != nullptr )
         {
@@ -130,7 +130,7 @@ void World::dispose()
 
 Entity World::spawn()
 {
-    Entity::index_type index, version;
+    Entity::index_t index, version;
     if( _freeslots.empty() )
     {
         index = _incremental_index++;
@@ -142,7 +142,7 @@ Entity World::spawn()
 
         ASSERT( _incremental_index != Entity::invalid,
             "too much entities,"
-            "please considering change the representation of Entity::index_type." );
+            "please considering change the representation of Entity::index_t." );
         _versions[index] = 1;
     }
     else
@@ -175,10 +175,10 @@ void World::recycle(Entity object)
 
     ASSERT( _versions[object.get_index()] != Entity::invalid,
         "too much reusages of this entity,"
-        "please considering change the representation of Entity::index_type." );
+        "please considering change the representation of Entity::index_t." );
 }
 
-bool World::register_component(TypeInfo::index_type id, size_t size, size_t chunk_size, const internal::destructor& destructor)
+bool World::register_component(TypeInfo::index_t id, size_t size, size_t chunk_size, const internal::destructor& destructor)
 {
     if( _components.size() < (id+1) )
         _components.resize(id+1);
@@ -195,7 +195,7 @@ bool World::register_component(TypeInfo::index_type id, size_t size, size_t chun
     return true;
 }
 
-void* World::add_component(TypeInfo::index_type id, Entity object)
+void* World::add_component(TypeInfo::index_t id, Entity object)
 {
     if( !alive(object) )
         return nullptr;
@@ -208,7 +208,7 @@ void* World::add_component(TypeInfo::index_type id, Entity object)
     return chunk;
 }
 
-void* World::get_component(TypeInfo::index_type id, Entity object)
+void* World::get_component(TypeInfo::index_t id, Entity object)
 {
     if( !alive(object) )
         return nullptr;
@@ -219,7 +219,7 @@ void* World::get_component(TypeInfo::index_type id, Entity object)
     return _components[id]->get(object.get_index());
 }
 
-void World::remove_component(TypeInfo::index_type id, Entity object)
+void World::remove_component(TypeInfo::index_t id, Entity object)
 {
     if( !alive(object) )
         return;
@@ -231,12 +231,12 @@ void World::remove_component(TypeInfo::index_type id, Entity object)
     }
 }
 
-Entity World::find_next_available(Entity::index_type index, ComponentMask mask, bool self)
+Entity World::find_next_available(Entity::index_t index, ComponentMask mask, bool self)
 {
     if( index == Entity::invalid )
         return Entity();
 
-    for( Entity::index_type i = self ? index : index + 1; i < Entity::invalid; i++ )
+    for( Entity::index_t i = self ? index : index + 1; i < Entity::invalid; i++ )
     {
         if( i < _versions.size() && (_versions[i] & 0x1) == 1 )
         {

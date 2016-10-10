@@ -14,7 +14,7 @@ void Dispatcher::dispose()
 {
 }
 
-void Dispatcher::subscribe(TypeInfoGeneric::index_type index, size_t id, closure cb)
+void Dispatcher::subscribe(TypeInfoGeneric::index_t index, size_t id, closure cb)
 {
     if( _table.size() <= index )
         _table.resize(index+1);
@@ -22,7 +22,7 @@ void Dispatcher::subscribe(TypeInfoGeneric::index_type index, size_t id, closure
     _table[index].insert(std::make_pair(id, cb));
 }
 
-void Dispatcher::unsubscribe(TypeInfoGeneric::index_type index, size_t id)
+void Dispatcher::unsubscribe(TypeInfoGeneric::index_t index, size_t id)
 {
     if( _table.size() > index )
     {
@@ -32,7 +32,7 @@ void Dispatcher::unsubscribe(TypeInfoGeneric::index_type index, size_t id)
     }
 }
 
-void Dispatcher::emit(TypeInfoGeneric::index_type index, const void* evt)
+void Dispatcher::emit(TypeInfoGeneric::index_t index, const void* evt)
 {
     if( _table.size() > index )
     {

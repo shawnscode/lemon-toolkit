@@ -20,7 +20,7 @@ void Context::dispose()
     _subsystems.clear();
 }
 
-Subsystem* Context::get_subsystem(TypeInfo::index_type index)
+Subsystem* Context::get_subsystem(TypeInfo::index_t index)
 {
     auto found = _subsystems.find(index);
     if( found != _subsystems.end() )
@@ -29,12 +29,12 @@ Subsystem* Context::get_subsystem(TypeInfo::index_type index)
     return nullptr;
 }
 
-void Context::add_subsystem(TypeInfo::index_type index, Subsystem* subsystem)
+void Context::add_subsystem(TypeInfo::index_t index, Subsystem* subsystem)
 {
     _subsystems.insert(std::make_pair(index, subsystem));
 }
 
-void Context::remove_subsystem(TypeInfo::index_type index)
+void Context::remove_subsystem(TypeInfo::index_t index)
 {
     auto found = _subsystems.find(index);
     if( found != _subsystems.end() )
@@ -45,7 +45,7 @@ void Context::remove_subsystem(TypeInfo::index_type index)
     }   
 }
 
-bool Context::has_subsystem(TypeInfo::index_type index)
+bool Context::has_subsystem(TypeInfo::index_t index)
 {
     return _subsystems.find(index) != _subsystems.end();
 }

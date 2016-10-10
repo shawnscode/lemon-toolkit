@@ -16,9 +16,9 @@ struct IndexedMemoryChunks : public FixedSizeAllocator
     IndexedMemoryChunks(World&, size_t, size_t, const internal::destructor&);
     ~IndexedMemoryChunks();
 
-    void* malloc_with_index(Entity::index_type);
-    void free_with_index(Entity::index_type);
-    void* get(Entity::index_type);
+    void* malloc_with_index(Entity::index_t);
+    void free_with_index(Entity::index_t);
+    void* get(Entity::index_t);
 
 protected:
     World& _world;
@@ -42,24 +42,24 @@ struct World
     void recycle(Entity);
 
     // initialize component storage and type informations
-    bool register_component(TypeInfo::index_type, size_t, size_t, const internal::destructor&);
+    bool register_component(TypeInfo::index_t, size_t, size_t, const internal::destructor&);
     // assign a component to object, passing through component constructor arguments
-    void* add_component(TypeInfo::index_type, Entity);
+    void* add_component(TypeInfo::index_t, Entity);
     // retrieve a component assigned to object
-    void* get_component(TypeInfo::index_type, Entity);
+    void* get_component(TypeInfo::index_t, Entity);
     // remove a component from object
-    void remove_component(TypeInfo::index_type, Entity);
+    void remove_component(TypeInfo::index_t, Entity);
 
     // return next available entity identifier with specified mask
-    Entity find_next_available(Entity::index_type index, ComponentMask mask, bool self);
+    Entity find_next_available(Entity::index_t index, ComponentMask mask, bool self);
 
     // return true if component has already registered
-    INLINE bool has_component_registered(TypeInfo::index_type id)
+    INLINE bool has_component_registered(TypeInfo::index_t id)
     {
         return _components.size() > id && _components[id] != nullptr;
     }
 
-    INLINE bool has_component(TypeInfo::index_type id, Entity object)
+    INLINE bool has_component(TypeInfo::index_t id, Entity object)
     {
         return alive(object) && _masks[object.get_index()].test(id);
     }
@@ -83,19 +83,19 @@ struct World
     }
 
     // returns current alive entity identifier by index
-    INLINE Entity get(Entity::index_type index)
+    INLINE Entity get(Entity::index_t index)
     {
         return index < _versions.size() && (_versions[index] & 0x1) == 1 ?
             Entity(index, _versions[index]) : Entity();
     }
 
-    INLINE size_t size(TypeInfo::index_type id)
+    INLINE size_t size(TypeInfo::index_t id)
     {
         return (_components.size() > id && _components[id] != nullptr) ?
             _components[id]->size() : 0;
     }
 
-    INLINE size_t capacity(TypeInfo::index_type id)
+    INLINE size_t capacity(TypeInfo::index_t id)
     {
         return (_components.size() > id && _components[id] != nullptr) ?
             _components[id]->capacity() : 0;   
@@ -103,7 +103,7 @@ struct World
     
 protected:
     // incremented entity index for brand new and free slot
-    Entity::index_type _incremental_index = 0;
+    Entity::index_t _incremental_index = 0;
 
     // each element in componets_pool corresponds to a Pool for a Component
     // the index into the vector is the Component::type();
@@ -114,10 +114,10 @@ protected:
     std::vector<ComponentMask> _masks;
 
     // entity version numbers. incremented each time an entity is destroyed
-    std::vector<Entity::index_type> _versions;
+    std::vector<Entity::index_t> _versions;
 
     // list of available entity slots
-    std::vector<Entity::index_type> _freeslots;
+    std::vector<Entity::index_t> _freeslots;
 };
 
 NS_LEMON_CORE_END

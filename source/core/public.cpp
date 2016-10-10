@@ -116,22 +116,22 @@ uint32_t get_cpu_count()
 
 namespace internal
 {
-    void add_subsystem(TypeInfo::index_type index, Subsystem* subsystem)
+    void add_subsystem(TypeInfo::index_t index, Subsystem* subsystem)
     {
         s_context->add_subsystem(index, subsystem);
     }
 
-    void remove_subsystem(TypeInfo::index_type index)
+    void remove_subsystem(TypeInfo::index_t index)
     {
         s_context->remove_subsystem(index);
     }
 
-    bool has_subsystem(TypeInfo::index_type index)
+    bool has_subsystem(TypeInfo::index_t index)
     {
         return s_context->has_subsystem(index);
     }
 
-    Subsystem* get_subsystem(TypeInfo::index_type index)
+    Subsystem* get_subsystem(TypeInfo::index_t index)
     {
         return s_context->get_subsystem(index);
     }
@@ -141,17 +141,17 @@ namespace internal
 
 namespace internal
 {
-    void subscribe(TypeInfoGeneric::index_type index, size_t id, closure cb)
+    void subscribe(TypeInfoGeneric::index_t index, size_t id, closure cb)
     {
         s_dispatcher->subscribe(index, id, cb);
     }
 
-    void unsubscribe(TypeInfoGeneric::index_type index, size_t id)
+    void unsubscribe(TypeInfoGeneric::index_t index, size_t id)
     {
         s_dispatcher->unsubscribe(index, id);
     }
 
-    void emit(TypeInfoGeneric::index_type index, const void* evt)
+    void emit(TypeInfoGeneric::index_t index, const void* evt)
     {
         s_dispatcher->emit(index, evt);
     }
@@ -161,54 +161,54 @@ namespace internal
 
 namespace internal
 {
-    bool has_component_registered(TypeInfo::index_type id)
+    bool has_component_registered(TypeInfo::index_t id)
     {
         return s_world->has_component_registered(id);
     }
 
-    bool register_component(TypeInfo::index_type id, size_t size, size_t chunk_size, const destructor& cb)
+    bool register_component(TypeInfo::index_t id, size_t size, size_t chunk_size, const destructor& cb)
     {
         return s_world->register_component(id, size, chunk_size, cb);
     }
 
-    void* add_component(TypeInfo::index_type id, Entity object)
+    void* add_component(TypeInfo::index_t id, Entity object)
     {
         return s_world->add_component(id, object);
     }
 
-    void* get_component(TypeInfo::index_type id, Entity object)
+    void* get_component(TypeInfo::index_t id, Entity object)
     {
         return s_world->get_component(id, object);
     }
 
-    void remove_component(TypeInfo::index_type id, Entity object)
+    void remove_component(TypeInfo::index_t id, Entity object)
     {
         s_world->remove_component(id, object);
     }
 
-    bool has_component(TypeInfo::index_type id, Entity object)
+    bool has_component(TypeInfo::index_t id, Entity object)
     {
         return s_world->has_component(id, object);
     }
 
-    Entity::index_type find_next_available(Entity::index_type id, ComponentMask mask, bool self)
+    Entity::index_t find_next_available(Entity::index_t id, ComponentMask mask, bool self)
     {
         return s_world->find_next_available(id, mask, self).get_index();
     }
 
-    Entity get(Entity::index_type id)
+    Entity get(Entity::index_t id)
     {
         return s_world->get(id);
     }
     
     namespace test_mem
     {
-        size_t size(TypeInfo::index_type id)
+        size_t size(TypeInfo::index_t id)
         {
             return s_world->size(id);
         }
         
-        size_t capacity(TypeInfo::index_type id)
+        size_t capacity(TypeInfo::index_t id)
         {
             return s_world->capacity(id);
         }
@@ -240,22 +240,22 @@ void reset_world()
     s_world->dispose();
 }
 
-void* add_component(TypeInfo::index_type id, Entity object)
+void* add_component(TypeInfo::index_t id, Entity object)
 {
     return s_world->add_component(id, object);
 }
 
-void* get_component(TypeInfo::index_type id, Entity object)
+void* get_component(TypeInfo::index_t id, Entity object)
 {
     return s_world->get_component(id, object);
 }
 
-void remove_component(TypeInfo::index_type id, Entity object)
+void remove_component(TypeInfo::index_t id, Entity object)
 {
     s_world->remove_component(id, object);
 }
 
-bool has_component(TypeInfo::index_type id, Entity object)
+bool has_component(TypeInfo::index_t id, Entity object)
 {
     return s_world->has_component(id, object);
 }
@@ -265,12 +265,12 @@ ComponentMask get_components_mask(Entity object)
     return s_world->get_components_mask(object);
 }
 
-Entity::index_type find_next_available(Entity::index_type index, ComponentMask mask, bool self)
+Entity::index_t find_next_available(Entity::index_t index, ComponentMask mask, bool self)
 {
     return s_world->find_next_available(index, mask, self).get_index();
 }
 
-Entity get(Entity::index_type index)
+Entity get(Entity::index_t index)
 {
     return s_world->get(index);
 }

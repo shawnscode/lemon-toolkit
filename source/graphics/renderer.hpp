@@ -79,7 +79,7 @@ protected:
 protected:
     bool _frame_began;
 
-    // std::unordered_map<TypeInfo::index_type, std::vector<GraphicsObject*>>
+    // std::unordered_map<TypeInfo::index_t, std::vector<GraphicsObject*>>
 
     std::unique_ptr<RendererBackend> _backend;
     // std::unique_ptr<VertexArrayObjectCache> _vaocache;
