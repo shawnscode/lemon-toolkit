@@ -76,6 +76,9 @@ const static unsigned kMaxUniforms = 32;
 
 const static unsigned kMaxTextureSamples = 4;
 
+struct Renderer;
+struct WindowDevice;
+
 NS_LEMON_GRAPHICS_END
 
 // FILESYSTEM COLLECTIONS

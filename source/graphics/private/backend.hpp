@@ -4,7 +4,7 @@
 #pragma once
 
 #include <forwards.hpp>
-#include <graphics/render_state.hpp>
+#include <graphics/renderer.hpp>
 #include <codebase/type/enumeration.hpp>
 #include <math/rect.hpp>
 #include <math/color.hpp>
@@ -29,14 +29,6 @@ enum class RasterizationMode : uint8_t
     POINT,
     LINE,
     FILL
-};
-
-enum class ClearOption : uint8_t
-{
-    NONE    = 0x0,
-    COLOR   = 0x1,
-    DEPTH   = 0x2,
-    STENCIL = 0x4
 };
 
 // graphics device subsystem. manages the window device, renedering state and gpu resources

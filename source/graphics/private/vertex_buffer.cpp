@@ -6,12 +6,10 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-VertexBuffer::VertexBuffer()
+bool VertexBufferGL::initialize(const void* data, unsigned size, const VertexLayout& layout, MemoryUsage usage)
 {
-}
+    ENSURE_NOT_RENDER_PHASE;
 
-bool VertexBuffer::initialize(const void* data, unsigned size, const VertexAttributeLayout& layout, BufferUsage usage)
-{
     glGenBuffers(1, &_buffer);
     if( !_buffer )
     {
@@ -21,21 +19,25 @@ bool VertexBuffer::initialize(const void* data, unsigned size, const VertexAttri
 
     _size = size;
     _attributes = layout;
-    _usage = usage == BufferUsage::DYNAMIC_DRAW ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+    _usage = usage == MemoryUsage::DYNAMIC ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
     _buffer = 0;
     return update_data(data);
 }
 
-void VertexBuffer::dispose()
+void VertexBufferGL::dispose()
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     if( _buffer != 0 )
         glDeleteBuffers(1, &_buffer);
 
     _buffer = 0;
 }
 
-bool VertexBuffer::update_data(const void* data)
+bool VertexBufferGL::update_data(const void* data)
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     if( !data )
     {
         LOGW("failed to update vertex buffer with nullptr.");
@@ -52,8 +54,10 @@ bool VertexBuffer::update_data(const void* data)
     return true;
 }
 
-bool VertexBuffer::update_data_range(const void* data, unsigned start, unsigned size, bool discard)
+bool VertexBufferGL::update_data(const void* data, unsigned start, unsigned size, bool discard)
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     if( start == 0 && size == _size )
         return update_data(data);
 

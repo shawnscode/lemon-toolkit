@@ -3,20 +3,20 @@
 
 #pragma once
 
-#include <graphics/renderer.hpp>
+#include <graphics/graphics.hpp>
 #include <graphics/private/opengl.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
-struct IndexBuffer
+struct IndexBufferGL : public IndexBuffer
 {
-    IndexBuffer();
+    IndexBufferGL(Renderer& renderer) : IndexBuffer(renderer) {}
 
-    bool initialize(const void*, unsigned, IndexElementFormat, BufferUsage);
+    bool initialize(const void*, unsigned, IndexElementFormat, MemoryUsage);
     void dispose();
 
     bool update_data(const void*);
-    bool update_data_range(const void*, unsigned, unsigned, bool discard = false);
+    bool update_data(const void*, unsigned, unsigned, bool discard = false);
 
     GLuint get_handle() const { return _buffer; }
     IndexElementFormat get_element_format() const { return _format; }

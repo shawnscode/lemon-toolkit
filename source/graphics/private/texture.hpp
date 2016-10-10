@@ -3,56 +3,11 @@
 
 #pragma once
 
-#include <graphics/private/backend.hpp>
+#include <graphics/graphics.hpp>
+#include <graphics/private/opengl.hpp>
 #include <resource/image.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
-
-// enum class TextureUsage : uint8_t
-// {
-//     STATIC = 0,
-//     DYNAMIC
-// };
-
-// enum class TextureFilterMode : uint8_t
-// {
-//     NEAREST = 0,
-//     LINEAR,
-//     TRILINEAR,
-//     ANISOTROPIC
-// };
-
-// enum class TextureAddressMode : uint8_t
-// {
-//     WRAP = 0,
-//     MIRROR,
-//     CLAMP,
-//     BORDER
-// };
-
-// enum class TextureCoordinate : uint8_t
-// {
-//     U = 0,
-//     V,
-//     W
-// };
-
-// enum class TextureFormat : uint8_t
-// {
-//     ALPHA = 0,
-//     RGB,
-//     RGBA,
-//     LUMINANCE,
-//     LUMINANCE_ALPHA
-// };
-
-// enum class PixelFormat : uint8_t
-// {
-//     UBYTE = 0,
-//     USHORT565,
-//     USHORT4444,
-//     USHORT5551
-// };
 
 // struct Texture : public GraphicsObject
 // {

@@ -9,12 +9,10 @@ unsigned GL_INDEX_ELEMENT_SIZES[] =
     2
 };
 
-IndexBuffer::IndexBuffer()
+bool IndexBufferGL::initialize(const void* data, unsigned size, IndexElementFormat format, MemoryUsage usage)
 {
-}
+    ENSURE_NOT_RENDER_PHASE;
 
-bool IndexBuffer::initialize(const void* data, unsigned size, IndexElementFormat format, BufferUsage usage)
-{
     glGenBuffers(1, &_buffer);
     if( !_buffer )
     {
@@ -24,21 +22,25 @@ bool IndexBuffer::initialize(const void* data, unsigned size, IndexElementFormat
 
     _size = size;
     _format = format;
-    _usage = usage == BufferUsage::DYNAMIC_DRAW ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+    _usage = usage == MemoryUsage::DYNAMIC ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
     _buffer = 0;
     return update_data(data);
 }
 
-void IndexBuffer::dispose()
+void IndexBufferGL::dispose()
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     if( _buffer != 0 )
         glDeleteBuffers(1, &_buffer);
 
     _buffer = 0;
 }
 
-bool IndexBuffer::update_data(const void* data)
+bool IndexBufferGL::update_data(const void* data)
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     if( !data )
     {
         LOGW("failed to update vertex buffer with nullptr.");
@@ -55,8 +57,10 @@ bool IndexBuffer::update_data(const void* data)
     return true;
 }
 
-bool IndexBuffer::update_data_range(const void* data, unsigned start, unsigned size, bool discard)
+bool IndexBufferGL::update_data(const void* data, unsigned start, unsigned size, bool discard)
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     if( start == 0 && size == _size )
         return update_data(data);
 

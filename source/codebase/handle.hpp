@@ -34,6 +34,11 @@ protected:
     index_t _version = invalid;
 };
 
+// struct ReuseableHandleSet
+// {
+//     using index_t 
+// };
+
 template<size_t M> struct HandleSet
 {
     using index_t = Handle::index_t;

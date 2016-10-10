@@ -3,30 +3,32 @@
 
 #pragma once
 
-#include <graphics/renderer.hpp>
+#include <graphics/graphics.hpp>
 #include <graphics/private/opengl.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
-struct VertexBuffer
+struct VertexBufferGL : public VertexBuffer
 {
-    VertexBuffer();
+    VertexBufferGL(Renderer& renderer) : VertexBuffer(renderer) {}
 
-    bool initialize(const void*, unsigned, const VertexAttributeLayout&, BufferUsage);
-    void dispose();
+    bool initialize(const void*, unsigned, const VertexLayout&, MemoryUsage) override;
+    void dispose() override;
 
-    bool update_data(const void*);
-    bool update_data_range(const void*, unsigned, unsigned, bool discard = false);
+    //
+    bool update_data(const void*) override;
+    bool update_data(const void*, unsigned, unsigned, bool discard = false) override;
 
+    //
     GLuint get_handle() const { return _buffer; }
-    const VertexAttributeLayout& get_attributes() const { return _attributes; }
+    const VertexLayout& get_attributes() const { return _attributes; }
     unsigned get_size() const { return _size; }
 
 protected:
     unsigned _size;
     GLuint _buffer;
     GLenum _usage;
-    VertexAttributeLayout _attributes;
+    VertexLayout _attributes;
 };
 
 NS_LEMON_GRAPHICS_END

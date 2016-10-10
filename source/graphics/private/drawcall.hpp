@@ -6,7 +6,7 @@
 #include <forwards.hpp>
 
 #include <graphics/renderer.hpp>
-#include <graphics/render_state.hpp>
+#include <graphics/state.hpp>
 
 #include <algorithm>
 

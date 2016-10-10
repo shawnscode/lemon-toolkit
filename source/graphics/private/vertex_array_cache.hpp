@@ -11,13 +11,13 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-struct Program;
-struct VertexBuffer;
+struct ProgramGL;
+struct VertexBufferGL;
 struct VertexArrayObjectCache
 {
     VertexArrayObjectCache();
 
-    void bind(Handle, Program&, Handle, VertexBuffer&);
+    void bind(Handle, ProgramGL&, Handle, VertexBufferGL&);
     void unbind();
 
     void free_vertex_buffer(Handle);

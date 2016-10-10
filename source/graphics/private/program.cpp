@@ -29,10 +29,9 @@ GLuint compile(GLenum type, const char* source)
     return shader;
 }
 
-Program::Program() {}
-
-bool Program::initialize(const char* vsraw, const char* psraw)
+bool ProgramGL::initialize(const char* vsraw, const char* psraw)
 {
+    ENSURE_NOT_RENDER_PHASE;
 
     if( vsraw == nullptr || psraw == nullptr )
     {
@@ -83,8 +82,10 @@ bool Program::initialize(const char* vsraw, const char* psraw)
     return true;
 }
 
-void Program::dispose()
+void ProgramGL::dispose()
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     if( _object != 0 )
         glDeleteProgram(_object);
 
@@ -93,7 +94,7 @@ void Program::dispose()
     _uniforms.clear();
 }
 
-void Program::bind()
+void ProgramGL::bind()
 {
     if( _object == 0 )
     {
@@ -106,12 +107,12 @@ void Program::bind()
     for( auto& pair : _textures )
     {
         glActiveTexture(GL_TEXTURE0+unit);
-        glBindTexture(GL_TEXTURE_2D, pair.second.second);
+        // glBindTexture(GL_TEXTURE_2D, pair.second.second);
         glUniform1f(pair.second.first, unit++);
     }
 }
 
-GLint Program::get_uniform_location(const char* name)
+GLint ProgramGL::get_uniform_location(const char* name)
 {
     if( _object == 0 )
     {
@@ -132,28 +133,33 @@ GLint Program::get_uniform_location(const char* name)
     return localtion;
 }
 
-bool Program::set_uniform_texture(const char* name, GLuint texture)
+bool ProgramGL::set_uniform_texture(const char* name, std::shared_ptr<Texture2D> texture)
 {
-    auto hash = math::StringHash(name);
+    ENSURE_NOT_RENDER_PHASE;
+    return false;
 
-    auto found = _textures.find(hash);
-    if( found != _textures.end() )
-    {
-        found->second.second = texture;
-        return true;
-    }
+    // auto hash = math::StringHash(name);
 
-    auto localtion = get_uniform_location(name);
-    if( localtion == -1 )
-        return false;
+    // auto found = _textures.find(hash);
+    // if( found != _textures.end() )
+    // {
+    //     found->second.second = texture;
+    //     return true;
+    // }
 
-    _textures.insert(std::make_pair(hash, std::make_pair(localtion, texture)));
-    CHECK_GL_ERROR();
-    return true;
+    // auto localtion = get_uniform_location(name);
+    // if( localtion == -1 )
+    //     return false;
+
+    // _textures.insert(std::make_pair(hash, std::make_pair(localtion, texture)));
+    // CHECK_GL_ERROR();
+    // return true;
 }
 
-bool Program::set_uniform_1f(const char* name, const math::Vector<1, float>& value)
+bool ProgramGL::set_uniform_1f(const char* name, const math::Vector<1, float>& value)
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     auto localtion = get_uniform_location(name);
     if( localtion == -1 )
         return false;
@@ -164,8 +170,10 @@ bool Program::set_uniform_1f(const char* name, const math::Vector<1, float>& val
     return true;
 }
 
-bool Program::set_uniform_2f(const char* name, const math::Vector<2, float>& value)
+bool ProgramGL::set_uniform_2f(const char* name, const math::Vector<2, float>& value)
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     auto localtion = get_uniform_location(name);
     if( localtion == -1 )
         return false;
@@ -176,8 +184,10 @@ bool Program::set_uniform_2f(const char* name, const math::Vector<2, float>& val
     return true;
 }
 
-bool Program::set_uniform_3f(const char* name, const math::Vector<3, float>& value)
+bool ProgramGL::set_uniform_3f(const char* name, const math::Vector<3, float>& value)
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     auto localtion = get_uniform_location(name);
     if( localtion == -1 )
         return false;
@@ -188,8 +198,10 @@ bool Program::set_uniform_3f(const char* name, const math::Vector<3, float>& val
     return true;
 }
 
-bool Program::set_uniform_4f(const char* name, const math::Vector<4, float>& value)
+bool ProgramGL::set_uniform_4f(const char* name, const math::Vector<4, float>& value)
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     auto localtion = get_uniform_location(name);
     if( localtion == -1 )
         return false;
@@ -201,8 +213,10 @@ bool Program::set_uniform_4f(const char* name, const math::Vector<4, float>& val
 }
 
 // OpenGL use column-major layout, so we always transpose our matrix
-bool Program::set_uniform_2fm(const char* name, const math::Matrix<2, 2, float>& value)
+bool ProgramGL::set_uniform_2fm(const char* name, const math::Matrix<2, 2, float>& value)
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     auto localtion = get_uniform_location(name);
     if( localtion == -1 )
         return false;
@@ -213,8 +227,10 @@ bool Program::set_uniform_2fm(const char* name, const math::Matrix<2, 2, float>&
     return true;
 }
 
-bool Program::set_uniform_3fm(const char* name, const math::Matrix<3, 3, float>& value)
+bool ProgramGL::set_uniform_3fm(const char* name, const math::Matrix<3, 3, float>& value)
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     auto localtion = get_uniform_location(name);
     if( localtion == -1 )
         return false;
@@ -225,8 +241,10 @@ bool Program::set_uniform_3fm(const char* name, const math::Matrix<3, 3, float>&
     return true;
 }
 
-bool Program::set_uniform_4fm(const char* name, const math::Matrix<4, 4, float>& value)
+bool ProgramGL::set_uniform_4fm(const char* name, const math::Matrix<4, 4, float>& value)
 {
+    ENSURE_NOT_RENDER_PHASE;
+
     auto localtion = get_uniform_location(name);
     if( localtion == -1 )
         return false;

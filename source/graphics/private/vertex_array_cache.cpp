@@ -4,6 +4,7 @@
 #include <graphics/private/vertex_array_cache.hpp>
 #include <graphics/private/program.hpp>
 #include <graphics/private/vertex_buffer.hpp>
+#include <codebase/type/enumeration.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
@@ -26,7 +27,7 @@ VertexArrayObjectCache::VertexArrayObjectCache()
 #endif
 }
 
-void VertexArrayObjectCache::bind(Handle hp, Program& program, Handle hv, VertexBuffer& vertex_buffer)
+void VertexArrayObjectCache::bind(Handle hp, ProgramGL& program, Handle hv, VertexBufferGL& vertex_buffer)
 {
     GLuint glprogram = program.get_handle();
     GLuint glvb = vertex_buffer.get_handle();
@@ -62,15 +63,15 @@ void VertexArrayObjectCache::bind(Handle hp, Program& program, Handle hv, Vertex
 
     glBindBuffer(GL_ARRAY_BUFFER, glvb);
     auto& attributes = vertex_buffer.get_attributes();
-    for( uint8_t i = 0; i < kVertexAttributeCount; i++ )
+    for( uint8_t i = 0; i < VertexAttribute::kVertexAttributeCount; i++ )
     {
-        auto va = (VertexAttribute)i;
+        VertexAttribute::Enum va = (VertexAttribute::Enum)i;
         if( attributes.has(va) )
         {
-            auto localtion = glGetAttribLocation(glprogram, get_attribute_name(va));
+            auto localtion = glGetAttribLocation(glprogram, VertexAttribute::name(va));
             if( localtion == -1 )
             {
-                LOGW("failed to localte attribute %s.", get_attribute_name(va));
+                LOGW("failed to localte attribute %s.", VertexAttribute::name(va));
                 continue;
             }
 
@@ -79,9 +80,9 @@ void VertexArrayObjectCache::bind(Handle hp, Program& program, Handle hv, Vertex
             glEnableVertexAttribArray(localtion);
             glVertexAttribPointer(
                 /*index*/ localtion,
-                /*size*/ attr.num,
-                /*type*/ GL_ELEMENT_FORMAT[value(attr.component)],
-                /*normalized*/ attr.normalize,
+                /*size*/ attr.size,
+                /*type*/ GL_ELEMENT_FORMAT[value(attr.format)],
+                /*normalized*/ attr.normalized,
                 /*stride*/ attributes.get_stride(),
                 /*pointer*/ (uint8_t*)0+attributes.get_offset(va));
         }

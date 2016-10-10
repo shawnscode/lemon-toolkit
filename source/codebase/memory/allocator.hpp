@@ -63,27 +63,6 @@ protected:
     std::unique_ptr<uint8_t[]> _buffer;
 };
 
-template<typename T, size_t M> struct FixedBlockAllocatorT : public FixedBlockAllocator
-{
-    FixedBlockAllocatorT() : FixedBlockAllocator(sizeof(T), M) {}
-
-    template<typename ... Args> T* construct(Args&& ... args)
-    {
-        void* memory = malloc();
-        if( memory == nullptr )
-            return nullptr;
-
-        ::new (memory) T(std::forward<Args>(args)...);
-        return static_cast<T*>(memory);
-    }
-
-    void destruct(T* element)
-    {
-        element->~T();
-        free(element);
-    }
-};
-
 // INCLUDED METHODS OF POOL
 INLINE size_t FixedSizeAllocator::size() const
 {
