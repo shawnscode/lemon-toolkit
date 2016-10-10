@@ -7,7 +7,6 @@
 #include <graphics/graphics.hpp>
 #include <graphics/state.hpp>
 
-#include <codebase/handle.hpp>
 #include <core/subsystem.hpp>
 #include <math/color.hpp>
 #include <math/vector.hpp>
@@ -36,6 +35,7 @@ enum class RenderLayer : uint16_t
 // order doesn't necessarily match the rendering order, but on the low-level
 // they will be sorted and ordered correctly.
 struct RendererBackend;
+struct VertexArrayObjectCache;
 struct Renderer : public core::Subsystem
 {
     SUBSYSTEM("lemon::graphics::Renderer")
@@ -58,7 +58,7 @@ struct Renderer : public core::Subsystem
     // clear any or all of rendertarget, depth buffer and stencil buffer
     void clear(ClearOption, const math::Color& color = {0.f, 0.f, 0.f, 0.f}, float depth = 1.f, unsigned stencil = 0);
     // submit primitive for rendering
-    void submit(RenderLayer, RenderState, Handle program, Handle vb, Handle ib, uint32_t depth, uint32_t start, uint32_t num);
+    void submit(RenderLayer, RenderState, Program::ptr, VertexBuffer::ptr, IndexBuffer::ptr, uint32_t depth, uint32_t start, uint32_t num);
     // flush all cached draw calls
     void flush();
     // finish current frame and flush all cached draw calls
@@ -78,11 +78,8 @@ protected:
 
 protected:
     bool _frame_began;
-
-    // std::unordered_map<TypeInfo::index_t, std::vector<GraphicsObject*>>
-
     std::unique_ptr<RendererBackend> _backend;
-    // std::unique_ptr<VertexArrayObjectCache> _vaocache;
+    std::unique_ptr<VertexArrayObjectCache> _vaocache;
 };
 
 NS_LEMON_GRAPHICS_END

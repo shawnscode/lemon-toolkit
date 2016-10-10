@@ -5,6 +5,7 @@
 
 #include <forwards.hpp>
 #include <limits>
+#include <vector>
 
 NS_LEMON_BEGIN
 
@@ -34,30 +35,29 @@ protected:
     index_t _version = invalid;
 };
 
-// struct ReuseableHandleSet
-// {
-//     using index_t 
-// };
-
-template<size_t M> struct HandleSet
+struct ReuseableHandleSet
 {
     using index_t = Handle::index_t;
 
-    HandleSet()
+    Handle create()
     {
-        reset();
-    }
-
-    Handle allocate()
-    {
-        if( _num_handles < M )
+        if( _freeslots.size() != 0 )
         {
-            index_t index = _num_handles ++;
-            _sparse[_dense[index]] = index;
-            return Handle(_dense[index], _versions[index]);
+            index_t index = _freeslots.back();
+            _freeslots.pop_back();
+            return Handle(index, _versions[index]);
         }
 
-        return Handle();
+        _versions.push_back(0);
+        return Handle(_versions.size()-1, 0);
+    }
+
+    bool is_valid(Handle handle)
+    {
+        const index_t index = handle.get_index();
+        const index_t version = handle.get_version();
+
+        return index < _versions.size() && _versions[index] == version;
     }
 
     void free(Handle handle)
@@ -65,39 +65,13 @@ template<size_t M> struct HandleSet
         if( !is_valid(handle) )
             return;
 
-        index_t index = _sparse[handle.get_index()];
-        index_t temp = _dense[--_num_handles];
-
-        _dense[_num_handles] = handle.get_index();
-        _sparse[temp] = index;
-        _dense[index] = temp;
-        _versions[index] ++;
-    }
-
-    bool is_valid(Handle handle)
-    {
-        index_t index = _sparse[handle.get_index()];
-
-        return index < _num_handles
-            && _dense[index] == handle.get_index()
-            && _versions[index] == handle.get_version();
-    }
-
-    void reset()
-    {
-        _num_handles = 0;
-        for( index_t i = 0; i < M; i++ )
-        {
-            _dense[i] = i;
-            _versions[i] = 0;
-        }
+        _versions[handle.get_index()]++;
+        _freeslots.push_back(handle.get_index());
     }
 
 protected:
-    index_t _num_handles = 0;
-    index_t _dense[M];
-    index_t _sparse[M];
-    index_t _versions[M];
+    std::vector<index_t> _versions;
+    std::vector<index_t> _freeslots;
 };
 
 NS_LEMON_END

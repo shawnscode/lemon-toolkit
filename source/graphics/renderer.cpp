@@ -3,6 +3,7 @@
 
 #include <graphics/renderer.hpp>
 #include <graphics/private/backend.hpp>
+#include <graphics/private/vertex_array_cache.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
@@ -43,7 +44,7 @@ void Renderer::clear(ClearOption option, const math::Color& color, float depth, 
 
 void Renderer::submit(
     RenderLayer layer, RenderState state,
-    Handle program, Handle vb, Handle ib,
+    Program::ptr program, VertexBuffer::ptr vb, IndexBuffer::ptr ib,
     uint32_t depth, uint32_t start, uint32_t num)
 {
     ASSERT(_frame_began, "\'submit\' could only be called during rendering frame.");

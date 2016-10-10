@@ -5,68 +5,44 @@
 
 #include <graphics/graphics.hpp>
 #include <graphics/private/opengl.hpp>
-#include <resource/image.hpp>
+// #include <resource/image.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
-// struct Texture : public GraphicsObject
-// {
-//     using ptr = std::shared_ptr<Texture>;
-//     using weak_ptr = std::weak_ptr<Texture>;
+struct TextureGL : public Texture
+{
+    TextureGL(Renderer& renderer);
 
-//     Texture(RendererBackend& device, unsigned target);
-//     ~Texture() { release(); }
+    // set data from an image and restore graphics state, return true if success
+    bool initialize(const void*, TextureFormat, TexturePixelFormat, unsigned, unsigned, MemoryUsage) override;
+    // release graphics resource and state
+    void dispose() override;
+    // set number of requested mip levels
+    void set_mipmap(bool) override;
+    // set filtering mode
+    void set_filter_mode(TextureFilterMode) override;
+    // set adddress mode
+    void set_address_mode(TextureCoordinate, TextureAddressMode) override;
+    // update the changed parameters to device
+    void update_parameters(bool force = false) override;
 
-//     bool restore(const void*, TextureFormat, PixelFormat, unsigned, unsigned, unsigned);
+    //
+    GLuint get_handle() const { return _object; }
 
-//     // set data from an image and restore graphics state, return true if success
-//     bool restore() override;
-//     // release graphics resource and state
-//     void release() override;
+protected:
+    GLuint _object;
 
-//     // keep the shared-reference of image
-//     void set_shadowed(bool);
-//     // set number of requested mip levels
-//     void set_mipmap(bool);
-//     // set filtering mode
-//     void set_filter_mode(TextureFilterMode);
-//     // set adddress mode
-//     void set_address_mode(TextureCoordinate, TextureAddressMode);
-//     // update the changed parameters to device
-//     void update_parameters(bool force = false);
+    // settings of texture
+    bool _override_parameters;
+    bool _mipmap;
+    MemoryUsage _usage;
+    TextureFilterMode _filter;
+    TextureAddressMode _address[3];
 
-//     unsigned get_target() const { return _target; }
-
-// protected:
-//     virtual bool set_texture_data(const void*) = 0;
-
-//     const unsigned  _target;
-//     bool            _shadowed;
-//     bool            _mipmap;
-
-//     // settings of texture
-//     bool                _parameter_dirty;
-//     TextureUsage        _usage;
-//     TextureFilterMode   _filter;
-//     TextureAddressMode  _address[3];
-
-//     //
-//     std::unique_ptr<uint8_t[]> _shadowed_pixels;
-//     unsigned _width, _height, _depth;
-//     TextureFormat _format;
-//     PixelFormat _pixel_format;
-// };
-
-// struct Texture2D : public Texture
-// {
-//     using ptr = std::shared_ptr<Texture2D>;
-//     using weak_ptr = std::weak_ptr<Texture2D>;
-
-//     Texture2D(RendererBackend& device);
-//     bool restore(res::Image::ptr, TextureFormat);
-
-// protected:
-//     bool set_texture_data(const void*) override;
-// };
+    unsigned _width;
+    unsigned _height;
+    TextureFormat _format;
+    TexturePixelFormat _pixel_format;
+};
 
 NS_LEMON_GRAPHICS_END

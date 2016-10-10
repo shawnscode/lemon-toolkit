@@ -6,6 +6,7 @@
 #include <forwards.hpp>
 #include <math/vector.hpp>
 #include <math/matrix.hpp>
+#include <codebase/type/enumeration.hpp>
 
 #include <limits>
 #include <memory>
@@ -14,6 +15,10 @@ NS_LEMON_GRAPHICS_BEGIN
 
 #define ENSURE_NOT_RENDER_PHASE \
     ASSERT(!_renderer.is_frame_began(), "can not manipulate resource during frame render phase.");
+
+#define DEFINE_SHARED_PTR(T) \
+    using ptr = std::shared_ptr<T>; \
+    using weak_ptr = std::weak_ptr<T>;
 
 // GraphicsObject is the base class of all the graphic card resources
 struct GraphicsObject
@@ -25,7 +30,6 @@ struct GraphicsObject
 protected:
     Renderer& _renderer;
 };
-
 
 // the expected usage pattern of the data store
 enum class MemoryUsage : uint8_t
@@ -116,6 +120,7 @@ protected:
 
 struct VertexBuffer : public GraphicsObject
 {
+    DEFINE_SHARED_PTR(VertexBuffer);
     VertexBuffer(Renderer& renderer) : GraphicsObject(renderer) {}
 
     virtual bool initialize(const void*, unsigned, const VertexLayout&, MemoryUsage) = 0;
@@ -134,6 +139,7 @@ enum class IndexElementFormat : uint8_t
 
 struct IndexBuffer : GraphicsObject
 {
+    DEFINE_SHARED_PTR(IndexBuffer);
     IndexBuffer(Renderer& renderer) : GraphicsObject(renderer) {}
 
     virtual bool initialize(const void*, unsigned, IndexElementFormat, MemoryUsage) = 0;
@@ -184,11 +190,12 @@ enum class TexturePixelFormat : uint8_t
     USHORT5551
 };
 
-struct Texture2D : public GraphicsObject
+struct Texture : public GraphicsObject
 {
-    Texture2D(Renderer& renderer) : GraphicsObject(renderer) {}
+    DEFINE_SHARED_PTR(Texture);
+    Texture(Renderer& renderer) : GraphicsObject(renderer) {}
 
-    virtual bool initialize(const void*, unsigned, unsigned, TextureFormat, TexturePixelFormat) = 0;
+    virtual bool initialize(const void*, TextureFormat, TexturePixelFormat, unsigned, unsigned, MemoryUsage) = 0;
     virtual void dispose() = 0;
 
     // set number of requested mip levels
@@ -204,6 +211,7 @@ struct Texture2D : public GraphicsObject
 //
 struct Program : public GraphicsObject
 {
+    DEFINE_SHARED_PTR(Program);
     Program(Renderer& renderer) : GraphicsObject(renderer) {}
 
     virtual bool initialize(const char* vs, const char* ps) = 0;
@@ -219,7 +227,7 @@ struct Program : public GraphicsObject
     virtual bool set_uniform_3fm(const char*, const math::Matrix<3, 3, float>&) = 0;
     virtual bool set_uniform_4fm(const char*, const math::Matrix<4, 4, float>&) = 0;
     // set uniform texture
-    virtual bool set_uniform_texture(const char*, std::shared_ptr<Texture2D>) = 0;
+    virtual bool set_uniform_texture(const char*, Texture::ptr) = 0;
 };
 
 // INCLUDED IMPLEMENTATIONS

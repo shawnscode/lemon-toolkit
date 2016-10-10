@@ -133,27 +133,26 @@ GLint ProgramGL::get_uniform_location(const char* name)
     return localtion;
 }
 
-bool ProgramGL::set_uniform_texture(const char* name, std::shared_ptr<Texture2D> texture)
+bool ProgramGL::set_uniform_texture(const char* name, std::shared_ptr<Texture> texture)
 {
     ENSURE_NOT_RENDER_PHASE;
-    return false;
 
-    // auto hash = math::StringHash(name);
+    auto hash = math::StringHash(name);
 
-    // auto found = _textures.find(hash);
-    // if( found != _textures.end() )
-    // {
-    //     found->second.second = texture;
-    //     return true;
-    // }
+    auto found = _textures.find(hash);
+    if( found != _textures.end() )
+    {
+        found->second.second = texture;
+        return true;
+    }
 
-    // auto localtion = get_uniform_location(name);
-    // if( localtion == -1 )
-    //     return false;
+    auto localtion = get_uniform_location(name);
+    if( localtion == -1 )
+        return false;
 
-    // _textures.insert(std::make_pair(hash, std::make_pair(localtion, texture)));
-    // CHECK_GL_ERROR();
-    // return true;
+    _textures.insert(std::make_pair(hash, std::make_pair(localtion, texture)));
+    CHECK_GL_ERROR();
+    return true;
 }
 
 bool ProgramGL::set_uniform_1f(const char* name, const math::Vector<1, float>& value)
