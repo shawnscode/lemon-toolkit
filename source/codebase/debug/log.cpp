@@ -65,6 +65,7 @@ void ABORT(const char* file, int line, const char* format, ...)
     s_log.write(LogLevel::ERROR, "\n\tIn: %s:%d\n\nStacktrace:", file, line);
     stacktrace(*s_log.out, 2);
     va_end(args);
+    exit(0);
 }
 
 void LOGI(const char* format, ...)

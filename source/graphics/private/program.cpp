@@ -106,10 +106,13 @@ void ProgramGL::bind()
     unsigned unit = 0;
     for( auto& pair : _textures )
     {
+        auto texture = std::static_pointer_cast<TextureGL>(pair.second.second);
         glActiveTexture(GL_TEXTURE0+unit);
-        // glBindTexture(GL_TEXTURE_2D, pair.second.second);
-        glUniform1f(pair.second.first, unit++);
+        glBindTexture(GL_TEXTURE_2D, texture->get_handle());
+        glUniform1i(pair.second.first, unit++);
     }
+
+    CHECK_GL_ERROR();
 }
 
 GLint ProgramGL::get_uniform_location(const char* name)

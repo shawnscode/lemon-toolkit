@@ -74,7 +74,9 @@ struct VertexAttribute
 
     constexpr const static size_t kVertexAttributeCount = 12;
 
-    VertexAttribute(VertexAttribute::Enum, VertexElementFormat, unsigned, bool);
+    VertexAttribute() {}
+    VertexAttribute(VertexAttribute::Enum, VertexElementFormat, unsigned size = 4, bool normalized = false);
+
     // specifies the default attribute identifier
     VertexAttribute::Enum attribute = VertexAttribute::POSITION;
     // specifies the data type of each component in the array
@@ -94,6 +96,8 @@ struct VertexLayout
 {
     template<typename ... T> static VertexLayout make(T&& ...);
 
+    VertexLayout();
+
     // returns true if this layout contains specified attribute
     bool has(VertexAttribute::Enum va) const { return _attributes[va] != invalid; }
     // returns relative attribute offset from the vertex
@@ -104,9 +108,9 @@ struct VertexLayout
     VertexAttribute get_attribute(VertexAttribute::Enum va) const;
 
 protected:
-    template<typename T> static VertexLayout& make(VertexLayout&, T&&);
+    template<typename T> static VertexLayout& recursive_make(VertexLayout&, T&&);
     template<typename T1, typename T2, typename ... Args>
-    static VertexLayout& make(VertexLayout&, T1&&, T2&&, Args&& ...);
+    static VertexLayout& recursive_make(VertexLayout&, T1&&, T2&&, Args&& ...);
 
     constexpr const static uint8_t invalid = std::numeric_limits<uint8_t>::max();
 
@@ -217,6 +221,8 @@ struct Program : public GraphicsObject
     virtual bool initialize(const char* vs, const char* ps) = 0;
     virtual void dispose() = 0;
 
+    // specified input identifier of vertex attribute
+    // virtual bool set_vertex_attribute(VertexAttribute, const char*) const;
     // set uniform vector value
     virtual bool set_uniform_1f(const char*, const math::Vector<1, float>&) = 0;
     virtual bool set_uniform_2f(const char*, const math::Vector<2, float>&) = 0;
@@ -231,22 +237,29 @@ struct Program : public GraphicsObject
 };
 
 // INCLUDED IMPLEMENTATIONS
+template<>
+INLINE VertexLayout VertexLayout::make()
+{
+    return VertexLayout();
+}
+
+template<typename ... T>
+INLINE VertexLayout VertexLayout::make(T&& ... args)
+{
+    VertexLayout layout;
+    return recursive_make(layout, std::forward<T>(args)...);
+}
+
 template<typename T>
-VertexLayout& VertexLayout::make(VertexLayout& layout, T&& arg)
+INLINE VertexLayout& VertexLayout::recursive_make(VertexLayout& layout, T&& arg)
 {
     return layout.append(arg);
 }
 
 template<typename T1, typename T2, typename ... Args>
-VertexLayout& VertexLayout::make(VertexLayout& layout, T1&& t1, T2&& t2, Args&& ... args)
+INLINE VertexLayout& VertexLayout::recursive_make(VertexLayout& layout, T1&& t1, T2&& t2, Args&& ... args)
 {
-    return make(layout.append(t1), t2, args...);
-}
-
-template<typename ... T> VertexLayout VertexLayout::make(T&& ... args)
-{
-    VertexLayout layout;
-    return make(layout, args...);
+    return recursive_make(layout.append(t1), t2, std::forward<Args>(args)...);
 }
 
 NS_LEMON_GRAPHICS_END

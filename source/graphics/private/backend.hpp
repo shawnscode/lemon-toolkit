@@ -13,17 +13,6 @@ struct SDL_Window;
 
 NS_LEMON_GRAPHICS_BEGIN
 
-enum class PrimitiveType : uint8_t
-{
-    POINTS = 0,
-    LINES,
-    LINE_LOOP,
-    LINE_STRIP,
-    TRIANGLES,
-    TRIANGLE_STRIP,
-    TRIANGLE_FAN,
-};
-
 enum class RasterizationMode : uint8_t
 {
     POINT,
@@ -110,5 +99,3 @@ protected:
 };
 
 NS_LEMON_GRAPHICS_END
-
-ENABLE_BITMASK_OPERATORS(lemon::graphics::ClearOption);

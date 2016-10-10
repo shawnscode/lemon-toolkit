@@ -13,8 +13,10 @@ bool IndexBufferGL::initialize(const void* data, unsigned size, IndexElementForm
 {
     ENSURE_NOT_RENDER_PHASE;
 
-    glGenBuffers(1, &_buffer);
-    if( !_buffer )
+    dispose();
+
+    glGenBuffers(1, &_object);
+    if( !_object )
     {
         LOGW("failed to create vertex buffer object.");
         return false;
@@ -23,7 +25,6 @@ bool IndexBufferGL::initialize(const void* data, unsigned size, IndexElementForm
     _size = size;
     _format = format;
     _usage = usage == MemoryUsage::DYNAMIC ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
-    _buffer = 0;
     return update_data(data);
 }
 
@@ -31,10 +32,10 @@ void IndexBufferGL::dispose()
 {
     ENSURE_NOT_RENDER_PHASE;
 
-    if( _buffer != 0 )
-        glDeleteBuffers(1, &_buffer);
+    if( _object != 0 )
+        glDeleteBuffers(1, &_object);
 
-    _buffer = 0;
+    _object = 0;
 }
 
 bool IndexBufferGL::update_data(const void* data)
@@ -47,9 +48,9 @@ bool IndexBufferGL::update_data(const void* data)
         return false;
     }
 
-    if( _buffer != 0 )
+    if( _object != 0 )
     {
-        glBindBuffer(GL_ARRAY_BUFFER, _buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, _object);
         glBufferData(GL_ARRAY_BUFFER, _size*GL_INDEX_ELEMENT_SIZES[value(_format)], data, _usage);
     }
 
@@ -79,9 +80,9 @@ bool IndexBufferGL::update_data(const void* data, unsigned start, unsigned size,
     if( !size )
         return true;
 
-    if( _buffer != 0 )
+    if( _object != 0 )
     {
-        glBindBuffer(GL_ARRAY_BUFFER, _buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, _object);
 
         uint16_t stride = GL_INDEX_ELEMENT_SIZES[value(_format)];
         if( !discard || start != 0 )

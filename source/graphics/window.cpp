@@ -108,9 +108,14 @@ bool WindowDevice::open(int width, int height, int multisample, WindowOption opt
     // reset rendertargets and viewport for the new mode
     // reset_render_targets();
 
-    // clear the initial window content to black
-    frontend->clear(ClearOption::COLOR);
-    SDL_GL_SwapWindow(_window);
+    // try th clear the initial window content to black
+    if( frontend->begin_frame() )
+    {
+        frontend->clear(ClearOption::COLOR);
+        SDL_GL_SwapWindow(_window);
+        frontend->end_frame();
+    }
+
     return true;
 }
 

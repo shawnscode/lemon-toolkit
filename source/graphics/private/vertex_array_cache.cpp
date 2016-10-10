@@ -2,9 +2,9 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <graphics/private/vertex_array_cache.hpp>
+#include <graphics/private/backend.hpp>
 #include <graphics/private/program.hpp>
 #include <graphics/private/vertex_buffer.hpp>
-#include <codebase/type/enumeration.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
@@ -27,25 +27,23 @@ VertexArrayObjectCache::VertexArrayObjectCache()
 #endif
 }
 
-void VertexArrayObjectCache::bind(Handle hp, ProgramGL& program, Handle hv, VertexBufferGL& vertex_buffer)
+void VertexArrayObjectCache::bind(Program::ptr rp, VertexBuffer::ptr rvb)
 {
-    GLuint glprogram = program.get_handle();
-    GLuint glvb = vertex_buffer.get_handle();
+    auto program = std::static_pointer_cast<ProgramGL>(rp);
+    auto vb = std::static_pointer_cast<VertexBufferGL>(rvb);
+
+    GLuint glprogram = program->get_handle();
+    GLuint glvb = vb->get_handle();
 
     if( glprogram == 0 || glvb == 0 )
     {
-        LOGW("failed to bind vertex array object without decent program(%d) and vertex_buffer(%d).",
-            hp.get_index(), hv.get_index());
+        LOGW("failed to bind vertex array object without decent program and vertex_buffer.");
         return;
     }
 
     if( _vao_support )
     {
-        const uint64_t pindex   = ((uint64_t)hp.get_index()) << 48;
-        const uint64_t pversion = ((uint64_t)hp.get_version()) << 32;
-        const uint64_t vindex   = ((uint64_t)hv.get_index()) << 16;
-        const uint64_t vversion = ((uint64_t)hv.get_version()) << 0;
-        const uint64_t k = pindex | pversion | vindex | vversion;
+        const uint64_t k = (uint64_t)glprogram | (uint64_t)glvb;
 
         auto found = _vaos.find(k);
         if( found != _vaos.end() )
@@ -59,21 +57,18 @@ void VertexArrayObjectCache::bind(Handle hp, ProgramGL& program, Handle hv, Vert
         glBindVertexArray(vao);
 
         _vaos.insert(std::make_pair(k, vao));
-}
+    }
 
     glBindBuffer(GL_ARRAY_BUFFER, glvb);
-    auto& attributes = vertex_buffer.get_attributes();
+    auto& attributes = vb->get_attributes();
     for( uint8_t i = 0; i < VertexAttribute::kVertexAttributeCount; i++ )
     {
         VertexAttribute::Enum va = (VertexAttribute::Enum)i;
         if( attributes.has(va) )
         {
-            auto localtion = glGetAttribLocation(glprogram, VertexAttribute::name(va));
+            auto localtion = get_attribute_location(glprogram, VertexAttribute::name(va));
             if( localtion == -1 )
-            {
-                LOGW("failed to localte attribute %s.", VertexAttribute::name(va));
                 continue;
-            }
 
             auto attr = attributes.get_attribute(va);
 
@@ -97,28 +92,52 @@ void VertexArrayObjectCache::unbind()
         glBindVertexArray(0);
 }
 
-void VertexArrayObjectCache::free_vertex_buffer(Handle handle)
-{
-    const uint64_t k = (((uint64_t)handle.get_index()) << 16) | (((uint64_t)handle.get_version()) << 0);
-    for( auto it = _vaos.cbegin(); it != _vaos.cend(); )
-    {
-        if( (it->first & 0xFFFFFFFF00000000) == k )
-            _vaos.erase(it++)       ;
-        else
-            ++it;
-    }
-}
+// void VertexArrayObjectCache::free(Program::ptr rp)
+// {
+//     auto program = std::static_pointer_cast<ProgramGL>(rp);
 
-void VertexArrayObjectCache::free_program(Handle handle)
+//     const uint64_t k = (((uint64_t)handle.get_index()) << 16) | (((uint64_t)handle.get_version()) << 0);
+//     const uint64_t k = program->get_handle();
+//     for( auto it = _vaos.cbegin(); it != _vaos.cend(); )
+//     {
+//         if( (it->first & 0xFFFFFFFF00000000) == k )
+//             _vaos.erase(it++)       ;
+//         else
+//             ++it;
+//     }
+// }
+
+// void VertexArrayObjectCache::free_program(Handle handle)
+// {
+//     const uint64_t k = (((uint64_t)handle.get_index()) << 48) | (((uint64_t)handle.get_version()) << 32);
+//     for( auto it = _vaos.cbegin(); it != _vaos.cend(); )
+//     {
+//         if( (it->first & 0xFFFFFFFF00000000) == k )
+//             _vaos.erase(it++)       ;
+//         else
+//             ++it;
+//     }
+// }
+
+GLint VertexArrayObjectCache::get_attribute_location(GLuint program, const char* name)
 {
-    const uint64_t k = (((uint64_t)handle.get_index()) << 48) | (((uint64_t)handle.get_version()) << 32);
-    for( auto it = _vaos.cbegin(); it != _vaos.cend(); )
-    {
-        if( (it->first & 0xFFFFFFFF00000000) == k )
-            _vaos.erase(it++)       ;
-        else
-            ++it;
-    }
+    auto it = _program_attributes.find(program);
+    if( it == _program_attributes.end() )
+        _program_attributes.emplace(program, attributes());
+
+    auto hash = math::StringHash(name);
+    auto& table = _program_attributes[program];
+
+    auto found = table.find(hash);
+    if( found != table.end() )
+        return found->second;
+
+    auto localtion = glGetAttribLocation(program, name);
+    if( localtion == -1 )
+        LOGW("failed to localte attribute %s of program %d.", name, program);
+
+    table.insert(std::make_pair(hash, localtion));
+    return localtion;
 }
 
 NS_LEMON_GRAPHICS_END

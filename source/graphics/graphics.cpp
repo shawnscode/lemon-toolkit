@@ -65,6 +65,12 @@ const char* VertexAttribute::name(VertexAttribute::Enum va)
     return ATTRIBUTE_DEFAULT_NAME[value(va)];
 }
 
+VertexLayout::VertexLayout() : _stride(0)
+{
+    memset(_offsets, 0, sizeof(_offsets));
+    memset(_attributes, invalid, sizeof(_attributes));
+}
+
 VertexAttribute VertexLayout::get_attribute(VertexAttribute::Enum va) const
 {
     return VertexAttribute::decode(va, _attributes[va]);

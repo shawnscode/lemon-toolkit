@@ -3,28 +3,31 @@
 
 #pragma once
 
-#include <codebase/handle.hpp>
-#include <math/string_hash.hpp>
+#include <graphics/graphics.hpp>
 #include <graphics/private/opengl.hpp>
+#include <math/string_hash.hpp>
 
 #include <unordered_map>
 
 NS_LEMON_GRAPHICS_BEGIN
 
-struct ProgramGL;
-struct VertexBufferGL;
 struct VertexArrayObjectCache
 {
     VertexArrayObjectCache();
 
-    void bind(Handle, ProgramGL&, Handle, VertexBufferGL&);
+    void bind(Program::ptr, VertexBuffer::ptr);
     void unbind();
 
-    void free_vertex_buffer(Handle);
-    void free_program(Handle);
+    // void free(Program::ptr);
+    // void free(VertexBuffer::ptr);
 
 protected:
+    GLint get_attribute_location(GLuint, const char*);
+
     bool _vao_support;
+
+    using attributes = std::unordered_map<math::StringHash, GLint>;
+    std::unordered_map<GLuint, attributes> _program_attributes;
     std::unordered_map<uint64_t, GLuint> _vaos;
 };
 

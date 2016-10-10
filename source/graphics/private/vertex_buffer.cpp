@@ -10,8 +10,10 @@ bool VertexBufferGL::initialize(const void* data, unsigned size, const VertexLay
 {
     ENSURE_NOT_RENDER_PHASE;
 
-    glGenBuffers(1, &_buffer);
-    if( !_buffer )
+    dispose();
+
+    glGenBuffers(1, &_object);
+    if( _object == 0 )
     {
         LOGW("failed to create vertex buffer object.");
         return false;
@@ -20,7 +22,6 @@ bool VertexBufferGL::initialize(const void* data, unsigned size, const VertexLay
     _size = size;
     _attributes = layout;
     _usage = usage == MemoryUsage::DYNAMIC ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
-    _buffer = 0;
     return update_data(data);
 }
 
@@ -28,10 +29,10 @@ void VertexBufferGL::dispose()
 {
     ENSURE_NOT_RENDER_PHASE;
 
-    if( _buffer != 0 )
-        glDeleteBuffers(1, &_buffer);
+    if( _object != 0 )
+        glDeleteBuffers(1, &_object);
 
-    _buffer = 0;
+    _object = 0;
 }
 
 bool VertexBufferGL::update_data(const void* data)
@@ -44,9 +45,9 @@ bool VertexBufferGL::update_data(const void* data)
         return false;
     }
 
-    if( _buffer != 0 )
+    if( _object != 0 )
     {
-        glBindBuffer(GL_ARRAY_BUFFER, _buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, _object);
         glBufferData(GL_ARRAY_BUFFER, _size*_attributes.get_stride(), data, _usage);
     }
 
@@ -76,9 +77,9 @@ bool VertexBufferGL::update_data(const void* data, unsigned start, unsigned size
     if( !size )
         return true;
 
-    if( _buffer != 0 )
+    if( _object != 0 )
     {
-        glBindBuffer(GL_ARRAY_BUFFER, _buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, _object);
         uint16_t stride = _attributes.get_stride();
         if( !discard || start != 0 )
             glBufferSubData(GL_ARRAY_BUFFER, start * stride, size * stride, data);

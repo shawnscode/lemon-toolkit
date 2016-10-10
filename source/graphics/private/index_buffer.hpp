@@ -18,13 +18,13 @@ struct IndexBufferGL : public IndexBuffer
     bool update_data(const void*);
     bool update_data(const void*, unsigned, unsigned, bool discard = false);
 
-    GLuint get_handle() const { return _buffer; }
+    GLuint get_handle() const { return _object; }
     IndexElementFormat get_element_format() const { return _format; }
     unsigned get_size() const { return _size; }
 
 protected:
     unsigned _size;
-    GLuint _buffer;
+    GLuint _object;
     GLenum _usage;
     IndexElementFormat _format;
 };

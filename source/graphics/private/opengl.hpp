@@ -20,6 +20,7 @@
 NS_LEMON_GRAPHICS_BEGIN
 
 extern void check_device_error(const char* file, unsigned line);
-#define CHECK_GL_ERROR() check_device_error(__FILE__, __LINE__);
+#define CHECK_GL_ERROR() \
+    check_device_error(__FILE__, __LINE__);
 
 NS_LEMON_GRAPHICS_END

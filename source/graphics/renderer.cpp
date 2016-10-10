@@ -4,17 +4,44 @@
 #include <graphics/renderer.hpp>
 #include <graphics/private/backend.hpp>
 #include <graphics/private/vertex_array_cache.hpp>
+#include <graphics/private/program.hpp>
+#include <graphics/private/vertex_buffer.hpp>
+#include <graphics/private/index_buffer.hpp>
+#include <graphics/private/texture.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
 bool Renderer::initialize()
 {
-    _backend.reset(new (std::nothrow) RendererBackend());
+    _backend = new (std::nothrow) RendererBackend();
     if ( _backend == nullptr )
         return false;
 
+    _vaocache = new (std::nothrow) VertexArrayObjectCache();
+    if( _vaocache == nullptr )
+    {
+        delete _backend;
+        _backend = nullptr;
+        return false;
+    }
+
     _frame_began = false;
     return true;
+}
+
+void Renderer::dispose()
+{
+    if( _backend != nullptr )
+    {
+        delete _backend;
+        _backend = nullptr;
+    }
+
+    if( _vaocache != nullptr )
+    {
+        delete _vaocache;
+        _vaocache = nullptr;
+    }
 }
 
 bool Renderer::restore(SDL_Window* window)
@@ -25,6 +52,60 @@ bool Renderer::restore(SDL_Window* window)
 void Renderer::release()
 {
     _backend->dispose();
+}
+
+Program::ptr Renderer::create_program(const char* vs, const char* ps)
+{
+    auto object = new (std::nothrow) ProgramGL(*this);
+    if( object && object->initialize(vs, ps) )
+        return Program::ptr(object);
+
+    if( object ) delete object;
+    return nullptr;
+}
+
+Texture::ptr Renderer::create_texture(
+    const void* pixels,
+    TextureFormat format,
+    TexturePixelFormat pixel_format,
+    unsigned width,
+    unsigned height,
+    MemoryUsage usage)
+{
+    auto object = new (std::nothrow) TextureGL(*this);
+    if( object && object->initialize(pixels, format, pixel_format, width, height, usage) )
+        return Texture::ptr(object);
+
+    if( object ) delete object;
+    return nullptr;
+}
+
+VertexBuffer::ptr Renderer::create_vertex_buffer(
+    const void* data,
+    unsigned size,
+    const VertexLayout& layer,
+    MemoryUsage usage)
+{
+    auto object = new (std::nothrow) VertexBufferGL(*this);
+    if( object && object->initialize(data, size, layer, usage) )
+        return VertexBuffer::ptr(object);
+
+    if( object ) delete object;
+    return nullptr;
+}
+
+IndexBuffer::ptr Renderer::create_index_buffer(
+    const void* data,
+    unsigned size,
+    IndexElementFormat format,
+    MemoryUsage usage)
+{
+    auto object = new (std::nothrow) IndexBufferGL(*this);
+    if( object && object->initialize(data, size, format, usage) )
+        return IndexBuffer::ptr(object);
+
+    if( object ) delete object;
+    return nullptr;
 }
 
 bool Renderer::begin_frame()
@@ -38,7 +119,8 @@ bool Renderer::begin_frame()
 
 void Renderer::clear(ClearOption option, const math::Color& color, float depth, unsigned stencil)
 {
-    ASSERT(_frame_began, "\'clear\' could only be called during rendering frame.");
+    ASSERT(_frame_began, "\'clear\' could only be called in render phase.");
+
     _backend->clear(option, color, depth, stencil);
 }
 
@@ -47,7 +129,7 @@ void Renderer::submit(
     Program::ptr program, VertexBuffer::ptr vb, IndexBuffer::ptr ib,
     uint32_t depth, uint32_t start, uint32_t num)
 {
-    ASSERT(_frame_began, "\'submit\' could only be called during rendering frame.");
+    ASSERT(_frame_began, "\'submit\' could only be called in render phase.");
 
     // RenderDrawcall drawcall;
     // drawcall.state = state;
@@ -64,36 +146,44 @@ void Renderer::submit(
     }
 }
 
+void Renderer::submit(RenderLayer layer, uint32_t depth, RenderDrawcall& drawcall)
+{
+    drawcall.sort = SortValue::encode(layer, 1, depth);
+
+    {
+        std::unique_lock<std::mutex> L(_mutex);
+        _drawcalls.push_back(drawcall);
+    }
+}
+
+bool Renderer::drawcall_compare(const RenderDrawcall& lhs, const RenderDrawcall& rhs)
+{
+    return lhs.sort < rhs.sort;
+}
+
 void Renderer::flush()
 {
-    ASSERT(_frame_began, "\'flush\' could only be called during rendering frame.");
+    ASSERT(_frame_began, "\'flush\' could only be called in render phase.");
 
-    // std::unique_lock<std::mutex> L(_context->frame_mutex);
-    // _context->frame.sort();
-    // for( auto& drawcall : _context->frame )
-    // {
-        // auto program = _context->programs.get(drawcall.program);
-        // auto ub = _context->uniform_buffers.get(drawcall.uniform_buffer);
-        // auto vb = CTX(vertex_buffers).get(drawcall.vertex_buffer);
-        // auto ib = CTX(index_buffers).get(drawcall.index_buffer);
+    std::unique_lock<std::mutex> L(_mutex);
+    std::sort(_drawcalls.begin(), _drawcalls.end(), drawcall_compare);
 
-        // auto hprogram = program->get_opengl_handle();
+    for( auto& drawcall : _drawcalls )
+    {
+        std::static_pointer_cast<ProgramGL>(drawcall.program)->bind();
+        _vaocache->bind(drawcall.program, drawcall.vertex_buffer);
 
-        // if( _supportVao )
-        // {
-        //     program->get_vao_handle();
-        // }
+        auto& state = drawcall.state;
+        _backend->set_front_face(state.cull.winding);
+        _backend->set_cull_face(state.cull.enable, state.cull.face);
+        // _backend->set_
+        // ...
 
-        // _backend.set_shader(program->get_opengl_handle());
-        // _backend.set_vertex_attributes(vb->get_attributes());
-        // _backend.set_
+        _backend->draw(state.primitive, drawcall.first, drawcall.count);
+    }
 
-
-        // ub->get_opengl_handle();
-        // vb->get_opengl_handle();
-        // ib->get_opengl_handle();
-    // }
-    // _context->frame.clear();
+    printf("draw %ld", _drawcalls.size());
+    _drawcalls.clear();
 }
 
 void Renderer::end_frame()

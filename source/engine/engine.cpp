@@ -4,9 +4,7 @@
 #include <engine/engine.hpp>
 #include <engine/input.hpp>
 #include <graphics/window.hpp>
-#include <graphics/private/backend.hpp>
 #include <graphics/renderer.hpp>
-#include <graphics/private/context.hpp>
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
 #include <core/public.hpp>
@@ -112,10 +110,10 @@ void Engine::run_one_frame()
 
 void Engine::update(duration dt)
 {
-    // emit<EvtUpdate>(dt);
-    // emit<EvtPostUpdate>(dt);
-    // emit<EvtRenderUpdate>(dt);
-    // emit<EvtPostRenderUpdate>(dt);
+    core::emit<EvtUpdate>(dt);
+    core::emit<EvtPostUpdate>(dt);
+    core::emit<EvtRenderUpdate>(dt);
+    core::emit<EvtPostRenderUpdate>(dt);
 }
 
 void Engine::render()
@@ -125,7 +123,7 @@ void Engine::render()
     if( !renderer->begin_frame() )
         return;
 
-    // emit<EvtRender>();
+    core::emit<EvtRender>();
     renderer->end_frame();
 }
 

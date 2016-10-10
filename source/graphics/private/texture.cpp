@@ -2,6 +2,7 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <graphics/private/texture.hpp>
+#include <graphics/private/backend.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
@@ -32,14 +33,6 @@ static GLenum GL_TEXTURE_PIXEL_FORMAT[] =
     GL_UNSIGNED_SHORT_5_6_5,
     GL_UNSIGNED_SHORT_4_4_4_4,
     GL_UNSIGNED_SHORT_5_5_5_1
-};
-
-static unsigned GL_PIXEL_SIZE[] =
-{
-    1,
-    2,
-    2,
-    2
 };
 
 TextureGL::TextureGL(Renderer& renderer) : Texture(renderer)

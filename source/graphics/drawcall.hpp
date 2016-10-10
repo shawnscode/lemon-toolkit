@@ -4,13 +4,19 @@
 #pragma once
 
 #include <forwards.hpp>
-
-#include <graphics/renderer.hpp>
+#include <graphics/graphics.hpp>
 #include <graphics/state.hpp>
 
-#include <algorithm>
-
 NS_LEMON_GRAPHICS_BEGIN
+
+enum class RenderLayer : uint16_t
+{
+    BACKGROUND = 1000,
+    GEOMETRY = 2000,
+    ALPHATEST = 2500,
+    TRANSPARENCY = 3000, // transparent geometreis will be renderred from-back-to-front
+    OVERLAY = 4000
+};
 
 enum class SortValueMask : uint64_t
 {
@@ -56,12 +62,12 @@ struct SortValue
         return layer | transparency | depth | program;
     }
 
-    static uint64_t encode(RenderLayer layer, Handle program, uint32_t depth)
+    static uint64_t encode(RenderLayer layer, uint16_t program, uint32_t depth)
     {
         SortValue in;
         in.layer = value(layer);
         in.transparency = layer == RenderLayer::TRANSPARENCY ? 1 : 0;
-        in.program = program.get_index();
+        in.program = program;
         in.depth = depth;
 
         return encode(in);
@@ -83,48 +89,14 @@ struct SortValue
 struct RenderDrawcall
 {
     RenderState state;
-    Handle program;
-    Handle vertex_buffer;
-    Handle index_buffer;
-    uint32_t start;
-    uint32_t vertex_count;
-    uint64_t sort_value;
+    Program::ptr program;
+    VertexBuffer::ptr vertex_buffer;
+    unsigned first;
+    unsigned count;
+
+protected:
+    friend class Renderer;
+    uint64_t sort;
 };
-
-// struct RenderFrame
-// {
-//     std::vector<RenderDraw>::iterator begin()
-//     {
-//         return _drawcalls.begin();
-//     }
-
-//     std::vector<RenderDraw>::iterator end()
-//     {
-//         return _drawcalls.end();
-//     }
-
-//     void clear()
-//     {
-//         _drawcalls.clear();
-//     }
-
-//     void push_back(const RenderDraw& dc)
-//     {
-//         _drawcalls.push_back(dc);
-//     }
-
-//     void sort()
-//     {
-//         std::sort(_drawcalls.begin(), _drawcalls.end(), compare);
-//     }
-
-// protected:
-//     static bool compare(const RenderDraw& lhs, const RenderDraw& rhs)
-//     {
-//         return lhs.sort_value < rhs.sort_value;
-//     }
-
-//     std::vector<RenderDraw> _drawcalls;
-// };
 
 NS_LEMON_GRAPHICS_END
