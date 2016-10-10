@@ -6,17 +6,6 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-// std::ostream& operator << (std::ostream& out, VertexAttributeLayout& attributes)
-// {
-//     out << "VertexAttributeLayout(";
-//     for( uint8_t i = 0; i < kVertexAttributeCount; i++ )
-//     {
-//         if( attributes.has((VertexAttribute)i) )
-//             out << get_attribute_name((VertexAttribute)i) << ", ";
-//     }
-//     return out << ")";
-// }
-
 static const uint8_t SIZE_OF_VERTEX_ELEMENT_FORMAT[] =
 {
     1,
