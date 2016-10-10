@@ -15,13 +15,25 @@ NS_LEMON_GRAPHICS_BEGIN
 enum class BufferUsage : uint8_t
 {
     // the data store contents will be modified once and used at most a few times
-    STREAM_DRAW = 0,
+    STREAM = 0,
     // the data store contents will be modified once and used many times
-    STATIC_DRAW,
+    STATIC,
     // the data store contents will be modified repeatedly and used many times
-    DYNAMIC_DRAW
+    DYNAMIC
 };
 
+// vertex element format
+enum class VertexElementFormat : uint8_t
+{
+    BYTE = 0,
+    UNSIGNED_BYTE,
+    SHORT,
+    UNSIGNED_SHORT,
+    FIXED,
+    FLOAT
+};
+
+// index element format
 enum class IndexElementFormat : uint8_t
 {
     UBYTE = 0,
@@ -33,10 +45,13 @@ enum class RenderLayer : uint16_t
     BACKGROUND = 1000,
     GEOMETRY = 2000,
     ALPHATEST = 2500,
-    TRANSPARENCY = 3000,
+    TRANSPARENCY = 3000, // transparent geometreis will be renderred from-back-to-front
     OVERLAY = 4000
 };
 
+// Renderer provides sort-based draw call bucketing. this means that submission
+// order doesn't necessarily match the rendering order, but on the low-level
+// they will be sorted and ordered correctly.
 struct RendererContext;
 struct Renderer : public core::Subsystem
 {
@@ -46,22 +61,17 @@ struct Renderer : public core::Subsystem
 
     // create program with vertex/pixel shader
     Handle create_program(const char*, const char*);
+    // set shader uniform parameter for draw primitive
+    bool update_uniform_1f(Handle, const char*, const math::Vector<1, float>&);
+    bool update_uniform_2f(Handle, const char*, const math::Vector<2, float>&);
+    bool update_uniform_3f(Handle, const char*, const math::Vector<3, float>&);
+    bool update_uniform_4f(Handle, const char*, const math::Vector<4, float>&);
+    bool update_uniform_2fm(Handle, const char*, const math::Matrix<2, 2, float>&);
+    bool update_uniform_3fm(Handle, const char*, const math::Matrix<3, 3, float>&);
+    bool update_uniform_4fm(Handle, const char*, const math::Matrix<4, 4, float>&);
+    bool update_uniform_texture(Handle, const char*, Handle);
     // free program handle
     void free_program(Handle);
-
-    // create uniform buffer associated with program
-    Handle create_uniform_buffer(Handle);
-    // set shader uniform parameter for draw primitive
-    void update_uniform_1f(Handle, const char*, const math::Vector<1, float>&);
-    void update_uniform_2f(Handle, const char*, const math::Vector<2, float>&);
-    void update_uniform_3f(Handle, const char*, const math::Vector<3, float>&);
-    void update_uniform_4f(Handle, const char*, const math::Vector<4, float>&);
-    void update_uniform_2fm(Handle, const char*, const math::Matrix<2, 2, float>&);
-    void update_uniform_3fm(Handle, const char*, const math::Matrix<3, 3, float>&);
-    void update_uniform_4fm(Handle, const char*, const math::Matrix<4, 4, float>&);
-    void update_uniform_texture(Handle, const char*, Handle);
-    // free uniform buffer handle
-    void free_uniform_buffer(Handle);
 
     // create vertex buffer
     Handle create_vertex_buffer(const void*, size_t, const VertexAttributeLayout&, BufferUsage);
@@ -85,11 +95,8 @@ struct Renderer : public core::Subsystem
     bool begin_frame();
     // clear any or all of rendertarget, depth buffer and stencil buffer
     void clear(ClearOption, const math::Color& color = {0.f, 0.f, 0.f, 0.f}, float depth = 1.f, unsigned stencil = 0);
-    // submit preparations for draw primitive
-    void set_vertex_buffer(Handle);
-    void set_index_buffer(Handle);
-    // submit primitive for rendering.
-    void submit(RenderLayer, RenderState, Handle program, Handle uniform, uint32_t depth, uint32_t start, uint32_t num);
+    // submit primitive for rendering
+    void submit(RenderLayer, RenderState, Handle program, Handle vb, Handle ib, uint32_t depth, uint32_t start, uint32_t num);
     // flush all cached draw calls
     void flush();
     // finish current frame and flush all cached draw calls
@@ -103,6 +110,7 @@ protected:
     void release();
 
 protected:
+    bool _frame_began;
     std::unique_ptr<RendererContext> _context;
 };
 

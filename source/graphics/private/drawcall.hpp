@@ -80,52 +80,51 @@ struct SortValue
     }
 };
 
-struct RenderDraw
+struct RenderDrawcall
 {
     RenderState state;
     Handle program;
-    Handle uniform_buffer;
     Handle vertex_buffer;
     Handle index_buffer;
-    Handle textures[kMaxTextureSamples];
-
+    uint32_t start;
+    uint32_t vertex_count;
     uint64_t sort_value;
 };
 
-struct RenderFrame
-{
-    std::vector<RenderDraw>::iterator begin()
-    {
-        return _drawcalls.begin();
-    }
+// struct RenderFrame
+// {
+//     std::vector<RenderDraw>::iterator begin()
+//     {
+//         return _drawcalls.begin();
+//     }
 
-    std::vector<RenderDraw>::iterator end()
-    {
-        return _drawcalls.end();
-    }
+//     std::vector<RenderDraw>::iterator end()
+//     {
+//         return _drawcalls.end();
+//     }
 
-    void clear()
-    {
-        _drawcalls.clear();
-    }
+//     void clear()
+//     {
+//         _drawcalls.clear();
+//     }
 
-    void push_back(const RenderDraw& dc)
-    {
-        _drawcalls.push_back(dc);
-    }
+//     void push_back(const RenderDraw& dc)
+//     {
+//         _drawcalls.push_back(dc);
+//     }
 
-    void sort()
-    {
-        std::sort(_drawcalls.begin(), _drawcalls.end(), compare);
-    }
+//     void sort()
+//     {
+//         std::sort(_drawcalls.begin(), _drawcalls.end(), compare);
+//     }
 
-protected:
-    static bool compare(const RenderDraw& lhs, const RenderDraw& rhs)
-    {
-        return lhs.sort_value < rhs.sort_value;
-    }
+// protected:
+//     static bool compare(const RenderDraw& lhs, const RenderDraw& rhs)
+//     {
+//         return lhs.sort_value < rhs.sort_value;
+//     }
 
-    std::vector<RenderDraw> _drawcalls;
-};
+//     std::vector<RenderDraw> _drawcalls;
+// };
 
 NS_LEMON_GRAPHICS_END

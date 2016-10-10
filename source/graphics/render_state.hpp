@@ -24,6 +24,7 @@ enum class FrontFaceOrder : uint8_t
     COUNTERCLOCKWISE
 };
 
+// compare functions
 enum class CompareEquation : uint8_t
 {
     NEVER = 0,

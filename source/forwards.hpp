@@ -19,6 +19,8 @@
 #define NS_LEMON_BEGIN namespace lemon {
 #define NS_LEMON_END }
 
+struct SDL_Window;
+
 NS_LEMON_BEGIN
 
 static const unsigned kDbgMaxTracebackFrames = 63;
@@ -69,7 +71,7 @@ const static unsigned kMaxVertexBuffers = 16;
 const static unsigned kMaxIndexBuffers = 16;
 const static unsigned kMaxPrograms = 8;
 
-const static unsigned kMaxTextures = 8;
+const static unsigned kMaxTexture2Ds = 8;
 const static unsigned kMaxUniforms = 32;
 
 const static unsigned kMaxTextureSamples = 4;

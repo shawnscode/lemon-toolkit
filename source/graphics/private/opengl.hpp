@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <forwards.hpp>
+
 #if defined(PLATFORM_ANDROID)
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -18,7 +20,6 @@
 NS_LEMON_GRAPHICS_BEGIN
 
 extern void check_device_error(const char* file, unsigned line);
-
-#define CHECK_GL_ERROR() lemon::graphics::check_device_error(__FILE__, __LINE__);
+#define CHECK_GL_ERROR() check_device_error(__FILE__, __LINE__);
 
 NS_LEMON_GRAPHICS_END

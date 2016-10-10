@@ -1,4 +1,5 @@
 #include <graphics/private/index_buffer.hpp>
+#include <graphics/private/backend.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 

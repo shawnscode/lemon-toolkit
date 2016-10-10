@@ -1,4 +1,8 @@
+// @date 2016/08/03
+// @author Mao Jingkai(oammix@gmail.com)
+
 #include <graphics/private/vertex_buffer.hpp>
+#include <graphics/private/backend.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
@@ -71,7 +75,6 @@ bool VertexBuffer::update_data_range(const void* data, unsigned start, unsigned 
     if( _buffer != 0 )
     {
         glBindBuffer(GL_ARRAY_BUFFER, _buffer);
-
         uint16_t stride = _attributes.get_stride();
         if( !discard || start != 0 )
             glBufferSubData(GL_ARRAY_BUFFER, start * stride, size * stride, data);

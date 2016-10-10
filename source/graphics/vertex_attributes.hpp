@@ -97,10 +97,6 @@ protected:
     uint8_t _attributes[kVertexAttributeCount];
 };
 
-std::ostream& operator << (std::ostream&, VertexAttributeLayout&);
-
-const char* get_attribute_name(VertexAttribute);
-
 /* facilities for vertex attribute layout generation.
 usage: make_attribute_layout(
     {VertexAttribute::POSITION, AttributeComponentFormat::FLOAT, 4},
@@ -108,6 +104,10 @@ usage: make_attribute_layout(
     {VertexAttribute::TEXCOORD_0, AttributeComponentFormat::FLOAT, 2} );
 */
 template<typename ... T> VertexAttributeLayout make_attribute_layout(T&& ...);
+
+const char* get_attribute_name(VertexAttribute);
+
+std::ostream& operator << (std::ostream&, VertexAttributeLayout&);
 
 //
 template<typename ... T>
