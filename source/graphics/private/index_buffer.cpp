@@ -38,6 +38,12 @@ void IndexBufferGL::dispose()
     _object = 0;
 }
 
+void IndexBufferGL::bind()
+{
+    if( _object != 0 )
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _object);
+}
+
 bool IndexBufferGL::update_data(const void* data)
 {
     ENSURE_NOT_RENDER_PHASE;
@@ -50,8 +56,8 @@ bool IndexBufferGL::update_data(const void* data)
 
     if( _object != 0 )
     {
-        glBindBuffer(GL_ARRAY_BUFFER, _object);
-        glBufferData(GL_ARRAY_BUFFER, _size*GL_INDEX_ELEMENT_SIZES[value(_format)], data, _usage);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _object);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, _size*GL_INDEX_ELEMENT_SIZES[value(_format)], data, _usage);
     }
 
     CHECK_GL_ERROR();
@@ -82,13 +88,13 @@ bool IndexBufferGL::update_data(const void* data, unsigned start, unsigned size,
 
     if( _object != 0 )
     {
-        glBindBuffer(GL_ARRAY_BUFFER, _object);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _object);
 
         uint16_t stride = GL_INDEX_ELEMENT_SIZES[value(_format)];
         if( !discard || start != 0 )
-            glBufferSubData(GL_ARRAY_BUFFER, start * stride, size * stride, data);
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, start * stride, size * stride, data);
         else
-            glBufferData(GL_ARRAY_BUFFER, size*stride, data, _usage);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, size*stride, data, _usage);
     }
 
     CHECK_GL_ERROR();

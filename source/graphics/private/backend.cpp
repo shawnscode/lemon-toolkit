@@ -80,6 +80,12 @@ static const unsigned GL_BLEND_EQUATION_FUNC[] =
     GL_FUNC_REVERSE_SUBTRACT
 };
 
+static const unsigned GL_INDEX_ELEMENT_FORMAT[] =
+{
+    GL_UNSIGNED_BYTE,
+    GL_UNSIGNED_SHORT
+};
+
 bool RendererBackend::initialize(SDL_Window* window)
 {
     if( window == nullptr )
@@ -397,15 +403,15 @@ void RendererBackend::set_texture(unsigned unit, unsigned type, unsigned object)
     }
 }
 
-void RendererBackend::prepare_draw()
-{
-
-}
-
 void RendererBackend::draw(PrimitiveType type, unsigned start, unsigned count)
 {
     glDrawArrays(GL_PRIMITIVE[value(type)], start, count);
     CHECK_GL_ERROR();
+}
+
+void RendererBackend::draw_index(PrimitiveType type, IndexElementFormat format, unsigned start, unsigned count)
+{
+    glDrawElements(GL_PRIMITIVE[value(type)], count, GL_INDEX_ELEMENT_FORMAT[value(format)], (uint8_t*)0+start);
 }
 
 bool RendererBackend::is_device_lost() const

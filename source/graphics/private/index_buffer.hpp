@@ -18,8 +18,9 @@ struct IndexBufferGL : public IndexBuffer
     bool update_data(const void*);
     bool update_data(const void*, unsigned, unsigned, bool discard = false);
 
+    void bind();
     GLuint get_handle() const { return _object; }
-    IndexElementFormat get_element_format() const { return _format; }
+    IndexElementFormat get_format() const { return _format; }
     unsigned get_size() const { return _size; }
 
 protected:

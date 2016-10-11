@@ -5,20 +5,12 @@
 
 #include <forwards.hpp>
 #include <graphics/renderer.hpp>
-#include <codebase/type/enumeration.hpp>
 #include <math/rect.hpp>
 #include <math/color.hpp>
 
 struct SDL_Window;
 
 NS_LEMON_GRAPHICS_BEGIN
-
-enum class RasterizationMode : uint8_t
-{
-    POINT,
-    LINE,
-    FILL
-};
 
 // graphics device subsystem. manages the window device, renedering state and gpu resources
 struct RendererBackend
@@ -70,12 +62,10 @@ struct RendererBackend
     // set the viewport
     void set_viewport(const math::Rect2i&);
 
-    // prepare for draw call. setup corresponding frame/vertex buffer object
-    void prepare_draw();
     // draw non-indexed geometry
     void draw(PrimitiveType, unsigned start, unsigned count);
     // draw indexed geometry
-    void draw_index(PrimitiveType, unsigned start, unsigned count);
+    void draw_index(PrimitiveType, IndexElementFormat, unsigned start, unsigned count);
 
     // check if we have valid window and OpenGL context
     bool is_device_lost() const;

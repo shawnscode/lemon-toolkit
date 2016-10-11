@@ -128,6 +128,8 @@ void Renderer::clear(ClearOption option, const math::Color& color, float depth, 
 void Renderer::submit(RenderLayer layer, uint32_t depth, RenderDrawcall& drawcall)
 {
     ASSERT(_frame_began, "\'submit\' could only be called in render phase.");
+    ASSERT(drawcall.program != nullptr, "program is required to make drawcall.");
+    ASSERT(drawcall.vertex_buffer != nullptr, "vertex_buffer is required to make drawcall.");
 
     drawcall.sort = SortValue::encode(layer, 1, depth);
 
@@ -179,7 +181,17 @@ void Renderer::flush()
             state.stencil_write.dpfail,
             state.stencil_write.dppass,
             state.stencil_write.mask);
-        _backend->draw(drawcall.primitive, drawcall.first, drawcall.count);
+
+        if( drawcall.index_buffer != nullptr )
+        {
+            auto index_buffer = std::static_pointer_cast<IndexBufferGL>(drawcall.index_buffer);
+            index_buffer->bind();
+            _backend->draw_index(drawcall.primitive, index_buffer->get_format(), drawcall.first, drawcall.count);
+        }
+        else
+        {
+            _backend->draw(drawcall.primitive, drawcall.first, drawcall.count);
+        }
     }
 
     _frame_drawcall += _drawcalls.size();
