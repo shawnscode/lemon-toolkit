@@ -5,6 +5,7 @@
 
 #include <forwards.hpp>
 #include <limits>
+#include <functional>
 
 NS_LEMON_BEGIN
 
