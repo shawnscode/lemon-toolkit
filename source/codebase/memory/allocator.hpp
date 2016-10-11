@@ -40,29 +40,6 @@ protected:
     size_t _first_free_block;  // the index of first available chunk
 };
 
-struct FixedBlockAllocator
-{
-    explicit FixedBlockAllocator(size_t element_size, size_t chunk_size);
-
-    size_t available() const;
-    size_t capacity() const;
-    size_t element_size() const;
-
-    // returns a free memory block from pool if malloc successful
-    void* malloc();
-    // free and recycle specified memory block
-    void free(void*);
-
-protected:
-    const static size_t invalid;
-
-    size_t _available;
-    size_t _element_size;
-    size_t _chunk_size;
-    size_t _first_free_block;
-    std::unique_ptr<uint8_t[]> _buffer;
-};
-
 // INCLUDED METHODS OF POOL
 INLINE size_t FixedSizeAllocator::size() const
 {
@@ -98,22 +75,6 @@ INLINE const void* FixedSizeAllocator::get_element(size_t index) const
         return nullptr;
 
     return static_cast<void*>(_chunks[index/_chunk_size] + (index%_chunk_size)*_element_size);
-}
-
-//
-INLINE size_t FixedBlockAllocator::available() const
-{
-    return _available;
-}
-
-INLINE size_t FixedBlockAllocator::capacity() const
-{
-    return _chunk_size;
-}
-
-INLINE size_t FixedBlockAllocator::element_size() const
-{
-    return _element_size;
 }
 
 NS_LEMON_END

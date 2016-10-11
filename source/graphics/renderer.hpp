@@ -61,6 +61,8 @@ struct Renderer : public core::Subsystem
 
 protected:
     static bool drawcall_compare(const RenderDrawcall&, const RenderDrawcall&);
+    static void free_program(Program*);
+    static void free_vertex_buffer(VertexBuffer*);
 
 protected:
     friend struct WindowDevice;

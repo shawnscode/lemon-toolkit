@@ -18,9 +18,6 @@ struct VertexArrayObjectCache
     void bind(Program::ptr, VertexBuffer::ptr);
     void unbind();
 
-    // void free(Program::ptr);
-    // void free(VertexBuffer::ptr);
-
 protected:
     bool _vao_support;
     std::unordered_map<uint64_t, GLuint> _vaos;

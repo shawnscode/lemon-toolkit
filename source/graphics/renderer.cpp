@@ -115,6 +115,7 @@ bool Renderer::begin_frame()
 
     _frame_drawcall = 0;
     _frame_began = true;
+    _vaocache->unbind();
     return true;
 }
 

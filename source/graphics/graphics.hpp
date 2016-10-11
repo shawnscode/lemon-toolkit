@@ -23,11 +23,10 @@ NS_LEMON_GRAPHICS_BEGIN
 // GraphicsObject is the base class of all the graphic card resources
 struct GraphicsObject
 {
-    GraphicsObject(Renderer& renderer)
-    : _renderer(renderer)
-    {}
+    GraphicsObject(Renderer& renderer) : _renderer(renderer) {}
+    virtual ~GraphicsObject() {}
 
-protected:
+protected: 
     Renderer& _renderer;
 };
 
@@ -126,6 +125,7 @@ struct VertexBuffer : public GraphicsObject
 {
     DEFINE_SHARED_PTR(VertexBuffer);
     VertexBuffer(Renderer& renderer) : GraphicsObject(renderer) {}
+    virtual ~VertexBuffer() {}
 
     virtual bool initialize(const void*, unsigned, const VertexLayout&, MemoryUsage) = 0;
     virtual void dispose() = 0;
@@ -145,6 +145,7 @@ struct IndexBuffer : GraphicsObject
 {
     DEFINE_SHARED_PTR(IndexBuffer);
     IndexBuffer(Renderer& renderer) : GraphicsObject(renderer) {}
+    virtual ~IndexBuffer() {}
 
     virtual bool initialize(const void*, unsigned, IndexElementFormat, MemoryUsage) = 0;
     virtual void dispose() = 0;
@@ -198,6 +199,7 @@ struct Texture : public GraphicsObject
 {
     DEFINE_SHARED_PTR(Texture);
     Texture(Renderer& renderer) : GraphicsObject(renderer) {}
+    virtual ~Texture() {}
 
     virtual bool initialize(const void*, TextureFormat, TexturePixelFormat, unsigned, unsigned, MemoryUsage) = 0;
     virtual void dispose() = 0;
@@ -217,6 +219,7 @@ struct Program : public GraphicsObject
 {
     DEFINE_SHARED_PTR(Program);
     Program(Renderer& renderer) : GraphicsObject(renderer) {}
+    virtual ~Program() {}
 
     virtual bool initialize(const char* vs, const char* ps) = 0;
     virtual void dispose() = 0;

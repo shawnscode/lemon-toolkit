@@ -11,6 +11,7 @@ NS_LEMON_GRAPHICS_BEGIN
 struct VertexBufferGL : public VertexBuffer
 {
     VertexBufferGL(Renderer& renderer) : VertexBuffer(renderer) {}
+    ~VertexBufferGL() { dispose(); }
 
     bool initialize(const void*, unsigned, const VertexLayout&, MemoryUsage) override;
     void dispose() override;

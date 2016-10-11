@@ -12,6 +12,7 @@ NS_LEMON_GRAPHICS_BEGIN
 struct TextureGL : public Texture
 {
     TextureGL(Renderer& renderer);
+    ~TextureGL() { dispose(); }
 
     // set data from an image and restore graphics state, return true if success
     bool initialize(const void*, TextureFormat, TexturePixelFormat, unsigned, unsigned, MemoryUsage) override;
