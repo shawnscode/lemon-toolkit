@@ -9,18 +9,12 @@ struct TransformFixture
 {
     TransformFixture()
     {
-        event::initialize();
-        subsystem::initialize();
-        task::initialize();
-        ecs::initialize();
+        initialize(0);
     }
 
     ~TransformFixture()
     {
-        ecs::dispose();
-        task::dispose();
-        subsystem::dispose();
-        event::dispose();
+        dispose();
     }
 };
 

@@ -7,6 +7,8 @@
 #include <codebase/type/enumeration.hpp>
 #include <math/vector.hpp>
 
+#include <unordered_set>
+
 NS_LEMON_BEGIN
 
 enum class KeyboardCode

@@ -3,6 +3,8 @@
 
 #include <codebase/debug/stacktrace.hpp>
 
+#include <iostream>
+
 NS_LEMON_BEGIN
 
 // implementations for posix based operation systems

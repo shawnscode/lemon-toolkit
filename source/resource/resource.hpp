@@ -3,10 +3,13 @@
 
 #pragma once
 
-#include <resource/defines.hpp>
+#include <forwards.hpp>
 #include <resource/path.hpp>
 #include <math/string_hash.hpp>
 #include <core/subsystem.hpp>
+
+#include <list>
+#include <fstream>
 
 NS_LEMON_RESOURCE_BEGIN
 
@@ -26,8 +29,8 @@ struct Resource
     unsigned get_memusage() const { return _memusage; } // in bytes
 
 protected:
-    std::string     _name;
-    unsigned        _memusage;
+    std::string _name;
+    unsigned _memusage;
 };
 
 // resource cache subsystems. loads resources on demand and cache them

@@ -45,24 +45,6 @@ INLINE T Rect<N, T>::length() const
 }
 
 template<size_t N, typename T>
-std::ostream& operator<< (std::ostream& out, const Rect<N, T>& rect)
-{
-    out << "Rect({";
-    for( size_t i = 0; i < N; i++ )
-    {
-        out << rect.min[i];
-        if( i != N-1 ) out << ", ";
-    }
-    out << "}, {";
-    for( size_t i = 0; i < N; i++ )
-    {
-        out << rect.max[i];
-        if( i != N-1 ) out << ", ";
-    }
-    return out << "})";
-}
-
-template<size_t N, typename T>
 INLINE bool equals(const Rect<N, T>& lhs, const Rect<N, T>& rhs, T epslion)
 {
     return equals( lhs.min, rhs.min, epslion ) && equals( lhs.max, rhs.max, epslion );

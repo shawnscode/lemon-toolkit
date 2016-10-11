@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <math/defines.hpp>
+#include <math/math.hpp>
 
 NS_LEMON_MATH_BEGIN
 
@@ -44,8 +44,6 @@ struct Color
     static const Color YELLOW;
     static const Color TRANSPARENT;
 };
-
-std::ostream& operator << (std::ostream&, const Color&);
 
 Color operator + (const Color&, const Color&);
 Color operator - (const Color&, const Color&);

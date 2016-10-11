@@ -3,7 +3,9 @@
 
 #pragma once
 
-#include <math/defines.hpp>
+#include <math/math.hpp>
+
+#include <iostream>
 
 NS_LEMON_MATH_BEGIN
 

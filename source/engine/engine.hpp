@@ -5,6 +5,9 @@
 
 #include <core/subsystem.hpp>
 
+#include <chrono>
+#include <vector>
+
 NS_LEMON_BEGIN
 
 // lemon engine, creates the other subsystems

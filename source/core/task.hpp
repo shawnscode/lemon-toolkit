@@ -3,15 +3,13 @@
 
 #pragma once
 
-#include <core/defines.hpp>
+#include <forwards.hpp>
+
+#include <functional>
 
 NS_LEMON_CORE_BEGIN
 
-#define MARK_AS_MAIN_THREAD_ONLY() \
-    ASSERT( lemon::core::task::is_main_thread(), "main thread only." );
-
-// a light-weight task scheduler with automatic load balancing and dynamic
-// parallelism supports
+// Task handle index
 struct TaskHandle
 {
     TaskHandle() : index(0), version(0) {}
@@ -21,6 +19,7 @@ struct TaskHandle
 };
 
 // create_task
+TaskHandle create_task(const char*);
 template<typename F, typename ... Args> TaskHandle create_task(const char*, F&&, Args&& ...);
 
 // create_task_as_child comes with parent-child relationships:
@@ -36,46 +35,34 @@ void run_task(TaskHandle);
 void wait_task(TaskHandle);
 
 // returns true if task completed
-bool completed_task(TaskHandle);
+bool is_task_completed(TaskHandle);
 
-namespace task
+// returns true if we are under the thread execute task::initialize()
+bool is_main_thread();
+
+// returns the number of cpu core, it could be used as hint to initialize task scheduler
+uint32_t get_cpu_count();
+
+//
+// implementation of traits
+namespace internal
 {
-    // returns the number of cpu core, it could be used as hint to initialize task scheduler
-    uint32_t get_cpu_core_count();
-    // returns true if we are under the thread execute task::initialize()
-    bool is_main_thread();
-    // initialize task scheduler with specified worker count
-    bool initialize(uint32_t nworker = 0);
-    // shutdown task scheduler, this would block main thread until all the tasks finished
-    void dispose();
-
-    // several callbacks instended for thread initialization
-    using thread_closure = std::function<void(uint32_t)>;
-    void set_on_thread_start(const thread_closure&);
-    void set_on_thread_stop(const thread_closure&);
-
-    // several callbacks instended for task based profiling
-    using task_closure = std::function<void(uint32_t, const char*)>;
-    void set_on_wait_start(const task_closure&);
-    void set_on_wait_stop(const task_closure&);
-
-    // private task specialization to avoid ambiguous resolve
-    TaskHandle create_task(const char* name, std::function<void()>);
-    TaskHandle create_task_as_child(TaskHandle, const char* name, std::function<void()>);
+    TaskHandle create_task(const char*, std::function<void()>);
+    TaskHandle create_task_as_child(TaskHandle, const char*, std::function<void()>);
 }
 
 template<typename F, typename ... Args>
 TaskHandle create_task(const char* name, F&& functor, Args&& ... args)
 {
     auto functor_with_env = std::bind(std::forward<F>(functor), std::forward<Args>(args)...);
-    return task::create_task(name, functor_with_env);
+    return internal::create_task(name, functor_with_env);
 }
 
 template<typename F, typename ... Args>
-TaskHandle create_task_as_child(TaskHandle parent, const char* name, F&& functor, Args&& ... args)
+TaskHandle create_task_as_child(TaskHandle parent, const char* name, F&& functor, Args&&... args)
 {
     auto functor_with_env = std::bind(std::forward<F>(functor), std::forward<Args>(args)...);
-    return task::create_task_as_child(parent, name, functor_with_env);
+    return internal::create_task_as_child(parent, name, functor_with_env);
 }
 
 NS_LEMON_CORE_END

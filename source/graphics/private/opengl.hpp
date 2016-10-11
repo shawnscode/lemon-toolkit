@@ -1,13 +1,9 @@
 // @date 2016/07/31
 // @author Mao Jingkai(oammix@gmail.com)
-// do NOT include this file in headers, make sure the implementation details
-// is invisble to user.
 
 #pragma once
 
-#include <graphics/defines.hpp>
-
-NS_LEMON_GRAPHICS_BEGIN
+#include <forwards.hpp>
 
 #if defined(PLATFORM_ANDROID)
 #include <GLES2/gl2.h>
@@ -21,10 +17,10 @@ NS_LEMON_GRAPHICS_BEGIN
 #include <GL/glew.h>
 #endif
 
-#include <SDL2/SDL.h>
+NS_LEMON_GRAPHICS_BEGIN
 
 extern void check_device_error(const char* file, unsigned line);
-
-#define CHECK_GL_ERROR() check_device_error(__FILE__, __LINE__);
+#define CHECK_GL_ERROR() \
+    check_device_error(__FILE__, __LINE__);
 
 NS_LEMON_GRAPHICS_END

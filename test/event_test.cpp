@@ -33,20 +33,20 @@ struct ExplosionSystem
     int damage_received = 0;
 };
 
-struct Context
+struct TestContext
 {
-    Context()
+    TestContext()
     {
-        event::initialize();
+        initialize(0);
     }
 
-    ~Context()
+    ~TestContext()
     {
-        event::dispose();
+        dispose();
     }
 };
 
-TEST_CASE_METHOD(Context, "TestEmitReceive")
+TEST_CASE_METHOD(TestContext, "TestEmitReceive")
 {
     ExplosionSystem explosion_system;
 
@@ -64,7 +64,7 @@ TEST_CASE_METHOD(Context, "TestEmitReceive")
 }
 
 
-TEST_CASE_METHOD(Context, "TestUntypedEmitReceive")
+TEST_CASE_METHOD(TestContext, "TestUntypedEmitReceive")
 {
     ExplosionSystem explosion_system;
 
@@ -77,7 +77,7 @@ TEST_CASE_METHOD(Context, "TestUntypedEmitReceive")
     REQUIRE(10 == explosion_system.damage_received);
 }
 
-TEST_CASE_METHOD(Context, "TestUnsubscription") {
+TEST_CASE_METHOD(TestContext, "TestUnsubscription") {
     ExplosionSystem explosion_system;
 
     subscribe<Explosion>(explosion_system);

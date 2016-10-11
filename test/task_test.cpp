@@ -32,12 +32,12 @@ struct Context
 {
     Context()
     {
-        core::task::initialize(4);
+        core::initialize(4);
     }
 
     ~Context()
     {
-        core::task::dispose();
+        core::dispose();
     }
 };
 
@@ -54,7 +54,7 @@ TEST_CASE_METHOD(Context, "TestSchedulerParalle")
     }
     REQUIRE( cmp == result );
 
-    auto master = core::create_task("master", fib, std::ref(result), 0);
+    auto master = core::create_task("master");
     for( unsigned i = 1; i < 10; i++ )
     {
         cmp += i;
@@ -77,18 +77,8 @@ BENCHMARK(TaskScheduler, Paralle, 2, 1)
 {
     Context context;
 
-    // core::task::set_on_wait_stop([&](unsigned index, const char* task)
-    // {
-    //     printf("[+] task: %s at %d\n", task, index);
-    // });
-
-    // core::task::set_on_wait_start([=](unsigned index, const char* task)
-    // {
-    //     printf("[-] task: %s at %d\n", task, index);
-    // });
-
     unsigned result = 0;
-    auto master = core::create_task("master", fib, std::ref(result), 0);
+    auto master = core::create_task("master");
     char name[10];
     for( unsigned i = 1; i < 10; i++ )
     {

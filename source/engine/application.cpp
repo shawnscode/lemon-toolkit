@@ -4,8 +4,7 @@
 #include <engine/application.hpp>
 #include <engine/engine.hpp>
 
-#include <core/subsystem.hpp>
-#include <core/task.hpp>
+#include <core/public.hpp>
 
 NS_LEMON_BEGIN
 
@@ -18,26 +17,19 @@ int Application::run()
     if( _exitcode != 0 )
         return _exitcode;
 
-    core::event::initialize();
-    core::subsystem::initialize();
-    core::task::initialize();
-    core::ecs::initialize();
-
-    auto& engine = core::add_subsystem<Engine>();
+    core::initialize(0);
+    auto engine = core::add_subsystem<Engine>();
 
     start();
     if( _exitcode != 0 )
         return _exitcode;
 
-    while( engine.is_running() )
-        engine.run_one_frame();
+    while( engine->is_running() )
+        engine->run_one_frame();
 
     stop();
 
-    core::ecs::dispose();
-    core::task::dispose();
-    core::subsystem::dispose();
-    core::event::dispose();
+    core::dispose();
     return _exitcode;
 }
 

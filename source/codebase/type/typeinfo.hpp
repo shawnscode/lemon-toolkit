@@ -3,29 +3,49 @@
 
 #pragma once
 
-#include <defines.hpp>
+#include <forwards.hpp>
+
+#include <type_traits>
 
 NS_LEMON_BEGIN
 
 struct TypeInfo
 {
-    using index_type = size_t;
+    using index_t = size_t;
 
-    template<typename Base, typename Derived>
-    static index_type id()
+    template<typename Base, typename Derived> static index_t id()
     {
         static_assert( std::is_base_of<Base, Derived>::value, "D should be derived from B." );
-        static index_type sid = counter<Base>::value ++;
+        static index_t sid = counter<Base>::value ++;
         return sid;
     }
 
 protected:
-    template<typename B> struct counter
+    template<typename Base> struct counter
     {
-        static index_type value;
+        static index_t value;
     };
 };
 
-template<typename B> TypeInfo::index_type TypeInfo::counter<B>::value = 0;
+template<typename B> TypeInfo::index_t TypeInfo::counter<B>::value = 0;
+
+struct TypeInfoGeneric
+{
+    using index_t = size_t;
+
+    template<typename Base, typename Type> static index_t id()
+    {
+        static index_t sid = counter<Base>::value ++;
+        return sid;
+    }
+
+protected:
+    template<typename Base> struct counter
+    {
+        static index_t value;
+    };
+};
+
+template<typename B> TypeInfo::index_t TypeInfoGeneric::counter<B>::value = 0;
 
 NS_LEMON_END

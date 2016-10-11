@@ -96,35 +96,31 @@ TEST_CASE_METHOD(MemoryChunksFixture, "TestMemoryChunksReuse")
     }
 }
 
-struct Context;
+struct TestContext;
 struct IntPosition : public Component
 {
     SET_CHUNK_SIZE(kChunkSize);
 
-    IntPosition(Context&, int x, int y);
+    IntPosition(TestContext&, int x, int y);
     ~IntPosition();
 
     int x, y;
-    Context& fixture;
+    TestContext& fixture;
 };
 
-struct Context
+struct TestContext
 {
     size_t spawn_count = 0;
     size_t dispose_count = 0;
 
-    Context()
+    TestContext()
     {
-        event::initialize();
-        subsystem::initialize();
-        ecs::initialize();
+        initialize(0);
     }
 
-    ~Context()
+    ~TestContext()
     {
-        ecs::dispose();
-        subsystem::dispose();
-        event::dispose();
+        dispose();
     }
     
     void reset()
@@ -137,17 +133,17 @@ struct Context
     size_t size() const
     {
         const auto id = TypeInfo::id<Component, IntPosition>();
-        return ecs::test_mem::size(id);
+        return internal::test_mem::size(id);
     }
 
     size_t capacity() const
     {
         const auto id = TypeInfo::id<Component, IntPosition>();
-        return ecs::test_mem::capacity(id);
+        return internal::test_mem::capacity(id);
     }
 };
 
-IntPosition::IntPosition(Context& f, int x, int y) : x(x), y(y), fixture(f)
+IntPosition::IntPosition(TestContext& f, int x, int y) : x(x), y(y), fixture(f)
 {
     fixture.spawn_count ++;
 }
@@ -157,7 +153,7 @@ IntPosition::~IntPosition()
     fixture.dispose_count ++;
 }
 
-TEST_CASE_METHOD(Context, "TestIndexedObjectChunks")
+TEST_CASE_METHOD(TestContext, "TestIndexedObjectChunks")
 {
     reset();
 
@@ -247,7 +243,7 @@ TEST_CASE_METHOD(Context, "TestIndexedObjectChunks")
     REQUIRE( capacity() == kChunkSize*2 );
 }
 
-TEST_CASE_METHOD(Context, "TestIndexedObjectChunksWithRandomHoles")
+TEST_CASE_METHOD(TestContext, "TestIndexedObjectChunksWithRandomHoles")
 {
     reset();
     const size_t kIterationCount = 32;

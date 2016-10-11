@@ -1,9 +1,6 @@
 #pragma once
 
-#include <core/subsystem.hpp>
-#include <core/ecs.hpp>
-#include <core/event.hpp>
-#include <core/task.hpp>
+#include <core/public.hpp>
 
 #include <math/vector.hpp>
 #include <math/matrix.hpp>
@@ -11,12 +8,10 @@
 #include <math/rect.hpp>
 #include <math/color.hpp>
 #include <math/string_hash.hpp>
+#include <math/stringify.hpp>
 
-#include <graphics/device.hpp>
-#include <graphics/shader.hpp>
-#include <graphics/index_buffer.hpp>
-#include <graphics/vertex_buffer.hpp>
-#include <graphics/texture.hpp>
+#include <graphics/window.hpp>
+#include <graphics/renderer.hpp>
 
 #include <resource/path.hpp>
 #include <resource/filesystem.hpp>

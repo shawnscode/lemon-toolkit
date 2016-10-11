@@ -3,24 +3,23 @@
 
 #pragma once
 
-#include <defines.hpp>
+#include <forwards.hpp>
+
+#include <vector>
 
 NS_LEMON_BEGIN
 
-// provides a 7 for constructing
-// objects in, which aims to provide cache-friendly iteration.
+// fixed size allocator, which aims to provide cache-friendly iteration,
 // lookups are O(1), appends/recycles are amortized O(1).
 struct FixedSizeAllocator
 {
-    using index_type = size_t;
-
-    explicit FixedSizeAllocator(index_type element_size, index_type chunk_size);
+    explicit FixedSizeAllocator(size_t element_size, size_t chunk_size);
     virtual ~FixedSizeAllocator();
 
-    index_type size() const;
-    index_type capacity() const;
-    index_type chunk_size() const;
-    index_type element_size() const;
+    size_t size() const;
+    size_t capacity() const;
+    size_t chunk_size() const;
+    size_t element_size() const;
 
     // returns a free memory block from pool
     void* malloc();
@@ -29,39 +28,63 @@ struct FixedSizeAllocator
 
 protected:
     const static size_t invalid;
-    void* get_element(index_type);
-    const void* get_element(index_type) const;
 
-    std::vector<uint8_t*>   _chunks;
-    index_type              _total_elements;
-    index_type              _available;
-    index_type              _element_size;      // size of each element block
-    index_type              _chunk_size;        // number of blocks in every chunk
-    index_type              _first_free_block;  // the index of first available chunk
+    void* get_element(size_t);
+    const void* get_element(size_t) const;
+
+    std::vector<uint8_t*> _chunks;
+    size_t _total_elements;
+    size_t _available;
+    size_t _element_size;      // size of each element block
+    size_t _chunk_size;        // number of blocks in every chunk
+    size_t _first_free_block;  // the index of first available chunk
+};
+
+struct FixedBlockAllocator
+{
+    explicit FixedBlockAllocator(size_t element_size, size_t chunk_size);
+
+    size_t available() const;
+    size_t capacity() const;
+    size_t element_size() const;
+
+    // returns a free memory block from pool if malloc successful
+    void* malloc();
+    // free and recycle specified memory block
+    void free(void*);
+
+protected:
+    const static size_t invalid;
+
+    size_t _available;
+    size_t _element_size;
+    size_t _chunk_size;
+    size_t _first_free_block;
+    std::unique_ptr<uint8_t[]> _buffer;
 };
 
 // INCLUDED METHODS OF POOL
-INLINE FixedSizeAllocator::index_type FixedSizeAllocator::size() const
+INLINE size_t FixedSizeAllocator::size() const
 {
     return _total_elements - _available;
 }
 
-INLINE FixedSizeAllocator::index_type FixedSizeAllocator::capacity() const
+INLINE size_t FixedSizeAllocator::capacity() const
 {
     return _total_elements;
 }
 
-INLINE FixedSizeAllocator::index_type FixedSizeAllocator::chunk_size() const
+INLINE size_t FixedSizeAllocator::chunk_size() const
 {
     return _chunk_size;
 }
 
-INLINE FixedSizeAllocator::index_type FixedSizeAllocator::element_size() const
+INLINE size_t FixedSizeAllocator::element_size() const
 {
     return _element_size;
 }
 
-INLINE void* FixedSizeAllocator::get_element(index_type index)
+INLINE void* FixedSizeAllocator::get_element(size_t index)
 {
     if( index >= _total_elements )
         return nullptr;
@@ -69,12 +92,28 @@ INLINE void* FixedSizeAllocator::get_element(index_type index)
     return static_cast<void*>(_chunks[index/_chunk_size] + (index%_chunk_size)*_element_size);
 }
 
-INLINE const void* FixedSizeAllocator::get_element(index_type index) const
+INLINE const void* FixedSizeAllocator::get_element(size_t index) const
 {
     if( index >= _total_elements )
         return nullptr;
 
     return static_cast<void*>(_chunks[index/_chunk_size] + (index%_chunk_size)*_element_size);
+}
+
+//
+INLINE size_t FixedBlockAllocator::available() const
+{
+    return _available;
+}
+
+INLINE size_t FixedBlockAllocator::capacity() const
+{
+    return _chunk_size;
+}
+
+INLINE size_t FixedBlockAllocator::element_size() const
+{
+    return _element_size;
 }
 
 NS_LEMON_END

@@ -1,7 +1,10 @@
+// @date 2016/06/07
+// @author Mao Jingkai(oammix@gmail.com)
+
 #include <codebase/debug/log.hpp>
 #include <codebase/debug/stacktrace.hpp>
-
 #include <core/task.hpp>
+#include <iostream>
 
 NS_LEMON_BEGIN
 
@@ -62,6 +65,7 @@ void ABORT(const char* file, int line, const char* format, ...)
     s_log.write(LogLevel::ERROR, "\n\tIn: %s:%d\n\nStacktrace:", file, line);
     stacktrace(*s_log.out, 2);
     va_end(args);
+    exit(0);
 }
 
 void LOGI(const char* format, ...)
@@ -90,7 +94,7 @@ void LOGE(const char* format, ...)
 
 void ASSERT_MAIN_THREAD(const char* message)
 {
-    if( !core::task::is_main_thread() )
+    if( !core::is_main_thread() )
         LOGE("%s only run on the main thread.", message);
 }
 

@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <math/vector.hpp>
 #include <math/matrix.hpp>
 
 NS_LEMON_MATH_BEGIN
@@ -32,8 +31,6 @@ using Matrix3T = Matrix3<Quaternion::value_type>;
 using Matrix4T = Matrix4<Quaternion::value_type>;
 using quat_value_type = Quaternion::value_type;
 
-std::ostream& operator << (std::ostream&, const Quaternion&);
-
 // test for (in)equality with another quaternion without epsilon
 bool operator == (const Quaternion&, const Quaternion&);
 bool operator != (const Quaternion&, const Quaternion&);
@@ -58,7 +55,7 @@ Vector3T   operator * (const Vector3T&, const Quaternion&);
 Vector3T   operator / (const Vector3T&, const Quaternion&);
 
 // comparison with epslion
-//bool equals(const Quaternion&, const Quaternion&, quat_value_type epsilon = epsilon<quat_value_type>());
+bool equals(const Quaternion&, const Quaternion&, quat_value_type e = epsilon<quat_value_type>());
 
 // build a quaternion from euler angles(pitch, yaw, roll), in degree
 // order of rotations: Z first, then X, then Y

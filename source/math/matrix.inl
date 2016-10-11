@@ -94,25 +94,6 @@ void Matrix<R, C, T>::identity()
         _values[i][i] = (T)1;
 }
 
-//
-template<size_t R, size_t C, typename T>
-std::ostream& operator << (std::ostream& out, const Matrix<R, C, T>& m)
-{
-    out << "Matrix(";
-    for( unsigned r = 0; r < R; r++ )
-    {
-        out << "[";
-        for( unsigned c = 0; c < C; c++ )
-        {
-            out << m[r][c];
-            if( c != C - 1 ) out <<",";
-        }
-        out << "]";
-        if( r != R - 1 ) out << ",";
-    }
-    return out << ")";
-}
-
 // unary operations
 template<size_t R, size_t C, typename T>
 Matrix<R, C, T> operator + (const Matrix<R, C, T>& rh)
