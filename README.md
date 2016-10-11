@@ -5,6 +5,6 @@ lemon-toolkit is an experimental purpose project, written with a minimalistic mo
 its far from a stable version right now, but i'll keep on making it happens.
 
 #### Thanks
-1. [catch](https://github.com/philsquared/Catch): A modern, C++-native, header-only, framework for unit-tests, TDD and BDD C++ Automated Test Cases in Headers;
+1. [catch](https://github.com/philsquared/Catch): A modern, C++-native, header-only, framework for unit-tests;
 1. [hayai](https://github.com/nickbruun/hayai): C++ benchmarking framework;
 1. [stb](https://github.com/nothings/stb): stb single-file public domain libraries for C/C++;

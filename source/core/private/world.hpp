@@ -5,6 +5,7 @@
 
 #include <core/entity.hpp>
 #include <codebase/memory/allocator.hpp>
+#include <codebase/handle_set.hpp>
 
 NS_LEMON_CORE_BEGIN
 
@@ -50,8 +51,10 @@ struct World
     // remove a component from object
     void remove_component(TypeInfo::index_t, Entity);
 
-    // return next available entity identifier with specified mask
-    Entity find_next_available(Entity::index_t index, ComponentMask mask, bool self);
+    // returns first available entity identifier with specified mask
+    Handle find_first_available(ComponentMask);
+    // returns next available entity identifier with specified mask
+    Handle find_next_available(Handle, ComponentMask);
 
     // return true if component has already registered
     INLINE bool has_component_registered(TypeInfo::index_t id)
@@ -71,22 +74,19 @@ struct World
 
     INLINE size_t size() const
     {
-        return _incremental_index - _freeslots.size();
+        return _handles.size();
     }
 
     // returns true if the entity identifier is current alive
     INLINE bool alive(Entity object)
     {
-        return
-            object.get_index() < _versions.size() &&
-            object.get_version() == _versions[object.get_index()];
+        return _handles.is_valid(object);
     }
 
     // returns current alive entity identifier by index
     INLINE Entity get(Entity::index_t index)
     {
-        return index < _versions.size() && (_versions[index] & 0x1) == 1 ?
-            Entity(index, _versions[index]) : Entity();
+        return Handle(index, _handles.get_version(index));
     }
 
     INLINE size_t size(TypeInfo::index_t id)
@@ -102,8 +102,8 @@ struct World
     }
     
 protected:
-    // incremented entity index for brand new and free slot
-    Entity::index_t _incremental_index = 0;
+    // incremented handle set for brand new and free slot
+    ReuseableHandleSet _handles;
 
     // each element in componets_pool corresponds to a Pool for a Component
     // the index into the vector is the Component::type();
@@ -112,12 +112,6 @@ protected:
     // bitmask of components associated with each entity
     // the index into the vector is the Entity::Uid
     std::vector<ComponentMask> _masks;
-
-    // entity version numbers. incremented each time an entity is destroyed
-    std::vector<Entity::index_t> _versions;
-
-    // list of available entity slots
-    std::vector<Entity::index_t> _freeslots;
 };
 
 NS_LEMON_CORE_END

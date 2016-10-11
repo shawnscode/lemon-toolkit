@@ -6,6 +6,7 @@
 #include <forwards.hpp>
 
 #include <codebase/handle.hpp>
+#include <codebase/handle_set.hpp>
 #include <codebase/memory/allocator.hpp>
 
 #include <functional>
@@ -35,8 +36,8 @@ struct IndexedMemoryPool
 
     void clear()
     {
-        _handles.clear();
         _allocator.clear();
+        _handles.clear();
         _table.clear();
     }
 
@@ -59,6 +60,7 @@ protected:
 struct IndexedObjectPool : public IndexedMemoryPool
 {
     using callback = std::function<void(void*)>;
+
     IndexedObjectPool(size_t element_size, size_t chunk_size, const callback& ctor, const callback& dtor);
     ~IndexedObjectPool();
 

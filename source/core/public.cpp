@@ -196,14 +196,14 @@ namespace internal
         return s_world->has_component(id, object);
     }
 
-    Entity::index_t find_next_available(Entity::index_t id, ComponentMask mask, bool self)
+    Handle find_first_available(ComponentMask mask)
     {
-        return s_world->find_next_available(id, mask, self).get_index();
+        return s_world->find_first_available(mask);
     }
 
-    Entity get(Entity::index_t id)
+    Handle find_next_available(Handle handle, ComponentMask mask)
     {
-        return s_world->get(id);
+        return s_world->find_next_available(handle, mask);
     }
     
     namespace test_mem
@@ -268,16 +268,6 @@ bool has_component(TypeInfo::index_t id, Entity object)
 ComponentMask get_components_mask(Entity object)
 {
     return s_world->get_components_mask(object);
-}
-
-Entity::index_t find_next_available(Entity::index_t index, ComponentMask mask, bool self)
-{
-    return s_world->find_next_available(index, mask, self).get_index();
-}
-
-Entity get(Entity::index_t index)
-{
-    return s_world->get(index);
 }
 
 NS_LEMON_CORE_END

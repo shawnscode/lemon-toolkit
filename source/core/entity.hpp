@@ -4,7 +4,9 @@
 #pragma once
 
 #include <core/event.hpp>
+
 #include <codebase/type/typeinfo.hpp>
+#include <codebase/handle.hpp>
 
 #include <bitset>
 
@@ -12,30 +14,7 @@
 NS_LEMON_CORE_BEGIN
 
 // represents an entity handle which is made up of components.
-struct Entity
-{
-    using index_t = uint16_t; // supports 60k+ entities and versions.
-    const static index_t invalid = std::numeric_limits<index_t>::max();
-
-    Entity() = default;
-    Entity(const Entity&) = default;
-    Entity(index_t index, index_t version) : _index(index), _version(version) {}
-    Entity& operator = (const Entity&) = default;
-
-    bool operator == (const Entity&) const;
-    bool operator != (const Entity&) const;
-    bool operator <  (const Entity&) const;
-
-    index_t get_index() const;
-    index_t get_version() const;
-
-    // invalidate entity handle, disassociating it from entity manager.
-    void invalidate();
-
-private:
-    index_t _index = invalid;
-    index_t _version = invalid;
-};
+using Entity = Handle;
 
 #define SET_CHUNK_SIZE(SIZE) static const size_t chunk_size = SIZE;
 #define SET_COMPONENT_NAME(NAME) static const char* name = NAME;
@@ -67,7 +46,7 @@ namespace ecs
     // an iterator over a specified view with components of the entites in an EntityManager.
     struct iterator : public std::iterator<std::forward_iterator_tag, Entity>
     {
-        iterator(Entity::index_t, ComponentMask);
+        iterator(Handle, ComponentMask);
 
         iterator operator ++ (int);
         iterator& operator ++ ();
@@ -78,7 +57,7 @@ namespace ecs
 
     protected:
         ComponentMask _mask;
-        Entity::index_t _index;
+        Handle _current;
     };
 
     template<typename ... Args> struct view
@@ -163,7 +142,7 @@ namespace internal
 
     //
     template<typename T> bool register_component()
-   {
+    {
         auto destructor = [](Entity object, void* chunk)
         {
             T* component = static_cast<T*>(chunk);
@@ -177,7 +156,7 @@ namespace internal
  
         const auto id = TypeInfo::id<Component, T>();
         return register_component(id, sizeof(T), T::chunk_size, destructor);
-   }
+    }
 
     //
     void* add_component(TypeInfo::index_t, Entity);
@@ -187,9 +166,10 @@ namespace internal
     void remove_component(TypeInfo::index_t, Entity);
     bool has_component(TypeInfo::index_t, Entity);
 
-    //
-    Entity::index_t find_next_available(Entity::index_t, ComponentMask, bool self = false);
-    Entity get(Entity::index_t);
+    // returns first available entity identifier with specified mask
+    Handle find_first_available(ComponentMask);
+    // returns next available entity identifier with specified mask
+    Handle find_next_available(Handle, ComponentMask);
 
     //
     template<typename T> INLINE bool has_components(Entity object)
@@ -221,50 +201,16 @@ namespace internal
     }
 }
 
-// INCLUDED METHODS OF ENTITY
-INLINE bool Entity::operator == (const Entity& rh) const
-{
-    return _index == rh._index && _version == rh._version;
-}
-
-INLINE bool Entity::operator != (const Entity& rh) const
-{
-    return !(*this == rh);
-}
-
-INLINE bool Entity::operator < (const Entity& rh) const
-{
-    return _version == rh._version ? _index < rh._index : _version < rh._version;
-}
-
-INLINE Entity::index_t Entity::get_index() const
-{
-    return _index;
-}
-
-INLINE Entity::index_t Entity::get_version() const
-{
-    return _version;
-}
-
-INLINE void Entity::invalidate()
-{
-    _index = invalid;
-    _version = invalid;
-}
-
 // INCLUDED METHODS OF ENTITY VIEW AND ITERATOR
 namespace ecs
 {
-    INLINE iterator::iterator(Entity::index_t index, ComponentMask mask)
-    : _index(index), _mask(mask)
-    {
-        _index = internal::find_next_available(_index, _mask, true);
-    }
+    INLINE iterator::iterator(Handle index, ComponentMask mask)
+    : _current(index), _mask(mask)
+    {}
 
     INLINE iterator& iterator::operator ++ ()
     {
-        _index = internal::find_next_available(_index, _mask);
+        _current = internal::find_next_available(_current, _mask);
         return *this;
     }
 
@@ -277,7 +223,7 @@ namespace ecs
 
     INLINE bool iterator::operator == (const iterator& rhs) const
     {
-        return _index == rhs._index && _mask == rhs._mask;
+        return _current == rhs._current && _mask == rhs._mask;
     }
 
     INLINE bool iterator::operator != (const iterator& rhs) const
@@ -287,7 +233,7 @@ namespace ecs
 
     INLINE Entity iterator::operator * () const
     {
-        return internal::get(_index);
+        return _current;
     }
 
     template<typename ... Args> view<Args...>::view()
@@ -296,12 +242,12 @@ namespace ecs
 
     template<typename ... Args> INLINE iterator view<Args...>::begin() const
     {
-        return iterator(0, _mask);
+        return iterator(internal::find_first_available(_mask), _mask);
     }
 
     template<typename ... Args> INLINE iterator view<Args...>::end() const
     {
-        return iterator(Entity::invalid, _mask);
+        return iterator(Handle(), _mask);
     }
 
     template<typename ... Args> INLINE void view<Args...>::visit(const visitor& cb)
@@ -398,14 +344,3 @@ template<typename ... T> INLINE ecs::view<T...> find_entities_with()
 }
 
 NS_LEMON_CORE_END
-
-namespace std
-{
-    template<> struct hash<lemon::core::Entity>
-    {
-        std::size_t operator() (const lemon::core::Entity& entity) const
-        {
-            return static_cast<std::size_t>((size_t)entity.get_index() ^ (size_t)entity.get_version());
-        }
-    };
-}

@@ -116,44 +116,22 @@ void World::dispose()
         }
     }
 
-    for( unsigned i = 0; i < _versions.size(); i++ )
-    {
-        if( (_versions[i] & 0x1) == 1 )
-            _versions[i] ++;
-    }
-
     for( unsigned i = 0; i < _masks.size(); i++ )
     {
         _masks[i].reset();
     }
+
+    _handles.clear();
 }
 
 Entity World::spawn()
 {
-    Entity::index_t index, version;
-    if( _freeslots.empty() )
-    {
-        index = _incremental_index++;
-        if( _masks.size() < _incremental_index )
-        {
-            _masks.resize(_incremental_index);
-            _versions.resize(_incremental_index);
-        }
+    auto handle = _handles.create();
 
-        ASSERT( _incremental_index != Entity::invalid,
-            "too much entities,"
-            "please considering change the representation of Entity::index_t." );
-        _versions[index] = 1;
-    }
-    else
-    {
-        index = _freeslots.back();
-        _freeslots.pop_back();
-        _versions[index] ++;
-    }
+    if( _masks.size() < (handle.get_index()+1) )
+        _masks.resize(handle.get_index()+1);
 
-    version = _versions[index];
-    return Entity(index, version);
+    return handle;
 }
 
 void World::recycle(Entity object)
@@ -170,12 +148,7 @@ void World::recycle(Entity object)
     }
 
     _masks[object.get_index()].reset();
-    _versions[object.get_index()] ++;
-    _freeslots.push_back(object.get_index());
-
-    ASSERT( _versions[object.get_index()] != Entity::invalid,
-        "too much reusages of this entity,"
-        "please considering change the representation of Entity::index_t." );
+    _handles.free(object);
 }
 
 bool World::register_component(TypeInfo::index_t id, size_t size, size_t chunk_size, const internal::destructor& destructor)
@@ -231,21 +204,27 @@ void World::remove_component(TypeInfo::index_t id, Entity object)
     }
 }
 
-Entity World::find_next_available(Entity::index_t index, ComponentMask mask, bool self)
+Handle World::find_first_available(ComponentMask mask)
 {
-    if( index == Entity::invalid )
-        return Entity();
-
-    for( Entity::index_t i = self ? index : index + 1; i < Entity::invalid; i++ )
+    for( auto handle : _handles )
     {
-        if( i < _versions.size() && (_versions[i] & 0x1) == 1 )
-        {
-            if( (_masks[i] & mask) == mask )
-                return Entity(i, _versions[i]);
-        }
+        if( (_masks[handle.get_index()] & mask) == mask )
+            return handle;
     }
 
-    return Entity();
+    return Handle();
+}
+
+Handle World::find_next_available(Handle handle, ComponentMask mask)
+{
+    auto iterator = ++ReuseableHandleSet::iterator(_handles, handle);
+    for( ; iterator != _handles.end(); iterator++ )
+    {
+        if( (_masks[(*iterator).get_index()] & mask) == mask )
+            return *iterator;
+    }
+
+    return Handle();
 }
 
 NS_LEMON_CORE_END
