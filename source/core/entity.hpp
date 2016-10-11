@@ -77,8 +77,8 @@ namespace ecs
         Entity operator * () const;
 
     protected:
-        ComponentMask       _mask;
-        Entity::index_t  _index;
+        ComponentMask _mask;
+        Entity::index_t _index;
     };
 
     template<typename ... Args> struct view

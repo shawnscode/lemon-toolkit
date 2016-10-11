@@ -26,7 +26,7 @@ struct GraphicsObject
     GraphicsObject(Renderer& renderer) : _renderer(renderer) {}
     virtual ~GraphicsObject() {}
 
-protected: 
+protected:
     Renderer& _renderer;
 };
 
