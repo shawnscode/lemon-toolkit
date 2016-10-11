@@ -21,7 +21,7 @@ struct VertexBufferGL : public VertexBuffer
 
     //
     GLuint get_handle() const { return _object; }
-    const VertexLayout& get_attributes() const { return _attributes; }
+    const VertexLayout& get_layout() const { return _attributes; }
     unsigned get_size() const { return _size; }
 
 protected:

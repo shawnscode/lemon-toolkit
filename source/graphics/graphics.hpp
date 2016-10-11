@@ -221,8 +221,6 @@ struct Program : public GraphicsObject
     virtual bool initialize(const char* vs, const char* ps) = 0;
     virtual void dispose() = 0;
 
-    // specified input identifier of vertex attribute
-    // virtual bool set_vertex_attribute(VertexAttribute, const char*) const;
     // set uniform vector value
     virtual bool set_uniform_1f(const char*, const math::Vector<1, float>&) = 0;
     virtual bool set_uniform_2f(const char*, const math::Vector<2, float>&) = 0;
@@ -234,6 +232,8 @@ struct Program : public GraphicsObject
     virtual bool set_uniform_4fm(const char*, const math::Matrix<4, 4, float>&) = 0;
     // set uniform texture
     virtual bool set_uniform_texture(const char*, Texture::ptr) = 0;
+    // specified input identifier of vertex attribute
+    virtual bool set_attribute_name(VertexAttribute::Enum, const char*) = 0;
 };
 
 // INCLUDED IMPLEMENTATIONS

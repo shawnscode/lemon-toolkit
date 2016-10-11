@@ -22,12 +22,7 @@ struct VertexArrayObjectCache
     // void free(VertexBuffer::ptr);
 
 protected:
-    GLint get_attribute_location(GLuint, const char*);
-
     bool _vao_support;
-
-    using attributes = std::unordered_map<math::StringHash, GLint>;
-    std::unordered_map<GLuint, attributes> _program_attributes;
     std::unordered_map<uint64_t, GLuint> _vaos;
 };
 

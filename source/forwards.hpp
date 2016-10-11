@@ -64,18 +64,6 @@ NS_LEMON_CORE_END
 
 NS_LEMON_GRAPHICS_BEGIN
 
-const static unsigned kMaxCommandBufferSize = 1 << 16;
-const static unsigned kMaxVertexAttributes = 16;
-
-const static unsigned kMaxVertexBuffers = 16;
-const static unsigned kMaxIndexBuffers = 16;
-const static unsigned kMaxPrograms = 8;
-
-const static unsigned kMaxTexture2Ds = 8;
-const static unsigned kMaxUniforms = 32;
-
-const static unsigned kMaxTextureSamples = 4;
-
 struct Renderer;
 struct WindowDevice;
 

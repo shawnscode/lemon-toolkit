@@ -60,26 +60,25 @@ void VertexArrayObjectCache::bind(Program::ptr rp, VertexBuffer::ptr rvb)
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, glvb);
-    auto& attributes = vb->get_attributes();
+    auto& layout = vb->get_layout();
     for( uint8_t i = 0; i < VertexAttribute::kVertexAttributeCount; i++ )
     {
         VertexAttribute::Enum va = (VertexAttribute::Enum)i;
-        if( attributes.has(va) )
+        if( layout.has(va) )
         {
-            auto localtion = get_attribute_location(glprogram, VertexAttribute::name(va));
+            auto localtion = program->get_attribute_location(va);
             if( localtion == -1 )
                 continue;
 
-            auto attr = attributes.get_attribute(va);
-
+            auto attribute = layout.get_attribute(va);
             glEnableVertexAttribArray(localtion);
             glVertexAttribPointer(
                 /*index*/ localtion,
-                /*size*/ attr.size,
-                /*type*/ GL_ELEMENT_FORMAT[value(attr.format)],
-                /*normalized*/ attr.normalized,
-                /*stride*/ attributes.get_stride(),
-                /*pointer*/ (uint8_t*)0+attributes.get_offset(va));
+                /*size*/ attribute.size,
+                /*type*/ GL_ELEMENT_FORMAT[value(attribute.format)],
+                /*normalized*/ attribute.normalized,
+                /*stride*/ layout.get_stride(),
+                /*pointer*/ (uint8_t*)0+layout.get_offset(va));
         }
     }
 
@@ -118,26 +117,5 @@ void VertexArrayObjectCache::unbind()
 //             ++it;
 //     }
 // }
-
-GLint VertexArrayObjectCache::get_attribute_location(GLuint program, const char* name)
-{
-    auto it = _program_attributes.find(program);
-    if( it == _program_attributes.end() )
-        _program_attributes.emplace(program, attributes());
-
-    auto hash = math::StringHash(name);
-    auto& table = _program_attributes[program];
-
-    auto found = table.find(hash);
-    if( found != table.end() )
-        return found->second;
-
-    auto localtion = glGetAttribLocation(program, name);
-    if( localtion == -1 )
-        LOGW("failed to localte attribute %s of program %d.", name, program);
-
-    table.insert(std::make_pair(hash, localtion));
-    return localtion;
-}
 
 NS_LEMON_GRAPHICS_END

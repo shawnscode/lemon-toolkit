@@ -34,22 +34,31 @@ struct ProgramGL : public Program
     bool set_uniform_4fm(const char*, const math::Matrix<4, 4, float>&) override;
     // set uniform texture
     bool set_uniform_texture(const char*, std::shared_ptr<Texture>) override;
+    // set attribute name
+    bool set_attribute_name(VertexAttribute::Enum, const char*) override;
 
     // active this program
     void bind();
     // returns opengl handle of this program
     GLuint get_handle() const { return _object; }
+    // returns location of specified attribute
+    GLint get_attribute_location(VertexAttribute::Enum);
 
 protected:
+    // returns location of specified uniform
     GLint get_uniform_location(const char*);
+    // returns location of specified attribute
+    GLint get_attribute_location(const char*);
 
     std::string _fragment_shader;
     std::string _vertex_shader;
     GLuint _object = 0;
 
-    // std::map<name, std::pair<location, texture handle>>
     std::map<math::StringHash, std::pair<GLint, std::shared_ptr<Texture>>> _textures;
+
     std::unordered_map<math::StringHash, GLint> _uniforms;
+    std::unordered_map<math::StringHash, GLint> _attributes;
+    std::unordered_map<uint8_t, math::StringHash> _attribute_names;
 };
 
 NS_LEMON_GRAPHICS_END

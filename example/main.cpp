@@ -6,13 +6,13 @@ using namespace lemon::graphics;
 
 const char* vs =
 "#version 330 core\n"
-"layout(location = 0) in vec3 Position;\n"
-"layout(location = 1) in vec2 Texcoord_0;\n"
+"layout(location = 0) in vec3 position;\n"
+"layout(location = 1) in vec2 uv;\n"
 "uniform mat4 MVP;\n"
 "out vec2 v_uv;\n"
 "void main(){\n"
-"    gl_Position = vec4(Position, 1.0)*MVP;\n"
-"    v_uv = Texcoord_0;\n"
+"    gl_Position = vec4(position, 1.0)*MVP;\n"
+"    v_uv = uv;\n"
 "}\n";
 
 const char* ps =
@@ -70,6 +70,8 @@ struct Example : public Application
 
         vb = frontend->create_vertex_buffer(vertices, 3, layout, MemoryUsage::STATIC);
         program = frontend->create_program(vs, ps);
+        program->set_attribute_name(VertexAttribute::POSITION, "position");
+        program->set_attribute_name(VertexAttribute::TEXCOORD_0, "uv");
         program->set_uniform_texture("sampler", texture);
 
         core::subscribe<EvtUpdate>(*this);

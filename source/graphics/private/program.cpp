@@ -119,7 +119,7 @@ GLint ProgramGL::get_uniform_location(const char* name)
 {
     if( _object == 0 )
     {
-        LOGW("failed to get uniform localtion without a decent handle.");
+        LOGW("failed to get uniform location without a decent handle.");
         return -1;
     }
 
@@ -128,12 +128,54 @@ GLint ProgramGL::get_uniform_location(const char* name)
     if( found != _uniforms.end() )
         return found->second;
 
-    auto localtion = glGetUniformLocation(_object, name);
-    if( localtion == -1 )
-        LOGW("failed to locate uniform %s.", name);
+    auto location = glGetUniformLocation(_object, name);
+    if( location == -1 )
+        LOGW("failed to locate uniform %s of program %d.", name, _object);
 
-    _uniforms.insert(std::make_pair(hash, localtion));
-    return localtion;
+    _uniforms.insert(std::make_pair(hash, location));
+    return location;
+}
+
+GLint ProgramGL::get_attribute_location(const char* name)
+{
+    if( _object == 0 )
+    {
+        LOGW("failed to get attribute location without a decent handle.");
+        return -1;
+    }
+
+    auto hash = math::StringHash(name);
+    auto found = _attributes.find(hash);
+    if( found != _attributes.end() )
+        return found->second;
+
+    auto location = glGetAttribLocation(_object, name);
+    if( location == -1 )
+        LOGW("failed to localte attribute %s of program %d.", name, _object);
+
+    _attributes.insert(std::make_pair(hash, location));
+    return location;
+}
+
+GLint ProgramGL::get_attribute_location(VertexAttribute::Enum va)
+{
+    auto it = _attribute_names.find(value(va));
+    if( it != _attribute_names.end() )
+    {
+        auto location = _attributes.find(it->second);
+        ENSURE(location != _attributes.end());
+        return location->second;
+    }
+
+    // use default name to search attribute location
+    return get_attribute_location(VertexAttribute::name(va));
+}
+
+bool ProgramGL::set_attribute_name(VertexAttribute::Enum va, const char* name)
+{
+    auto location = get_attribute_location(name);
+    _attribute_names.insert(std::make_pair(value(va), math::StringHash(name)));
+    return location != -1;
 }
 
 bool ProgramGL::set_uniform_texture(const char* name, std::shared_ptr<Texture> texture)
@@ -149,11 +191,11 @@ bool ProgramGL::set_uniform_texture(const char* name, std::shared_ptr<Texture> t
         return true;
     }
 
-    auto localtion = get_uniform_location(name);
-    if( localtion == -1 )
+    auto location = get_uniform_location(name);
+    if( location == -1 )
         return false;
 
-    _textures.insert(std::make_pair(hash, std::make_pair(localtion, texture)));
+    _textures.insert(std::make_pair(hash, std::make_pair(location, texture)));
     CHECK_GL_ERROR();
     return true;
 }
@@ -162,12 +204,12 @@ bool ProgramGL::set_uniform_1f(const char* name, const math::Vector<1, float>& v
 {
     ENSURE_NOT_RENDER_PHASE;
 
-    auto localtion = get_uniform_location(name);
-    if( localtion == -1 )
+    auto location = get_uniform_location(name);
+    if( location == -1 )
         return false;
 
     glUseProgram(_object);
-    glUniform1f(localtion, value[0]);
+    glUniform1f(location, value[0]);
     CHECK_GL_ERROR();
     return true;
 }
@@ -176,12 +218,12 @@ bool ProgramGL::set_uniform_2f(const char* name, const math::Vector<2, float>& v
 {
     ENSURE_NOT_RENDER_PHASE;
 
-    auto localtion = get_uniform_location(name);
-    if( localtion == -1 )
+    auto location = get_uniform_location(name);
+    if( location == -1 )
         return false;
 
     glUseProgram(_object);
-    glUniform2f(localtion, value[0], value[1]);
+    glUniform2f(location, value[0], value[1]);
     CHECK_GL_ERROR();
     return true;
 }
@@ -190,12 +232,12 @@ bool ProgramGL::set_uniform_3f(const char* name, const math::Vector<3, float>& v
 {
     ENSURE_NOT_RENDER_PHASE;
 
-    auto localtion = get_uniform_location(name);
-    if( localtion == -1 )
+    auto location = get_uniform_location(name);
+    if( location == -1 )
         return false;
 
     glUseProgram(_object);
-    glUniform3f(localtion, value[0], value[1], value[2]);
+    glUniform3f(location, value[0], value[1], value[2]);
     CHECK_GL_ERROR();
     return true;
 }
@@ -204,12 +246,12 @@ bool ProgramGL::set_uniform_4f(const char* name, const math::Vector<4, float>& v
 {
     ENSURE_NOT_RENDER_PHASE;
 
-    auto localtion = get_uniform_location(name);
-    if( localtion == -1 )
+    auto location = get_uniform_location(name);
+    if( location == -1 )
         return false;
 
     glUseProgram(_object);
-    glUniform4f(localtion, value[0], value[1], value[2], value[3]);
+    glUniform4f(location, value[0], value[1], value[2], value[3]);
     CHECK_GL_ERROR();
     return true;
 }
@@ -219,12 +261,12 @@ bool ProgramGL::set_uniform_2fm(const char* name, const math::Matrix<2, 2, float
 {
     ENSURE_NOT_RENDER_PHASE;
 
-    auto localtion = get_uniform_location(name);
-    if( localtion == -1 )
+    auto location = get_uniform_location(name);
+    if( location == -1 )
         return false;
 
     glUseProgram(_object);
-    glUniformMatrix2fv(localtion, 1, GL_TRUE, (float*)&value);
+    glUniformMatrix2fv(location, 1, GL_TRUE, (float*)&value);
     CHECK_GL_ERROR();
     return true;
 }
@@ -233,12 +275,12 @@ bool ProgramGL::set_uniform_3fm(const char* name, const math::Matrix<3, 3, float
 {
     ENSURE_NOT_RENDER_PHASE;
 
-    auto localtion = get_uniform_location(name);
-    if( localtion == -1 )
+    auto location = get_uniform_location(name);
+    if( location == -1 )
         return false;
 
     glUseProgram(_object);
-    glUniformMatrix3fv(localtion, 1, GL_TRUE, (float*)&value);
+    glUniformMatrix3fv(location, 1, GL_TRUE, (float*)&value);
     CHECK_GL_ERROR();
     return true;
 }
@@ -247,12 +289,12 @@ bool ProgramGL::set_uniform_4fm(const char* name, const math::Matrix<4, 4, float
 {
     ENSURE_NOT_RENDER_PHASE;
 
-    auto localtion = get_uniform_location(name);
-    if( localtion == -1 )
+    auto location = get_uniform_location(name);
+    if( location == -1 )
         return false;
 
     glUseProgram(_object);
-    glUniformMatrix4fv(localtion, 1, GL_TRUE, (float*)&value);
+    glUniformMatrix4fv(location, 1, GL_TRUE, (float*)&value);
     CHECK_GL_ERROR();
     return true;
 }
