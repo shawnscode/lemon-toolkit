@@ -11,6 +11,7 @@
 NS_LEMON_CORE_BEGIN
 
 bool initialize(unsigned nworker);
+bool is_running();
 void dispose();
 
 NS_LEMON_CORE_END

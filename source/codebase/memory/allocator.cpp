@@ -85,4 +85,15 @@ void FixedSizeAllocator::free(void* element)
     _available ++;
 }
 
+void FixedSizeAllocator::clear()
+{
+    for( auto chunk : _chunks )
+        ::free(chunk);
+
+    _chunks.clear();
+    _first_free_block = invalid;
+    _available = 0;
+    _total_elements = 0;
+}
+
 NS_LEMON_END

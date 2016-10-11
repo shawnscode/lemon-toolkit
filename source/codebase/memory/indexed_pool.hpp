@@ -33,6 +33,13 @@ struct IndexedMemoryPool
         return _handles.is_valid(handle) ? _table[handle.get_index()] : nullptr;
     }
 
+    void clear()
+    {
+        _handles.clear();
+        _allocator.clear();
+        _table.clear();
+    }
+
     ReuseableHandleSet::iterator begin() const
     {
         return _handles.begin();
@@ -63,51 +70,6 @@ struct IndexedObjectPool : public IndexedMemoryPool
 protected:
     callback _constructor;
     callback _destructor;
-};
-
-template<typename T> struct IndexedObjectPoolT
-{
-    IndexedObjectPoolT(size_t chunk_size) : _allocator(sizeof(T), chunk_size)
-    {}
-
-    ~IndexedObjectPoolT()
-    {
-        for( auto iterator : _allocator )
-            _allocator.get(*iterator)->~T();
-    }
-
-    // accquire a unused block of memory and construct it as T with args
-    template<typename ... Args> Handle malloc(Args&& ...args)
-    {
-        auto handle = _allocator.malloc();
-        auto object = _allocator.get(handle);
-
-        if( object == nullptr )
-            return handle;
-
-        ::new (object) T(std::forward<Args>(args)...);
-        return handle;
-    }
-
-    // returns object associated with handle
-    T* get(Handle handle)
-    {
-        return static_cast<T*>(_allocator.get(handle));
-    }
-
-    // destruct object and recycle memory
-    void free(Handle handle)
-    {
-        auto object = _allocator.get(handle);
-        if( object == nullptr )
-            return;
-
-        static_cast<T*>(object)->~T();
-        _allocator.free(handle);
-    }
-
-protected:
-    IndexedMemoryPool _allocator;
 };
 
 NS_LEMON_END

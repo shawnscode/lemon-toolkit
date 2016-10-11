@@ -8,8 +8,11 @@
 #include <graphics/private/vertex_buffer.hpp>
 #include <graphics/private/index_buffer.hpp>
 #include <graphics/private/texture.hpp>
+#include <core/public.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
+
+Renderer::Renderer() {}
 
 bool Renderer::initialize()
 {
@@ -20,10 +23,23 @@ bool Renderer::initialize()
     _vaocache = new (std::nothrow) VertexArrayObjectCache();
     if( _vaocache == nullptr )
     {
-        delete _backend;
-        _backend = nullptr;
+        dispose();
         return false;
     }
+
+    _destruct_program = [=](Program* p)
+    {
+        if( core::is_running() )
+            _vaocache->free(*static_cast<ProgramGL*>(p));
+        delete p;
+    };
+
+    _destruct_vertex_buffer = [=](VertexBuffer* vb)
+    {
+        if( core::is_running() )
+            _vaocache->free(*static_cast<VertexBufferGL*>(vb));
+        delete vb;
+    };
 
     _frame_began = false;
     return true;
@@ -42,6 +58,9 @@ void Renderer::dispose()
         delete _vaocache;
         _vaocache = nullptr;
     }
+
+    _destruct_program = nullptr;
+    _destruct_vertex_buffer = nullptr;
 }
 
 bool Renderer::restore(SDL_Window* window)
@@ -58,7 +77,7 @@ Program::ptr Renderer::create_program(const char* vs, const char* ps)
 {
     auto object = new (std::nothrow) ProgramGL(*this);
     if( object && object->initialize(vs, ps) )
-        return Program::ptr(object);
+        return Program::ptr(object, _destruct_program);
 
     if( object ) delete object;
     return nullptr;
@@ -88,7 +107,7 @@ VertexBuffer::ptr Renderer::create_vertex_buffer(
 {
     auto object = new (std::nothrow) VertexBufferGL(*this);
     if( object && object->initialize(data, size, layer, usage) )
-        return VertexBuffer::ptr(object);
+        return VertexBuffer::ptr(object, _destruct_vertex_buffer);
 
     if( object ) delete object;
     return nullptr;
@@ -154,8 +173,12 @@ void Renderer::flush()
 
     for( auto& drawcall : _drawcalls )
     {
-        std::static_pointer_cast<ProgramGL>(drawcall.program)->bind();
-        _vaocache->bind(drawcall.program, drawcall.vertex_buffer);
+        auto program = std::static_pointer_cast<ProgramGL>(drawcall.program);
+        auto vb = std::static_pointer_cast<VertexBufferGL>(drawcall.vertex_buffer);
+        auto ib = std::static_pointer_cast<IndexBufferGL>(drawcall.index_buffer);
+
+        program->bind();
+        _vaocache->bind(*program, *vb);
 
         auto& state = drawcall.state;
         _backend->set_scissor_test(state.scissor.enable, state.scissor.area);
@@ -183,11 +206,10 @@ void Renderer::flush()
             state.stencil_write.dppass,
             state.stencil_write.mask);
 
-        if( drawcall.index_buffer != nullptr )
+        if( ib != nullptr )
         {
-            auto index_buffer = std::static_pointer_cast<IndexBufferGL>(drawcall.index_buffer);
-            index_buffer->bind();
-            _backend->draw_index(drawcall.primitive, index_buffer->get_format(), drawcall.first, drawcall.count);
+            ib->bind();
+            _backend->draw_index(drawcall.primitive, ib->get_format(), drawcall.first, drawcall.count);
         }
         else
         {

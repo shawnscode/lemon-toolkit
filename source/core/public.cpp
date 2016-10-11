@@ -10,26 +10,26 @@
 
 NS_LEMON_CORE_BEGIN
 
-std::auto_ptr<Scheduler> s_scheduler;
-std::auto_ptr<Context> s_context;
-std::auto_ptr<Dispatcher> s_dispatcher;
-std::auto_ptr<World> s_world;
+std::unique_ptr<Scheduler> s_scheduler;
+std::unique_ptr<Context> s_context;
+std::unique_ptr<Dispatcher> s_dispatcher;
+std::unique_ptr<World> s_world;
 
 bool initialize(unsigned nworker)
 {
-    auto scheduler = std::auto_ptr<Scheduler>(new (std::nothrow) Scheduler());
+    auto scheduler = std::unique_ptr<Scheduler>(new (std::nothrow) Scheduler());
     if( scheduler.get() == nullptr || !scheduler->initialize(nworker) )
         return false;
 
-    auto dispatcher = std::auto_ptr<Dispatcher>(new (std::nothrow) Dispatcher());
+    auto dispatcher = std::unique_ptr<Dispatcher>(new (std::nothrow) Dispatcher());
     if( dispatcher.get() == nullptr || !dispatcher->initialize() )
         return false;
 
-    auto context = std::auto_ptr<Context>(new (std::nothrow) Context());
+    auto context = std::unique_ptr<Context>(new (std::nothrow) Context());
     if( context.get() == nullptr || !context->initialize() )
         return false;
 
-    auto world = std::auto_ptr<World>(new (std::nothrow) World());
+    auto world = std::unique_ptr<World>(new (std::nothrow) World());
     if( world.get() == nullptr || !world->initialize() )
         return false;
 
@@ -38,6 +38,11 @@ bool initialize(unsigned nworker)
     s_context = std::move(context);
     s_world = std::move(world);
     return true;
+}
+
+bool is_running()
+{
+    return s_context != nullptr;
 }
 
 void dispose()

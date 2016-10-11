@@ -9,6 +9,7 @@
 #include <graphics/state.hpp>
 #include <graphics/drawcall.hpp>
 
+#include <codebase/memory/indexed_pool.hpp>
 #include <core/subsystem.hpp>
 #include <math/color.hpp>
 #include <math/vector.hpp>
@@ -36,6 +37,7 @@ struct VertexArrayObjectCache;
 struct Renderer : public core::Subsystem
 {
     SUBSYSTEM("lemon::graphics::Renderer")
+    Renderer();
 
     bool initialize() override;
     void dispose() override;
@@ -61,8 +63,6 @@ struct Renderer : public core::Subsystem
 
 protected:
     static bool drawcall_compare(const RenderDrawcall&, const RenderDrawcall&);
-    static void free_program(Program*);
-    static void free_vertex_buffer(VertexBuffer*);
 
 protected:
     friend struct WindowDevice;
@@ -77,6 +77,8 @@ protected:
 
     RendererBackend* _backend;
     VertexArrayObjectCache* _vaocache;
+    std::function<void(Program*)> _destruct_program;
+    std::function<void(VertexBuffer*)> _destruct_vertex_buffer;
 
     std::mutex _mutex;
     std::vector<RenderDrawcall> _drawcalls;

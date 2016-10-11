@@ -13,6 +13,9 @@ NS_LEMON_BEGIN
 // lookups are O(1), appends/recycles are amortized O(1).
 struct FixedSizeAllocator
 {
+    FixedSizeAllocator(FixedSizeAllocator&) = delete;
+    FixedSizeAllocator& operator=(FixedSizeAllocator&) = delete;
+
     explicit FixedSizeAllocator(size_t element_size, size_t chunk_size);
     virtual ~FixedSizeAllocator();
 
@@ -24,7 +27,9 @@ struct FixedSizeAllocator
     // returns a free memory block from pool
     void* malloc();
     // free and recycle specified memory block
-    void  free(void*);
+    void free(void*);
+    // clear all traced allocated chunks
+    void clear();
 
 protected:
     const static size_t invalid;
@@ -35,9 +40,9 @@ protected:
     std::vector<uint8_t*> _chunks;
     size_t _total_elements;
     size_t _available;
+    size_t _first_free_block;  // the index of first available chunk
     size_t _element_size;      // size of each element block
     size_t _chunk_size;        // number of blocks in every chunk
-    size_t _first_free_block;  // the index of first available chunk
 };
 
 // INCLUDED METHODS OF POOL

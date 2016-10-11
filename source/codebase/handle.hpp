@@ -108,6 +108,12 @@ struct ReuseableHandleSet
         _freeslots.push_back(handle.get_index());
     }
 
+    void clear()
+    {
+        _versions.clear();
+        _freeslots.clear();
+    }
+
     // returns an iterator referrring to the first alive handle in the handle set
     iterator begin() const
     {
