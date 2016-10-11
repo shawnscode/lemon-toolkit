@@ -113,6 +113,7 @@ bool Renderer::begin_frame()
     if( !_backend->begin_frame() )
         return false;
 
+    _frame_drawcall = 0;
     _frame_began = true;
     return true;
 }
@@ -124,30 +125,10 @@ void Renderer::clear(ClearOption option, const math::Color& color, float depth, 
     _backend->clear(option, color, depth, stencil);
 }
 
-void Renderer::submit(
-    RenderLayer layer, RenderState state,
-    Program::ptr program, VertexBuffer::ptr vb, IndexBuffer::ptr ib,
-    uint32_t depth, uint32_t start, uint32_t num)
+void Renderer::submit(RenderLayer layer, uint32_t depth, RenderDrawcall& drawcall)
 {
     ASSERT(_frame_began, "\'submit\' could only be called in render phase.");
 
-    // RenderDrawcall drawcall;
-    // drawcall.state = state;
-    // drawcall.program = program;
-    // drawcall.vertex_buffer = vb;
-    // drawcall.index_buffer = ib;
-    // drawcall.start = start;
-    // drawcall.vertex_count = num;
-    // drawcall.sort_value = SortValue::encode(layer, program, depth);
-
-    {
-        // std::unique_lock<std::mutex> L(CTX(mutex));
-        // CTX(drawcalls).push_back(drawcall);
-    }
-}
-
-void Renderer::submit(RenderLayer layer, uint32_t depth, RenderDrawcall& drawcall)
-{
     drawcall.sort = SortValue::encode(layer, 1, depth);
 
     {
@@ -174,25 +155,45 @@ void Renderer::flush()
         _vaocache->bind(drawcall.program, drawcall.vertex_buffer);
 
         auto& state = drawcall.state;
+        _backend->set_scissor_test(state.scissor.enable, state.scissor.area);
         _backend->set_front_face(state.cull.winding);
         _backend->set_cull_face(state.cull.enable, state.cull.face);
-        // _backend->set_
-        // ...
-
-        _backend->draw(state.primitive, drawcall.first, drawcall.count);
+        _backend->set_depth_test(state.depth.enable, state.depth.compare);
+        _backend->set_depth_write(
+            state.depth_write.enable,
+            state.depth_write.bias_slope_scaled,
+            state.depth_write.bias_constant);
+        _backend->set_color_blend(
+            state.blend.enable,
+            state.blend.equation,
+            state.blend.source_factor,
+            state.blend.destination_factor);
+        _backend->set_color_write(state.color_write);
+        _backend->set_stencil_test(
+            state.stencil.enable,
+            state.stencil.compare,
+            state.stencil.reference,
+            state.stencil.mask);
+        _backend->set_stencil_write(
+            state.stencil_write.sfail,
+            state.stencil_write.dpfail,
+            state.stencil_write.dppass,
+            state.stencil_write.mask);
+        _backend->draw(drawcall.primitive, drawcall.first, drawcall.count);
     }
 
-    printf("draw %ld", _drawcalls.size());
+    _frame_drawcall += _drawcalls.size();
     _drawcalls.clear();
 }
 
-void Renderer::end_frame()
+unsigned Renderer::end_frame()
 {
     ASSERT(_frame_began, "\'end_frame\' could only be called during rendering frame.");
 
     flush();
     _backend->end_frame();
     _frame_began = false;
+    return _frame_drawcall;
 }
 
 NS_LEMON_GRAPHICS_END

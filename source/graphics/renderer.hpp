@@ -51,13 +51,11 @@ struct Renderer : public core::Subsystem
     // clear any or all of rendertarget, depth buffer and stencil buffer
     void clear(ClearOption, const math::Color& color = {0.f, 0.f, 0.f, 0.f}, float depth = 1.f, unsigned stencil = 0);
     // submit primitive for rendering
-    void submit(RenderLayer, RenderState, Program::ptr, VertexBuffer::ptr, IndexBuffer::ptr, uint32_t depth, uint32_t start, uint32_t num);
-
     void submit(RenderLayer, uint32_t depth, RenderDrawcall&);
     // flush all cached draw calls
     void flush();
-    // finish current frame and flush all cached draw calls
-    void end_frame();
+    // end current frame and returns the count of drawcall
+    unsigned end_frame();
     // returns true if we are under frame render phase
     bool is_frame_began() const { return _frame_began; }
 
@@ -73,6 +71,8 @@ protected:
 
 protected:
     bool _frame_began;
+    unsigned _frame_drawcall;
+
     RendererBackend* _backend;
     VertexArrayObjectCache* _vaocache;
 

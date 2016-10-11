@@ -148,24 +148,10 @@ struct StencilBufferWrite
     unsigned mask;
 };
 
-// specifies what kind of primitives to render.
-enum class PrimitiveType : uint8_t
-{
-    POINTS = 0,
-    LINES,
-    LINE_LOOP,
-    LINE_STRIP,
-    TRIANGLES,
-    TRIANGLE_STRIP,
-    TRIANGLE_FAN,
-};
-
 // stateless render states used to address multi-thread draw call submittings
 struct RenderState
 {
     RenderState();
-
-    PrimitiveType primitive;
 
     CullTestOp cull;
     ScissorTestOp scissor;

@@ -12,8 +12,6 @@ RenderState::RenderState()
 
 void RenderState::reset()
 {
-    primitive = PrimitiveType::TRIANGLES;
-
     cull.enable   = false;
     cull.face     = CullFace::BACK;
     cull.winding  = FrontFaceOrder::COUNTERCLOCKWISE;
