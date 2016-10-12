@@ -3,14 +3,13 @@
 
 #include <core/public.hpp>
 #include <core/private/scheduler.hpp>
-#include <core/private/context.hpp>
 #include <core/private/dispatcher.hpp>
 #include <SDL2/SDL.h>
 
 NS_LEMON_CORE_BEGIN
 
 std::unique_ptr<Scheduler> s_scheduler;
-std::unique_ptr<Context> s_context;
+std::unique_ptr<SubsystemContext> s_context;
 std::unique_ptr<Dispatcher> s_dispatcher;
 std::unique_ptr<EntityComponentSystem> s_world;
 
@@ -24,7 +23,7 @@ bool initialize(unsigned nworker)
     if( dispatcher.get() == nullptr || !dispatcher->initialize() )
         return false;
 
-    auto context = std::unique_ptr<Context>(new (std::nothrow) Context());
+    auto context = std::unique_ptr<SubsystemContext>(new (std::nothrow) SubsystemContext());
     if( context.get() == nullptr || !context->initialize() )
         return false;
 
@@ -47,6 +46,11 @@ bool is_running()
 EntityComponentSystem& world()
 {
     return *s_world;
+}
+
+SubsystemContext& context()
+{
+    return *s_context;
 }
 
 void dispose()
@@ -119,31 +123,6 @@ bool is_main_thread()
 uint32_t get_cpu_count()
 {
     return SDL_GetCPUCount();
-}
-
-// CONTEXT
-
-namespace internal
-{
-    void add_subsystem(TypeInfo::index_t index, Subsystem* subsystem)
-    {
-        s_context->add_subsystem(index, subsystem);
-    }
-
-    void remove_subsystem(TypeInfo::index_t index)
-    {
-        s_context->remove_subsystem(index);
-    }
-
-    bool has_subsystem(TypeInfo::index_t index)
-    {
-        return s_context->has_subsystem(index);
-    }
-
-    Subsystem* get_subsystem(TypeInfo::index_t index)
-    {
-        return s_context->get_subsystem(index);
-    }
 }
 
 // DISPATCHER

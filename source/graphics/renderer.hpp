@@ -36,7 +36,6 @@ struct RendererBackend;
 struct VertexArrayObjectCache;
 struct Renderer : public core::Subsystem
 {
-    SUBSYSTEM("lemon::graphics::Renderer")
     Renderer();
 
     bool initialize() override;

@@ -391,146 +391,122 @@ TEST_CASE_METHOD(TestContext, "TestComponentDestructorCalledWhenEntityDestroyed"
     REQUIRE( freed );
 }
 
-// struct Base : public VTraitComponent<Base, 32>
-// {
-//     virtual void add(int&) {}
-// };
+struct Counter : public Component
+{
+    explicit Counter(int counter = 0) : counter(counter) {}
+    int counter;
+};
 
-// struct Derived : public Base
-// {
-//     virtual void add(int& v) override { v++; }
-// };
+struct MovementSystem : public SubsystemWithEntities<Position, Direction>
+{
+    explicit MovementSystem(string label = "") : label(label) {}
 
-// TEST_CASE_METHOD(TestContext, "TestTraitComponent")
-// {
-//     auto e = create();
-//     add_component<Derived>(e);
+    void update(float dt)
+    {
+        for( auto pair : *this )
+        {
+            std::get<0>(pair.second)->x += std::get<1>(pair.second)->x;
+            std::get<0>(pair.second)->y += std::get<1>(pair.second)->y;
+        }
+    }
 
-//     REQUIRE( has_components<Base::Trait>(e) );
+    std::string label;
+};
 
-//     int c = 0;
-//     auto bt = get_component<Base::Trait>(e);
-//     (*bt)->add(c);
+struct CounterSystem : public SubsystemWithEntities<Counter>
+{
+    void update(float dt)
+    {
+        visit([&](lemon::Handle object, Counter& c)
+        {
+            c.counter ++;
+        });
+    }
+};
 
-//     REQUIRE( c == 1 );
-// }
+TEST_CASE_METHOD(TestContext, "TestConstructSystemWithArgs")
+{
+    add_subsystem<MovementSystem>("movement");
+    REQUIRE("movement" == get_subsystem<MovementSystem>()->label);
+}
 
-// struct Counter : public Component
-// {
-//     explicit Counter(int counter = 0) : counter(counter) {}
-//     int counter;
-// };
+TEST_CASE_METHOD(TestContext, "TestApplySystem")
+{
 
-// struct MovementSystem : public SubsystemWithEntities<Position, Direction>
-// {
-//     explicit MovementSystem(string label = "") : label(label) {}
+    std::vector<Handle> created_entities;
+    for (int i = 0; i < 75; ++i)
+    {
+        auto e = create();
+        created_entities.push_back(e);
+        if (i % 2 == 0) add_component<Position>(e, 1, 2);
+        if (i % 3 == 0) add_component<Direction>(e, 1, 1);
+        add_component<Counter>(e, 0);
+    }
 
-//     void update(float dt)
-//     {
-//         for( auto pair : *this )
-//         {
-//             std::get<0>(pair.second)->x += std::get<1>(pair.second)->x;
-//             std::get<0>(pair.second)->y += std::get<1>(pair.second)->y;
-//         }
-//     }
+    add_subsystem<MovementSystem>();
+    for (int i = 0; i < 75; ++i)
+    {
+        auto e = create();
+        created_entities.push_back(e);
+        if (i % 2 == 0) add_component<Position>(e, 1, 2);
+        if (i % 3 == 0) add_component<Direction>(e, 1, 1);
+        add_component<Counter>(e, 0);
+    }
 
-//     std::string label;
-// };
+    get_subsystem<MovementSystem>()->update(0.f);
 
-// struct CounterSystem : public SubsystemWithEntities<Counter>
-// {
-//     void update(float dt)
-//     {
-//         visit([&](lemon::Handle object, Counter& c)
-//         {
-//             c.counter ++;
-//         });
-//     }
-// };
+    for (auto entity : created_entities)
+    {
+        auto position = get_component<Position>(entity);
+        auto direction = get_component<Direction>(entity);
 
-// TEST_CASE_METHOD(TestContext, "TestConstructSystemWithArgs")
-// {
-//     add_subsystem<MovementSystem>("movement");
-//     REQUIRE("movement" == get_subsystem<MovementSystem>()->label);
-// }
+        if (position && direction)
+        {
+            REQUIRE(2.0 == Approx(position->x));
+            REQUIRE(3.0 == Approx(position->y));
+        }
+        else if (position)
+        {
+            REQUIRE(1.0 == Approx(position->x));
+            REQUIRE(2.0 == Approx(position->y));
+        }
+    }
+}
 
-// TEST_CASE_METHOD(TestContext, "TestApplySystem")
-// {
+TEST_CASE_METHOD(TestContext, "TestApplyAllSystems")
+{
+    std::vector<Handle> created_entities;
+    for (int i = 0; i < 150; ++i) {
+        auto e = create();
+        created_entities.push_back(e);
+        if (i % 2 == 0) add_component<Position>(e, 1, 2);
+        if (i % 3 == 0) add_component<Direction>(e, 1, 1);
+        add_component<Counter>(e, 0);
+    }
 
-//     std::vector<Entity> created_entities;
-//     for (int i = 0; i < 75; ++i)
-//     {
-//         auto e = create();
-//         created_entities.push_back(e);
-//         if (i % 2 == 0) add_component<Position>(e, 1, 2);
-//         if (i % 3 == 0) add_component<Direction>(e, 1, 1);
-//         add_component<Counter>(e, 0);
-//     }
+    add_subsystem<MovementSystem>();
+    add_subsystem<CounterSystem>();
 
-//     add_subsystem<MovementSystem>();
-//     for (int i = 0; i < 75; ++i)
-//     {
-//         auto e = create();
-//         created_entities.push_back(e);
-//         if (i % 2 == 0) add_component<Position>(e, 1, 2);
-//         if (i % 3 == 0) add_component<Direction>(e, 1, 1);
-//         add_component<Counter>(e, 0);
-//     }
+    get_subsystem<MovementSystem>()->update(0.f);
+    get_subsystem<CounterSystem>()->update(0.f);
 
-//     get_subsystem<MovementSystem>()->update(0.f);
+    for (auto entity : created_entities)
+    {
+        auto position   = get_component<Position>(entity);
+        auto direction  = get_component<Direction>(entity);
+        auto counter    = get_component<Counter>(entity);
 
-//     for (auto entity : created_entities)
-//     {
-//         auto position = get_component<Position>(entity);
-//         auto direction = get_component<Direction>(entity);
+        if (position && direction)
+        {
+            REQUIRE(2.0 == Approx(position->x));
+            REQUIRE(3.0 == Approx(position->y));
+        }
+        else if (position)
+        {
+            REQUIRE(1.0 == Approx(position->x));
+            REQUIRE(2.0 == Approx(position->y));
+        }
 
-//         if (position && direction)
-//         {
-//             REQUIRE(2.0 == Approx(position->x));
-//             REQUIRE(3.0 == Approx(position->y));
-//         }
-//         else if (position)
-//         {
-//             REQUIRE(1.0 == Approx(position->x));
-//             REQUIRE(2.0 == Approx(position->y));
-//         }
-//     }
-// }
-
-// TEST_CASE_METHOD(TestContext, "TestApplyAllSystems")
-// {
-//     std::vector<Entity> created_entities;
-//     for (int i = 0; i < 150; ++i) {
-//         auto e = create();
-//         created_entities.push_back(e);
-//         if (i % 2 == 0) add_component<Position>(e, 1, 2);
-//         if (i % 3 == 0) add_component<Direction>(e, 1, 1);
-//         add_component<Counter>(e, 0);
-//     }
-
-//     add_subsystem<MovementSystem>();
-//     add_subsystem<CounterSystem>();
-
-//     get_subsystem<MovementSystem>()->update(0.f);
-//     get_subsystem<CounterSystem>()->update(0.f);
-
-//     for (auto entity : created_entities)
-//     {
-//         auto position   = get_component<Position>(entity);
-//         auto direction  = get_component<Direction>(entity);
-//         auto counter    = get_component<Counter>(entity);
-
-//         if (position && direction)
-//         {
-//             REQUIRE(2.0 == Approx(position->x));
-//             REQUIRE(3.0 == Approx(position->y));
-//         }
-//         else if (position)
-//         {
-//             REQUIRE(1.0 == Approx(position->x));
-//             REQUIRE(2.0 == Approx(position->y));
-//         }
-
-//         REQUIRE( 1 == counter->counter );
-//     }
-// }
+        REQUIRE( 1 == counter->counter );
+    }
+}

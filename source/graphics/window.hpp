@@ -34,8 +34,6 @@ enum class WindowOption : uint16_t
 // window subsystem, manages the window device states and messages
 struct WindowDevice : public core::Subsystem
 {
-    SUBSYSTEM("lemon::graphics::WindowDevice")
-
     // create window handle and main OpenGL context
     bool open(int, int, int multisample = 1, WindowOption options = WindowOption::NONE);
     void close();

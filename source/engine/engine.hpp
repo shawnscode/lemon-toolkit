@@ -17,7 +17,6 @@ struct Engine : public core::Subsystem
     using clock = std::chrono::high_resolution_clock;
     using duration = std::chrono::high_resolution_clock::duration;
 
-    SUBSYSTEM("Engine");
     Engine() {}
     virtual ~Engine() {}
 

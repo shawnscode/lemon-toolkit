@@ -146,7 +146,6 @@ enum class KeyboardQualifier
 // and internal events.
 struct Input : public core::Subsystem
 {
-    SUBSYSTEM("Input");
     Input() {}
     virtual ~Input() {}
 

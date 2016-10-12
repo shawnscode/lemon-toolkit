@@ -37,8 +37,6 @@ protected:
 // for later access with a LRU strategy.
 struct ResourceCache : public core::Subsystem
 {
-    SUBSYSTEM("ResourceCache");
-
     ResourceCache(unsigned threshold = kCacheDefaultThreshold);
     ~ResourceCache();
 

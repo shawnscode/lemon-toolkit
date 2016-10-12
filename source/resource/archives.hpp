@@ -51,8 +51,6 @@ protected:
 //subsystem for file and archive operations and access control
 struct ArchiveCollection : core::Subsystem
 {
-    SUBSYSTEM("ArchiveCollection");
-
     ArchiveCollection() {}
     virtual ~ArchiveCollection();
 
