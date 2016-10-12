@@ -20,16 +20,16 @@ struct TransformFixture
 
 TEST_CASE_METHOD(TransformFixture, "TestConstructor")
 {
-    Entity e1 = spawn();
+    Handle e1 = create();
     Transform* t1 = add_component<Transform>(e1, Vector3f{10.f, 10.f});
 
-    Entity e2 = spawn();
+    Handle e2 = create();
     Transform* t2 = add_component<Transform>(e2, Vector3f{20.f, 20.f});
 
-    Entity e3 = spawn();
+    Handle e3 = create();
     Transform* t3 = add_component<Transform>(e3, Vector3f{40.f, 40.f}, Vector3f{2.0f, 2.0f});
 
-    Entity e4 = spawn();
+    Handle e4 = create();
     Transform* t4 = add_component<Transform>(e4, Vector3f{50.f, 50.f}, Vector3f{2.0f, 2.0f}, Quaternion());
 
     REQUIRE( equals(t2->get_position(), {20.f, 20.f}) );
@@ -38,7 +38,7 @@ TEST_CASE_METHOD(TransformFixture, "TestConstructor")
 
 TEST_CASE_METHOD(TransformFixture, "TestTransform")
 {
-    Entity e1 = spawn();
+    Handle e1 = create();
     Transform* t1 = add_component<Transform>(e1, Vector3f{10.f, 10.f, 0.f});
     REQUIRE( t1->transform_point({0.f, 5.f, 0.f}) == (Vector3f{10.f, 15.f, 0.f}) );
     REQUIRE( t1->inverse_transform_point({0.f, 5.f, 0.f}) == (Vector3f{-10.f, -5.f, 0.f}) );
@@ -85,7 +85,7 @@ TEST_CASE_METHOD(TransformFixture, "TestTransform")
 
 TEST_CASE_METHOD(TransformFixture, "TestOpsWithoutHierachy")
 {
-    Entity e1 = spawn();
+    Handle e1 = create();
     Transform* t1 = add_component<Transform>(e1, Vector3f{10.f, 10.f});
 
     t1->set_position({20.f, 20.f});
@@ -113,16 +113,16 @@ TEST_CASE_METHOD(TransformFixture, "TestOpsWithoutHierachy")
 
 TEST_CASE_METHOD(TransformFixture, "TestHierachy")
 {
-    Entity e1 = spawn();
+    Handle e1 = create();
     Transform* t1 = add_component<Transform>(e1, Vector3f{10.f, 10.f});
 
-    Entity e2 = spawn();
+    Handle e2 = create();
     Transform* t2 = add_component<Transform>(e2, Vector3f{20.f, 20.f});
 
-    Entity e3 = spawn();
+    Handle e3 = create();
     Transform* t3 = add_component<Transform>(e3, Vector3f{40.f, 40.f}, Vector3f{2.0f, 2.0f});
 
-    Entity e4 = spawn();
+    Handle e4 = create();
     Transform* t4 = add_component<Transform>(e4, Vector3f{-50.f, -10.f}, Vector3f{3.0f, 3.0f});
 
     t1->append_child(*t2);
@@ -153,16 +153,16 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachy")
 
 TEST_CASE_METHOD(TransformFixture, "TestHierachyReconstructWhenDispose")
 {
-    Entity e1 = spawn_with<Transform>(Vector3f{10.f, 10.f});
+    Handle e1 = create_with<Transform>(Vector3f{10.f, 10.f});
     Transform* t1 = get_component<Transform>(e1);
 
-    Entity e2 = spawn_with<Transform>(Vector3f{10.f, 10.f});
+    Handle e2 = create_with<Transform>(Vector3f{10.f, 10.f});
     Transform* t2 = get_component<Transform>(e2);
 
-    Entity e3 = spawn_with<Transform>(Vector3f{10.f, 10.f});
+    Handle e3 = create_with<Transform>(Vector3f{10.f, 10.f});
     Transform* t3 = get_component<Transform>(e3);
 
-    Entity e4 = spawn_with<Transform>(Vector3f{10.f, 10.f});
+    Handle e4 = create_with<Transform>(Vector3f{10.f, 10.f});
     Transform* t4 = get_component<Transform>(e4);
 
     t1->append_child(*t2);
@@ -202,7 +202,7 @@ static void dump_heriachy(Transform* t, int index = 1, int level = 0)
         printf("\t");
     printf("[%d]", index);
     for( auto& transform : t->get_children() )
-        printf("%d ", transform.object.get_index() );
+        printf("%d ", transform.handle.get_index() );
     printf("\n");
 
     size_t count = 0;
@@ -215,7 +215,7 @@ TEST_CASE_METHOD(TransformFixture, "TestIteration")
     std::vector<Transform*> transforms;
     for( size_t i = 0; i < 255; i++ )
     {
-        auto e = spawn_with<Transform>();
+        auto e = create_with<Transform>();
         transforms.push_back(get_component<Transform>(e));
     }
 
@@ -270,12 +270,12 @@ TEST_CASE_METHOD(TransformFixture, "TestGenericIteration")
     std::vector<Transform*> transforms;
     std::vector<Widget*> widgets;
 
-    auto r = spawn();
+    auto r = create();
     auto root = add_component<Transform>(r);
 
     for( size_t i = 0; i < 255; i++ )
     {
-        auto e = spawn_with<Transform>();
+        auto e = create_with<Transform>();
         transforms.push_back(get_component<Transform>(e));
         root->append_child(*transforms.back());
 

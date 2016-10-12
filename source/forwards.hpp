@@ -53,8 +53,9 @@ NS_LEMON_END
 
 NS_LEMON_CORE_BEGIN
 
-static const unsigned kEntPoolChunkSize = 512;
+static const unsigned kEntPoolChunkSize = 128;
 static const unsigned kEntMaxComponents = 128;
+struct EntityComponentSystem;
 
 NS_LEMON_CORE_END
 

@@ -5,7 +5,6 @@
 #include <core/private/scheduler.hpp>
 #include <core/private/context.hpp>
 #include <core/private/dispatcher.hpp>
-#include <core/private/world.hpp>
 #include <SDL2/SDL.h>
 
 NS_LEMON_CORE_BEGIN
@@ -13,7 +12,7 @@ NS_LEMON_CORE_BEGIN
 std::unique_ptr<Scheduler> s_scheduler;
 std::unique_ptr<Context> s_context;
 std::unique_ptr<Dispatcher> s_dispatcher;
-std::unique_ptr<World> s_world;
+std::unique_ptr<EntityComponentSystem> s_world;
 
 bool initialize(unsigned nworker)
 {
@@ -29,7 +28,7 @@ bool initialize(unsigned nworker)
     if( context.get() == nullptr || !context->initialize() )
         return false;
 
-    auto world = std::unique_ptr<World>(new (std::nothrow) World());
+    auto world = std::unique_ptr<EntityComponentSystem>(new (std::nothrow) EntityComponentSystem());
     if( world.get() == nullptr || !world->initialize() )
         return false;
 
@@ -43,6 +42,11 @@ bool initialize(unsigned nworker)
 bool is_running()
 {
     return s_context != nullptr;
+}
+
+EntityComponentSystem& world()
+{
+    return *s_world;
 }
 
 void dispose()
@@ -160,114 +164,6 @@ namespace internal
     {
         s_dispatcher->emit(index, evt);
     }
-}
-
-// WORLD
-
-namespace internal
-{
-    bool has_component_registered(TypeInfo::index_t id)
-    {
-        return s_world->has_component_registered(id);
-    }
-
-    bool register_component(TypeInfo::index_t id, size_t size, size_t chunk_size, const destructor& cb)
-    {
-        return s_world->register_component(id, size, chunk_size, cb);
-    }
-
-    void* add_component(TypeInfo::index_t id, Handle object)
-    {
-        return s_world->add_component(id, object);
-    }
-
-    void* get_component(TypeInfo::index_t id, Handle object)
-    {
-        return s_world->get_component(id, object);
-    }
-
-    void remove_component(TypeInfo::index_t id, Handle object)
-    {
-        s_world->remove_component(id, object);
-    }
-
-    bool has_component(TypeInfo::index_t id, Handle object)
-    {
-        return s_world->has_component(id, object);
-    }
-
-    Handle find_first_available(ComponentMask mask)
-    {
-        return s_world->find_first_available(mask);
-    }
-
-    Handle find_next_available(Handle handle, ComponentMask mask)
-    {
-        return s_world->find_next_available(handle, mask);
-    }
-    
-    namespace test_mem
-    {
-        size_t size(TypeInfo::index_t id)
-        {
-            return s_world->size(id);
-        }
-        
-        size_t capacity(TypeInfo::index_t id)
-        {
-            return s_world->capacity(id);
-        }
-    }
-}
-
-Handle spawn()
-{
-    return s_world->spawn();
-}
-
-void recycle(Handle object)
-{
-    s_world->recycle(object);
-}
-
-bool alive(Handle object)
-{
-    return s_world->alive(object);
-}
-
-size_t size_of_world()
-{
-    return s_world->size();
-}
-
-void reset_world()
-{
-    s_world->dispose();
-}
-
-void* add_component(TypeInfo::index_t id, Handle object)
-{
-    return s_world->add_component(id, object);
-}
-
-void* get_component(TypeInfo::index_t id, Handle object)
-{
-    return s_world->get_component(id, object);
-}
-
-void remove_component(TypeInfo::index_t id, Handle object)
-{
-    s_world->remove_component(id, object);
-}
-
-bool has_component(TypeInfo::index_t id, Handle object)
-{
-    return s_world->has_component(id, object);
-}
-
-ComponentMask get_components_mask(Handle object)
-{
-    return s_world->get_components_mask(object);
 }
 
 NS_LEMON_CORE_END

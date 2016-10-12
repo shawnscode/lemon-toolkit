@@ -4,6 +4,7 @@
 #include <map>
 
 using namespace std;
+using namespace lemon;
 using namespace lemon::core;
 
 template<typename T> int size(const T& t)
@@ -52,27 +53,25 @@ struct TestContext
 
 TEST_CASE_METHOD(TestContext, "TestCreateEntity")
 {
-    size_of_world();
+    REQUIRE( world().size() == 0UL );
 
-    REQUIRE( size_of_world() == 0UL );
+    auto e2 = create();
+    REQUIRE( is_valid(e2) );
+    REQUIRE( world().size() == 1UL );
 
-    auto e2 = spawn();
-    REQUIRE( alive(e2) );
-    REQUIRE( size_of_world() == 1UL );
-
-    Entity e1 = e2;
-    REQUIRE( alive(e1) );
+    auto e1 = e2;
+    REQUIRE( is_valid(e1) );
 }
 
 // its complex to implementation a generic clone senario,
 // when take hierarchy into consideration.
 // TEST_CASE_METHOD(TestContext, "TestEntityCreateFromCopy")
 // {
-//     auto e = spawn();
+//     auto e = create();
 //     auto ep = add_component<Position>(e, 1, 2);
 
 //     auto f = _world.clone(e);
-//     auto fp = get_component<Position>(f);
+//     auto fp  get_component<Position>(f);
 
 //     REQUIRE( ep != fp );
 //     REQUIRE( ep->x == fp->x );
@@ -81,37 +80,37 @@ TEST_CASE_METHOD(TestContext, "TestCreateEntity")
 //     REQUIRE( e != f );
 //     REQUIRE( get_components_mask(e) == get_components_mask(f) );
 
-//     REQUIRE( size_of_world() == 2 );
+//     REQUIRE( world().size() == 2 );
 // }
 
 TEST_CASE_METHOD(TestContext, "TestEntityAsBoolean")
 {
-    REQUIRE( size_of_world() == 0UL );
+    REQUIRE( world().size() == 0UL );
 
-    auto e = spawn();
-    REQUIRE( alive(e) );
-    REQUIRE( size_of_world() == 1UL );
+    auto e = create();
+    REQUIRE( is_valid(e) );
+    REQUIRE( world().size() == 1UL );
 
-    recycle(e);
-    REQUIRE( size_of_world() == 0UL );
-    REQUIRE( !alive(e) );
+    free(e);
+    REQUIRE( world().size() == 0UL );
+    REQUIRE( !is_valid(e) );
 }
 
 TEST_CASE_METHOD(TestContext, "TestEntityReuse")
 {
-    auto e1 = spawn();
+    auto e1 = create();
     auto e2 = e1;
     auto index = e1.get_index();
     auto version = e1.get_version();
-    REQUIRE( alive(e1) );
-    REQUIRE( alive(e2) );
+    REQUIRE( is_valid(e1) );
+    REQUIRE( is_valid(e2) );
 
     add_component<Position>(e1);
-    recycle(e1);
-    REQUIRE( !alive(e1) );
-    REQUIRE( !alive(e2) );
+    free(e1);
+    REQUIRE( !is_valid(e1) );
+    REQUIRE( !is_valid(e2) );
 
-    auto e3 = spawn();
+    auto e3 = create();
     REQUIRE( e3.get_index() == index );
     REQUIRE( e3.get_version() != version );
     REQUIRE( !has_components<Position>(e3) );
@@ -122,20 +121,20 @@ TEST_CASE_METHOD(TestContext, "TestEntityReuse")
 
 TEST_CASE_METHOD(TestContext, "TestEntityAssignment")
 {
-    Entity a = spawn();
-    Entity b = a;
+    lemon::Handle a = create();
+    lemon::Handle b = a;
     REQUIRE( a == b );
 
     a.invalidate();
     REQUIRE( a != b );
 
-    REQUIRE( !alive(a) );
-    REQUIRE( alive(b) );
+    REQUIRE( !is_valid(a) );
+    REQUIRE( is_valid(b) );
 }
 
 TEST_CASE_METHOD(TestContext, "TestComponentConstruction")
 {
-    auto e = spawn();
+    auto e = create();
     auto p = add_component<Position>(e, 1, 2);
 
     auto cp = get_component<Position>(e);
@@ -150,20 +149,20 @@ TEST_CASE_METHOD(TestContext, "TestComponentIdsDiffer")
     REQUIRE( (get_components_mask<Position, Direction>()) != get_components_mask<Direction>() );
 }
 
-TEST_CASE_METHOD(TestContext, "TestComponentHandleInvalidatedWhenEntityDestroyed") {
-    auto a = spawn();
+TEST_CASE_METHOD(TestContext, "TestComponentlemon::HandleInvalidatedWhenEntityDestroyed") {
+    auto a = create();
     auto position = add_component<Position>(a, 1, 2);
     REQUIRE(position);
     REQUIRE(position->x == 1);
     REQUIRE(position->y == 2);
 
-    recycle(a);
+    free(a);
     REQUIRE( !has_components<Position>(a) );
 }
 
 TEST_CASE_METHOD(TestContext, "TestComponentAssignmentFromCopy")
 {
-    auto e = spawn();
+    auto e = create();
     auto p = Position(1, 2);
     auto h = add_component<Position>(e, p);
 
@@ -171,14 +170,14 @@ TEST_CASE_METHOD(TestContext, "TestComponentAssignmentFromCopy")
     REQUIRE( h->x == p.x );
     REQUIRE( h->y == p.y );
 
-    recycle(e);
+    free(e);
     REQUIRE( !has_components<Position>(e) );
 }
 
 TEST_CASE_METHOD(TestContext, "TestDestroyEntity")
 {
-    auto e = spawn();
-    auto f = spawn();
+    auto e = create();
+    auto f = create();
 
     add_component<Position>(e);
     add_component<Position>(f);
@@ -186,8 +185,8 @@ TEST_CASE_METHOD(TestContext, "TestDestroyEntity")
     add_component<Direction>(e);
     add_component<Direction>(f);
 
-    REQUIRE( alive(e) );
-    REQUIRE( alive(f) );
+    REQUIRE( is_valid(e) );
+    REQUIRE( is_valid(f) );
     REQUIRE( get_component<Position>(e) != nullptr );
     REQUIRE( get_component<Direction>(e) != nullptr );
     REQUIRE( get_component<Position>(f) != nullptr );
@@ -195,9 +194,9 @@ TEST_CASE_METHOD(TestContext, "TestDestroyEntity")
     REQUIRE( has_components<Position>(e) );
     REQUIRE( has_components<Position>(f) );
 
-    recycle(e);
-    REQUIRE( !alive(e) );
-    REQUIRE( alive(f) );
+    free(e);
+    REQUIRE( !is_valid(e) );
+    REQUIRE( is_valid(f) );
     REQUIRE( get_component<Position>(f) != nullptr );
     REQUIRE( get_component<Direction>(f) != nullptr );
     REQUIRE( has_components<Position>(f) );
@@ -205,40 +204,40 @@ TEST_CASE_METHOD(TestContext, "TestDestroyEntity")
 
 TEST_CASE_METHOD(TestContext, "TestEntityDestroyAll")
 {
-    auto e = spawn();
-    auto f = spawn();
-    reset_world();
+    auto e = create();
+    auto f = create();
+    world().free_all();
 
-    REQUIRE( !alive(e) );
-    REQUIRE( !alive(f) );
+    REQUIRE( !is_valid(e) );
+    REQUIRE( !is_valid(f) );
 }
 
 TEST_CASE_METHOD(TestContext, "TestEntityDestroyHole") {
-    std::vector<Entity> entities;
+    std::vector<Handle> entities;
 
     auto count = [this]()->int {
         auto view = find_entities_with<Position>();
         auto cursor = view.begin();
-        return std::count_if(view.begin(), view.end(), [](const Entity &) { return true; });
+        return std::count_if(view.begin(), view.end(), [](const lemon::Handle &) { return true; });
     };
 
     for (int i = 0; i < 5000; i++) {
-        auto e = spawn();
+        auto e = create();
         add_component<Position>(e);
         entities.push_back(e);
     }
 
     REQUIRE(count() ==  5000);
-    recycle(entities[2500]);
+    free(entities[2500]);
     REQUIRE(count() ==  4999);
 }
 
 TEST_CASE_METHOD(TestContext, "TestEntityInStdSet")
 {
-    auto a = spawn();
-    auto b = spawn();
-    auto c = spawn();
-    set<Entity> entitySet;
+    auto a = create();
+    auto b = create();
+    auto c = create();
+    set<Handle> entitySet;
     
     REQUIRE( entitySet.insert(a).second );
     REQUIRE( entitySet.insert(b).second );
@@ -247,13 +246,13 @@ TEST_CASE_METHOD(TestContext, "TestEntityInStdSet")
 
 TEST_CASE_METHOD(TestContext, "TestEntityInStdMap")
 {
-    auto a = spawn();
-    auto b = spawn();
-    auto c = spawn();
-    map<Entity, int> entityMap;
-    REQUIRE( entityMap.insert(pair<Entity, int>(a, 1)).second );
-    REQUIRE( entityMap.insert(pair<Entity, int>(b, 2)).second );
-    REQUIRE( entityMap.insert(pair<Entity, int>(c, 3)).second );
+    auto a = create();
+    auto b = create();
+    auto c = create();
+    map<Handle, int> entityMap;
+    REQUIRE( entityMap.insert(pair<Handle, int>(a, 1)).second );
+    REQUIRE( entityMap.insert(pair<Handle, int>(b, 2)).second );
+    REQUIRE( entityMap.insert(pair<Handle, int>(c, 3)).second );
     REQUIRE( entityMap[a] == 1 );
     REQUIRE( entityMap[b] == 2 );
     REQUIRE( entityMap[c] == 3 );
@@ -261,9 +260,9 @@ TEST_CASE_METHOD(TestContext, "TestEntityInStdMap")
 
 TEST_CASE_METHOD(TestContext, "TestGetEntitiesWithComponent")
 {
-    auto e = spawn();
-    auto f = spawn();
-    auto g = spawn();
+    auto e = create();
+    auto f = create();
+    auto g = create();
 
     add_component<Position>(e, 1, 2);
     add_component<Direction>(e);
@@ -274,11 +273,11 @@ TEST_CASE_METHOD(TestContext, "TestGetEntitiesWithComponent")
     REQUIRE( 2 == size(find_entities_with<Direction>()) );
     REQUIRE( 1 == size(find_entities_with<Position, Direction>()) );
 
-    reset_world();
+    world().free_all();
 
     for( auto i=0; i<150; i++ )
     {
-        auto h = spawn();
+        auto h = create();
         if( i % 2 == 0 ) add_component<Position>(h);
         if( i % 3 == 0 ) add_component<Direction>(h);
     }
@@ -289,7 +288,7 @@ TEST_CASE_METHOD(TestContext, "TestGetEntitiesWithComponent")
 }
 
 TEST_CASE_METHOD(TestContext, "TestGetComponentsAsTuple") {
-    auto e = spawn();
+    auto e = create();
     add_component<Position>(e, 1, 2);
     add_component<Direction>(e, 3, 4);
 
@@ -302,13 +301,13 @@ TEST_CASE_METHOD(TestContext, "TestGetComponentsAsTuple") {
 
 TEST_CASE_METHOD(TestContext, "TestEntityIteration")
 {
-    auto e = spawn();
-    auto f = spawn();
+    auto e = create();
+    auto f = create();
 
     add_component<Position>(e, 1, 2);
 
     auto count = 0;
-    find_entities_with<Position>().visit([&](Entity entity, Position& position)
+    find_entities_with<Position>().visit([&](lemon::Handle entity, Position& position)
     {
         count ++;
         REQUIRE( position.x == 1 );
@@ -324,11 +323,11 @@ TEST_CASE_METHOD(TestContext, "TestEntityIteration")
 }
 
 TEST_CASE_METHOD(TestContext, "TestIterateAllEntitiesSkipsDestroyed") {
-    auto e = spawn();
-    auto f = spawn();
-    auto g = spawn();
+    auto e = create();
+    auto f = create();
+    auto g = create();
 
-    recycle(f);
+    free(f);
     auto it = find_entities().begin();
 
     REQUIRE( *it == e );
@@ -341,13 +340,13 @@ TEST_CASE_METHOD(TestContext, "TestIterateAllEntitiesSkipsDestroyed") {
 
 TEST_CASE_METHOD(TestContext, "TestComponentsRemovedFromReusedEntities")
 {
-  auto e = spawn();
+  auto e = create();
   auto eversion = e.get_version();
   auto eindex = e.get_index();
   add_component<Position>(e, 1, 2);
-  recycle(e);
+  free(e);
 
-  auto f = spawn();
+  auto f = create();
   REQUIRE( eindex == f.get_index() );
   REQUIRE( eversion < f.get_version() );
   REQUIRE( !has_components<Position>(f) );
@@ -363,7 +362,7 @@ struct FreedSentinel : public Component
 TEST_CASE_METHOD(TestContext, "TestComponentDestruction")
 {
     bool freed = false;
-    auto e = spawn();
+    auto e = create();
     add_component<FreedSentinel>(e, freed);
     remove_component<FreedSentinel>(e);
 
@@ -375,7 +374,7 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
     bool freed = false;
     {
         TestContext context;
-        auto e = spawn();
+        auto e = create();
         add_component<FreedSentinel>(e, freed);
         REQUIRE( !freed );
     }
@@ -385,10 +384,10 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
 TEST_CASE_METHOD(TestContext, "TestComponentDestructorCalledWhenEntityDestroyed")
 {
     bool freed = false;
-    auto e = spawn();
+    auto e = create();
     add_component<FreedSentinel>(e, freed);
     REQUIRE( !freed );
-    recycle(e);
+    free(e);
     REQUIRE( freed );
 }
 
@@ -404,7 +403,7 @@ TEST_CASE_METHOD(TestContext, "TestComponentDestructorCalledWhenEntityDestroyed"
 
 // TEST_CASE_METHOD(TestContext, "TestTraitComponent")
 // {
-//     auto e = spawn();
+//     auto e = create();
 //     add_component<Derived>(e);
 
 //     REQUIRE( has_components<Base::Trait>(e) );
@@ -416,122 +415,122 @@ TEST_CASE_METHOD(TestContext, "TestComponentDestructorCalledWhenEntityDestroyed"
 //     REQUIRE( c == 1 );
 // }
 
-struct Counter : public Component
-{
-    explicit Counter(int counter = 0) : counter(counter) {}
-    int counter;
-};
+// struct Counter : public Component
+// {
+//     explicit Counter(int counter = 0) : counter(counter) {}
+//     int counter;
+// };
 
-struct MovementSystem : public SubsystemWithEntities<Position, Direction>
-{
-    explicit MovementSystem(string label = "") : label(label) {}
+// struct MovementSystem : public SubsystemWithEntities<Position, Direction>
+// {
+//     explicit MovementSystem(string label = "") : label(label) {}
 
-    void update(float dt)
-    {
-        for( auto pair : *this )
-        {
-            std::get<0>(pair.second)->x += std::get<1>(pair.second)->x;
-            std::get<0>(pair.second)->y += std::get<1>(pair.second)->y;
-        }
-    }
+//     void update(float dt)
+//     {
+//         for( auto pair : *this )
+//         {
+//             std::get<0>(pair.second)->x += std::get<1>(pair.second)->x;
+//             std::get<0>(pair.second)->y += std::get<1>(pair.second)->y;
+//         }
+//     }
 
-    std::string label;
-};
+//     std::string label;
+// };
 
-struct CounterSystem : public SubsystemWithEntities<Counter>
-{
-    void update(float dt)
-    {
-        visit([&](Entity object, Counter& c)
-        {
-            c.counter ++;
-        });
-    }
-};
+// struct CounterSystem : public SubsystemWithEntities<Counter>
+// {
+//     void update(float dt)
+//     {
+//         visit([&](lemon::Handle object, Counter& c)
+//         {
+//             c.counter ++;
+//         });
+//     }
+// };
 
-TEST_CASE_METHOD(TestContext, "TestConstructSystemWithArgs")
-{
-    add_subsystem<MovementSystem>("movement");
-    REQUIRE("movement" == get_subsystem<MovementSystem>()->label);
-}
+// TEST_CASE_METHOD(TestContext, "TestConstructSystemWithArgs")
+// {
+//     add_subsystem<MovementSystem>("movement");
+//     REQUIRE("movement" == get_subsystem<MovementSystem>()->label);
+// }
 
-TEST_CASE_METHOD(TestContext, "TestApplySystem")
-{
+// TEST_CASE_METHOD(TestContext, "TestApplySystem")
+// {
 
-    std::vector<Entity> created_entities;
-    for (int i = 0; i < 75; ++i)
-    {
-        auto e = spawn();
-        created_entities.push_back(e);
-        if (i % 2 == 0) add_component<Position>(e, 1, 2);
-        if (i % 3 == 0) add_component<Direction>(e, 1, 1);
-        add_component<Counter>(e, 0);
-    }
+//     std::vector<Entity> created_entities;
+//     for (int i = 0; i < 75; ++i)
+//     {
+//         auto e = create();
+//         created_entities.push_back(e);
+//         if (i % 2 == 0) add_component<Position>(e, 1, 2);
+//         if (i % 3 == 0) add_component<Direction>(e, 1, 1);
+//         add_component<Counter>(e, 0);
+//     }
 
-    add_subsystem<MovementSystem>();
-    for (int i = 0; i < 75; ++i)
-    {
-        auto e = spawn();
-        created_entities.push_back(e);
-        if (i % 2 == 0) add_component<Position>(e, 1, 2);
-        if (i % 3 == 0) add_component<Direction>(e, 1, 1);
-        add_component<Counter>(e, 0);
-    }
+//     add_subsystem<MovementSystem>();
+//     for (int i = 0; i < 75; ++i)
+//     {
+//         auto e = create();
+//         created_entities.push_back(e);
+//         if (i % 2 == 0) add_component<Position>(e, 1, 2);
+//         if (i % 3 == 0) add_component<Direction>(e, 1, 1);
+//         add_component<Counter>(e, 0);
+//     }
 
-    get_subsystem<MovementSystem>()->update(0.f);
+//     get_subsystem<MovementSystem>()->update(0.f);
 
-    for (auto entity : created_entities)
-    {
-        auto position = get_component<Position>(entity);
-        auto direction = get_component<Direction>(entity);
+//     for (auto entity : created_entities)
+//     {
+//         auto position = get_component<Position>(entity);
+//         auto direction = get_component<Direction>(entity);
 
-        if (position && direction)
-        {
-            REQUIRE(2.0 == Approx(position->x));
-            REQUIRE(3.0 == Approx(position->y));
-        }
-        else if (position)
-        {
-            REQUIRE(1.0 == Approx(position->x));
-            REQUIRE(2.0 == Approx(position->y));
-        }
-    }
-}
+//         if (position && direction)
+//         {
+//             REQUIRE(2.0 == Approx(position->x));
+//             REQUIRE(3.0 == Approx(position->y));
+//         }
+//         else if (position)
+//         {
+//             REQUIRE(1.0 == Approx(position->x));
+//             REQUIRE(2.0 == Approx(position->y));
+//         }
+//     }
+// }
 
-TEST_CASE_METHOD(TestContext, "TestApplyAllSystems")
-{
-    std::vector<Entity> created_entities;
-    for (int i = 0; i < 150; ++i) {
-        auto e = spawn();
-        created_entities.push_back(e);
-        if (i % 2 == 0) add_component<Position>(e, 1, 2);
-        if (i % 3 == 0) add_component<Direction>(e, 1, 1);
-        add_component<Counter>(e, 0);
-    }
+// TEST_CASE_METHOD(TestContext, "TestApplyAllSystems")
+// {
+//     std::vector<Entity> created_entities;
+//     for (int i = 0; i < 150; ++i) {
+//         auto e = create();
+//         created_entities.push_back(e);
+//         if (i % 2 == 0) add_component<Position>(e, 1, 2);
+//         if (i % 3 == 0) add_component<Direction>(e, 1, 1);
+//         add_component<Counter>(e, 0);
+//     }
 
-    add_subsystem<MovementSystem>();
-    add_subsystem<CounterSystem>();
+//     add_subsystem<MovementSystem>();
+//     add_subsystem<CounterSystem>();
 
-    get_subsystem<MovementSystem>()->update(0.f);
-    get_subsystem<CounterSystem>()->update(0.f);
+//     get_subsystem<MovementSystem>()->update(0.f);
+//     get_subsystem<CounterSystem>()->update(0.f);
 
-    for (auto entity : created_entities)
-    {
-        auto position   = get_component<Position>(entity);
-        auto direction  = get_component<Direction>(entity);
-        auto counter    = get_component<Counter>(entity);
+//     for (auto entity : created_entities)
+//     {
+//         auto position   = get_component<Position>(entity);
+//         auto direction  = get_component<Direction>(entity);
+//         auto counter    = get_component<Counter>(entity);
 
-        if (position && direction)
-        {
-            REQUIRE(2.0 == Approx(position->x));
-            REQUIRE(3.0 == Approx(position->y));
-        }
-        else if (position)
-        {
-            REQUIRE(1.0 == Approx(position->x));
-            REQUIRE(2.0 == Approx(position->y));
-        }
+//         if (position && direction)
+//         {
+//             REQUIRE(2.0 == Approx(position->x));
+//             REQUIRE(3.0 == Approx(position->y));
+//         }
+//         else if (position)
+//         {
+//             REQUIRE(1.0 == Approx(position->x));
+//             REQUIRE(2.0 == Approx(position->y));
+//         }
 
-        REQUIRE( 1 == counter->counter );
-    }
-}
+//         REQUIRE( 1 == counter->counter );
+//     }
+// }

@@ -13,8 +13,10 @@ NS_LEMON_BEGIN
 
 // an indexed memory pool provides O(1) amortized allocation/deallocation/lookup
 // of fixed size memory block associated with handle.
-template<typename T, size_t Growth> struct IndexedMemoryPool : protected MemoryPool<T, Growth>
+struct IndexedMemoryPool : protected MemoryPool
 {
+    IndexedMemoryPool(size_t block_size, size_t chunk_size) : MemoryPool(block_size, chunk_size) {}
+
     // accquire a unused block of memory from pool, returns handle associated with it
     Handle malloc();
     // returns memory block associated with handle
@@ -23,6 +25,13 @@ template<typename T, size_t Growth> struct IndexedMemoryPool : protected MemoryP
     void free(Handle);
     // destruct all objects/handles and frees all allocated chunks
     void free_all();
+    // returns true if handle is valid
+    bool is_valid(Handle) const;
+
+    // returns size of allocated blocks
+    size_t size() const;
+    // returns capacity of this memory pool
+    size_t capacity() const;
 
     // returns the iterator referrring to the first alive handle
     ReuseableHandleSet::iterator begin() const;
@@ -34,48 +43,37 @@ protected:
     std::vector<void*> _table;
 };
 
-template<typename T, size_t Growth> Handle IndexedMemoryPool<T, Growth>::malloc()
+template<typename T, size_t Growth> struct IndexedMemoryPoolT : public IndexedMemoryPool
 {
-    auto block = MemoryPool<T, Growth>::malloc();
-    if( block == nullptr )
-        return Handle();
+    using aligned_storage_t = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
 
-    auto handle = _handles.create();
-    if( _table.size() <= handle.get_index() )
-        _table.resize(handle.get_index()+1, nullptr);
+    IndexedMemoryPoolT() : IndexedMemoryPool(sizeof(aligned_storage_t), Growth)
+    {}
 
-    _table[handle.get_index()] = block();
-    return handle;
+    T* get_t(Handle handle) { return static_cast<T*>(get(handle)); }
+};
+
+INLINE bool IndexedMemoryPool::is_valid(Handle handle) const
+{
+    return _handles.is_valid(handle);
 }
 
-template<typename T, size_t Growth> void* IndexedMemoryPool<T, Growth>::get(Handle handle)
+INLINE size_t IndexedMemoryPool::size() const
 {
-    return _handles.is_valid(handle) ? _table[handle.get_index()] : nullptr;
+    return MemoryPool::size();
 }
 
-template<typename T, size_t Growth> void IndexedMemoryPool<T, Growth>::free(Handle handle)
+INLINE size_t IndexedMemoryPool::capacity() const
 {
-    if( !_handles.is_valid(handle) )
-        return;
-
-    MemoryPool<T, Growth>::free(_table[handle.get_index()]);
-    _handles.free(handle);
-    _table[handle.get_index()] = nullptr;
+    return MemoryPool::capacity();
 }
 
-template<typename T, size_t Growth> void IndexedMemoryPool<T, Growth>::free_all()
-{
-    MemoryPool<T, Growth>::free_all();
-    _handles.clear();
-    _table.clear();
-}
-
-template<typename T, size_t Growth> ReuseableHandleSet::iterator IndexedMemoryPool<T, Growth>::begin() const
+INLINE ReuseableHandleSet::iterator IndexedMemoryPool::begin() const
 {
     return _handles.begin();
 }
 
-template<typename T, size_t Growth> ReuseableHandleSet::iterator IndexedMemoryPool<T, Growth>::end() const
+INLINE ReuseableHandleSet::iterator IndexedMemoryPool::end() const
 {
     return _handles.end();
 }

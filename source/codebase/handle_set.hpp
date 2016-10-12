@@ -17,7 +17,7 @@ struct ReuseableHandleSet
     // an iterator over all alive handle
     struct iterator : public std::iterator<std::forward_iterator_tag, Handle>
     {
-        iterator(const ReuseableHandleSet& handles, Handle current)
+        iterator(const ReuseableHandleSet& handles, Handle current = Handle())
         : _handles(handles), _current(current)
         {}
 

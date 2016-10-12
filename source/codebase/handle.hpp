@@ -32,7 +32,7 @@ struct Handle
     // returns true if index and version both equals
     bool operator == (const Handle& rhs) const
     {
-        return _index == rhs._index && _version == rhs._version;
+        return (!is_valid() && !rhs.is_valid()) || (_index == rhs._index && _version == rhs._version);
     }
 
     bool operator != (const Handle& rhs) const

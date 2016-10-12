@@ -173,12 +173,12 @@ INLINE unsigned Transform::view_t<T, Args...>::count() const
 
 INLINE bool Transform::operator == (const Transform& rh) const
 {
-    return object == rh.object;
+    return handle == rh.handle;
 }
 
 INLINE bool Transform::operator != (const Transform& rh) const
 {
-    return object != rh.object;
+    return handle != rh.handle;
 }
 
 INLINE void Transform::scale(const Vector3f& scaler)

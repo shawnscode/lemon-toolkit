@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <core/entity.hpp>
+#include <core/ecs.hpp>
 #include <codebase/type/tuple.hpp>
 
 NS_LEMON_CORE_BEGIN
@@ -24,30 +24,30 @@ struct Subsystem
     Subsystem& operator = (const Subsystem&) = delete;
 };
 
-template<typename ... Args> struct SubsystemWithEntities : public Subsystem
-{
-    using tuple = std::tuple<Args*...>;
-    using collection = std::unordered_map<Handle, tuple>;
-    using visitor = std::function<void(Handle, Args&...)>;
-    using iterator = typename collection::iterator;
-    using const_iterator = typename collection::const_iterator;
+// template<typename ... Args> struct SubsystemWithEntities : public Subsystem
+// {
+//     using tuple = std::tuple<Args*...>;
+//     using collection = std::unordered_map<Handle, tuple>;
+//     using visitor = std::function<void(Handle, Args&...)>;
+//     using iterator = typename collection::iterator;
+//     using const_iterator = typename collection::const_iterator;
 
-    SUBSYSTEM("lemon::core::SubsystemWithEntities");
+//     SUBSYSTEM("lemon::core::SubsystemWithEntities");
 
-    virtual bool initialize() override;
-    virtual void dispose() override;
+//     virtual bool initialize() override;
+//     virtual void dispose() override;
 
-    void receive(const EvtHandleModified&);
-    void visit(const visitor&);
+//     void receive(const EvtEntityModified&);
+//     void visit(const visitor&);
 
-    iterator begin() { return _entities.begin(); }
-    iterator end() { return _entities.end(); }
-    const_iterator begin() const { return _entities.begin(); }
-    const_iterator end() const { return _entities.end(); }
+//     iterator begin() { return _entities.begin(); }
+//     iterator end() { return _entities.end(); }
+//     const_iterator begin() const { return _entities.begin(); }
+//     const_iterator end() const { return _entities.end(); }
 
-protected:
-    collection _entities;
-};
+// protected:
+//     collection _entities;
+// };
 
 // retrieve the registered system instance, existence should be guaranteed
 template<typename S> S* get_subsystem();
@@ -63,45 +63,45 @@ template<typename S> bool has_subsystems();
 template<typename S1, typename S2, typename ... Args> bool has_subsystems();
 
 //
-template<typename ... Args>
-bool SubsystemWithEntities<Args...>::initialize()
-{
-    for( auto object : find_entities_with<Args...>() )
-        _entities[object] = get_components<Args...>(object);
-    subscribe<EvtHandleModified>(*this);
-    return true;
-}
+// template<typename ... Args>
+// bool SubsystemWithEntities<Args...>::initialize()
+// {
+//     for( auto object : world().find_entities_with<Args...>() )
+//         _entities[object] = entity->get_components<Args...>();
+//     subscribe<EvtEntityModified>(*this);
+//     return true;
+// }
 
-template<typename ... Args>
-void SubsystemWithEntities<Args...>::dispose()
-{
-    unsubscribe<EvtHandleModified>(*this);
-}
+// template<typename ... Args>
+// void SubsystemWithEntities<Args...>::dispose()
+// {
+//     unsubscribe<EvtEntityModified>(*this);
+// }
 
-template<typename ... Args>
-void SubsystemWithEntities<Args...>::receive(const EvtHandleModified& evt)
-{
-    // auto& world = _context.get_world();
-    auto mask = get_components_mask<Args...>();
-    if( (get_components_mask(evt.object) & mask) == mask )
-        _entities[evt.object] = get_components<Args...>(evt.object);
-    else
-        _entities.erase(evt.object);
-}
+// template<typename ... Args>
+// void SubsystemWithEntities<Args...>::receive(const EvtEntityModified& evt)
+// {
+//     // auto& world = _context.get_world();
+//     auto mask = get_components_mask<Args...>();
+//     if( (get_components_mask(evt.object) & mask) == mask )
+//         _entities[evt.object] = get_components<Args...>(evt.object);
+//     else
+//         _entities.erase(evt.object);
+// }
 
-template<typename Func, typename Tup, std::size_t... index>
-void visit_with_unpack(Func&& cb, Handle object, Tup&& tuple, integer_sequence<size_t, index...>)
-{
-    return cb(object, *std::get<index>(std::forward<Tup>(tuple))...);
-}
+// template<typename Func, typename Tup, std::size_t... index>
+// void visit_with_unpack(Func&& cb, Handle object, Tup&& tuple, integer_sequence<size_t, index...>)
+// {
+//     return cb(object, *std::get<index>(std::forward<Tup>(tuple))...);
+// }
 
-template<typename ... Args>
-void SubsystemWithEntities<Args...>::visit(const visitor& cb)
-{
-    constexpr auto Size = std::tuple_size<typename std::decay<tuple>::type>::value;
-    for( auto pair : *this )
-        visit_with_unpack(cb, pair.first, pair.second, make_integer_sequence<size_t, Size>{});
-}
+// template<typename ... Args>
+// void SubsystemWithEntities<Args...>::visit(const visitor& cb)
+// {
+//     constexpr auto Size = std::tuple_size<typename std::decay<tuple>::type>::value;
+//     for( auto pair : *this )
+//         visit_with_unpack(cb, pair.first, pair.second, make_integer_sequence<size_t, Size>{});
+// }
 
 //
 // implementation of traits
