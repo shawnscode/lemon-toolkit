@@ -27,8 +27,8 @@ struct Subsystem
 template<typename ... Args> struct SubsystemWithEntities : public Subsystem
 {
     using tuple = std::tuple<Args*...>;
-    using collection = std::unordered_map<Entity, tuple>;
-    using visitor = std::function<void(Entity, Args&...)>;
+    using collection = std::unordered_map<Handle, tuple>;
+    using visitor = std::function<void(Handle, Args&...)>;
     using iterator = typename collection::iterator;
     using const_iterator = typename collection::const_iterator;
 
@@ -37,7 +37,7 @@ template<typename ... Args> struct SubsystemWithEntities : public Subsystem
     virtual bool initialize() override;
     virtual void dispose() override;
 
-    void receive(const EvtEntityModified&);
+    void receive(const EvtHandleModified&);
     void visit(const visitor&);
 
     iterator begin() { return _entities.begin(); }
@@ -68,18 +68,18 @@ bool SubsystemWithEntities<Args...>::initialize()
 {
     for( auto object : find_entities_with<Args...>() )
         _entities[object] = get_components<Args...>(object);
-    subscribe<EvtEntityModified>(*this);
+    subscribe<EvtHandleModified>(*this);
     return true;
 }
 
 template<typename ... Args>
 void SubsystemWithEntities<Args...>::dispose()
 {
-    unsubscribe<EvtEntityModified>(*this);
+    unsubscribe<EvtHandleModified>(*this);
 }
 
 template<typename ... Args>
-void SubsystemWithEntities<Args...>::receive(const EvtEntityModified& evt)
+void SubsystemWithEntities<Args...>::receive(const EvtHandleModified& evt)
 {
     // auto& world = _context.get_world();
     auto mask = get_components_mask<Args...>();
@@ -90,7 +90,7 @@ void SubsystemWithEntities<Args...>::receive(const EvtEntityModified& evt)
 }
 
 template<typename Func, typename Tup, std::size_t... index>
-void visit_with_unpack(Func&& cb, Entity object, Tup&& tuple, integer_sequence<size_t, index...>)
+void visit_with_unpack(Func&& cb, Handle object, Tup&& tuple, integer_sequence<size_t, index...>)
 {
     return cb(object, *std::get<index>(std::forward<Tup>(tuple))...);
 }

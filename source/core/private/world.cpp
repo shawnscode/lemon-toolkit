@@ -13,14 +13,14 @@ IndexedMemoryChunks::IndexedMemoryChunks(World& world, size_t size, size_t chunk
 
 IndexedMemoryChunks::~IndexedMemoryChunks()
 {
-    for( Entity::index_t i = 0; i < _objects.size(); i++ )
+    for( Handle::index_t i = 0; i < _objects.size(); i++ )
     {
         if( _objects[i] != nullptr )
             _destructor(_world.get(i), _objects[i]);
     }
 }
 
-void* IndexedMemoryChunks::malloc_with_index(Entity::index_t index)
+void* IndexedMemoryChunks::malloc_with_index(Handle::index_t index)
 {
     auto object = FixedSizeAllocator::malloc();
     if( object == nullptr )
@@ -57,7 +57,7 @@ void* IndexedMemoryChunks::malloc_with_index(Entity::index_t index)
     return object;
 }
 
-void IndexedMemoryChunks::free_with_index(Entity::index_t index)
+void IndexedMemoryChunks::free_with_index(Handle::index_t index)
 {
     if( !_fallback )
     {
@@ -85,7 +85,7 @@ void IndexedMemoryChunks::free_with_index(Entity::index_t index)
     }
 }
 
-void* IndexedMemoryChunks::get(Entity::index_t index)
+void* IndexedMemoryChunks::get(Handle::index_t index)
 {
     if( !_fallback )
     {
@@ -107,7 +107,7 @@ bool World::initialize()
 
 void World::dispose()
 {
-    for( Entity::index_t i = 0; i < _components.size(); i++ )
+    for( Handle::index_t i = 0; i < _components.size(); i++ )
     {
         if( _components[i] != nullptr )
         {
@@ -124,7 +124,7 @@ void World::dispose()
     _handles.clear();
 }
 
-Entity World::spawn()
+Handle World::spawn()
 {
     auto handle = _handles.create();
 
@@ -134,7 +134,7 @@ Entity World::spawn()
     return handle;
 }
 
-void World::recycle(Entity object)
+void World::recycle(Handle object)
 {
     if( !alive(object) )
         return;
@@ -168,7 +168,7 @@ bool World::register_component(TypeInfo::index_t id, size_t size, size_t chunk_s
     return true;
 }
 
-void* World::add_component(TypeInfo::index_t id, Entity object)
+void* World::add_component(TypeInfo::index_t id, Handle object)
 {
     if( !alive(object) )
         return nullptr;
@@ -181,7 +181,7 @@ void* World::add_component(TypeInfo::index_t id, Entity object)
     return chunk;
 }
 
-void* World::get_component(TypeInfo::index_t id, Entity object)
+void* World::get_component(TypeInfo::index_t id, Handle object)
 {
     if( !alive(object) )
         return nullptr;
@@ -192,7 +192,7 @@ void* World::get_component(TypeInfo::index_t id, Entity object)
     return _components[id]->get(object.get_index());
 }
 
-void World::remove_component(TypeInfo::index_t id, Entity object)
+void World::remove_component(TypeInfo::index_t id, Handle object)
 {
     if( !alive(object) )
         return;

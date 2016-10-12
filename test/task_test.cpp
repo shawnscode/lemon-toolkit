@@ -69,7 +69,7 @@ TEST_CASE_METHOD(Context, "TestSchedulerParalle")
 BENCHMARK(TaskScheduler, Sequence, 2, 1)
 {
     unsigned result = 0;
-    for( unsigned i = 1; i < 100; i++ )
+    for( unsigned i = 1; i < 10; i++ )
         fib(result, i);
 }
 

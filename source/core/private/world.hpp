@@ -17,9 +17,9 @@ struct IndexedMemoryChunks : public FixedSizeAllocator
     IndexedMemoryChunks(World&, size_t, size_t, const internal::destructor&);
     ~IndexedMemoryChunks();
 
-    void* malloc_with_index(Entity::index_t);
-    void free_with_index(Entity::index_t);
-    void* get(Entity::index_t);
+    void* malloc_with_index(Handle::index_t);
+    void free_with_index(Handle::index_t);
+    void* get(Handle::index_t);
 
 protected:
     World& _world;
@@ -38,18 +38,18 @@ struct World
     void dispose();
 
     // spawn a new entity identifier
-    Entity spawn();
+    Handle spawn();
     // recycle entity identifier and its components
-    void recycle(Entity);
+    void recycle(Handle);
 
     // initialize component storage and type informations
     bool register_component(TypeInfo::index_t, size_t, size_t, const internal::destructor&);
     // assign a component to object, passing through component constructor arguments
-    void* add_component(TypeInfo::index_t, Entity);
+    void* add_component(TypeInfo::index_t, Handle);
     // retrieve a component assigned to object
-    void* get_component(TypeInfo::index_t, Entity);
+    void* get_component(TypeInfo::index_t, Handle);
     // remove a component from object
-    void remove_component(TypeInfo::index_t, Entity);
+    void remove_component(TypeInfo::index_t, Handle);
 
     // returns first available entity identifier with specified mask
     Handle find_first_available(ComponentMask);
@@ -62,12 +62,12 @@ struct World
         return _components.size() > id && _components[id] != nullptr;
     }
 
-    INLINE bool has_component(TypeInfo::index_t id, Entity object)
+    INLINE bool has_component(TypeInfo::index_t id, Handle object)
     {
         return alive(object) && _masks[object.get_index()].test(id);
     }
 
-    INLINE ComponentMask get_components_mask(Entity object)
+    INLINE ComponentMask get_components_mask(Handle object)
     {
         return alive(object) ? _masks[object.get_index()] : ComponentMask();
     }
@@ -78,13 +78,13 @@ struct World
     }
 
     // returns true if the entity identifier is current alive
-    INLINE bool alive(Entity object)
+    INLINE bool alive(Handle object)
     {
         return _handles.is_valid(object);
     }
 
     // returns current alive entity identifier by index
-    INLINE Entity get(Entity::index_t index)
+    INLINE Handle get(Handle::index_t index)
     {
         return Handle(index, _handles.get_version(index));
     }
@@ -110,7 +110,7 @@ protected:
     std::vector<IndexedMemoryChunks*> _components;
 
     // bitmask of components associated with each entity
-    // the index into the vector is the Entity::Uid
+    // the index into the vector is the Handle::Uid
     std::vector<ComponentMask> _masks;
 };
 

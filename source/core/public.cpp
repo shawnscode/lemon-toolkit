@@ -176,22 +176,22 @@ namespace internal
         return s_world->register_component(id, size, chunk_size, cb);
     }
 
-    void* add_component(TypeInfo::index_t id, Entity object)
+    void* add_component(TypeInfo::index_t id, Handle object)
     {
         return s_world->add_component(id, object);
     }
 
-    void* get_component(TypeInfo::index_t id, Entity object)
+    void* get_component(TypeInfo::index_t id, Handle object)
     {
         return s_world->get_component(id, object);
     }
 
-    void remove_component(TypeInfo::index_t id, Entity object)
+    void remove_component(TypeInfo::index_t id, Handle object)
     {
         s_world->remove_component(id, object);
     }
 
-    bool has_component(TypeInfo::index_t id, Entity object)
+    bool has_component(TypeInfo::index_t id, Handle object)
     {
         return s_world->has_component(id, object);
     }
@@ -220,17 +220,17 @@ namespace internal
     }
 }
 
-Entity spawn()
+Handle spawn()
 {
     return s_world->spawn();
 }
 
-void recycle(Entity object)
+void recycle(Handle object)
 {
     s_world->recycle(object);
 }
 
-bool alive(Entity object)
+bool alive(Handle object)
 {
     return s_world->alive(object);
 }
@@ -245,27 +245,27 @@ void reset_world()
     s_world->dispose();
 }
 
-void* add_component(TypeInfo::index_t id, Entity object)
+void* add_component(TypeInfo::index_t id, Handle object)
 {
     return s_world->add_component(id, object);
 }
 
-void* get_component(TypeInfo::index_t id, Entity object)
+void* get_component(TypeInfo::index_t id, Handle object)
 {
     return s_world->get_component(id, object);
 }
 
-void remove_component(TypeInfo::index_t id, Entity object)
+void remove_component(TypeInfo::index_t id, Handle object)
 {
     s_world->remove_component(id, object);
 }
 
-bool has_component(TypeInfo::index_t id, Entity object)
+bool has_component(TypeInfo::index_t id, Handle object)
 {
     return s_world->has_component(id, object);
 }
 
-ComponentMask get_components_mask(Entity object)
+ComponentMask get_components_mask(Handle object)
 {
     return s_world->get_components_mask(object);
 }

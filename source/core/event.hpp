@@ -4,7 +4,7 @@
 #pragma once
 
 #include <forwards.hpp>
-#include <codebase/type/typeinfo.hpp>
+#include <codebase/type/type_traits.hpp>
 
 #include <functional>
 #include <unordered_map>

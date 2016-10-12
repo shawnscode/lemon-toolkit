@@ -7,71 +7,77 @@
 
 #include <codebase/handle.hpp>
 #include <codebase/handle_set.hpp>
-#include <codebase/memory/allocator.hpp>
-
-#include <functional>
+#include <codebase/memory/memory_pool.hpp>
 
 NS_LEMON_BEGIN
 
-struct IndexedMemoryPool
+// an indexed memory pool provides O(1) amortized allocation/deallocation/lookup
+// of fixed size memory block associated with handle.
+template<typename T, size_t Growth> struct IndexedMemoryPool : protected MemoryPool<T, Growth>
 {
-    IndexedMemoryPool(size_t element_size, size_t chunk_size);
-
     // accquire a unused block of memory from pool, returns handle associated with it
     Handle malloc();
-
+    // returns memory block associated with handle
+    void* get(Handle handle);
     // returns memory block to pool and invalidate current handle
     void free(Handle);
+    // destruct all objects/handles and frees all allocated chunks
+    void free_all();
 
-    // returns memory block associated with handle
-    void* get(Handle handle)
-    {
-        return _handles.is_valid(handle) ? _table[handle.get_index()] : nullptr;
-    }
-
-    const void* get(Handle handle) const
-    {
-        return _handles.is_valid(handle) ? _table[handle.get_index()] : nullptr;
-    }
-
-    void clear()
-    {
-        _allocator.clear();
-        _handles.clear();
-        _table.clear();
-    }
-
-    ReuseableHandleSet::iterator begin() const
-    {
-        return _handles.begin();
-    }
-
-    ReuseableHandleSet::iterator end() const
-    {
-        return _handles.end();
-    }
+    // returns the iterator referrring to the first alive handle
+    ReuseableHandleSet::iterator begin() const;
+    // returns an iterator referrring to the past-the-end handle
+    ReuseableHandleSet::iterator end() const;
 
 protected:
-    FixedSizeAllocator _allocator;
     ReuseableHandleSet _handles;
     std::vector<void*> _table;
 };
 
-struct IndexedObjectPool : public IndexedMemoryPool
+template<typename T, size_t Growth> Handle IndexedMemoryPool<T, Growth>::malloc()
 {
-    using callback = std::function<void(void*)>;
+    auto block = MemoryPool<T, Growth>::malloc();
+    if( block == nullptr )
+        return Handle();
 
-    IndexedObjectPool(size_t element_size, size_t chunk_size, const callback& ctor, const callback& dtor);
-    ~IndexedObjectPool();
+    auto handle = _handles.create();
+    if( _table.size() <= handle.get_index() )
+        _table.resize(handle.get_index()+1, nullptr);
 
-    // accquire a unused block of memory and construct it with constructor
-    Handle malloc();
-    // destruct object and recycle memory
-    void free(Handle);
+    _table[handle.get_index()] = block();
+    return handle;
+}
 
-protected:
-    callback _constructor;
-    callback _destructor;
-};
+template<typename T, size_t Growth> void* IndexedMemoryPool<T, Growth>::get(Handle handle)
+{
+    return _handles.is_valid(handle) ? _table[handle.get_index()] : nullptr;
+}
+
+template<typename T, size_t Growth> void IndexedMemoryPool<T, Growth>::free(Handle handle)
+{
+    if( !_handles.is_valid(handle) )
+        return;
+
+    MemoryPool<T, Growth>::free(_table[handle.get_index()]);
+    _handles.free(handle);
+    _table[handle.get_index()] = nullptr;
+}
+
+template<typename T, size_t Growth> void IndexedMemoryPool<T, Growth>::free_all()
+{
+    MemoryPool<T, Growth>::free_all();
+    _handles.clear();
+    _table.clear();
+}
+
+template<typename T, size_t Growth> ReuseableHandleSet::iterator IndexedMemoryPool<T, Growth>::begin() const
+{
+    return _handles.begin();
+}
+
+template<typename T, size_t Growth> ReuseableHandleSet::iterator IndexedMemoryPool<T, Growth>::end() const
+{
+    return _handles.end();
+}
 
 NS_LEMON_END
