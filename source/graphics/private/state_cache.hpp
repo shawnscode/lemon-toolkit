@@ -11,36 +11,24 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-struct ProgramGL;
-struct VertexBufferGL;
-
-struct VertexArrayObjectCache
-{
-    VertexArrayObjectCache();
-
-    void bind(ProgramGL&, VertexBufferGL&);
-    void unbind();
-
-    void free(ProgramGL&);
-    void free(VertexBufferGL&);
-
-protected:
-    bool _vao_support;
-    std::unordered_map<uint64_t, GLuint> _vaos;
-};
-
 struct RenderStateCache
 {
     RenderStateCache(Renderer&);
 
     void begin_frame();
     void bind_program(Handle program);
-    void bind_vertex_buffer(Handle program, Handle vb);
     void bind_uniform_buffer(Handle program, Handle uniform);
+    void bind_vertex_buffer(Handle program, Handle vb);
     void end_frame();
+
+    void free_program(Handle);
+    void free_vertex_buffer(Handle);
 
 protected:
     Renderer& _renderer;
+
+    bool _vao_support;
+    std::unordered_map<std::pair<Handle, Handle>, GLuint> _vertex_array_objects;
 
     Handle _active_program;
     std::unordered_map<Handle, Handle> _active_uniforms;

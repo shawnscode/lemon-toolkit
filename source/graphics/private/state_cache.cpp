@@ -1,7 +1,7 @@
 // @date 2016/10/09
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <graphics/private/vertex_array_cache.hpp>
+#include <graphics/private/state_cache.hpp>
 #include <graphics/private/backend.hpp>
 #include <graphics/private/program.hpp>
 #include <graphics/private/vertex_buffer.hpp>
@@ -9,8 +9,24 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
+static const unsigned GL_ELEMENT_FORMAT[] =
+{
+    GL_BYTE,
+    GL_UNSIGNED_BYTE,
+    GL_SHORT,
+    GL_UNSIGNED_SHORT,
+    GL_FIXED,
+    GL_FLOAT
+};
+
 RenderStateCache::RenderStateCache(Renderer& renderer) : _renderer(renderer)
-{}
+{
+#ifndef GL_ES_VERSION_2_0
+    _vao_support = true;
+#else
+    _vao_support = false;
+#endif
+}
 
 void RenderStateCache::begin_frame()
 {
@@ -104,29 +120,13 @@ void RenderStateCache::bind_uniform_buffer(Handle program_handle, Handle uniform
     _active_uniforms[program_handle] = uniform_handle;
 }
 
-static const unsigned GL_ELEMENT_FORMAT[] =
+void RenderStateCache::bind_vertex_buffer(Handle program_handle, Handle vb_handle)
 {
-    GL_BYTE,
-    GL_UNSIGNED_BYTE,
-    GL_SHORT,
-    GL_UNSIGNED_SHORT,
-    GL_FIXED,
-    GL_FLOAT
-};
+    auto program = static_cast<ProgramGL*>(_renderer.get<Program>(program_handle));
+    auto vb = static_cast<VertexBufferGL*>(_renderer.get<VertexBuffer>(vb_handle));
 
-VertexArrayObjectCache::VertexArrayObjectCache()
-{
-#ifndef GL_ES_VERSION_2_0
-    _vao_support = true;
-#else
-    _vao_support = false;
-#endif
-}
-
-void VertexArrayObjectCache::bind(ProgramGL& program, VertexBufferGL& vb)
-{
-    GLuint glprogram = program.get_handle();
-    GLuint glvb = vb.get_handle();
+    GLuint glprogram = program == nullptr ? 0 : program->get_handle();
+    GLuint glvb = vb == nullptr ? 0 : vb->get_handle();
 
     if( glprogram == 0 || glvb == 0 )
     {
@@ -136,10 +136,10 @@ void VertexArrayObjectCache::bind(ProgramGL& program, VertexBufferGL& vb)
 
     if( _vao_support )
     {
-        const uint64_t k = (uint64_t)glprogram | (uint64_t)glvb;
+        const auto k = std::make_pair(program_handle, vb_handle);
 
-        auto found = _vaos.find(k);
-        if( found != _vaos.end() )
+        auto found = _vertex_array_objects.find(k);
+        if( found != _vertex_array_objects.end() )
         {
             glBindVertexArray(found->second);
             return;
@@ -149,17 +149,17 @@ void VertexArrayObjectCache::bind(ProgramGL& program, VertexBufferGL& vb)
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
-        _vaos.insert(std::make_pair(k, vao));
+        _vertex_array_objects.insert(std::make_pair(k, vao));
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, glvb);
-    auto& layout = vb.get_layout();
+    auto& layout = vb->get_layout();
     for( uint8_t i = 0; i < VertexAttribute::kVertexAttributeCount; i++ )
     {
         VertexAttribute::Enum va = (VertexAttribute::Enum)i;
         if( layout.has(va) )
         {
-            auto localtion = program.get_attribute_location(va);
+            auto localtion = program->get_attribute_location(va);
             if( localtion == -1 )
                 continue;
 
@@ -178,26 +178,22 @@ void VertexArrayObjectCache::bind(ProgramGL& program, VertexBufferGL& vb)
     CHECK_GL_ERROR();
 }
 
-void VertexArrayObjectCache::unbind()
+bool operator < (const std::pair<Handle, Handle>& lhs, const std::pair<Handle, Handle>& rhs)
 {
-    if( !_vao_support )
-        return;
-
-    glBindVertexArray(0);
+    return lhs.first == rhs.first ? lhs.second < rhs.second : lhs.first < rhs.first;
 }
 
-void VertexArrayObjectCache::free(ProgramGL& program)
+void RenderStateCache::free_program(Handle handle)
 {
     if( !_vao_support )
         return;
 
-    const uint64_t k = ((uint64_t)program.get_handle()) << 32;
-    for( auto it = _vaos.cbegin(); it != _vaos.cend(); )
+    for( auto it = _vertex_array_objects.cbegin(); it != _vertex_array_objects.cend(); )
     {
-        if( (it->first & 0xFFFFFFFF00000000) == k )
+        if( it->first.first == handle )
         {
             glDeleteVertexArrays(1, &it->second);
-            _vaos.erase(it++);
+            _vertex_array_objects.erase(it++);
         }
         else
             ++it;
@@ -205,18 +201,17 @@ void VertexArrayObjectCache::free(ProgramGL& program)
     CHECK_GL_ERROR();
 }
 
-void VertexArrayObjectCache::free(VertexBufferGL& vb)
+void RenderStateCache::free_vertex_buffer(Handle handle)
 {
     if( !_vao_support )
         return;
 
-    const uint64_t k = (uint64_t)vb.get_handle();
-    for( auto it = _vaos.cbegin(); it != _vaos.cend(); )
+    for( auto it = _vertex_array_objects.cbegin(); it != _vertex_array_objects.cend(); )
     {
-        if( (it->first & 0x00000000FFFFFFFF) == k )
+        if( it->first.second == handle )
         {
             glDeleteVertexArrays(1, &it->second);
-            _vaos.erase(it++);
+            _vertex_array_objects.erase(it++);
         }
         else
             ++it;

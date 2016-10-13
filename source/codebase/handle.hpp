@@ -41,9 +41,9 @@ struct Handle
     }
 
     // comparisons for sorted containers
-    bool operator < (const Handle& rh) const
+    bool operator < (const Handle& rhs) const
     {
-        return _version == rh._version ? _index < rh._index : _version < rh._version;
+        return _index == rhs._index ? _version < rhs._version : _index < rhs._index;
     }
 
     // invalidate handle
@@ -67,6 +67,14 @@ namespace std
         std::size_t operator() (const lemon::Handle& handle) const
         {
             return (((size_t)handle.get_version()) << 16) & ((size_t)handle.get_index());
+        }
+    };
+
+    template<> struct hash<std::pair<lemon::Handle, lemon::Handle>>
+    {
+        std::size_t operator() (const std::pair<lemon::Handle, lemon::Handle>& value) const
+        {
+            return std::hash<lemon::Handle>()(value.first) ^ std::hash<lemon::Handle>()(value.second);
         }
     };
 }

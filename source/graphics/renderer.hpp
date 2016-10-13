@@ -33,9 +33,8 @@ enum class ClearOption : uint8_t
 // Renderer provides sort-based draw call bucketing. this means that submission
 // order doesn't necessarily match the rendering order, but on the low-level
 // they will be sorted and ordered correctly.
-struct RenderStateCache;
 struct RendererBackend;
-struct VertexArrayObjectCache;
+struct RenderStateCache;
 struct Renderer : public core::Subsystem
 {
     Renderer();
@@ -65,9 +64,9 @@ struct Renderer : public core::Subsystem
 protected:
     static bool drawcall_compare(const RenderDrawcall&, const RenderDrawcall&);
 
-    using destructor = std::function<void(void*)>;
+    using resolver = std::function<void(Handle, void*)>;
     template<typename T, typename Impl, size_t Growth>
-    bool register_graphics_object(const destructor& dtor = nullptr);
+    bool register_graphics_object(const resolver& dtor = nullptr);
 
 protected:
     friend struct WindowDevice;
@@ -81,12 +80,11 @@ protected:
     unsigned _frame_drawcall;
 
     std::unique_ptr<RendererBackend> _backend;
-    std::unique_ptr<VertexArrayObjectCache> _vaocache;
     std::unique_ptr<RenderStateCache> _statecache;
 
     std::vector<std::unique_ptr<std::mutex>> _object_mutexs;
-    std::vector<std::function<void(void*)>> _object_destructors;
-    std::vector<std::function<void(void*)>> _object_creators;
+    std::vector<resolver> _object_destructors;
+    std::vector<resolver> _object_creators;
     std::vector<std::unique_ptr<IndexedMemoryPool>> _object_sets;
 
     std::mutex _mutex;
@@ -114,7 +112,7 @@ template<typename T, typename ... Args> Handle Renderer::create(Args&& ... args)
         return Handle();
     }
 
-    _object_creators[index](object);
+    _object_creators[index](handle, object);
     if( !object->initialize(std::forward<Args>(args)...) )
     {
         {
@@ -146,7 +144,7 @@ template<typename T> void Renderer::free(Handle handle)
     if( object == nullptr )
         return;
 
-    _object_destructors[index](object);
+    _object_destructors[index](handle, object);
     {
         std::unique_lock<std::mutex> L(*_object_mutexs[index]);
         _object_sets[index]->free(handle);
@@ -154,7 +152,7 @@ template<typename T> void Renderer::free(Handle handle)
 }
 
 template<typename T, typename Impl, size_t Growth>
-bool Renderer::register_graphics_object(const destructor& dtor)
+bool Renderer::register_graphics_object(const resolver& dtor)
 {
     const auto index = TypeInfo::id<GraphicsObject, T>();
 
@@ -169,12 +167,12 @@ bool Renderer::register_graphics_object(const destructor& dtor)
     _object_sets[index].reset(new (std::nothrow) IndexedMemoryPoolT<Impl, Growth>());
     _object_mutexs[index].reset(new std::mutex());
 
-    _object_destructors[index] = dtor != nullptr ? dtor : [=](void* object)
+    _object_destructors[index] = dtor != nullptr ? dtor : [=](Handle, void* object)
     {
         static_cast<T*>(object)->~T();
     };
 
-    _object_creators[index] = [=](void* object)
+    _object_creators[index] = [=](Handle, void* object)
     {
         ::new(object) Impl(*this);
     };

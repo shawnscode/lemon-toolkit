@@ -3,7 +3,7 @@
 
 #include <graphics/renderer.hpp>
 #include <graphics/private/backend.hpp>
-#include <graphics/private/vertex_array_cache.hpp>
+#include <graphics/private/state_cache.hpp>
 #include <graphics/private/program.hpp>
 #include <graphics/private/vertex_buffer.hpp>
 #include <graphics/private/index_buffer.hpp>
@@ -18,26 +18,27 @@ Renderer::~Renderer() { dispose(); }
 bool Renderer::initialize()
 {
     _backend.reset(new (std::nothrow) RendererBackend());
-    _vaocache.reset(new (std::nothrow) VertexArrayObjectCache());
     _statecache.reset(new (std::nothrow) RenderStateCache(*this));
 
-    if( _backend == nullptr || _vaocache == nullptr || _statecache == nullptr )
+    if( _backend == nullptr || _statecache == nullptr )
     {
         dispose();
         return false;
     }
 
-    auto program_dtor = [=](void* p)
+    auto program_dtor = [=](Handle handle, void* p)
     {
+        _statecache->free_program(handle);
+
         auto program = static_cast<ProgramGL*>(p);
-        _vaocache->free(*program);
         program->~ProgramGL();
     };
 
-    auto vb_dtor = [=](void* vb)
+    auto vb_dtor = [=](Handle handle, void* vb)
     {
+        _statecache->free_vertex_buffer(handle);
+
         auto vertex_buffer = static_cast<VertexBufferGL*>(vb);
-        _vaocache->free(*vertex_buffer);
         vertex_buffer->~VertexBufferGL();
     };
 
@@ -58,7 +59,6 @@ bool Renderer::initialize()
 void Renderer::dispose()
 {
     _backend.reset();
-    _vaocache.reset();
     _statecache.reset();
 
     for( size_t i = 0; i < _object_sets.size(); i++ )
@@ -68,7 +68,7 @@ void Renderer::dispose()
             continue;
 
         for( auto handle : *pool )
-            _object_destructors[i](pool->get(handle));
+            _object_destructors[i](handle, pool->get(handle));
     }
 
     _object_sets.clear();
@@ -94,7 +94,6 @@ bool Renderer::begin_frame()
     _frame_drawcall = 0;
     _frame_began = true;
     _statecache->begin_frame();
-    _vaocache->unbind();
     return true;
 }
 
@@ -144,7 +143,7 @@ void Renderer::flush()
 
         _statecache->bind_program(drawcall.program);
         _statecache->bind_uniform_buffer(drawcall.program, drawcall.uniform_buffer);
-        _vaocache->bind(*program, *vb);
+        _statecache->bind_vertex_buffer(drawcall.program, drawcall.vertex_buffer);
 
         auto& state = drawcall.state;
         _backend->set_scissor_test(state.scissor.enable, state.scissor.area);
