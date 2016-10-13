@@ -9,38 +9,44 @@
 #include <graphics/private/index_buffer.hpp>
 #include <graphics/private/texture.hpp>
 
-#include <core/instance.hpp>
-
 NS_LEMON_GRAPHICS_BEGIN
 
 Renderer::Renderer() {}
+Renderer::~Renderer() { dispose(); }
 
 bool Renderer::initialize()
 {
-    _backend = new (std::nothrow) RendererBackend();
-    if ( _backend == nullptr )
-        return false;
+    _backend.reset(new (std::nothrow) RendererBackend());
+    _vaocache.reset(new (std::nothrow) VertexArrayObjectCache());
 
-    _vaocache = new (std::nothrow) VertexArrayObjectCache();
-    if( _vaocache == nullptr )
+    if( _backend == nullptr || _vaocache == nullptr )
     {
         dispose();
         return false;
     }
 
-    _destruct_program = [=](Program* p)
+    auto program_dtor = [=](void* p)
     {
-        if( core::status() == core::Status::RUNNING )
-            _vaocache->free(*static_cast<ProgramGL*>(p));
-        delete p;
+        auto program = static_cast<ProgramGL*>(p);
+        _vaocache->free(*program);
+        program->~ProgramGL();
     };
 
-    _destruct_vertex_buffer = [=](VertexBuffer* vb)
+    auto vb_dtor = [=](void* vb)
     {
-        if( core::status() == core::Status::RUNNING )
-            _vaocache->free(*static_cast<VertexBufferGL*>(vb));
-        delete vb;
+        auto vertex_buffer = static_cast<VertexBufferGL*>(vb);
+        _vaocache->free(*vertex_buffer);
+        vertex_buffer->~VertexBufferGL();
     };
+
+    if( !register_graphics_object<Program, ProgramGL, 8>(program_dtor) ||
+        !register_graphics_object<Texture, TextureGL, 8>() ||
+        !register_graphics_object<IndexBuffer, IndexBufferGL, 16>() ||
+        !register_graphics_object<VertexBuffer, VertexBufferGL, 16>(vb_dtor) )
+    {
+        dispose();
+        return false;
+    }
 
     _frame_began = false;
     return true;
@@ -48,20 +54,22 @@ bool Renderer::initialize()
 
 void Renderer::dispose()
 {
-    if( _backend != nullptr )
+    _backend.reset();
+    _vaocache.reset();
+
+    for( size_t i = 0; i < _object_sets.size(); i++ )
     {
-        delete _backend;
-        _backend = nullptr;
+        auto& pool = _object_sets[i];
+        if( pool == nullptr )
+            continue;
+
+        for( auto handle : *pool )
+            _object_destructors[i](pool->get(handle));
     }
 
-    if( _vaocache != nullptr )
-    {
-        delete _vaocache;
-        _vaocache = nullptr;
-    }
-
-    _destruct_program = nullptr;
-    _destruct_vertex_buffer = nullptr;
+    _object_sets.clear();
+    _object_mutexs.clear();
+    _object_destructors.clear();
 }
 
 bool Renderer::restore(SDL_Window* window)
@@ -72,60 +80,6 @@ bool Renderer::restore(SDL_Window* window)
 void Renderer::release()
 {
     _backend->dispose();
-}
-
-Program::ptr Renderer::create_program(const char* vs, const char* ps)
-{
-    auto object = new (std::nothrow) ProgramGL(*this);
-    if( object && object->initialize(vs, ps) )
-        return Program::ptr(object, _destruct_program);
-
-    if( object ) delete object;
-    return nullptr;
-}
-
-Texture::ptr Renderer::create_texture(
-    const void* pixels,
-    TextureFormat format,
-    TexturePixelFormat pixel_format,
-    unsigned width,
-    unsigned height,
-    MemoryUsage usage)
-{
-    auto object = new (std::nothrow) TextureGL(*this);
-    if( object && object->initialize(pixels, format, pixel_format, width, height, usage) )
-        return Texture::ptr(object);
-
-    if( object ) delete object;
-    return nullptr;
-}
-
-VertexBuffer::ptr Renderer::create_vertex_buffer(
-    const void* data,
-    unsigned size,
-    const VertexLayout& layer,
-    MemoryUsage usage)
-{
-    auto object = new (std::nothrow) VertexBufferGL(*this);
-    if( object && object->initialize(data, size, layer, usage) )
-        return VertexBuffer::ptr(object, _destruct_vertex_buffer);
-
-    if( object ) delete object;
-    return nullptr;
-}
-
-IndexBuffer::ptr Renderer::create_index_buffer(
-    const void* data,
-    unsigned size,
-    IndexElementFormat format,
-    MemoryUsage usage)
-{
-    auto object = new (std::nothrow) IndexBufferGL(*this);
-    if( object && object->initialize(data, size, format, usage) )
-        return IndexBuffer::ptr(object);
-
-    if( object ) delete object;
-    return nullptr;
 }
 
 bool Renderer::begin_frame()
@@ -149,8 +103,8 @@ void Renderer::clear(ClearOption option, const math::Color& color, float depth, 
 void Renderer::submit(RenderLayer layer, uint32_t depth, RenderDrawcall& drawcall)
 {
     ASSERT(_frame_began, "\'submit\' could only be called in render phase.");
-    ASSERT(drawcall.program != nullptr, "program is required to make drawcall.");
-    ASSERT(drawcall.vertex_buffer != nullptr, "vertex_buffer is required to make drawcall.");
+    ASSERT(drawcall.program.is_valid(), "program is required to make drawcall.");
+    ASSERT(drawcall.vertex_buffer.is_valid(), "vertex_buffer is required to make drawcall.");
 
     drawcall.sort = SortValue::encode(layer, 1, depth);
 
@@ -174,9 +128,12 @@ void Renderer::flush()
 
     for( auto& drawcall : _drawcalls )
     {
-        auto program = std::static_pointer_cast<ProgramGL>(drawcall.program);
-        auto vb = std::static_pointer_cast<VertexBufferGL>(drawcall.vertex_buffer);
-        auto ib = std::static_pointer_cast<IndexBufferGL>(drawcall.index_buffer);
+        auto program = static_cast<ProgramGL*>(get<Program>(drawcall.program));
+        auto vb = static_cast<VertexBufferGL*>(get<VertexBuffer>(drawcall.vertex_buffer));
+        auto ib = static_cast<IndexBufferGL*>(get<IndexBuffer>(drawcall.index_buffer));
+
+        if( program == nullptr || vb == nullptr )
+            continue;
 
         program->bind();
         _vaocache->bind(*program, *vb);

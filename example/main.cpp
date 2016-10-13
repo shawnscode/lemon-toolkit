@@ -42,14 +42,16 @@ struct Example : public Application
         ////
         image = cache->get<res::Image>("view.jpeg");
 
-        texture = frontend->create_texture(image->get_data(),
+        texture = frontend->create<Texture>(image->get_data(),
             TextureFormat::RGB,
             static_cast<TexturePixelFormat>(image->get_element_format()),
             image->get_width(),
             image->get_height(),
             MemoryUsage::STATIC);
-        texture->set_mipmap(true);
-        texture->update_parameters();
+
+        auto t = frontend->get<Texture>(texture);
+        t->set_mipmap(true);
+        t->update_parameters();
 
         ////
         float depth = 0.f;
@@ -68,11 +70,13 @@ struct Example : public Application
              VertexAttribute(VertexAttribute::POSITION, VertexElementFormat::FLOAT, 3),
              VertexAttribute(VertexAttribute::TEXCOORD_0, VertexElementFormat::FLOAT, 2));
 
-        vb = frontend->create_vertex_buffer(vertices, 3, layout, MemoryUsage::STATIC);
-        program = frontend->create_program(vs, ps);
-        program->set_attribute_name(VertexAttribute::POSITION, "position");
-        program->set_attribute_name(VertexAttribute::TEXCOORD_0, "uv");
-        program->set_uniform_texture("sampler", texture);
+        vb = frontend->create<VertexBuffer>(vertices, 3, layout, MemoryUsage::STATIC);
+        program = frontend->create<Program>(vs, ps);
+
+        auto p = frontend->get<Program>(program);
+        p->set_attribute_name(VertexAttribute::POSITION, "position");
+        p->set_attribute_name(VertexAttribute::TEXCOORD_0, "uv");
+        p->set_uniform_texture("sampler", texture);
 
         core::subscribe<EvtUpdate>(*this);
         core::subscribe<EvtRender>(*this);
@@ -97,7 +101,9 @@ struct Example : public Application
         auto transform = math::look_at(math::Vector3f{0, 0, -10+x*10}, math::Vector3f {0, 0, 0}, math::Vector3f {0, 1, 0});
         transform *= math::perspective(45.f, (float)size[0]/(float)size[1], 0.1f, 100.f);
 
-        program->set_uniform_4fm("MVP", transform);
+        auto frontend = core::get_subsystem<Renderer>();
+        auto p = frontend->get<Program>(program);
+        p->set_uniform_4fm("MVP", transform);
     }
 
     void receive(const EvtRender& evt)
@@ -114,9 +120,10 @@ struct Example : public Application
     }
 
     res::Image::ptr     image;
-    Texture::ptr      texture;
-    VertexBuffer::ptr   vb;
-    Program::ptr        program;
+
+    Handle texture;
+    Handle vb;
+    Handle program;
 
     float x, y;
 };

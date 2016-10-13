@@ -52,9 +52,9 @@ struct RenderDrawcall
     // stateless render state
     RenderState state;
     // graphics resources we need to make a draw call
-    Program::ptr program;
-    VertexBuffer::ptr vertex_buffer;
-    IndexBuffer::ptr index_buffer;
+    Handle program;
+    Handle vertex_buffer;
+    Handle index_buffer;
     // specifies what kind of primitive to render
     PrimitiveType primitive = PrimitiveType::TRIANGLES;
     // specifies the starting index in the enabled arrays

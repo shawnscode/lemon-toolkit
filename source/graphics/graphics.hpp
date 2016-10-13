@@ -6,6 +6,8 @@
 #include <forwards.hpp>
 #include <math/vector.hpp>
 #include <math/matrix.hpp>
+
+#include <codebase/handle.hpp>
 #include <codebase/type/enumeration.hpp>
 
 #include <limits>
@@ -234,7 +236,7 @@ struct Program : public GraphicsObject
     virtual bool set_uniform_3fm(const char*, const math::Matrix<3, 3, float>&) = 0;
     virtual bool set_uniform_4fm(const char*, const math::Matrix<4, 4, float>&) = 0;
     // set uniform texture
-    virtual bool set_uniform_texture(const char*, Texture::ptr) = 0;
+    virtual bool set_uniform_texture(const char*, Handle) = 0;
     // specified input identifier of vertex attribute
     virtual bool set_attribute_name(VertexAttribute::Enum, const char*) = 0;
 };

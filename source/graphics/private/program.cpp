@@ -106,9 +106,10 @@ void ProgramGL::bind()
     unsigned unit = 0;
     for( auto& pair : _textures )
     {
-        auto texture = std::static_pointer_cast<TextureGL>(pair.second.second);
         glActiveTexture(GL_TEXTURE0+unit);
-        glBindTexture(GL_TEXTURE_2D, texture->get_handle());
+
+        auto texture = static_cast<TextureGL*>(_renderer.get<Texture>(pair.second.second));
+        glBindTexture(GL_TEXTURE_2D, texture == nullptr ? 0 : texture->get_handle());
         glUniform1i(pair.second.first, unit++);
     }
 
@@ -178,7 +179,7 @@ bool ProgramGL::set_attribute_name(VertexAttribute::Enum va, const char* name)
     return location != -1;
 }
 
-bool ProgramGL::set_uniform_texture(const char* name, std::shared_ptr<Texture> texture)
+bool ProgramGL::set_uniform_texture(const char* name, Handle texture)
 {
     ENSURE_NOT_RENDER_PHASE;
 

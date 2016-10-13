@@ -34,7 +34,7 @@ struct ProgramGL : public Program
     bool set_uniform_3fm(const char*, const math::Matrix<3, 3, float>&) override;
     bool set_uniform_4fm(const char*, const math::Matrix<4, 4, float>&) override;
     // set uniform texture
-    bool set_uniform_texture(const char*, std::shared_ptr<Texture>) override;
+    bool set_uniform_texture(const char*, Handle) override;
     // set attribute name
     bool set_attribute_name(VertexAttribute::Enum, const char*) override;
 
@@ -55,7 +55,7 @@ protected:
     std::string _vertex_shader;
     GLuint _object = 0;
 
-    std::map<math::StringHash, std::pair<GLint, std::shared_ptr<Texture>>> _textures;
+    std::map<math::StringHash, std::pair<GLint, Handle>> _textures;
 
     std::unordered_map<math::StringHash, GLint> _uniforms;
     std::unordered_map<math::StringHash, GLint> _attributes;
