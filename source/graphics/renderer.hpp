@@ -68,7 +68,6 @@ protected:
     template<typename T, typename Impl, size_t Growth>
     bool register_graphics_object(const destructor& dtor = nullptr);
 
-
 protected:
     friend struct WindowDevice;
     // restore OpenGL context and reinitialize state, requires an open window. returns true if successful
