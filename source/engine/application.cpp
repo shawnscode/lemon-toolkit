@@ -3,8 +3,7 @@
 
 #include <engine/application.hpp>
 #include <engine/engine.hpp>
-
-#include <core/public.hpp>
+#include <core/instance.hpp>
 
 NS_LEMON_BEGIN
 

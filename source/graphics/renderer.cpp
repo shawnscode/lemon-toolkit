@@ -8,7 +8,8 @@
 #include <graphics/private/vertex_buffer.hpp>
 #include <graphics/private/index_buffer.hpp>
 #include <graphics/private/texture.hpp>
-#include <core/public.hpp>
+
+#include <core/instance.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
@@ -29,14 +30,14 @@ bool Renderer::initialize()
 
     _destruct_program = [=](Program* p)
     {
-        if( core::is_running() )
+        if( core::status() == core::Status::RUNNING )
             _vaocache->free(*static_cast<ProgramGL*>(p));
         delete p;
     };
 
     _destruct_vertex_buffer = [=](VertexBuffer* vb)
     {
-        if( core::is_running() )
+        if( core::status() == core::Status::RUNNING )
             _vaocache->free(*static_cast<VertexBufferGL*>(vb));
         delete vb;
     };

@@ -7,7 +7,7 @@
 #include <graphics/renderer.hpp>
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
-#include <core/public.hpp>
+#include <core/message.hpp>
 
 #include <thread>
 #include <SDL2/SDL.h>

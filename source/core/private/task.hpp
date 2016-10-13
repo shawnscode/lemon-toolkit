@@ -12,6 +12,8 @@
 #include <thread>
 #include <condition_variable>
 
+#include <codebase/memory/indexed_pool.hpp>
+
 NS_LEMON_CORE_BEGIN
 
 struct Task
@@ -21,14 +23,12 @@ struct Task
     {
         closure = std::move(rhs.closure);
         parent = rhs.parent;
-        version = rhs.version;
         strncpy(name, rhs.name, strlen(rhs.name));
     }
 
     std::function<void()> closure = nullptr;
     std::atomic<uint32_t> jobs;
     TaskHandle parent;
-    int16_t version = 1;
     char name[64] = {0};
 };
 
@@ -74,15 +74,17 @@ public:
 
 protected:
     static void thread_run(Scheduler&, unsigned index);
-    Task* get_task(TaskHandle);
+
     TaskHandle create_task_chunk();
     void finish_task(TaskHandle);
     bool execute_one_task(unsigned, bool);
     unsigned get_thread_index() const;
 
     std::mutex _allocator_mutex;
-    std::vector<Task> _tasks;
-    std::vector<int16_t> _free_tasks;
+    IndexedMemoryPoolT<Task, 32> _tasks;
+
+    // std::vector<Task> _tasks;
+    // std::vector<int16_t> _free_tasks;
 
     std::mutex _mutex;
     std::queue<TaskHandle> _alive_tasks;

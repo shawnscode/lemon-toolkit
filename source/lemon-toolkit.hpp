@@ -1,6 +1,10 @@
 #pragma once
 
-#include <core/public.hpp>
+#include <core/instance.hpp>
+#include <core/task.hpp>
+#include <core/ecs.hpp>
+#include <core/subsystem.hpp>
+#include <core/task.hpp>
 
 #include <math/vector.hpp>
 #include <math/matrix.hpp>

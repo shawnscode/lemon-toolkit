@@ -3,15 +3,19 @@
 
 #pragma once
 
-#include <core/event.hpp>
-#include <core/ecs.hpp>
-#include <core/subsystem.hpp>
-#include <core/task.hpp>
+#include <forwards.hpp>
 
 NS_LEMON_CORE_BEGIN
 
+enum class Status : uint8_t
+{
+    IDLE,
+    RUNNING,
+    DISPOSED
+};
+
 bool initialize(unsigned nworker);
-bool is_running();
+Status status();
 void dispose();
 
 NS_LEMON_CORE_END

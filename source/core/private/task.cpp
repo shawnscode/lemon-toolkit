@@ -1,7 +1,7 @@
 // @date 2016/08/26
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <core/private/scheduler.hpp>
+#include <core/private/task.hpp>
 
 #include <SDL2/SDL.h>
 
@@ -40,7 +40,7 @@ void Scheduler::dispose()
 TaskHandle Scheduler::create_task(const char* name, std::function<void()> closure)
 {
     TaskHandle handle = create_task_chunk();
-    Task* task = get_task(handle);
+    Task* task = _tasks.get_t(handle);
 
     task->closure = closure;
     task->jobs.store(1);
@@ -51,13 +51,13 @@ TaskHandle Scheduler::create_task(const char* name, std::function<void()> closur
 TaskHandle Scheduler::create_task_as_child(TaskHandle parent, const char* name, std::function<void()> closure)
 {
     TaskHandle handle = create_task_chunk();
-    Task* task = get_task(handle);
+    Task* task = _tasks.get_t(handle);
 
     task->closure = closure;
     task->jobs.store(1);
     strncpy(task->name, name, std::min(sizeof(task->name), strlen(name)));
 
-    Task* ptask = get_task(parent);
+    Task* ptask = _tasks.get_t(parent);
     if( ptask != nullptr )
     {
         uint32_t current_jobs = ptask->jobs++;
@@ -69,29 +69,22 @@ TaskHandle Scheduler::create_task_as_child(TaskHandle parent, const char* name, 
 
 TaskHandle Scheduler::create_task_chunk()
 {
-    std::unique_lock<std::mutex> L(_allocator_mutex);
-
-    if( _free_tasks.size() > 0 )
+    Handle handle;
     {
-        auto index = _free_tasks.back();
-        _free_tasks.pop_back();
-        return TaskHandle(index, _tasks[index].version);
+        std::unique_lock<std::mutex> L(_allocator_mutex);
+        handle = _tasks.malloc();
+        if( !handle.is_valid() )
+            return handle;
     }
 
-    _tasks.emplace_back();
-    auto index = _tasks.size() - 1;
-    return TaskHandle(index, _tasks[index].version);
-}
-
-Task* Scheduler::get_task(TaskHandle handle)
-{
-    auto& task = _tasks[handle.index];
-    return task.version == handle.version ? &task : nullptr;
+    auto task = _tasks.get(handle);
+    ::new (task) Task();
+    return handle;
 }
 
 void Scheduler::run_task(TaskHandle handle)
 {
-    Task* task = get_task(handle);
+    Task* task = _tasks.get_t(handle);
     ASSERT( task != nullptr && task->jobs.load() > 0, "invalid task handle to run." );
 
     {
@@ -104,7 +97,7 @@ void Scheduler::run_task(TaskHandle handle)
 
 bool Scheduler::is_task_completed(TaskHandle handle)
 {
-    Task* task = get_task(handle);
+    Task* task = _tasks.get_t(handle);
     if( task == nullptr )
         return true;
     return task->jobs.load() == 0;
@@ -112,7 +105,7 @@ bool Scheduler::is_task_completed(TaskHandle handle)
 
 void Scheduler::wait_task(TaskHandle handle)
 {
-    Task* task = get_task(handle);
+    Task* task = _tasks.get_t(handle);
     if( task == nullptr )
         return;
 
@@ -127,7 +120,7 @@ void Scheduler::wait_task(TaskHandle handle)
 
 void Scheduler::finish_task(TaskHandle handle)
 {
-    Task* task = get_task(handle);
+    Task* task = _tasks.get_t(handle);
     if( task == nullptr )
         return;
 
@@ -139,12 +132,11 @@ void Scheduler::finish_task(TaskHandle handle)
 
         // free captured reference and recycle task
         task->closure = nullptr;
-        task->parent.version = 0; // invalidate parent handle
-        task->version ++;
+        task->parent.invalidate(); // invalidate parent handle
 
         {
             std::unique_lock<std::mutex> L(_allocator_mutex);
-            _free_tasks.push_back(handle.index);
+            _tasks.free(handle);
         }
     }
 }
@@ -174,7 +166,7 @@ bool Scheduler::execute_one_task(unsigned index, bool wait)
 
     }
 
-    Task* task = get_task(handle);
+    Task* task = _tasks.get_t(handle);
     if( task == nullptr )
         ENSURE( task != nullptr );
 

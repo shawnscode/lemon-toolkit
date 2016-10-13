@@ -4,19 +4,13 @@
 #pragma once
 
 #include <forwards.hpp>
-
 #include <functional>
+#include <codebase/handle.hpp>
 
 NS_LEMON_CORE_BEGIN
 
 // Task handle index
-struct TaskHandle
-{
-    TaskHandle() : index(0), version(0) {}
-    TaskHandle(uint16_t index, uint16_t version) : index(index), version(version) {}
-    int16_t index;
-    int16_t version;
-};
+using TaskHandle = Handle;
 
 // create_task
 TaskHandle create_task(const char*);
@@ -35,7 +29,7 @@ void run_task(TaskHandle);
 void wait_task(TaskHandle);
 
 // returns true if task completed
-bool is_task_completed(TaskHandle);
+bool is_completed(TaskHandle);
 
 // returns true if we are under the thread execute task::initialize()
 bool is_main_thread();
@@ -44,7 +38,7 @@ bool is_main_thread();
 uint32_t get_cpu_count();
 
 //
-// implementation of traits
+// implementation of templates
 namespace internal
 {
     TaskHandle create_task(const char*, std::function<void()>);

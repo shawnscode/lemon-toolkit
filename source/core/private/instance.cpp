@@ -1,17 +1,20 @@
 // @date 2016/09/29
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <core/public.hpp>
-#include <core/private/scheduler.hpp>
-#include <core/private/dispatcher.hpp>
+#include <core/instance.hpp>
+#include <core/private/message.hpp>
+#include <core/private/task.hpp>
+#include <core/private/ecs.hpp>
+#include <core/private/subsystem.hpp>
 #include <SDL2/SDL.h>
 
 NS_LEMON_CORE_BEGIN
 
 std::unique_ptr<Scheduler> s_scheduler;
 std::unique_ptr<SubsystemContext> s_context;
-std::unique_ptr<Dispatcher> s_dispatcher;
+std::unique_ptr<Messenger> s_messenger;
 std::unique_ptr<EntityComponentSystem> s_world;
+Status s_status = Status::IDLE;
 
 bool initialize(unsigned nworker)
 {
@@ -19,7 +22,7 @@ bool initialize(unsigned nworker)
     if( scheduler.get() == nullptr || !scheduler->initialize(nworker) )
         return false;
 
-    auto dispatcher = std::unique_ptr<Dispatcher>(new (std::nothrow) Dispatcher());
+    auto dispatcher = std::unique_ptr<Messenger>(new (std::nothrow) Messenger());
     if( dispatcher.get() == nullptr || !dispatcher->initialize() )
         return false;
 
@@ -32,15 +35,16 @@ bool initialize(unsigned nworker)
         return false;
 
     s_scheduler = std::move(scheduler);
-    s_dispatcher = std::move(dispatcher);
+    s_messenger = std::move(dispatcher);
     s_context = std::move(context);
     s_world = std::move(world);
+    s_status = Status::RUNNING;
     return true;
 }
 
-bool is_running()
+Status status()
 {
-    return s_context != nullptr;
+    return s_status;
 }
 
 EntityComponentSystem& world()
@@ -53,8 +57,15 @@ SubsystemContext& context()
     return *s_context;
 }
 
+Messenger& messenger()
+{
+    return *s_messenger;
+}
+
 void dispose()
 {
+    s_status = Status::DISPOSED;
+
     if( s_world.get() )
     {
         s_world->dispose();
@@ -67,10 +78,10 @@ void dispose()
         s_context.reset();
     }
 
-    if( s_dispatcher.get() )
+    if( s_messenger.get() )
     {
-        s_dispatcher->dispose();
-        s_dispatcher.reset();
+        s_messenger->dispose();
+        s_messenger.reset();
     }
 
     if( s_scheduler.get() )
@@ -110,7 +121,7 @@ void wait_task(TaskHandle handle)
     s_scheduler->wait_task(handle);
 }
 
-bool is_task_completed(TaskHandle handle)
+bool is_completed(TaskHandle handle)
 {
     return s_scheduler->is_task_completed(handle);
 }
@@ -123,26 +134,6 @@ bool is_main_thread()
 uint32_t get_cpu_count()
 {
     return SDL_GetCPUCount();
-}
-
-// DISPATCHER
-
-namespace internal
-{
-    void subscribe(TypeInfoGeneric::index_t index, size_t id, closure cb)
-    {
-        s_dispatcher->subscribe(index, id, cb);
-    }
-
-    void unsubscribe(TypeInfoGeneric::index_t index, size_t id)
-    {
-        s_dispatcher->unsubscribe(index, id);
-    }
-
-    void emit(TypeInfoGeneric::index_t index, const void* evt)
-    {
-        s_dispatcher->emit(index, evt);
-    }
 }
 
 NS_LEMON_CORE_END

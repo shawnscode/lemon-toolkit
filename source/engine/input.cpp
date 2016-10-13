@@ -3,7 +3,6 @@
 
 #include <engine/input.hpp>
 #include <graphics/window.hpp>
-#include <core/public.hpp>
 
 #include <SDL2/SDL.h>
 

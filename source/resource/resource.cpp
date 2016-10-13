@@ -3,7 +3,6 @@
 
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
-#include <core/public.hpp>
 
 NS_LEMON_RESOURCE_BEGIN
 

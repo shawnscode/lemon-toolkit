@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <core/event.hpp>
+#include <core/message.hpp>
 
 #include <codebase/type/type_traits.hpp>
 #include <codebase/memory/indexed_pool.hpp>
@@ -278,9 +278,7 @@ template<typename T> IndexedMemoryPool* EntityComponentSystem::get_component_poo
 
     if( _component_sets[id] == nullptr )
     {
-        _component_sets[id] = new (std::nothrow) IndexedMemoryPool(
-            sizeof(typename std::aligned_storage<sizeof(T), alignof(T)>::type),
-            kEntPoolChunkSize);
+        _component_sets[id] = new (std::nothrow) IndexedMemoryPoolT<T, kEntPoolChunkSize>();
 
         _destructors[id] = [=](Handle handle, void* raw)
         {

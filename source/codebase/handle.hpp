@@ -9,6 +9,11 @@
 
 NS_LEMON_BEGIN
 
+#define DECLARE_HANDLE(Name) \
+    struct Name : public Handle { \
+        Name() = default; \
+        Name(index_t i, index_t v) : Handle(i, v) {} };
+
 struct Handle
 {
     using index_t = uint16_t;
