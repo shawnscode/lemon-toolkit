@@ -90,30 +90,8 @@ void ProgramGL::dispose()
         glDeleteProgram(_object);
 
     _object = 0;
-    _textures.clear();
     _uniforms.clear();
-}
-
-void ProgramGL::bind()
-{
-    if( _object == 0 )
-    {
-        LOGW("failed to bind program without a decent handle.");
-        return;
-    }
-
-    glUseProgram(_object);
-    unsigned unit = 0;
-    for( auto& pair : _textures )
-    {
-        glActiveTexture(GL_TEXTURE0+unit);
-
-        auto texture = static_cast<TextureGL*>(_renderer.get<Texture>(pair.second.second));
-        glBindTexture(GL_TEXTURE_2D, texture == nullptr ? 0 : texture->get_handle());
-        glUniform1i(pair.second.first, unit++);
-    }
-
-    CHECK_GL_ERROR();
+    _attribute_names.clear();
 }
 
 GLint ProgramGL::get_uniform_location(const char* name)
@@ -177,127 +155,6 @@ bool ProgramGL::set_attribute_name(VertexAttribute::Enum va, const char* name)
     auto location = get_attribute_location(name);
     _attribute_names.insert(std::make_pair(value(va), math::StringHash(name)));
     return location != -1;
-}
-
-bool ProgramGL::set_uniform_texture(const char* name, Handle texture)
-{
-    ENSURE_NOT_RENDER_PHASE;
-
-    auto hash = math::StringHash(name);
-
-    auto found = _textures.find(hash);
-    if( found != _textures.end() )
-    {
-        found->second.second = texture;
-        return true;
-    }
-
-    auto location = get_uniform_location(name);
-    if( location == -1 )
-        return false;
-
-    _textures.insert(std::make_pair(hash, std::make_pair(location, texture)));
-    CHECK_GL_ERROR();
-    return true;
-}
-
-bool ProgramGL::set_uniform_1f(const char* name, const math::Vector<1, float>& value)
-{
-    ENSURE_NOT_RENDER_PHASE;
-
-    auto location = get_uniform_location(name);
-    if( location == -1 )
-        return false;
-
-    glUseProgram(_object);
-    glUniform1f(location, value[0]);
-    CHECK_GL_ERROR();
-    return true;
-}
-
-bool ProgramGL::set_uniform_2f(const char* name, const math::Vector<2, float>& value)
-{
-    ENSURE_NOT_RENDER_PHASE;
-
-    auto location = get_uniform_location(name);
-    if( location == -1 )
-        return false;
-
-    glUseProgram(_object);
-    glUniform2f(location, value[0], value[1]);
-    CHECK_GL_ERROR();
-    return true;
-}
-
-bool ProgramGL::set_uniform_3f(const char* name, const math::Vector<3, float>& value)
-{
-    ENSURE_NOT_RENDER_PHASE;
-
-    auto location = get_uniform_location(name);
-    if( location == -1 )
-        return false;
-
-    glUseProgram(_object);
-    glUniform3f(location, value[0], value[1], value[2]);
-    CHECK_GL_ERROR();
-    return true;
-}
-
-bool ProgramGL::set_uniform_4f(const char* name, const math::Vector<4, float>& value)
-{
-    ENSURE_NOT_RENDER_PHASE;
-
-    auto location = get_uniform_location(name);
-    if( location == -1 )
-        return false;
-
-    glUseProgram(_object);
-    glUniform4f(location, value[0], value[1], value[2], value[3]);
-    CHECK_GL_ERROR();
-    return true;
-}
-
-// OpenGL use column-major layout, so we always transpose our matrix
-bool ProgramGL::set_uniform_2fm(const char* name, const math::Matrix<2, 2, float>& value)
-{
-    ENSURE_NOT_RENDER_PHASE;
-
-    auto location = get_uniform_location(name);
-    if( location == -1 )
-        return false;
-
-    glUseProgram(_object);
-    glUniformMatrix2fv(location, 1, GL_TRUE, (float*)&value);
-    CHECK_GL_ERROR();
-    return true;
-}
-
-bool ProgramGL::set_uniform_3fm(const char* name, const math::Matrix<3, 3, float>& value)
-{
-    ENSURE_NOT_RENDER_PHASE;
-
-    auto location = get_uniform_location(name);
-    if( location == -1 )
-        return false;
-
-    glUseProgram(_object);
-    glUniformMatrix3fv(location, 1, GL_TRUE, (float*)&value);
-    CHECK_GL_ERROR();
-    return true;
-}
-
-bool ProgramGL::set_uniform_4fm(const char* name, const math::Matrix<4, 4, float>& value)
-{
-    ENSURE_NOT_RENDER_PHASE;
-
-    auto location = get_uniform_location(name);
-    if( location == -1 )
-        return false;
-
-    glUseProgram(_object);
-    glUniformMatrix4fv(location, 1, GL_TRUE, (float*)&value);
-    CHECK_GL_ERROR();
-    return true;
 }
 
 NS_LEMON_GRAPHICS_END

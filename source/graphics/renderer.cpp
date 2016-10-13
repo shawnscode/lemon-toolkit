@@ -8,6 +8,7 @@
 #include <graphics/private/vertex_buffer.hpp>
 #include <graphics/private/index_buffer.hpp>
 #include <graphics/private/texture.hpp>
+#include <graphics/private/uniform_buffer.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
@@ -18,8 +19,9 @@ bool Renderer::initialize()
 {
     _backend.reset(new (std::nothrow) RendererBackend());
     _vaocache.reset(new (std::nothrow) VertexArrayObjectCache());
+    _statecache.reset(new (std::nothrow) RenderStateCache(*this));
 
-    if( _backend == nullptr || _vaocache == nullptr )
+    if( _backend == nullptr || _vaocache == nullptr || _statecache == nullptr )
     {
         dispose();
         return false;
@@ -42,7 +44,8 @@ bool Renderer::initialize()
     if( !register_graphics_object<Program, ProgramGL, 8>(program_dtor) ||
         !register_graphics_object<Texture, TextureGL, 8>() ||
         !register_graphics_object<IndexBuffer, IndexBufferGL, 16>() ||
-        !register_graphics_object<VertexBuffer, VertexBufferGL, 16>(vb_dtor) )
+        !register_graphics_object<VertexBuffer, VertexBufferGL, 16>(vb_dtor) ||
+        !register_graphics_object<UniformBuffer, UniformBufferGL, 16>() )
     {
         dispose();
         return false;
@@ -56,6 +59,7 @@ void Renderer::dispose()
 {
     _backend.reset();
     _vaocache.reset();
+    _statecache.reset();
 
     for( size_t i = 0; i < _object_sets.size(); i++ )
     {
@@ -89,6 +93,7 @@ bool Renderer::begin_frame()
 
     _frame_drawcall = 0;
     _frame_began = true;
+    _statecache->begin_frame();
     _vaocache->unbind();
     return true;
 }
@@ -104,6 +109,7 @@ void Renderer::submit(RenderLayer layer, uint32_t depth, RenderDrawcall& drawcal
 {
     ASSERT(_frame_began, "\'submit\' could only be called in render phase.");
     ASSERT(drawcall.program.is_valid(), "program is required to make drawcall.");
+    ASSERT(drawcall.uniform_buffer.is_valid(), "uniform_buffer is required to make drawcall.");
     ASSERT(drawcall.vertex_buffer.is_valid(), "vertex_buffer is required to make drawcall.");
 
     drawcall.sort = SortValue::encode(layer, 1, depth);
@@ -129,13 +135,15 @@ void Renderer::flush()
     for( auto& drawcall : _drawcalls )
     {
         auto program = static_cast<ProgramGL*>(get<Program>(drawcall.program));
+        auto uniform = static_cast<UniformBufferGL*>(get<UniformBuffer>(drawcall.uniform_buffer));
         auto vb = static_cast<VertexBufferGL*>(get<VertexBuffer>(drawcall.vertex_buffer));
         auto ib = static_cast<IndexBufferGL*>(get<IndexBuffer>(drawcall.index_buffer));
 
-        if( program == nullptr || vb == nullptr )
+        if( program == nullptr || uniform == nullptr || vb == nullptr )
             continue;
 
-        program->bind();
+        _statecache->bind_program(drawcall.program);
+        _statecache->bind_uniform_buffer(drawcall.program, drawcall.uniform_buffer);
         _vaocache->bind(*program, *vb);
 
         auto& state = drawcall.state;

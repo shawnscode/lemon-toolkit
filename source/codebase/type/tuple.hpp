@@ -36,6 +36,11 @@ using make_integer_sequence = typename MakeIntegerSequenceImpl<T, N>::type;
 // returns the index of the first occurrence of a given type
 template<typename T, typename Tuple> struct TupleIndex;
 
+template<typename T> struct TupleIndex<T, std::tuple<>>
+{
+    static const size_t value = size_t(-1);
+};
+
 template<typename T, typename ... Args> struct TupleIndex<T, std::tuple<T, Args...>>
 {
     static const size_t value = 0;
@@ -46,16 +51,23 @@ template<typename T, typename U, typename ... Args> struct TupleIndex<T, std::tu
     static const size_t value = 1 + TupleIndex<T, std::tuple<Args...>>::value;
 };
 
-// returns true-type if tuple has specfied type
+// returns true if tuple has specfied type
 template<typename T, typename Tuple> struct TupleHas;
 
 template<typename T>
-struct TupleHas<T, std::tuple<>> : std::false_type {};
+struct TupleHas<T, std::tuple<>> : std::false_type
+{
+    static const bool value = false;
+};
 
 template<typename T, typename U, typename ... Args>
-struct TupleHas<T, std::tuple<U, Args...>> : TupleHas<T, std::tuple<Args...>> {};
+struct TupleHas<T, std::tuple<U, Args...>> : TupleHas<T, std::tuple<Args...>>
+{};
 
 template<typename T, typename ... Args>
-struct TupleHas<T, std::tuple<T, Args...>> : std::true_type {};
+struct TupleHas<T, std::tuple<T, Args...>> : std::true_type
+{
+    static const bool value = true;
+};
 
 NS_LEMON_END

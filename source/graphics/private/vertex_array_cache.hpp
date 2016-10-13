@@ -21,23 +21,20 @@ struct VertexArrayObjectCache
     void bind(ProgramGL&, VertexBufferGL&);
     void unbind();
 
-    // void bind_uniform_buffer(Renderer&, Handle program, Handle uniform);
-
     void free(ProgramGL&);
     void free(VertexBufferGL&);
 
 protected:
     bool _vao_support;
     std::unordered_map<uint64_t, GLuint> _vaos;
-
-    // std::unordered_map<Handle, Handle> _
 };
 
-struct RenderDrawcallCache
+struct RenderStateCache
 {
-    RenderDrawcallCache(Renderer&);
+    RenderStateCache(Renderer&);
 
     void begin_frame();
+    void bind_program(Handle program);
     void bind_vertex_buffer(Handle program, Handle vb);
     void bind_uniform_buffer(Handle program, Handle uniform);
     void end_frame();
@@ -45,6 +42,7 @@ struct RenderDrawcallCache
 protected:
     Renderer& _renderer;
 
+    Handle _active_program;
     std::unordered_map<Handle, Handle> _active_uniforms;
 };
 

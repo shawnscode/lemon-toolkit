@@ -9,6 +9,7 @@
 #include <codebase/type/tuple.hpp>
 
 #include <type_traits>
+#include <stdexcept>
 
 NS_LEMON_BEGIN
 
@@ -42,14 +43,6 @@ template<typename ... Types> struct Variant
         resolver_t::move(_index_t, &rhs._data, &_data);
     }
 
-    template<typename T, typename Enable = typename std::enable_if<TupleHas<T, tuple_t>::type>::type>
-    Variant(T&& v)
-    {
-        // find the index of this type in the variant type list
-        _index_t = type_size - TupleIndex<T, tuple_t>::value - 1;
-        ::new (&_data) T(std::forward<T>(v));
-    }
-
     // copy-assignments
     Variant& operator = (const Variant& rhs)
     {
@@ -68,50 +61,45 @@ template<typename ... Types> struct Variant
         return *this;
     }
 
-    template<typename T, typename Enable = typename std::enable_if<TupleHas<T, tuple_t>::type>::type>
-    Variant& operator = (T&& rhs)
-    {
-        resolver_t::destroy(_index_t, &_data);
-        Variant temp(std::forward<T>(rhs));
-        _index_t = temp._index_t;
-        resolver_t::move(_index_t, &temp._data, &_data);
-        return *this;
-    }
-
-    //
-    template<typename T, typename Enable = typename std::enable_if<TupleHas<T, tuple_t>::type>::type>
+    template<typename T, typename Enable = typename std::enable_if<TupleHas<T, tuple_t>::value>::type>
     bool is() const
     {
         return _index_t == TupleIndex<T, tuple_t>::value;
     }
 
-    bool is_valid() const
+    // returns the zero-based index into the set of bounded types of the contained type
+    size_t which() const
+    {
+        return _index_t;
+    }
+
+    bool empty() const
     {
         return _index_t < type_size;
     }
 
-    template<typename T, typename ... Args> void set(Args&& ... args)
+    template<typename T, typename ... Args>
+    typename std::enable_if<TupleHas<T, tuple_t>::value, T>::type& set(Args&& ... args)
     {
         resolver_t::destroy(_index_t, &_data);
-        _index_t = type_size - TupleIndex<T, tuple_t>::value - 1;
+        _index_t = TupleIndex<T, tuple_t>::value;
         new (&_data) T(std::forward<Args>(args)...);
+        return *reinterpret_cast<T*>(&_data);
     }
 
-    template<typename T, typename Enable = typename std::enable_if<TupleHas<T, tuple_t>::type>::type>
-    T& get()
+    template<typename T>
+    typename std::enable_if<TupleHas<T, tuple_t>::value, T>::type& get()
     {
-        const auto index = type_size - TupleIndex<T, tuple_t>::value - 1;
-        if( _index_t == index )
+        if( _index_t == TupleIndex<T, tuple_t>::value )
             return *reinterpret_cast<T*>(&_data);
         else
             throw std::runtime_error("failed to get T in variant.");
     }
 
-    template<typename T, typename Enable = typename std::enable_if<TupleHas<T, tuple_t>::type>::type>
-    const T& get() const
+    template<typename T>
+    typename std::enable_if<TupleHas<T, tuple_t>::value, T>::type const& get() const
     {
-        const auto index = type_size - TupleIndex<T, tuple_t>::value - 1;
-        if( _index_t == index )
+        if( _index_t == TupleIndex<T, tuple_t>::value )
             return *reinterpret_cast<const T*>(&_data);
         else
             throw std::runtime_error("failed to get T in variant.");
@@ -124,38 +112,62 @@ protected:
     aligned_storage_t _data;
 };
 
-template<typename T, typename ... Types> struct VariantResolver<T, Types...>
+template<typename ... Types> struct VariantResolverReverse;
+
+template<typename T, typename ... Types> struct VariantResolverReverse<T, Types...>
 {
+    constexpr static size_t position = sizeof...(Types);
+    
     static void destroy(size_t index, void* data)
     {
-        if( index == sizeof...(Types) )
+        if( index == position )
             reinterpret_cast<T*>(data)->~T();
         else
-            VariantResolver<Types...>::destroy(index, data);
+            VariantResolverReverse<Types...>::destroy(index, data);
+    }
+    
+    static void move(size_t index, void* from, void* to)
+    {
+        if( index == position )
+            new (to) T(std::move(*reinterpret_cast<T*>(from)));
+        else
+            VariantResolverReverse<Types...>::move(index, from, to);
+    }
+    
+    static void copy(size_t index, const void* from, void* to)
+    {
+        if( index == position )
+            new (to) T(*reinterpret_cast<const T*>(from));
+        else
+            VariantResolverReverse<Types...>::copy(index, from, to);
+    }
+};
+
+template<> struct VariantResolverReverse<>
+{
+    static void destroy(size_t id, void* data) {}
+    static void move(size_t id, void* from, void* to) {}
+    static void copy(size_t id, const void* from, void* to) {}
+};
+
+template<typename ... Types> struct VariantResolver
+{
+    constexpr static size_t size = sizeof...(Types);
+
+    static void destroy(size_t index, void* data)
+    {
+        VariantResolverReverse<Types...>::destroy(size - index - 1, data);
     }
 
     static void move(size_t index, void* from, void* to)
     {
-        if( index == sizeof...(Types) )
-            new (to) T(std::move(*reinterpret_cast<T*>(from)));
-        else
-            VariantResolver<Types...>::move(index, from, to);
+        VariantResolverReverse<Types...>::move(size - index - 1, from, to);
     }
 
-    static void copy(size_t index, void* from, void* to)
+    static void copy(size_t index, const void* from, void* to)
     {
-        if( index == sizeof...(Types) )
-            new (to) T(*reinterpret_cast<T*>(from));
-        else
-            VariantResolver<Types...>::move(index, from, to);
+        VariantResolverReverse<Types...>::copy(size - index - 1, from, to);
     }
-};
-
-template<> struct VariantResolver<>
-{
-    static void destroy(size_t id, void* data) {}
-    static void move(size_t id, void* from, void* to) {}
-    static void copy(size_t id, void* from, void* to) {}
 };
 
 NS_LEMON_END

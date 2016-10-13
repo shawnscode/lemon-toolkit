@@ -53,6 +53,7 @@ struct RenderDrawcall
     RenderState state;
     // graphics resources we need to make a draw call
     Handle program;
+    Handle uniform_buffer;
     Handle vertex_buffer;
     Handle index_buffer;
     // specifies what kind of primitive to render

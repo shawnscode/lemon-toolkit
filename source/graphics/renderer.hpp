@@ -33,6 +33,7 @@ enum class ClearOption : uint8_t
 // Renderer provides sort-based draw call bucketing. this means that submission
 // order doesn't necessarily match the rendering order, but on the low-level
 // they will be sorted and ordered correctly.
+struct RenderStateCache;
 struct RendererBackend;
 struct VertexArrayObjectCache;
 struct Renderer : public core::Subsystem
@@ -81,6 +82,7 @@ protected:
 
     std::unique_ptr<RendererBackend> _backend;
     std::unique_ptr<VertexArrayObjectCache> _vaocache;
+    std::unique_ptr<RenderStateCache> _statecache;
 
     std::vector<std::unique_ptr<std::mutex>> _object_mutexs;
     std::vector<std::function<void(void*)>> _object_destructors;

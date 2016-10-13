@@ -72,11 +72,14 @@ struct Example : public Application
 
         vb = frontend->create<VertexBuffer>(vertices, 3, layout, MemoryUsage::STATIC);
         program = frontend->create<Program>(vs, ps);
+        uniform = frontend->create<UniformBuffer>();
 
         auto p = frontend->get<Program>(program);
         p->set_attribute_name(VertexAttribute::POSITION, "position");
         p->set_attribute_name(VertexAttribute::TEXCOORD_0, "uv");
-        p->set_uniform_texture("sampler", texture);
+
+        auto u = frontend->get<UniformBuffer>(uniform);
+        u->set_uniform_texture("sampler", texture);
 
         core::subscribe<EvtUpdate>(*this);
         core::subscribe<EvtRender>(*this);
@@ -102,8 +105,8 @@ struct Example : public Application
         transform *= math::perspective(45.f, (float)size[0]/(float)size[1], 0.1f, 100.f);
 
         auto frontend = core::get_subsystem<Renderer>();
-        auto p = frontend->get<Program>(program);
-        p->set_uniform_4fm("MVP", transform);
+        auto u = frontend->get<UniformBuffer>(uniform);
+        u->set_uniform_4fm("MVP", transform);
     }
 
     void receive(const EvtRender& evt)
@@ -113,6 +116,7 @@ struct Example : public Application
 
         RenderDrawcall drawcall;
         drawcall.program = program;
+        drawcall.uniform_buffer = uniform;
         drawcall.vertex_buffer = vb;
         drawcall.first = 0;
         drawcall.count = 3;
@@ -124,6 +128,7 @@ struct Example : public Application
     Handle texture;
     Handle vb;
     Handle program;
+    Handle uniform;
 
     float x, y;
 };

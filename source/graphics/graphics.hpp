@@ -217,13 +217,13 @@ struct Texture : public GraphicsObject
 };
 
 //
-struct Program : public GraphicsObject
+struct UniformBuffer : public GraphicsObject
 {
-    DEFINE_SHARED_PTR(Program);
-    Program(Renderer& renderer) : GraphicsObject(renderer) {}
-    virtual ~Program() {}
+    DEFINE_SHARED_PTR(UniformBuffer);
+    UniformBuffer(Renderer& renderer) : GraphicsObject(renderer) {}
+    virtual ~UniformBuffer() {}
 
-    virtual bool initialize(const char* vs, const char* ps) = 0;
+    virtual bool initialize() = 0;
     virtual void dispose() = 0;
 
     // set uniform vector value
@@ -237,6 +237,18 @@ struct Program : public GraphicsObject
     virtual bool set_uniform_4fm(const char*, const math::Matrix<4, 4, float>&) = 0;
     // set uniform texture
     virtual bool set_uniform_texture(const char*, Handle) = 0;
+};
+
+//
+struct Program : public GraphicsObject
+{
+    DEFINE_SHARED_PTR(Program);
+    Program(Renderer& renderer) : GraphicsObject(renderer) {}
+    virtual ~Program() {}
+
+    virtual bool initialize(const char* vs, const char* ps) = 0;
+    virtual void dispose() = 0;
+
     // specified input identifier of vertex attribute
     virtual bool set_attribute_name(VertexAttribute::Enum, const char*) = 0;
 };
