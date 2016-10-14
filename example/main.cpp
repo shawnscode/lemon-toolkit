@@ -4,26 +4,6 @@
 using namespace lemon;
 using namespace lemon::graphics;
 
-const char* vs =
-"#version 330 core\n"
-"layout(location = 0) in vec3 position;\n"
-"layout(location = 1) in vec2 uv;\n"
-"uniform mat4 MVP;\n"
-"out vec2 v_uv;\n"
-"void main(){\n"
-"    gl_Position = vec4(position, 1.0)*MVP;\n"
-"    v_uv = uv;\n"
-"}\n";
-
-const char* ps =
-"#version 330 core\n"
-"in vec2 v_uv;\n"
-"out vec3 color;\n"
-"uniform sampler2D sampler;\n"
-"void main(){\n"
-"  color = texture(sampler, v_uv).rgb;\n"
-"}\n";
-
 struct Example : public Application
 {
     void start() override
@@ -41,6 +21,7 @@ struct Example : public Application
 
         ////
         image = cache->get<res::Image>("view.jpeg");
+        shader = cache->get<res::Shader>("shader/example-1.shader");
 
         texture = frontend->create<Texture>(image->get_data(),
             TextureFormat::RGB,
@@ -71,10 +52,9 @@ struct Example : public Application
              VertexAttribute(VertexAttribute::TEXCOORD_0, VertexElementFormat::FLOAT, 2));
 
         vb = frontend->create<VertexBuffer>(vertices, 3, layout, MemoryUsage::STATIC);
-        program = frontend->create<Program>(vs, ps);
         uniform = frontend->create<UniformBuffer>();
 
-        auto p = frontend->get<Program>(program);
+        auto p = frontend->get<Program>(shader->get_program_handle());
         p->set_attribute_name(VertexAttribute::POSITION, "position");
         p->set_attribute_name(VertexAttribute::TEXCOORD_0, "uv");
 
@@ -115,7 +95,7 @@ struct Example : public Application
         frontend->clear(ClearOption::COLOR | ClearOption::DEPTH, {0.75, 0.75, 0.75}, 1.f);
 
         RenderDrawcall drawcall;
-        drawcall.program = program;
+        drawcall.program = shader->get_program_handle();
         drawcall.uniform_buffer = uniform;
         drawcall.vertex_buffer = vb;
         drawcall.first = 0;
@@ -123,11 +103,11 @@ struct Example : public Application
         frontend->submit(RenderLayer::BACKGROUND, 0, drawcall);
     }
 
-    res::Image::ptr     image;
+    res::Image::ptr image;
+    res::Shader::ptr shader;
 
     Handle texture;
     Handle vb;
-    Handle program;
     Handle uniform;
 
     float x, y;
