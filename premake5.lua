@@ -15,7 +15,7 @@ workspace("lemon-toolkit")
         language( "C++" )
         buildoptions({"-std=c++11", "-stdlib=libc++"})
         files({ "source/**.cpp" })
-        sysincludedirs({ "source", "/usr/local/include", "3rd/filesystem", "3rd/libtess2/Include" })
+        sysincludedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/stb", "3rd/hayai/src" })
         targetdir( "build/libs" )
 
 workspace( "dependencies" )
@@ -37,9 +37,8 @@ workspace("chore")
     flags({ "Symbols" })
     kind( "ConsoleApp" )
     libdirs({ "/usr/local/lib/" })
-
-    sysincludedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/libtess2/Include", "3rd/stb", "3rd/hayai/src" })
-    includedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/libtess2/Include", "3rd/stb", "3rd/hayai/src" })
+    sysincludedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/stb", "3rd/hayai/src" })
+    includedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/stb", "3rd/hayai/src" })
 
     language( "C++" )
     buildoptions({"-std=c++11", "-stdlib=libc++"})
@@ -53,6 +52,12 @@ workspace("chore")
 
     project( "phong" )
         location( "build/example" )
-        links({ "glew", "SDL2" })
+        links({ "glew", "SDL2", "lemon-toolkit" })
         linkoptions { "-framework OpenGL", "-framework Cocoa", "-framework IOKit", "-framework CoreVideo" }
-        files({ "example/phong/*.cpp", "source/**.cpp" })
+        files({ "example/phong/*.cpp" })
+
+    project( "light-casters" )
+        location( "build/example" )
+        links({ "glew", "SDL2", "lemon-toolkit" })
+        linkoptions { "-framework OpenGL", "-framework Cocoa", "-framework IOKit", "-framework CoreVideo" }
+        files({ "example/light-casters/*.cpp" })

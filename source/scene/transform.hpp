@@ -124,6 +124,11 @@ public:
     Vector3f get_position(TransformSpace space = TransformSpace::LOCAL) const;
     Quaternion get_rotation(TransformSpace space = TransformSpace::LOCAL) const;
 
+    // returns forward direction
+    Vector3f get_forward(TransformSpace space = TransformSpace::LOCAL) const;
+    // returns up direction
+    Vector3f get_up(TransformSpace space = TransformSpace::LOCAL) const;
+
     // transforms the position from local space to world space
     Vector3f transform_point(const Vector3f&) const;
     // the opposite of Transform::transform_point

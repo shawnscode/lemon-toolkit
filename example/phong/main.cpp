@@ -86,8 +86,6 @@ struct Example : public Application
         p->set_attribute_name(VertexAttribute::POSITION, "position");
 
         auto u = frontend->get<UniformBuffer>(uniform);
-        u->set_uniform_3f("object_color", {1.0f, 0.0f, 0.f});
-        u->set_uniform_3f("light_color", {1.0f, 1.0f, 1.f});
         u->set_uniform_3f("light_pos", lamp_pos);
 
         core::subscribe<EvtUpdate>(*this);
@@ -96,13 +94,18 @@ struct Example : public Application
 
     void receive(const EvtUpdate& evt)
     {
+        auto now = core::get_subsystem<Engine>()->get_time_since_launch() / std::chrono::milliseconds(1);
+        lamp_color[0] = sin((float)now/1000.f * 2.0f);
+        lamp_color[1] = sin((float)now/1000.f * 0.7f);
+        lamp_color[2] = sin((float)now/1000.f * 1.3f);
+
         auto input = core::get_subsystem<Input>();
 
         if( input->get_key_press(KeyboardCode::D) )
             x += 0.1f;
         if( input->get_key_press(KeyboardCode::A) )
             x -= 0.1f;
-        auto view_pos = math::Vector3f{0, 0, -5+x*10};
+        auto view_pos = math::Vector3f{-1, 0, -5+x*10};
 
         if( input->get_mouse_button_down(MouseCode::LEFT) )
         {
@@ -121,13 +124,15 @@ struct Example : public Application
         u->set_uniform_4fm("projection", projection);
         u->set_uniform_4fm("view", view);
         u->set_uniform_4fm("model", hlift(to_rotation_matrix(rotation)));
+        u->set_uniform_3f("light_color", lamp_color);
+        u->set_uniform_3f("object_color", {1.0f, 1.0f, 1.0f});
         u->set_uniform_3f("view_pos", view_pos);
 
         u = frontend->get<UniformBuffer>(lamp_uniform);
         u->set_uniform_4fm("projection", projection);
         u->set_uniform_4fm("view", view);
         u->set_uniform_4fm("model", hlift(scale(lamp_scale))*translation(lamp_pos));
-        u->set_uniform_3f("object_color", {1.f, 1.f, 1.f});
+        u->set_uniform_3f("object_color", lamp_color);
     }
 
     void receive(const EvtRender& evt)
@@ -160,6 +165,7 @@ struct Example : public Application
     Handle lamp_uniform;
     math::Vector3f lamp_scale = {0.15f, 0.15f, 0.15f};
     math::Vector3f lamp_pos = {-1.0f, 0.5f, -1.0f};
+    math::Vector3f lamp_color = {1.0f, 1.0f, 1.0f};
 
     math::Quaternion rotation;
     float x, y;

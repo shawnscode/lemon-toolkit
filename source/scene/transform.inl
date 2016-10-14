@@ -196,6 +196,16 @@ INLINE void Transform::translate(const Vector3f& translation)
     set_position(get_position() + translation);
 }
 
+INLINE Vector3f Transform::get_forward(TransformSpace space) const
+{
+    return Vector3f {0.f, 0.f, 1.f} * get_rotation(space);
+}
+
+INLINE Vector3f Transform::get_up(TransformSpace space) const
+{
+    return Vector3f {0.f, 1.f, 0.f} * get_rotation(space);
+}
+
 INLINE bool Transform::is_root() const
 {
     return _parent == nullptr;
