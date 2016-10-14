@@ -6,7 +6,6 @@ its far from a stable version right now, but i'll keep on making it happens.
 
 #### Screenshots
 
-__Phong Lighting__
 ![Phong Lighting](example/screenshots/phong.png)
 
 #### Thanks
