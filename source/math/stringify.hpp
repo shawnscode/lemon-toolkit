@@ -66,8 +66,8 @@ INLINE std::ostream& operator << (std::ostream& out, const Quaternion& rhs)
     return out
         << "Quaternion("
         << rhs[0] << ", "
-        << rhs[1] << ","
-        << rhs[2] << ","
+        << rhs[1] << ", "
+        << rhs[2] << ", "
         << rhs[3] << ")";
 }
 

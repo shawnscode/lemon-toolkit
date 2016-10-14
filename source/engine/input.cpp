@@ -8,7 +8,16 @@
 
 NS_LEMON_BEGIN
 
-static int SDL_KEYBOARD_CODES[] = 
+static int SDL_MOUSE_CODE[] =
+{
+    SDL_BUTTON_LEFT,
+    SDL_BUTTON_MIDDLE,
+    SDL_BUTTON_RIGHT,
+    SDL_BUTTON_X1,
+    SDL_BUTTON_X2
+};
+
+static int SDL_KEYBOARD_CODE[] =
 {
     SDLK_a,
     SDLK_b,
@@ -125,6 +134,8 @@ static int SDL_KEYBOARD_CODES[] =
 
 bool Input::initialize()
 {
+    _window_size = core::get_subsystem<graphics::WindowDevice>()->get_window_size();
+    _last_mouse_position = get_mouse_position();
     return true;
 }
 
@@ -141,6 +152,10 @@ void Input::begin_frame()
 void Input::end_frame()
 {
     auto device = core::get_subsystem<graphics::WindowDevice>();
+
+    //
+    _window_size = core::get_subsystem<graphics::WindowDevice>()->get_window_size();
+    _last_mouse_position = get_mouse_position();
 
     // check for focus change this frame
     if( device->get_window_flags() & SDL_WINDOW_INPUT_FOCUS )
@@ -166,8 +181,8 @@ void Input::end_frame()
     // recenter mouse if no mouse visibility
     if( _input_focus && !_mouse_visible && !_touch_emulation )
     {
-        auto size = device->get_window_size();
-        SDL_WarpMouseInWindow((SDL_Window*)device->get_window_object(), size[0]/2, size[1]/2);
+        SDL_WarpMouseInWindow((SDL_Window*)device->get_window_object(),
+            _window_size[0]/2, _window_size[1]/2);
     }
 }
 
@@ -192,10 +207,16 @@ void Input::process_message(void* data)
         }
         case SDL_MOUSEBUTTONDOWN:
         {
+            if( _mouse_down.find(event.button.button) == _mouse_down.end() )
+            {
+                _mouse_down.insert((int)event.button.button);
+                _mouse_press.insert((int)event.button.button);
+            }
             break;
         }
         case SDL_MOUSEBUTTONUP:
         {
+            _mouse_down.erase(event.button.button);
             break;
         }
         default:
@@ -225,7 +246,7 @@ void Input::set_mouse_visible(bool visible)
 
 bool Input::get_key_down(KeyboardCode code) const
 {
-    return _key_down.find(SDL_KEYBOARD_CODES[value(code)]) != _key_down.end();
+    return _key_down.find(SDL_KEYBOARD_CODE[value(code)]) != _key_down.end();
 }
 
 bool Input::get_key_down(const char* name) const
@@ -235,7 +256,7 @@ bool Input::get_key_down(const char* name) const
 
 bool Input::get_key_press(KeyboardCode code) const
 {
-    return _key_press.find(SDL_KEYBOARD_CODES[value(code)]) != _key_press.end();
+    return _key_press.find(SDL_KEYBOARD_CODE[value(code)]) != _key_press.end();
 }
 
 bool Input::get_key_press(const char* name) const
@@ -283,24 +304,25 @@ math::Vector2i Input::get_mouse_position() const
 {
     math::Vector2i result;
     SDL_GetMouseState(&result[0], &result[1]);
-    return result;
+    return { result[0], _window_size[1]-result[1] };
 }
 
 math::Vector2i Input::get_mouse_delta() const
 {
     if( _mouse_visible )
         return get_mouse_position() - _last_mouse_position;
+
     return {0, 0};
 }
 
 bool Input::get_mouse_button_down(MouseCode code) const
 {
-    return _mouse_down.find(SDL_KEYBOARD_CODES[value(code)]) != _mouse_down.end();
+    return _mouse_down.find(SDL_MOUSE_CODE[value(code)]) != _mouse_down.end();
 }
 
 bool Input::get_mouse_button_press(MouseCode code) const
 {
-    return _mouse_press.find(SDL_KEYBOARD_CODES[value(code)]) != _mouse_press.end();
+    return _mouse_press.find(SDL_MOUSE_CODE[value(code)]) != _mouse_press.end();
 }
 
 NS_LEMON_END

@@ -49,8 +49,11 @@ void Engine::dispose()
 void Engine::run_one_frame()
 {
     auto device = core::get_subsystem<graphics::WindowDevice>();
+    auto input = core::get_subsystem<Input>();
 
+    input->begin_frame();
     process_message();
+
     if( !_running )
         return;
 
@@ -59,6 +62,7 @@ void Engine::run_one_frame()
         update(_timestep);
 
     render();
+    input->end_frame();
 
     // perform waiting loop if maximum fps set
     auto max_fps = _max_fps;
@@ -131,7 +135,6 @@ void Engine::process_message()
 {
     auto input = core::get_subsystem<Input>();
     auto device = core::get_subsystem<graphics::WindowDevice>();
-    input->begin_frame();
 
     SDL_Event event;
     while( SDL_PollEvent( &event ) )
@@ -145,8 +148,6 @@ void Engine::process_message()
         input->process_message(&event);
         device->process_message(&event);
     }
-
-    input->end_frame();
 }
 
 void Engine::set_min_fps(unsigned fps)

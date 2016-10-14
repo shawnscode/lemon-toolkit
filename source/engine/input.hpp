@@ -131,7 +131,9 @@ enum class MouseCode
 {
     LEFT = 0,
     MIDDLE,
-    RIGHT
+    RIGHT,
+    X1,
+    X2
 };
 
 enum class KeyboardQualifier
@@ -197,7 +199,8 @@ protected:
     bool _touch_emulation = false;
     bool _mouse_visible = true;
 
-    math::Vector2i          _last_mouse_position;
+    math::Vector2i _window_size;
+    math::Vector2i _last_mouse_position;
     std::unordered_set<int> _key_down;
     std::unordered_set<int> _key_press;
     std::unordered_set<int> _mouse_down;

@@ -20,7 +20,7 @@ void RenderState::reset()
     scissor.area   = math::Rect2i { { 0, 0 }, { 1, 1 } };
 
     depth.enable = false;
-    depth.compare = CompareEquation::NEVER;
+    depth.compare = CompareEquation::GREATER;
     depth_write.enable = false;
     depth_write.bias_slope_scaled = 0.f;
     depth_write.bias_constant = 0.f;
