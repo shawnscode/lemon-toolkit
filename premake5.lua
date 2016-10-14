@@ -51,8 +51,8 @@ workspace("chore")
         linkoptions { "-framework OpenGL", "-framework Cocoa", "-framework IOKit", "-framework CoreVideo" }
         files({ "test/*_test.cpp", "source/**.cpp" })
 
-    project( "example" )
+    project( "phong" )
         location( "build/example" )
         links({ "glew", "SDL2" })
         linkoptions { "-framework OpenGL", "-framework Cocoa", "-framework IOKit", "-framework CoreVideo" }
-        files({ "example/*.cpp", "source/**.cpp" })
+        files({ "example/phong/*.cpp", "source/**.cpp" })
