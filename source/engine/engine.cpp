@@ -33,6 +33,7 @@ bool Engine::initialize()
     _last_frame_timepoint = clock::now();
     _min_fps = _max_fps = _max_inactive_fps = 0;
     _running = true;
+    _launch_timepoint = clock::now();
 
     if( !device->open(512, 512, 1, graphics::WindowOption::RESIZABLE) )
         return false;
@@ -173,6 +174,11 @@ void Engine::set_time_smoothing_step(unsigned step)
 void Engine::set_pause_minimized(bool enable)
 {
     _pause_minimized = enable;
+}
+
+Engine::duration Engine::get_time_since_launch() const
+{
+    return clock::now() - _launch_timepoint;
 }
 
 NS_LEMON_END

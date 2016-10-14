@@ -44,6 +44,8 @@ struct Engine : public core::Subsystem
     void set_pause_minimized(bool);
     // return if engine is exiting
     bool is_running() const { return _running; }
+    // return duration since lemon-toolkit launched
+    duration get_time_since_launch() const;
 
 protected:
     // minimum/maximum frames per second
@@ -58,6 +60,8 @@ protected:
     bool _pause_minimized;
     // frame update timer
     timepoint _last_frame_timepoint;
+    // timepoint when we launched
+    timepoint _launch_timepoint;
     // exiting flag
     bool _running;
 };
