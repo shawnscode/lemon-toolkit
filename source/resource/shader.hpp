@@ -4,6 +4,7 @@
 #pragma once
 
 #include <resource/resource.hpp>
+#include <codebase/handle.hpp>
 #include <math/color.hpp>
 
 NS_LEMON_RESOURCE_BEGIN

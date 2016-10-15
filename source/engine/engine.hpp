@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <core/subsystem.hpp>
+#include <core/core.hpp>
 
 #include <chrono>
 #include <vector>
@@ -16,9 +16,6 @@ struct Engine : public core::Subsystem
     using timepoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
     using clock = std::chrono::high_resolution_clock;
     using duration = std::chrono::high_resolution_clock::duration;
-
-    Engine() {}
-    virtual ~Engine() {}
 
     bool initialize() override;
     void dispose() override;

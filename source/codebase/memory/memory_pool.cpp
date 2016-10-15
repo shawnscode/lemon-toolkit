@@ -47,11 +47,12 @@ void MemoryPool::free(void* block)
     // find block index of the element
     size_t index = invalid;
     size_t offset = _chunk_entries_size * _block_size;
+
     for( size_t i = 0; i < _chunks.size(); i++ )
     {
-        if( (size_t)block >= (size_t)_chunks[i] && (size_t)block < (size_t)(_chunks[i]+offset) )
+        if( (size_t)block >= (size_t)_chunks[i] && (size_t)block < (size_t)_chunks[i]+offset )
         {
-            index = i*_chunks.size() + ((size_t)block - (size_t)_chunks[i])/_block_size;
+            index = i*_chunk_entries_size + ((size_t)block - (size_t)_chunks[i])/_block_size;
             break;
         }
     }

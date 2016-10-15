@@ -3,110 +3,96 @@
 
 #pragma once
 
-#include <core/ecs.hpp>
-#include <core/message.hpp>
-#include <core/private/subsystem.hpp>
+#include <forwards.hpp>
+#include <codebase/type/type_traits.hpp>
+
+#include <unordered_map>
 
 NS_LEMON_CORE_BEGIN
 
-// returns subsystem context instance
-SubsystemContext& context();
-
-// retrieve the registered system instance, existence should be guaranteed
-template<typename S> S* get_subsystem();
-
-// spawn a new subsystem with type S and construct arguments
-template<typename S, typename ... Args> S* add_subsystem(Args&& ... args);
-
-// release and unregistered a subsystem from our context
-template<typename S> void remove_subsystem();
-
-// check if we have specified subsystems
-template<typename ... Args> bool has_subsystems();
-
-// entities associated with specified components will be traced in this subsystem
-template<typename ... Args> struct SubsystemWithEntities : public Subsystem
+struct SubsystemContext;
+struct Subsystem
 {
-    using tuple = std::tuple<Args*...>;
-    using collection = std::unordered_map<Handle, tuple>;
-    using visitor = std::function<void(Handle, Args&...)>;
-    using iterator = typename collection::iterator;
-    using const_iterator = typename collection::const_iterator;
+    Subsystem() = default;
+    Subsystem(const Subsystem&) = delete;
+    Subsystem& operator = (const Subsystem&) = delete;
+    virtual ~Subsystem() {}
 
-    virtual bool initialize() override;
-    virtual void dispose() override;
+    virtual bool initialize() { return true; }
+    virtual void dispose() {}
+};
 
-    void receive(const EvtEntityModified&);
-    void visit(const visitor&);
+struct SubsystemContext
+{
+    bool initialize();
+    void dispose();
 
-    iterator begin() { return _entities.begin(); }
-    iterator end() { return _entities.end(); }
-    const_iterator begin() const { return _entities.begin(); }
-    const_iterator end() const { return _entities.end(); }
+    // spawn a new subsystem with type S and construct arguments
+    template<typename S, typename ... Args> S* add_subsystem(Args&& ...);
+
+    // retrieve the registered system instance, existence should be guaranteed
+    template<typename S> S* get_subsystem();
+
+    // release and unregistered a subsystem from our context
+    template<typename S> void remove_subsystem();
+
+    // check if we have specified subsystems
+    template<typename S> bool has_subsystems() const;
+    template<typename S1, typename S2, typename ... Args> bool has_subsystems() const;
 
 protected:
-    collection _entities;
+    std::unordered_map<TypeInfo::index_t, Subsystem*> _subsystems;
 };
 
 //
-// implementation of subsystems
-template<typename S> S* get_subsystem()
+// IMPLEMENTATIONS of SUBSYSTEMS
+template<typename S, typename ... Args> S* SubsystemContext::add_subsystem(Args&& ... args)
 {
-    return context().get_subsystem<S>();
+    auto index = TypeInfo::id<Subsystem, S>();
+    ASSERT( !has_subsystems<S>(),
+        "duplicated subsystem: %s.", typeid(S).name() );
+
+    auto sys = new (std::nothrow) S(std::forward<Args>(args)...);
+    ASSERT( sys->initialize(),
+        "failed to initialize subsystem: %s.", typeid(S).name() );
+
+    _subsystems.insert(std::make_pair(index, sys));
+    return sys;
 }
 
-template<typename S, typename ... Args> S* add_subsystem(Args&& ... args)
+template<typename S> S* SubsystemContext::get_subsystem()
 {
-    return context().add_subsystem<S>(std::forward<Args>(args)...);
+    auto index = TypeInfo::id<Subsystem, S>();
+
+    auto found = _subsystems.find(index);
+    if( found != _subsystems.end() )
+        return static_cast<S*>(found->second);
+
+    return nullptr;
 }
 
-template<typename S> void remove_subsystem()
+template<typename S> void SubsystemContext::remove_subsystem()
 {
-    context().remove_subsystem<S>();
+    auto index = TypeInfo::id<Subsystem, S>();
+
+    auto found = _subsystems.find(index);
+    if( found != _subsystems.end() )
+    {
+        found->second->dispose();
+        delete found->second;
+        _subsystems.erase(found);
+    }   
 }
 
-template<typename ... Args> bool has_subsystems()
+template<typename S> bool SubsystemContext::has_subsystems() const
 {
-    return context().has_subsystems<Args...>();
+    auto index = TypeInfo::id<Subsystem, S>();
+    return _subsystems.find(index) != _subsystems.end();
 }
 
-template<typename ... Args>
-bool SubsystemWithEntities<Args...>::initialize()
+template<typename S1, typename S2, typename ... Args> bool SubsystemContext::has_subsystems() const
 {
-   for( auto object : find_entities_with<Args...>() )
-       _entities[object] = get_components<Args...>(object);
-   subscribe<EvtEntityModified>(*this);
-   return true;
-}
-
-template<typename ... Args>
-void SubsystemWithEntities<Args...>::dispose()
-{
-   unsubscribe<EvtEntityModified>(*this);
-}
-
-template<typename ... Args>
-void SubsystemWithEntities<Args...>::receive(const EvtEntityModified& evt)
-{
-   auto mask = get_components_mask<Args...>();
-   if( (get_components_mask(evt.object) & mask) == mask )
-       _entities[evt.object] = get_components<Args...>(evt.object);
-   else
-       _entities.erase(evt.object);
-}
-
-template<typename Func, typename Tup, std::size_t... index>
-void visit_with_unpack(Func&& cb, Handle object, Tup&& tuple, integer_sequence<size_t, index...>)
-{
-   return cb(object, *std::get<index>(std::forward<Tup>(tuple))...);
-}
-
-template<typename ... Args>
-void SubsystemWithEntities<Args...>::visit(const visitor& cb)
-{
-   constexpr auto Size = std::tuple_size<typename std::decay<tuple>::type>::value;
-   for( auto pair : *this )
-       visit_with_unpack(cb, pair.first, pair.second, make_integer_sequence<size_t, Size>{});
+    return has_subsystems<S1>() && has_subsystems<S2, Args...>();
 }
 
 NS_LEMON_CORE_END

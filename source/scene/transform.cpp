@@ -2,42 +2,47 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <scene/transform.hpp>
+#include <functional>
 
 NS_LEMON_BEGIN
 
-Transform::view<> Transform::get_children(bool recursive)
+Transform::view<> Transform::find_children(bool recursive)
 {
-    return view<>(this,
-        recursive ? iterate_mode::CHILDREN_RECURSIVE : iterate_mode::CHILDREN);
+    return view<>(this, std::bind(recursive ?
+        &Transform::find_next_children_recursive<Transform> : &Transform::find_next_children<Transform>,
+        this,
+        std::placeholders::_1));
 }
 
-Transform::const_view<> Transform::get_children(bool recursive) const
+Transform::const_view<> Transform::find_children(bool recursive) const
 {
-    return const_view<>(this,
-        recursive ? iterate_mode::CHILDREN_RECURSIVE : iterate_mode::CHILDREN);
+   return const_view<>(this, std::bind(recursive ? 
+        &Transform::find_next_children_recursive<const Transform> : &Transform::find_next_children<const Transform>,
+        this,
+        std::placeholders::_1));
 }
 
-Transform::view<> Transform::get_ancestors()
+Transform::view<> Transform::find_ancestors()
 {
-    return view<>(this, iterate_mode::ANCESTORS);
+   return view<>(this, &Transform::find_parent<Transform>);
 }
 
-Transform::const_view<> Transform::get_ancestors() const
+Transform::const_view<> Transform::find_ancestors() const
 {
-    return const_view<>(this, iterate_mode::ANCESTORS);
+   return const_view<>(this, &Transform::find_parent<const Transform>);
 }
 
 bool Transform::is_ancestor(Transform& target) const
 {
-    for( auto& ancestor : get_ancestors() )
-        if( ancestor == target )
+    for( auto ancestor : find_ancestors() )
+        if( *ancestor == target )
             return true;
     return false;
 }
 
 void Transform::update_children()
 {
-    get_children(true).visit([](Transform& t)
+    find_children(true).visit([](Transform& t)
     {
         t._world_pose = t._parent->_world_pose * t._pose;
     });

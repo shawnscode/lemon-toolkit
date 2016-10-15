@@ -1,9 +1,8 @@
 #pragma once
 
-#include <core/instance.hpp>
-#include <core/task.hpp>
+#include <core/core.hpp>
 #include <core/ecs.hpp>
-#include <core/subsystem.hpp>
+#include <core/event.hpp>
 #include <core/task.hpp>
 
 #include <math/vector.hpp>

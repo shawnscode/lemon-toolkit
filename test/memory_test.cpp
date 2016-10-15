@@ -1,333 +1,394 @@
-// #include <catch.hpp>
-// #include <lemon-toolkit.hpp>
-// #include <cstdio>
-// #include <cstdlib>
-// #include <ctime>
+#include <catch.hpp>
+#include <hayai.hpp>
+#include <lemon-toolkit.hpp>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 
-// #include <codebase/memory/allocator.hpp>
+#include <codebase/memory/memory_pool.hpp>
 
-// USING_NS_LEMON;
-// USING_NS_LEMON_CORE;
+USING_NS_LEMON;
+USING_NS_LEMON_CORE;
 
-// const static size_t kChunkSize = 8;
+const static size_t kChunkSize = 8;
 
-// struct MemoryChunksFixture : public FixedSizeAllocator
-// {
-//     MemoryChunksFixture() : FixedSizeAllocator(sizeof(int32_t), kChunkSize) {}
+struct MemoryPoolTestContext : public MemoryPoolT<int32_t, kChunkSize>
+{
+    void* get_element(size_t i) const
+    {
+        return _chunks[i/_chunk_entries_size]+(i%_chunk_entries_size)*_block_size;
+    }
 
-//     size_t get_memory_chunks() const { return _chunks.size(); }
-//     size_t get_memory_capacity() const { return _total_elements; }
-//     size_t get_available() const { return _available; }
+    void dump() const
+    {
+        printf("first_free_block: %zu\n", _first_free_block);
+        for( size_t i = 0; i < _chunks.size(); i++ )
+        {
+            printf("chunk %ld:\n", i);
+            for( size_t j = 0; j < _chunk_entries_size; j++ )
+                printf("%d ", *(int32_t*)get_element(_chunk_entries_size*i+j));
+            printf("\n");
+        }
+        printf("\n");
+    }
+};
 
-//     void dump() const
-//     {
-//         for( size_t i = 0; i < _chunks.size(); i++ )
-//         {
-//             printf("chunk %ld:\n", i);
-//             for( size_t j = 0; j < _chunk_size; j++ )
-//                 printf("%d ", *(int32_t*)get_element(_chunk_size*i+j));
-//             printf("\n");
-//         }
-//     }
-// };
+TEST_CASE_METHOD(MemoryPoolTestContext, "TestMemoryChunksReuse")
+{
+   const size_t kIterationCount = 32;
 
-// TEST_CASE_METHOD(MemoryChunksFixture, "TestMemoryChunksReuse")
-// {
-//     const size_t kIterationCount = 32;
+   // use current time as seed for random generator
+   std::srand(std::time(0));
 
-//     // use current time as seed for random generator
-//     std::srand(std::time(0));
+   //
+   for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
+   {
+       std::vector<void*> ptrs;
+       int holes = std::rand()%kChunkSize;
 
-//     //
-//     for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
-//     {
-//         std::vector<void*> ptrs;
-//         int holes = std::rand()%kChunkSize;
+       for( size_t i = 0; i < kChunkSize - holes; i++ )
+       {
+           ptrs.push_back(malloc());
+           *(int32_t*)ptrs.back() = kChunkSize * 1000 + i;
+       }
 
-//         for( size_t i = 0; i < kChunkSize - holes; i++ )
-//         {
-//             ptrs.push_back(malloc());
-//             *(int32_t*)ptrs.back() = kChunkSize * 1000 + i;
-//         }
+       REQUIRE( size() == kChunkSize - holes );
+       REQUIRE( _chunks.size() == 1 );
+       REQUIRE( _available == holes );
 
-//         REQUIRE( size() == kChunkSize - holes );
-//         REQUIRE( get_memory_chunks() == 1 );
-//         REQUIRE( get_memory_capacity() == kChunkSize );
-//         REQUIRE( get_available() == holes );
+       for( size_t i = 0; i < kChunkSize-holes; i++ )
+       {
+           int ra = std::rand()%ptrs.size();
+           REQUIRE( *(int32_t*)ptrs[ra] >= (int32_t)(kChunkSize * 1000) );
 
-//         for( size_t i = 0; i < kChunkSize-holes; i++ )
-//         {
-//             int ra = std::rand()%ptrs.size();
-//             REQUIRE( *(int32_t*)ptrs[ra] >= (int32_t)(kChunkSize * 1000) );
+           free(ptrs[ra]);
+           REQUIRE( *(int32_t*)ptrs[ra] < (int32_t)(kChunkSize * 1000) );
 
-//             free(ptrs[ra]);
-//             REQUIRE( *(int32_t*)ptrs[ra] < (int32_t)(kChunkSize * 1000) );
+           ptrs.erase(ptrs.begin()+ra);
+       }
+   }
 
-//             ptrs.erase(ptrs.begin()+ra);
-//         }
-//     }
+   // multi-chunks
+   int max_chunks = 0;
+   for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
+   {
+       int chunks = std::rand()%5+1;
+       int holes = std::rand()%kChunkSize;
+       max_chunks = std::max(chunks, max_chunks);
 
-//     // multi-chunks
-//     int max_chunks = 0;
-//     for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
-//     {
-//         int chunks = std::rand()%5+1;
-//         int holes = std::rand()%kChunkSize;
-//         max_chunks = std::max(chunks, max_chunks);
+       std::vector<void*> ptrs;
+       for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
+       {
+           ptrs.push_back(malloc());
+           *(int32_t*)ptrs.back() = 99;
+       }
 
-//         std::vector<void*> ptrs;
-//         for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
-//             ptrs.push_back(malloc());
+       REQUIRE( size() == kChunkSize*chunks - holes );
+       REQUIRE( _chunks.size() == max_chunks );
 
-//         REQUIRE( size() == kChunkSize*chunks - holes );
-//         REQUIRE( get_memory_chunks() == max_chunks );
-//         REQUIRE( get_memory_capacity() == kChunkSize*max_chunks );
+       for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
+       {
+           int ra = std::rand()%ptrs.size();
+           free(ptrs[ra]);
+           ptrs.erase(ptrs.begin()+ra);
+       }
 
-//         for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
-//         {
-//             int ra = std::rand()%ptrs.size();
-//             free(ptrs[ra]);
-//             ptrs.erase(ptrs.begin()+ra);
-//         }
+       REQUIRE( size() == 0 );
+       REQUIRE( _chunks.size() == max_chunks );
+   }
+}
 
-//         REQUIRE( size() == 0 );
-//         REQUIRE( get_memory_chunks() == max_chunks );
-//         REQUIRE( get_memory_capacity() == kChunkSize*max_chunks );
-//     }
-// }
+struct IndexedPoolTestContext;
+struct IntPosition : public Component
+{
+    // SET_CHUNK_SIZE(kChunkSize);
+    IntPosition(IndexedPoolTestContext&, int x, int y);
+    ~IntPosition();
 
-// struct TestContext;
-// struct IntPosition : public Component
-// {
-//     SET_CHUNK_SIZE(kChunkSize);
+    int x, y;
+    IndexedPoolTestContext& fixture;
+};
 
-//     IntPosition(TestContext&, int x, int y);
-//     ~IntPosition();
+struct IndexedPoolTestContext : public core::EntityComponentSystem
+{
+    IndexedPoolTestContext()
+    {
+        static const TypeInfo::index_t index = TypeInfo::id<Component, IntPosition>();
+        _resolvers.resize(index+1, nullptr);
+        _resolvers[index] = new details::ComponentResolverT<IntPosition, kChunkSize>();
+    }
 
-//     int x, y;
-//     TestContext& fixture;
-// };
+    size_t size()
+    {
+        return resolve<IntPosition>()->size();
+    }
 
-// struct TestContext
-// {
-//     size_t spawn_count = 0;
-//     size_t dispose_count = 0;
+    size_t capacity()
+    {
+        return resolve<IntPosition>()->capacity();
+    }
 
-//     TestContext()
-//     {
-//         initialize(0);
-//     }
+    size_t spawn_count = 0;
+    size_t dispose_count = 0;
+};
 
-//     ~TestContext()
-//     {
-//         dispose();
-//     }
+IntPosition::IntPosition(IndexedPoolTestContext& f, int x, int y) : x(x), y(y), fixture(f)
+{
+    fixture.spawn_count ++;
+}
+
+IntPosition::~IntPosition()
+{
+    fixture.dispose_count ++;
+}
+
+TEST_CASE_METHOD(IndexedPoolTestContext, "TestIndexedObjectChunks")
+{
+    REQUIRE( size() == 0 );
+    REQUIRE( capacity() == 0 );
+
+    std::vector<Entity*> entities;
+    for( size_t i = 0; i < kChunkSize*3; i++ )
+    {
+        auto handle = create();
+        entities.push_back(get(handle));
+    }
+
+    REQUIRE( size() == 0 );
+    REQUIRE( capacity() == 0 );
     
-//     void reset()
-//     {
-//         std::srand(std::time(0));
-//         spawn_count = 0;
-//         dispose_count = 0;
-//     }
+    for( size_t i = 0; i < kChunkSize-1; i++ )
+    {
+        auto p = entities[i]->add_component<IntPosition>(*this, i, i*2);
+        REQUIRE( p->x == i );
+        REQUIRE( p->y == i*2 );
+    }
 
-//     size_t size() const
-//     {
-//         const auto id = TypeInfo::id<Component, IntPosition>();
-//         return internal::test_mem::size(id);
-//     }
+    for( size_t i = 0; i < kChunkSize-1; i++ )
+    {
+        auto p = entities[i]->get_component<IntPosition>();
+        REQUIRE( p->x == i );
+        REQUIRE( p->y == i*2 );
+    }
 
-//     size_t capacity() const
-//     {
-//         const auto id = TypeInfo::id<Component, IntPosition>();
-//         return internal::test_mem::capacity(id);
-//     }
-// };
+    REQUIRE( size() == (kChunkSize-1) );
+    REQUIRE( spawn_count == size() );
+    REQUIRE( dispose_count == 0 );
+    REQUIRE( capacity() == kChunkSize );
 
-// IntPosition::IntPosition(TestContext& f, int x, int y) : x(x), y(y), fixture(f)
-// {
-//     fixture.spawn_count ++;
-// }
+    for( size_t i = kChunkSize-1; i < kChunkSize*2; i++ )
+    {
+        entities[i]->add_component<IntPosition>(*this, i, i*2);
+    }
 
-// IntPosition::~IntPosition()
-// {
-//     fixture.dispose_count ++;
-// }
+    for( size_t i = 0; i < kChunkSize*2; i++ )
+    {
+        auto p = entities[i]->get_component<IntPosition>();
+        REQUIRE( p->x == i );
+        REQUIRE( p->y == i*2 );
+    }
 
-// TEST_CASE_METHOD(TestContext, "TestIndexedObjectChunks")
-// {
-//     reset();
+    REQUIRE( spawn_count == size() );
+    REQUIRE( dispose_count == 0 );
+    REQUIRE( size() == kChunkSize*2 );
+    REQUIRE( capacity() == kChunkSize*2 );
 
-//     REQUIRE( size() == 0 );
-//     REQUIRE( capacity() == 0 );
+    size_t holes = 0;
+    std::set<size_t> removed;
+    for( size_t i = 0; i < kChunkSize*2; i++ )
+    {
+        if( i % 2 == 0 || i % 3 == 0 || i % 7 == 0 )
+        {
+            free(entities[i]->handle);
+            removed.insert(i);
+            holes ++;
+        }
+    }
 
-//     std::vector<Entity> entities;
-//     for( size_t i = 0; i < kChunkSize*3; i++ )
-//         entities.push_back(spawn());
+    REQUIRE( dispose_count == holes );
+    REQUIRE( size() == (kChunkSize*2 - holes) );
+    REQUIRE( capacity() == kChunkSize*2 );
 
-//     REQUIRE( size() == 0 );
-//     REQUIRE( capacity() == 0 );
-    
-//     for( size_t i = 0; i < kChunkSize-1; i++ )
-//     {
-//         auto p = add_component<IntPosition>(entities[i], *this, i, i*2);
-//         REQUIRE( p->x == i );
-//         REQUIRE( p->y == i*2 );
-//     }
+    // block reuse
+    for( auto cursor = removed.begin(); cursor != removed.end(); cursor++ )
+    {
+        if( *cursor % 7 == 0 && *cursor % 2 != 0 && *cursor % 3 != 0 )
+        {
+            auto handle = create();
+            get(handle)->add_component<IntPosition>(*this, 0, 0);
+            holes --;
+        }
+    }
 
-//     for( size_t i = 0; i < kChunkSize-1; i++ )
-//     {
-//         auto p = get_component<IntPosition>(entities[i]);
-//         REQUIRE( p->x == i );
-//         REQUIRE( p->y == i*2 );
-//     }
+    REQUIRE( size() == (kChunkSize*2 - holes) );
+    REQUIRE( capacity() == kChunkSize*2 );
 
-//     REQUIRE( size() == (kChunkSize-1) );
-//     REQUIRE( spawn_count == size() );
-//     REQUIRE( dispose_count == 0 );
-//     REQUIRE( capacity() == kChunkSize );
+    for( auto cursor = removed.begin(); cursor != removed.end(); cursor++ )
+    {
+        if( *cursor % 3 == 0 && *cursor % 7 != 0 && *cursor % 2 != 0 )
+        {
+            auto handle = create();
+            get(handle)->add_component<IntPosition>(*this, 0, 0);
+            holes --;
+        }
+    }
 
-//     for( size_t i = kChunkSize-1; i < kChunkSize*2; i++ )
-//         add_component<IntPosition>(entities[i], *this, i, i*2);
+    REQUIRE( size() == (kChunkSize*2 - holes) );
+    REQUIRE( capacity() == kChunkSize*2 );
+}
 
-//     for( size_t i = 0; i < kChunkSize*2; i++ )
-//     {
-//         auto p = get_component<IntPosition>(entities[i]);
-//         REQUIRE( p->x == i );
-//         REQUIRE( p->y == i*2 );
-//     }
+TEST_CASE_METHOD(IndexedPoolTestContext, "TestIndexedObjectChunksWithRandomHoles")
+{
+    const size_t kIterationCount = 32;
+    // use current time as seed for random generator
 
-//     REQUIRE( spawn_count == size() );
-//     REQUIRE( dispose_count == 0 );
-//     REQUIRE( size() == kChunkSize*2 );
-//     REQUIRE( capacity() == kChunkSize*2 );
+    //
+    for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
+    {
+        std::vector<std::pair<Entity*, size_t>> indices, shuffle;
+        int holes = std::rand()%kChunkSize;
 
-//     size_t holes = 0;
-//     std::set<size_t> removed;
-//     for( size_t i = 0; i < kChunkSize*2; i++ )
-//     {
-//         if( i % 2 == 0 || i % 3 == 0 || i % 7 == 0 )
-//         {
-//             recycle(entities[i]);
-//             removed.insert(i);
-//             holes ++;
-//         }
-//     }
+        for( size_t i = 0; i < kChunkSize; i++ )
+            shuffle.push_back(std::make_pair(get(create()), i));
 
-//     REQUIRE( dispose_count == holes );
-//     REQUIRE( size() == (kChunkSize*2 - holes) );
-//     REQUIRE( capacity() == kChunkSize*2 );
+        for( size_t i = 0; i < kChunkSize - holes; i++ )
+        {
+            int ra = std::rand()%shuffle.size();
+            shuffle[ra].first->add_component<IntPosition>(*this, shuffle[ra].second, shuffle[ra].second);
+            indices.push_back(shuffle[ra]);
 
-//     // block reuse
-//     for( auto cursor = removed.begin(); cursor != removed.end(); cursor++ )
-//     {
-//         if( *cursor % 7 == 0 && *cursor % 2 != 0 && *cursor % 3 != 0 )
-//         {
-//             add_component<IntPosition>(spawn(), *this, 0, 0);
-//             holes --;
-//         }
-//     }
+            std::swap(shuffle[ra], shuffle[shuffle.size()-1]);
+            shuffle.pop_back();
+        };
 
-//     REQUIRE( size() == (kChunkSize*2 - holes) );
-//     REQUIRE( capacity() == kChunkSize*2 );
+        REQUIRE( size() == kChunkSize - holes );
+        REQUIRE( capacity() == kChunkSize );
 
-//     for( auto cursor = removed.begin(); cursor != removed.end(); cursor++ )
-//     {
-//         if( *cursor % 3 == 0 && *cursor % 7 != 0 && *cursor % 2 != 0 )
-//         {
-//             add_component<IntPosition>(spawn(), *this, 0, 0);
-//             holes --;
-//         }
-//     }
+        for( size_t i = 0; i < kChunkSize-holes; i++ )
+        {
+            int ra = std::rand()%indices.size();
 
-//     REQUIRE( size() == (kChunkSize*2 - holes) );
-//     REQUIRE( capacity() == kChunkSize*2 );
-// }
+            auto object = indices[ra].first->get_component<IntPosition>();
+            REQUIRE( object != nullptr );
+            REQUIRE( object->x == indices[ra].second );
+            REQUIRE( object->y == indices[ra].second );
 
-// TEST_CASE_METHOD(TestContext, "TestIndexedObjectChunksWithRandomHoles")
-// {
-//     reset();
-//     const size_t kIterationCount = 32;
-//     // use current time as seed for random generator
+            indices[ra].first->remove_component<IntPosition>();
+            REQUIRE( indices[ra].first->get_component<IntPosition>() == nullptr );
 
-//     //
-//     for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
-//     {
-//         std::vector<std::pair<Entity, size_t>> indices, shuffle;
-//         int holes = std::rand()%kChunkSize;
+            indices.erase(indices.begin()+ra);
+        }
+    }
 
-//         for( size_t i = 0; i < kChunkSize; i++ )
-//             shuffle.push_back(std::make_pair(spawn(), i));
+    // multi-chunks
+    int max_chunks = 0;
+    for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
+    {
+        int chunks = std::rand()%5+1;
+        int holes = std::rand()%kChunkSize;
+        max_chunks = std::max(chunks, max_chunks);
 
-//         for( size_t i = 0; i < kChunkSize - holes; i++ )
-//         {
-//             int ra = std::rand()%shuffle.size();
-//             add_component<IntPosition>(shuffle[ra].first, *this, shuffle[ra].second, shuffle[ra].second);
-//             indices.push_back(shuffle[ra]);
+        std::vector<std::pair<Entity*, size_t>> indices, shuffle;
+        for( size_t i = 0; i < kChunkSize*chunks; i++ )
+            shuffle.push_back(std::make_pair(get(create()), i));
 
-//             std::swap(shuffle[ra], shuffle[shuffle.size()-1]);
-//             shuffle.pop_back();
-//         };
+        for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
+        {
+            int ra = std::rand()%shuffle.size();
+            shuffle[ra].first->add_component<IntPosition>(*this, shuffle[ra].second, shuffle[ra].second);
+            indices.push_back(shuffle[ra]);
 
-//         REQUIRE( size() == kChunkSize - holes );
-//         REQUIRE( capacity() == kChunkSize );
+            std::swap(shuffle[ra], shuffle[shuffle.size()-1]);
+            shuffle.pop_back();
+        }
 
-//         for( size_t i = 0; i < kChunkSize-holes; i++ )
-//         {
-//             int ra = std::rand()%indices.size();
+        REQUIRE( size() == kChunkSize*chunks - holes );
+        REQUIRE( capacity() == kChunkSize*max_chunks );
 
-//             auto object = get_component<IntPosition>(indices[ra].first);
-//             REQUIRE( object != nullptr );
-//             REQUIRE( object->x == indices[ra].second );
-//             REQUIRE( object->y == indices[ra].second );
+        for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
+        {
+            int ra = std::rand()%indices.size();
 
-//             remove_component<IntPosition>(indices[ra].first);
-//             REQUIRE( get_component<IntPosition>(indices[ra].first) == nullptr );
+            auto object = indices[ra].first->get_component<IntPosition>();
+            REQUIRE( object != nullptr );
+            REQUIRE( object->x == indices[ra].second );
+            REQUIRE( object->y == indices[ra].second );
 
-//             indices.erase(indices.begin()+ra);
-//         }
-//     }
+            indices[ra].first->remove_component<IntPosition>();
+            REQUIRE( indices[ra].first->get_component<IntPosition>() == nullptr );
 
-//     // multi-chunks
-//     int max_chunks = 0;
-//     for( size_t iteration = 0; iteration < kIterationCount; iteration++ )
-//     {
-//         int chunks = std::rand()%5+1;
-//         int holes = std::rand()%kChunkSize;
-//         max_chunks = std::max(chunks, max_chunks);
+            indices.erase(indices.begin()+ra);
+        }
 
-//         std::vector<std::pair<Entity, size_t>> indices, shuffle;
-//         for( size_t i = 0; i < kChunkSize*chunks; i++ )
-//             shuffle.push_back(std::make_pair(spawn(), i));
+        REQUIRE( size() == 0 );
+        REQUIRE( capacity() == kChunkSize*max_chunks );
+    }
+}
 
-//         for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
-//         {
-//             int ra = std::rand()%shuffle.size();
-//             add_component<IntPosition>(shuffle[ra].first, *this, shuffle[ra].second, shuffle[ra].second);
-//             indices.push_back(shuffle[ra]);
+size_t max_elements = 100;
+size_t max_operations = 100000;
+size_t max_iterations = 8;
 
-//             std::swap(shuffle[ra], shuffle[shuffle.size()-1]);
-//             shuffle.pop_back();
-//         }
+BENCHMARK(MemoryTest, Pool32, max_iterations, 1)
+{
+    MemoryPoolT<size_t, 32> pool;
 
-//         REQUIRE( size() == kChunkSize*chunks - holes );
-//         REQUIRE( capacity() == kChunkSize*max_chunks );
+    std::list<void*> ptrs;
+    for( size_t iteration = 0; iteration < max_operations; iteration ++ )
+    {
+        if( iteration % 3 == 0 || ptrs.size() < max_elements )
+        {
+            ptrs.push_back(pool.malloc());
+        }
+        else
+        {
+            pool.free(ptrs.front());
+            ptrs.pop_front();
+        }
+    }
 
-//         for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
-//         {
-//             int ra = std::rand()%indices.size();
+    for( void* ptr : ptrs )
+        pool.free(ptr);
+}
 
-//             auto object = get_component<IntPosition>(indices[ra].first);
-//             REQUIRE( object != nullptr );
-//             REQUIRE( object->x == indices[ra].second );
-//             REQUIRE( object->y == indices[ra].second );
+BENCHMARK(MemoryTest, Pool128, max_iterations, 1)
+{
+    MemoryPoolT<size_t, 128> pool;
 
-//             remove_component<IntPosition>(indices[ra].first);
-//             REQUIRE( get_component<IntPosition>(indices[ra].first) == nullptr );
+    std::list<void*> ptrs;
+    for( size_t iteration = 0; iteration < max_operations; iteration ++ )
+    {
+        if( iteration % 3 == 0 || ptrs.size() < max_elements )
+        {
+            ptrs.push_back(pool.malloc());
+        }
+        else
+        {
+            pool.free(ptrs.front());
+            ptrs.pop_front();
+        }
+    }
 
-//             indices.erase(indices.begin()+ra);
-//         }
+    for( void* ptr : ptrs )
+        pool.free(ptr);
+}
 
-//         REQUIRE( size() == 0 );
-//         REQUIRE( capacity() == kChunkSize*max_chunks );
-//     }
-// }
+BENCHMARK(MemoryTest, System, max_iterations, 1)
+{
+    std::list<void*> ptrs;
+    for( size_t iteration = 0; iteration < max_operations; iteration ++ )
+    {
+        if( iteration % 3 == 0 || ptrs.size() < max_elements )
+        {
+            ptrs.push_back(::malloc(sizeof(size_t)));
+        }
+        else
+        {
+            ::free(ptrs.front());
+            ptrs.pop_front();
+        }
+    }
+
+    for( void* ptr : ptrs )
+        ::free(ptr);
+}

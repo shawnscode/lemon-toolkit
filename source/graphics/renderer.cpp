@@ -12,13 +12,10 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-Renderer::Renderer() {}
-Renderer::~Renderer() { dispose(); }
-
 bool Renderer::initialize()
 {
-    _backend.reset(new (std::nothrow) RendererBackend());
-    _statecache.reset(new (std::nothrow) RenderStateCache(*this));
+    _backend = new (std::nothrow) RendererBackend();
+    _statecache = new (std::nothrow) RenderStateCache(*this);
 
     if( _backend == nullptr || _statecache == nullptr )
     {
@@ -58,8 +55,17 @@ bool Renderer::initialize()
 
 void Renderer::dispose()
 {
-    _backend.reset();
-    _statecache.reset();
+    if( _backend != nullptr )
+    {
+        delete _backend;
+        _backend = nullptr;
+    }
+
+    if( _statecache != nullptr )
+    {
+        delete _statecache;
+        _statecache = nullptr;
+    }
 
     for( size_t i = 0; i < _object_sets.size(); i++ )
     {

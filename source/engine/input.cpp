@@ -3,7 +3,6 @@
 
 #include <engine/input.hpp>
 #include <graphics/window.hpp>
-
 #include <SDL2/SDL.h>
 
 NS_LEMON_BEGIN

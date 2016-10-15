@@ -21,7 +21,66 @@ bool ResourceCache::initialize()
 
 void ResourceCache::dispose()
 {
+}
 
+Resource::ptr ResourceCache::get_internal(ResourceResolver* resolver, const fs::Path& name)
+{
+    auto hash = math::StringHash(name.c_str());
+
+    auto found = _manuals.find(hash);
+    if( found != _manuals.end() )
+        return found->second;
+
+    found = _resources.find(hash);
+    if( found != _resources.end() )
+    {
+        touch(hash);
+        return found->second;
+    }
+
+    auto file = get_file(name);
+    if( !file.is_open() )
+    {
+        LOGW("failed to get due to file not exists, \"%s\"", name.c_str());
+        return nullptr;
+    }
+
+    auto resource = resolver->create();
+    if( resource )
+    {
+        resource->set_name(name.c_str());
+        if( resource->read(file) )
+        {
+            make_room(resource->get_memusage());
+            _resources[hash] = resource;
+            _lru.push_back(std::make_pair(hash, resource));
+            _names[hash] = name.to_string();
+            return resource;
+        }
+    }
+
+    return nullptr;
+}
+
+bool ResourceCache::add(const fs::Path& name, Resource::ptr resource)
+{
+    if( resource == nullptr )
+        return false;
+
+    auto hash = math::StringHash(name.c_str());
+    auto found = _resources.find(hash);
+    if( found != _resources.end() )
+        return false;
+
+    _resources[hash] = resource;
+    _manuals[hash] = resource;
+    _names[hash] = name.to_string();
+    return true;
+}
+
+void ResourceCache::remove(const fs::Path& name)
+{
+    _manuals.erase(math::StringHash(name.c_str()));
 }
 
 bool ResourceCache::is_exist(const fs::Path& path) const
@@ -38,7 +97,9 @@ void ResourceCache::make_room(unsigned size)
     }
 
     _memusage = size;
-    for( auto pair : _resources ) _memusage += pair.second->get_memusage();
+    for( auto pair : _resources )
+        _memusage += pair.second->get_memusage();
+
     for( auto cursor = _lru.begin(); cursor != _lru.end(); )
     {
         if( cursor->second.use_count() == 2 )

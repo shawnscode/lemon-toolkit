@@ -4,7 +4,7 @@
 #pragma once
 
 #include <forwards.hpp>
-#include <core/subsystem.hpp>
+#include <core/core.hpp>
 #include <codebase/type/enumeration.hpp>
 #include <math/vector.hpp>
 

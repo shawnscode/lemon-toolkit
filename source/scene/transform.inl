@@ -30,90 +30,69 @@ INLINE TransformPose& operator /= (TransformPose& lhs, const TransformPose& rhs)
     return lhs;
 }
 
-/// IMPLEMENTATONS OF TRANSFORM ITERATOR
-template<typename T>
-Transform::iterator_t<T>::iterator_t(T* transform, iterate_mode mode, core::ComponentMask mask)
-:_start(transform), _mode(mode), _mask(mask)
+template<typename T> T* Transform::find_parent(T* current)
 {
-    if( transform != nullptr )
-    {
-        _start = transform;
-        if( mode == iterate_mode::ANCESTORS )
-            _cursor = transform->_parent;
-        else
-            _cursor = transform->_first_child;
-        
-        if( _cursor != nullptr && (core::get_components_mask(*_cursor) & _mask) != _mask )
-            find_next_available();
-    }
-    else
-        _start = _cursor = nullptr;
+    return current == nullptr ? nullptr : current->_parent;
 }
 
-template<typename T>
-void Transform::iterator_t<T>::find_next_available()
+template<typename T> T* Transform::find_next_children(T* root, T* current)
 {
-    if( _cursor == nullptr )
-        return;
+    if( root == nullptr || current == nullptr )
+        return nullptr;
 
-    if( _mode == iterate_mode::ANCESTORS )
-    {
-        _cursor = _cursor->_parent;
-        return;
-    }
+    return current == root ? current->_first_child : current->_next_sibling;
+}
 
-    if( _mode == iterate_mode::CHILDREN )
-    {
-        _cursor = _cursor->_next_sibling;
-        return;
-    }
+template<typename T> T* Transform::find_next_children_recursive(T* root, T* current)
+{
+    if( root == nullptr || current == nullptr )
+        return nullptr;
 
     // deep first search when iterating children recursively
-    if( _cursor->_first_child )
-    {
-        _cursor = _cursor->_first_child;
-        return;
-    }
+    if( current->_first_child )
+        return current->_first_child;
 
-    if( _cursor->_next_sibling )
-    {
-        _cursor = _cursor->_next_sibling;
-        return;
-    }
+    if( current->_next_sibling )
+        return current->_next_sibling;
 
     // travel back when we reach leaf-node
-    bool found_available_node = false;
-    while( _cursor->_parent != _start )
+    while( current->_parent != nullptr && current->_parent != root )
     {
-        if( _cursor->_parent->_next_sibling )
-        {
-            _cursor = _cursor->_parent->_next_sibling;
-            found_available_node = true;
-            break;
-        }
+        if( current->_parent->_next_sibling )
+            return current->_parent->_next_sibling;
         else
-            _cursor = _cursor->_parent;
+            current = current->_parent;
     }
 
-    if( !found_available_node )
-        _cursor = nullptr;
-    return;
+    return nullptr;
 }
 
-template<typename T>
-INLINE Transform::iterator_t<T>& Transform::iterator_t<T>::operator ++ ()
+template<typename T> T* Transform::find_with_mask(const it_function<T>& cb, T* current, Component::Mask mask)
 {
-    while( _cursor != nullptr )
+    while( current != nullptr )
     {
-        find_next_available();
-        if( (_cursor == nullptr) || (core::get_components_mask(*_cursor) & _mask) == _mask )
-            break;
+        current = cb(current);
+        if( current == nullptr || (current->entity.get_components_mask() & mask) == mask )
+            return current;
     }
+    return nullptr;
+}
+
+/// IMPLEMENTATONS OF TRANSFORM ITERATOR
+template<typename T>
+Transform::iterator_traits<T>::iterator_traits(T* transform, const it_function<T>& func, core::Component::Mask mask)
+: _current(transform), _iterator(func), _mask(mask)
+{}
+
+template<typename T>
+INLINE Transform::iterator_traits<T>& Transform::iterator_traits<T>::operator ++ ()
+{
+    _current = Transform::find_with_mask(_iterator, _current, _mask);
     return *this;
 }
 
 template<typename T>
-INLINE Transform::iterator_t<T> Transform::iterator_t<T>::operator ++ (int dummy)
+INLINE Transform::iterator_traits<T> Transform::iterator_traits<T>::operator ++ (int dummy)
 {
     auto tmp = *this;
     ++(*this);
@@ -121,64 +100,66 @@ INLINE Transform::iterator_t<T> Transform::iterator_t<T>::operator ++ (int dummy
 }
 
 template<typename T>
-INLINE bool Transform::iterator_t<T>::operator == (const Transform::iterator_t<T>& rh) const
+INLINE bool Transform::iterator_traits<T>::operator == (const Transform::iterator_traits<T>& rhs) const
 {
-    return _cursor == rh._cursor && _mode == rh._mode;
+    return _current == rhs._current;
 }
 
 template<typename T>
-INLINE bool Transform::iterator_t<T>::operator != (const Transform::iterator_t<T>& rh) const
+INLINE bool Transform::iterator_traits<T>::operator != (const Transform::iterator_traits<T>& rhs) const
 {
-    return !(*this == rh);
+    return !(*this == rhs);
 }
 
 template<typename T>
-INLINE T& Transform::iterator_t<T>::operator * ()
+INLINE T* Transform::iterator_traits<T>::operator * ()
 {
-    return *_cursor;
+    return _current;
 }
 
 template<typename T, typename ... Args>
-Transform::view_t<T, Args...>::view_t(T* transform, iterate_mode mode)
-: _transform(transform), _mode(mode)
+Transform::view_traits<T, Args...>::view_traits(T* transform, const it_function<T>& cb)
+: _transform(transform), _iterator(cb)
 {
-    _mask = core::get_components_mask<Args...>();
+    _mask = core::Component::calculate<Args...>();
 }
 
 template<typename T, typename ... Args>
-INLINE Transform::iterator_t<T> Transform::view_t<T, Args...>::begin() const
+INLINE Transform::iterator_traits<T> Transform::view_traits<T, Args...>::begin() const
 {
-    return iterator_t<T>(_transform, _mode, _mask);
+    return iterator_traits<T>(Transform::find_with_mask(_iterator, _transform, _mask), _iterator, _mask);
 }
 
 template<typename T, typename ... Args>
-INLINE Transform::iterator_t<T> Transform::view_t<T, Args...>::end() const
+INLINE Transform::iterator_traits<T> Transform::view_traits<T, Args...>::end() const
 {
-    return iterator_t<T>(nullptr, _mode, _mask);
+    return iterator_traits<T>(nullptr, _iterator, _mask);
 }
 
 template<typename T, typename ... Args>
-INLINE void Transform::view_t<T, Args...>::visit(const visitor& cb)
+INLINE void Transform::view_traits<T, Args...>::visit(const std::function<void(Transform&, Args&...)>& cb)
 {
-    for( auto& iterator : *this ) cb(iterator);
+    for( auto iterator : *this )
+        cb(*iterator, *((*iterator)->entity.template get_component<Args>())...);
 }
 
 template<typename T, typename ... Args>
-INLINE unsigned Transform::view_t<T, Args...>::count() const
+INLINE unsigned Transform::view_traits<T, Args...>::count() const
 {
     unsigned result = 0;
-    for( auto& _iterator : *this ) result++;
+    for( auto _iterator : *this )
+        result++;
     return result;
 }
 
-INLINE bool Transform::operator == (const Transform& rh) const
+INLINE bool Transform::operator == (const Transform& rhs) const
 {
-    return handle == rh.handle;
+    return &entity == &rhs.entity;
 }
 
-INLINE bool Transform::operator != (const Transform& rh) const
+INLINE bool Transform::operator != (const Transform& rhs) const
 {
-    return handle != rh.handle;
+    return &entity != &rhs.entity;
 }
 
 INLINE void Transform::scale(const Vector3f& scaler)
@@ -201,9 +182,29 @@ INLINE Vector3f Transform::get_forward(TransformSpace space) const
     return Vector3f {0.f, 0.f, 1.f} * get_rotation(space);
 }
 
+INLINE Vector3f Transform::get_back(TransformSpace space) const
+{
+    return Vector3f {0.f, 0.f, -1.f} * get_rotation(space);
+}
+
 INLINE Vector3f Transform::get_up(TransformSpace space) const
 {
     return Vector3f {0.f, 1.f, 0.f} * get_rotation(space);
+}
+
+INLINE Vector3f Transform::get_down(TransformSpace space) const
+{
+    return Vector3f {0.f, -1.f, 0.f} * get_rotation(space);
+}
+
+INLINE Vector3f Transform::get_right(TransformSpace space) const
+{
+    return Vector3f {1.f, 0.f, 0.f} * get_rotation(space);
+}
+
+INLINE Vector3f Transform::get_left(TransformSpace space) const
+{
+    return Vector3f {-1.f, 0.f, 0.f} * get_rotation(space);
 }
 
 INLINE bool Transform::is_root() const
@@ -227,10 +228,21 @@ INLINE const Transform* Transform::get_parent() const
 }
 
 template<typename ... T>
-INLINE Transform::view<T...> Transform::get_children_with(bool recursive)
+INLINE Transform::view<T...> Transform::find_children_with(bool recursive)
 {
-    return view<T...>(this,
-        recursive ? iterate_mode::CHILDREN_RECURSIVE : iterate_mode::CHILDREN );
+   return view<T...>(this, std::bind(recursive ?
+        &Transform::find_next_children_recursive<Transform> : &Transform::find_next_children<Transform>,
+        this,
+        std::placeholders::_1));
+}
+
+template<typename ... T>
+INLINE Transform::const_view<T...> Transform::find_children_with(bool recursive) const
+{
+   return const_view<T...>(this, std::bind( recursive ?
+        &Transform::find_next_children_recursive<const Transform> : &Transform::find_next_children<const Transform>,
+        this,
+        std::placeholders::_1));
 }
 
 INLINE Matrix4f Transform::to_matrix(TransformSpace space) const

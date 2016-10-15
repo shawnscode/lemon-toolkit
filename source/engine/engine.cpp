@@ -7,9 +7,10 @@
 #include <graphics/renderer.hpp>
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
-#include <core/message.hpp>
+#include <core/event.hpp>
+#include <core/ecs.hpp>
+#include <core/task.hpp>
 
-#include <thread>
 #include <SDL2/SDL.h>
 
 NS_LEMON_BEGIN
@@ -23,7 +24,10 @@ bool Engine::initialize()
         return false;
     }
 
-    auto device = core::add_subsystem<graphics::WindowDevice>();
+    core::add_subsystem<core::EventSystem>();
+    core::add_subsystem<core::EntityComponentSystem>();
+    core::add_subsystem<core::JobSystem>();
+    core::add_subsystem<graphics::WindowDevice>();
     core::add_subsystem<graphics::Renderer>();
     core::add_subsystem<res::ArchiveCollection>();
     core::add_subsystem<res::ResourceCache>();
@@ -35,6 +39,7 @@ bool Engine::initialize()
     _running = true;
     _launch_timepoint = clock::now();
 
+    auto device = core::get_subsystem<graphics::WindowDevice>();
     if( !device->open(512, 512, 1, graphics::WindowOption::RESIZABLE) )
         return false;
 
@@ -115,20 +120,22 @@ void Engine::run_one_frame()
 
 void Engine::update(duration dt)
 {
-    core::emit<EvtUpdate>(dt);
-    core::emit<EvtPostUpdate>(dt);
-    core::emit<EvtRenderUpdate>(dt);
-    core::emit<EvtPostRenderUpdate>(dt);
+    auto event = core::get_subsystem<core::EventSystem>();
+    event->emit<EvtUpdate>(dt);
+    event->emit<EvtPostUpdate>(dt);
+    event->emit<EvtRenderUpdate>(dt);
+    event->emit<EvtPostRenderUpdate>(dt);
 }
 
 void Engine::render()
 {
     auto renderer = core::get_subsystem<graphics::Renderer>();
+    auto event = core::get_subsystem<core::EventSystem>();
 
     if( !renderer->begin_frame() )
         return;
 
-    core::emit<EvtRender>();
+    event->emit<EvtRender>();
     renderer->end_frame();
 }
 

@@ -42,67 +42,57 @@ TransformPose& operator /= (TransformPose&, const TransformPose&);
 struct Transform : public core::Component
 {
 protected:
-    enum class iterate_mode : uint8_t
+    template<typename T> using it_function = std::function<T*(T*)>;
+    template<typename T> struct iterator_traits : public std::iterator<std::forward_iterator_tag, T*>
     {
-        ANCESTORS,
-        CHILDREN,
-        CHILDREN_RECURSIVE
-    };
+        iterator_traits(T*, const it_function<T>&, core::Component::Mask);
 
-    template<typename T> struct iterator_t : public std::iterator<std::forward_iterator_tag, T>
-    {
-        iterator_t(T*, iterate_mode, core::ComponentMask);
-
-        iterator_t& operator ++ ();
-        iterator_t  operator ++ (int);
-        bool        operator == (const iterator_t&) const;
-        bool        operator != (const iterator_t&) const;
-        T&          operator * ();
+        iterator_traits& operator ++ ();
+        iterator_traits operator ++ (int);
+        bool operator == (const iterator_traits&) const;
+        bool operator != (const iterator_traits&) const;
+        T* operator * ();
 
     protected:
-        void find_next_available();
-
-        T*                  _cursor = nullptr;
-        T*                  _start = nullptr;
-        iterate_mode        _mode;
-        core::ComponentMask _mask;
+        T* _current = nullptr;
+        it_function<T> _iterator;
+        core::Component::Mask _mask;
     };
 
-    using iterator = iterator_t<Transform>;
-    using const_iterator = iterator_t<const Transform>;
+    using iterator = iterator_traits<Transform>;
+    using const_iterator = iterator_traits<const Transform>;
 
-    template<typename T, typename ... Args> struct view_t
+    template<typename T, typename ... Args> struct view_traits
     {
-        view_t(T*, iterate_mode);
+        view_traits(T*, const it_function<T>&);
 
-        iterator_t<T> begin() const;
-        iterator_t<T> end() const;
+        iterator_traits<T> begin() const;
+        iterator_traits<T> end() const;
+
+        // visit the *iterator in sequences
+        void visit(const std::function<void(Transform&, Args&...)>&);
         // returns the number of children in this hierachy
         unsigned count() const;
 
-        // visit the *iterator in sequences
-        using visitor = std::function<void(T&, Args&...)>;
-        void visit(const visitor&);
-
     protected:
-        T*                  _transform = nullptr;
-        iterate_mode        _mode;
-        core::ComponentMask _mask;
+        T* _transform = nullptr;
+        it_function<T> _iterator;
+        core::Component::Mask _mask;
     };
 
-    template<typename ... Args> using view = view_t<Transform, Args...>;
-    template<typename ... Args> using const_view = view_t<const Transform, Args...>;
+    template<typename ... Args> using view = view_traits<Transform, Args...>;
+    template<typename ... Args> using const_view = view_traits<const Transform, Args...>;
 
 public:
     Transform() = default;
     Transform(const Transform&) = delete;
     Transform& operator = (const Transform&) = delete;
 
-    Transform(
-        const Vector3f& position,
+    Transform(core::Entity& entity,
+        const Vector3f& position = {0.f, 0.f, 0.f},
         const Vector3f& scale = {1.f, 1.f, 1.f},
         const Quaternion& rotation = Quaternion(1.f, 0.f, 0.f, 0.f))
-    : _pose(position, scale, rotation), _world_pose(position, scale, rotation)
+    : entity(entity), _pose(position, scale, rotation), _world_pose(position, scale, rotation)
     {}
 
     void dispose() { remove_from_parent(); }
@@ -124,10 +114,13 @@ public:
     Vector3f get_position(TransformSpace space = TransformSpace::LOCAL) const;
     Quaternion get_rotation(TransformSpace space = TransformSpace::LOCAL) const;
 
-    // returns forward direction
+    // returns direction
     Vector3f get_forward(TransformSpace space = TransformSpace::LOCAL) const;
-    // returns up direction
+    Vector3f get_back(TransformSpace space = TransformSpace::LOCAL) const;
     Vector3f get_up(TransformSpace space = TransformSpace::LOCAL) const;
+    Vector3f get_down(TransformSpace space = TransformSpace::LOCAL) const;
+    Vector3f get_right(TransformSpace space = TransformSpace::LOCAL) const;
+    Vector3f get_left(TransformSpace space = TransformSpace::LOCAL) const;
 
     // transforms the position from local space to world space
     Vector3f transform_point(const Vector3f&) const;
@@ -146,12 +139,13 @@ public:
 
     // visit all of this object's ancestors/decenster,
     // in depth-first order if works with recursive mode.
-    view<> get_ancestors();
-    const_view<> get_ancestors() const;
-    view<> get_children(bool recursive = false);
-    const_view<> get_children(bool recursive = false) const;
-    // find children that have all of the specified components
-    template<typename ... T> view<T...> get_children_with(bool recursive = false);
+    view<> find_ancestors();
+    const_view<> find_ancestors() const;
+    view<> find_children(bool recursive = false);
+    const_view<> find_children(bool recursive = false) const;
+    // find children that have all of the specified components with deepth first search
+    template<typename ... T> view<T...> find_children_with(bool recursive = false);
+    template<typename ... T> const_view<T...> find_children_with(bool recursive = false) const;
 
     // appends an entity to this hierarchy
     void append_child(Transform&, bool keep_world_pose = false);
@@ -174,16 +168,25 @@ public:
     Matrix4f to_matrix(TransformSpace space = TransformSpace::LOCAL) const;
 
 protected:
+    template<typename T> static T* find_parent(T* current);
+    template<typename T> static T* find_next_children(T* start, T* current);
+    template<typename T> static T* find_next_children_recursive(T* start, T* current);
+    template<typename T> static T* find_with_mask(const it_function<T>&, T*, core::Component::Mask);
+
+public:
+    core::Entity& entity;
+
+protected:
     // update the world pose of children
     void update_children();
 
     TransformPose _pose;
     TransformPose _world_pose;
 
-    Transform*  _parent         = nullptr;
-    Transform*  _first_child    = nullptr;
-    Transform*  _next_sibling   = nullptr;
-    Transform*  _prev_sibling   = nullptr;
+    Transform* _parent = nullptr;
+    Transform* _first_child = nullptr;
+    Transform* _next_sibling = nullptr;
+    Transform* _prev_sibling = nullptr;
 };
 
 #include <scene/transform.inl>

@@ -3,60 +3,128 @@
 
 #pragma once
 
-#include <forwards.hpp>
-#include <functional>
-#include <codebase/handle.hpp>
+#include <core/core.hpp>
+#include <codebase/memory/indexed_pool.hpp>
+
+#include <vector>
+#include <queue>
+#include <unordered_map>
+#include <mutex>
+#include <thread>
+#include <condition_variable>
 
 NS_LEMON_CORE_BEGIN
 
-// Task handle index
-using TaskHandle = Handle;
-
-// create_task
-TaskHandle create_task(const char*);
-template<typename F, typename ... Args> TaskHandle create_task(const char*, F&&, Args&& ...);
-
-// create_task_as_child comes with parent-child relationships:
-// 1. a task should be able to have N child tasks;
-// 2. waiting for a task to be completed must properly synchronize across its children
-// as well
-template<typename F, typename ... Args> TaskHandle create_task_as_child(TaskHandle, const char*, F&&, Args&&...);
-
-// run_task insert a task into a queue instead of executing it immediately
-void run_task(TaskHandle);
-
-// wait_task
-void wait_task(TaskHandle);
-
-// returns true if task completed
-bool is_completed(TaskHandle);
-
-// returns true if we are under the thread execute task::initialize()
-bool is_main_thread();
-
-// returns the number of cpu core, it could be used as hint to initialize task scheduler
-uint32_t get_cpu_count();
-
-//
-// implementation of templates
-namespace internal
+struct Task
 {
-    TaskHandle create_task(const char*, std::function<void()>);
-    TaskHandle create_task_as_child(TaskHandle, const char*, std::function<void()>);
+    Task() {}
+    Task(Task&& rhs) : jobs(rhs.jobs.load())
+    {
+        closure = std::move(rhs.closure);
+        parent = rhs.parent;
+        strncpy(name, rhs.name, strlen(rhs.name));
+    }
+
+    std::function<void()> closure = nullptr;
+    std::atomic<uint32_t> jobs;
+    Handle parent;
+    char name[64] = {0};
+};
+
+// a light-weight task scheduler with automatic load balancing,
+// the dependencies between tasks are addressed as parent-child relationships.
+struct JobSystem : public Subsystem
+{
+    JobSystem(unsigned worker = 0) : _core(worker) {}
+
+    // initialize task scheduler with specified worker count
+    bool initialize() override;
+    // shutdown task scheduler, this would block main thread until all the tasks finished
+    void dispose() override;
+
+    // create_task
+    Handle create(const char* name);
+
+    template<typename F, typename ... Args>
+    Handle create(const char* name, F&& functor, Args&& ... args);
+
+    template<typename F, typename ... Args>
+    Handle create_as_child(Handle parent, const char* name, F&& functor, Args&&... args);
+
+    // run_task insert a task into a queue instead of executing it immediately
+    void run(Handle);
+
+    // wait_task
+    void wait(Handle);
+
+    // returns true if task completed
+    bool is_completed(Handle);
+
+    // returns main thread id
+    std::thread::id get_main_thread() const { return _thread_main; }
+
+protected:
+    // create a task
+    Handle create_internal(const char*, std::function<void()>);
+
+    // create_task_as_child comes with parent-child relationships:
+    // 1. a task should be able to have N child tasks;
+    // 2. waiting for a task to be completed must properly synchronize across its children
+    // as well
+    Handle create_as_child_internal(Handle, const char*, std::function<void()>);
+
+public:
+    // several callbacks instended for thread initialization and profilers
+    using thread_callback = std::function<void(unsigned)>;
+    thread_callback on_thread_start;
+    thread_callback on_thread_stop;
+    // several callbacks instended for task based profiling
+    using task_callback = std::function<void(unsigned, const char*)>;
+    task_callback on_task_start;
+    task_callback on_task_stop;
+
+protected:
+    static void thread_run(JobSystem&, unsigned index);
+
+    Handle create_task_chunk();
+    void finish(Handle);
+    bool execute_one(unsigned, bool);
+    unsigned get_thread_index() const;
+
+protected:
+    unsigned _core;
+
+    std::mutex _allocator_mutex;
+    IndexedMemoryPoolT<Task, 32> _tasks;
+
+    std::mutex _mutex;
+    std::queue<Handle> _alive_tasks;
+
+    std::vector<std::thread> _workers;
+    std::thread::id _thread_main;
+    std::condition_variable _condition;
+    bool _stop;
+
+    std::unordered_map<std::thread::id, unsigned> _thread_indices;
+};
+
+INLINE Handle JobSystem::create(const char* name)
+{
+    return create_internal(name, nullptr);
 }
 
 template<typename F, typename ... Args>
-TaskHandle create_task(const char* name, F&& functor, Args&& ... args)
+Handle JobSystem::create(const char* name, F&& functor, Args&& ... args)
 {
     auto functor_with_env = std::bind(std::forward<F>(functor), std::forward<Args>(args)...);
-    return internal::create_task(name, functor_with_env);
+    return create_internal(name, functor_with_env);
 }
 
 template<typename F, typename ... Args>
-TaskHandle create_task_as_child(TaskHandle parent, const char* name, F&& functor, Args&&... args)
+Handle JobSystem::create_as_child(Handle parent, const char* name, F&& functor, Args&&... args)
 {
     auto functor_with_env = std::bind(std::forward<F>(functor), std::forward<Args>(args)...);
-    return internal::create_task_as_child(parent, name, functor_with_env);
+    return create_as_child_internal(parent, name, functor_with_env);
 }
 
 NS_LEMON_CORE_END

@@ -138,7 +138,7 @@ struct ArchiveFixture
 {
     ArchiveFixture()
     {
-        initialize(0);
+        details::initialize();
 
         set_output_stream(LogLevel::ERROR, &std::cout);
         pwd = get_current_directory();
@@ -149,7 +149,7 @@ struct ArchiveFixture
     ~ArchiveFixture()
     {
         set_current_directory(pwd);
-        dispose();
+        details::dispose();
     }
 
     Path pwd;
@@ -205,7 +205,7 @@ struct ResourceCacheFixture
 {
     ResourceCacheFixture()
     {
-        initialize(0);
+        details::initialize();
 
         set_output_stream(LogLevel::ERROR, &std::cout);
         pwd = get_current_directory();
@@ -232,7 +232,7 @@ struct ResourceCacheFixture
         remove("tmp", true);
         set_current_directory(pwd);
 
-        dispose();
+        details::dispose();
     }
 
     Path pwd;

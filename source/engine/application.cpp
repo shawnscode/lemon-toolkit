@@ -3,7 +3,7 @@
 
 #include <engine/application.hpp>
 #include <engine/engine.hpp>
-#include <core/instance.hpp>
+#include <core/core.hpp>
 
 NS_LEMON_BEGIN
 
@@ -16,7 +16,7 @@ int Application::run()
     if( _exitcode != 0 )
         return _exitcode;
 
-    core::initialize(0);
+    core::details::initialize();
     auto engine = core::add_subsystem<Engine>();
 
     start();
@@ -28,13 +28,13 @@ int Application::run()
 
     stop();
 
-    core::dispose();
+    core::details::dispose();
     return _exitcode;
 }
 
 void Application::terminate_with_error(const std::string& message)
 {
-    LOGE(message.c_str());
+//    LOGE(message.c_str());
     _exitcode = -1;
 }
 

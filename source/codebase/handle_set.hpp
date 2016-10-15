@@ -10,6 +10,8 @@
 
 NS_LEMON_BEGIN
 
+// An handle contains an index and a version. when an handle is detroyed, the
+// version associated with the index is incremented.
 struct ReuseableHandleSet
 {
     using index_t = Handle::index_t;

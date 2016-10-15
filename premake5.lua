@@ -36,7 +36,7 @@ workspace("chore")
     defines({ "DEBUG" })
     flags({ "Symbols" })
     kind( "ConsoleApp" )
-    libdirs({ "/usr/local/lib/" })
+    libdirs({ "/usr/local/lib/", "build/libs" })
     sysincludedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/stb", "3rd/hayai/src" })
     includedirs({ "source", "3rd/catch/include", "/usr/local/include", "3rd/stb", "3rd/hayai/src" })
 

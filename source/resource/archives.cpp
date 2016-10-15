@@ -64,7 +64,7 @@ std::fstream PackageArchive::open(const fs::Path&, fs::FileMode)
     return std::fstream();
 }
 
-ArchiveCollection::~ArchiveCollection()
+void ArchiveCollection::dispose()
 {
     for( auto archive : _archives )
         delete archive;

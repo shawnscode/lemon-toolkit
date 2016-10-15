@@ -1,10 +1,10 @@
-// @date 2016/09/01
+// @date 2016/09/29
 // @author Mao Jingkai(oammix@gmail.com)
 
 #pragma once
 
 #include <forwards.hpp>
-#include <codebase/type/type_traits.hpp>
+#include <core/subsystem.hpp>
 
 #include <vector>
 #include <functional>
@@ -13,11 +13,12 @@
 NS_LEMON_CORE_BEGIN
 
 struct Event {};
-
-struct Messenger
+struct EventSystem : public core::Subsystem
 {
-    bool initialize() { return true; }
-    void dispose() {}
+    template<typename E, typename R> void subscribe(R* receiver)
+    {
+        subscribe<E, R>(*receiver);
+    }
 
     template<typename E, typename R> void subscribe(R& receiver)
     {
@@ -32,6 +33,11 @@ struct Messenger
         }));
     }
 
+    template<typename E, typename R> void unsubscribe(R* receiver)
+    {
+        unsubscribe<E, R>(*receiver);
+    }
+
     template<typename E, typename R> void unsubscribe(R& receiver)
     {
         const auto index = TypeInfoGeneric::id<Event, E>();
@@ -44,8 +50,10 @@ struct Messenger
             _table[index].erase(found);
     }
 
-    template<typename E> void emit(const E& event)
+    template<typename E, typename ... Args> void emit(Args && ... args)
     {
+        E event(std::forward<Args>(args)...);
+
         auto index = TypeInfoGeneric::id<Event, E>();
         if( _table.size() <= index )
             return;

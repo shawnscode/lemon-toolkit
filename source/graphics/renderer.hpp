@@ -22,14 +22,6 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-enum class ClearOption : uint8_t
-{
-    NONE    = 0x0,
-    COLOR   = 0x1,
-    DEPTH   = 0x2,
-    STENCIL = 0x4
-};
-
 // Renderer provides sort-based draw call bucketing. this means that submission
 // order doesn't necessarily match the rendering order, but on the low-level
 // they will be sorted and ordered correctly.
@@ -37,9 +29,6 @@ struct RendererBackend;
 struct RenderStateCache;
 struct Renderer : public core::Subsystem
 {
-    Renderer();
-    virtual ~Renderer();
-
     bool initialize() override;
     void dispose() override;
 
@@ -79,8 +68,8 @@ protected:
     bool _frame_began;
     unsigned _frame_drawcall;
 
-    std::unique_ptr<RendererBackend> _backend;
-    std::unique_ptr<RenderStateCache> _statecache;
+    RendererBackend* _backend = nullptr;
+    RenderStateCache* _statecache = nullptr;
 
     std::vector<std::unique_ptr<std::mutex>> _object_mutexs;
     std::vector<resolver> _object_destructors;

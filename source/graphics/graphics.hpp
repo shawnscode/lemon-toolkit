@@ -43,6 +43,15 @@ enum class MemoryUsage : uint8_t
     DYNAMIC
 };
 
+// clear options
+enum class ClearOption : uint8_t
+{
+    NONE    = 0x0,
+    COLOR   = 0x1,
+    DEPTH   = 0x2,
+    STENCIL = 0x4
+};
+
 // vertex element format
 enum class VertexElementFormat : uint8_t
 {

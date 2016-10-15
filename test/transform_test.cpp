@@ -7,30 +7,39 @@ USING_NS_LEMON_MATH;
 
 struct TransformFixture
 {
-    TransformFixture()
+    template<typename ... Args> Transform* create_with(Args&& ... args)
     {
-        initialize(0);
+        auto handle = ecs.create();
+        auto object = ecs.get(handle);
+        return object->add_component<Transform>(*object, std::forward<Args>(args)...);
     }
 
-    ~TransformFixture()
-    {
-        dispose();
-    }
+    core::EntityComponentSystem ecs;
 };
+
+static void dump_heriachy(Transform* t, int index = 1, int level = 0)
+{
+    if( t->find_children().count() == 0 )
+        return;
+    
+    for( size_t i = 0; i < level; i++ )
+        printf("\t");
+    printf("[%d]", index);
+    for( auto transform : t->find_children() )
+        printf("%d ", transform->entity.handle.get_index() );
+    printf("\n");
+    
+    size_t count = 0;
+    for( auto transform : t->find_children() )
+        dump_heriachy(transform, ++count, level+1);
+}
 
 TEST_CASE_METHOD(TransformFixture, "TestConstructor")
 {
-    Handle e1 = create();
-    Transform* t1 = add_component<Transform>(e1, Vector3f{10.f, 10.f});
-
-    Handle e2 = create();
-    Transform* t2 = add_component<Transform>(e2, Vector3f{20.f, 20.f});
-
-    Handle e3 = create();
-    Transform* t3 = add_component<Transform>(e3, Vector3f{40.f, 40.f}, Vector3f{2.0f, 2.0f});
-
-    Handle e4 = create();
-    Transform* t4 = add_component<Transform>(e4, Vector3f{50.f, 50.f}, Vector3f{2.0f, 2.0f}, Quaternion());
+    auto t1 = create_with(Vector3f{10.f, 10.f});
+    auto t2 = create_with(Vector3f{20.f, 20.f});
+    auto t3 = create_with(Vector3f{40.f, 40.f}, Vector3f{2.0f, 2.0f});
+    auto t4 = create_with(Vector3f{50.f, 50.f}, Vector3f{2.0f, 2.0f}, Quaternion());
 
     REQUIRE( equals(t2->get_position(), {20.f, 20.f}) );
     REQUIRE( equals(t1->get_scale(), t2->get_scale()) );
@@ -38,8 +47,7 @@ TEST_CASE_METHOD(TransformFixture, "TestConstructor")
 
 TEST_CASE_METHOD(TransformFixture, "TestTransform")
 {
-    Handle e1 = create();
-    Transform* t1 = add_component<Transform>(e1, Vector3f{10.f, 10.f, 0.f});
+    auto t1 = create_with(Vector3f{10.f, 10.f, 0.f});
     REQUIRE( t1->transform_point({0.f, 5.f, 0.f}) == (Vector3f{10.f, 15.f, 0.f}) );
     REQUIRE( t1->inverse_transform_point({0.f, 5.f, 0.f}) == (Vector3f{-10.f, -5.f, 0.f}) );
     REQUIRE( t1->transform_vector({0.f, 5.f, 0.f}) == (Vector3f{0.f, 5.f, 0.f}) );
@@ -85,9 +93,7 @@ TEST_CASE_METHOD(TransformFixture, "TestTransform")
 
 TEST_CASE_METHOD(TransformFixture, "TestOpsWithoutHierachy")
 {
-    Handle e1 = create();
-    Transform* t1 = add_component<Transform>(e1, Vector3f{10.f, 10.f});
-
+    auto t1 = create_with(Vector3f{10.f, 10.f});
     t1->set_position({20.f, 20.f});
     REQUIRE( t1->get_position() == Vector3f({20.f, 20.f}) );
     REQUIRE( t1->get_position() == t1->get_position(TransformSpace::WORLD) );
@@ -113,21 +119,17 @@ TEST_CASE_METHOD(TransformFixture, "TestOpsWithoutHierachy")
 
 TEST_CASE_METHOD(TransformFixture, "TestHierachy")
 {
-    Handle e1 = create();
-    Transform* t1 = add_component<Transform>(e1, Vector3f{10.f, 10.f});
-
-    Handle e2 = create();
-    Transform* t2 = add_component<Transform>(e2, Vector3f{20.f, 20.f});
-
-    Handle e3 = create();
-    Transform* t3 = add_component<Transform>(e3, Vector3f{40.f, 40.f}, Vector3f{2.0f, 2.0f});
-
-    Handle e4 = create();
-    Transform* t4 = add_component<Transform>(e4, Vector3f{-50.f, -10.f}, Vector3f{3.0f, 3.0f});
+    auto t1 = create_with(Vector3f{10.f, 10.f});
+    auto t2 = create_with(Vector3f{20.f, 20.f});
+    auto t3 = create_with(Vector3f{40.f, 40.f}, Vector3f{2.0f, 2.0f});
+    auto t4 = create_with(Vector3f{-50.f, -10.f}, Vector3f{3.0f, 3.0f});
 
     t1->append_child(*t2);
-    REQUIRE( t1->get_children().count() == 1 );
-    REQUIRE( t2->get_children().count() == 0 );
+    auto iter = t1->find_children();
+    auto begin = iter.begin();
+
+    REQUIRE( t1->find_children().count() == 1 );
+    REQUIRE( t2->find_children().count() == 0 );
     REQUIRE( t2->get_parent() == t1 );
     REQUIRE( equals(t1->get_position(), {10.f, 10.f}) );
     REQUIRE( equals(t2->get_position(), {20.f, 20.f}) );
@@ -135,7 +137,7 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachy")
 
     // keep world pose of t3
     t1->append_child(*t3, true);
-    REQUIRE( t1->get_children().count() == 2 );
+    REQUIRE( t1->find_children().count() == 2 );
     REQUIRE( equals(t1->get_position(), {10.f, 10.f}) );
     REQUIRE( equals(t3->get_position(), {30.f, 30.f}) );
     REQUIRE( t3->get_parent() == t1 );
@@ -143,9 +145,9 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachy")
 
     // nested hierachies
     t3->append_child(*t4);
-    REQUIRE( t1->get_children().count() == 2 );
-    REQUIRE( t1->get_children(true).count() == 3 );
-    REQUIRE( t3->get_children(true).count() == 1 );
+    REQUIRE( t1->find_children().count() == 2 );
+    REQUIRE( t1->find_children(true).count() == 3 );
+    REQUIRE( t3->find_children(true).count() == 1 );
     REQUIRE( t4->get_parent() == t3 );
     REQUIRE( equals(t4->get_position(TransformSpace::WORLD), {-10.f, 30.f}) );
     REQUIRE( equals(t4->get_scale(TransformSpace::WORLD), {6.f, 6.f}) );
@@ -153,17 +155,10 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachy")
 
 TEST_CASE_METHOD(TransformFixture, "TestHierachyReconstructWhenDispose")
 {
-    Handle e1 = create_with<Transform>(Vector3f{10.f, 10.f});
-    Transform* t1 = get_component<Transform>(e1);
-
-    Handle e2 = create_with<Transform>(Vector3f{10.f, 10.f});
-    Transform* t2 = get_component<Transform>(e2);
-
-    Handle e3 = create_with<Transform>(Vector3f{10.f, 10.f});
-    Transform* t3 = get_component<Transform>(e3);
-
-    Handle e4 = create_with<Transform>(Vector3f{10.f, 10.f});
-    Transform* t4 = get_component<Transform>(e4);
+    auto t1 = create_with(Vector3f{10.f, 10.f});
+    auto t2 = create_with(Vector3f{10.f, 10.f});
+    auto t3 = create_with(Vector3f{10.f, 10.f});
+    auto t4 = create_with(Vector3f{10.f, 10.f});
 
     t1->append_child(*t2);
     t1->append_child(*t3);
@@ -179,8 +174,8 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachyReconstructWhenDispose")
     REQUIRE( !t3->is_leaf() );
     REQUIRE( t4->is_leaf() );
 
-    REQUIRE( t1->get_children().count() == 2 );
-    REQUIRE( t1->get_children(true).count() == 3 );
+    REQUIRE( t1->find_children().count() == 2 );
+    REQUIRE( t1->find_children(true).count() == 3 );
 
     t3->remove_from_parent();
 
@@ -189,35 +184,15 @@ TEST_CASE_METHOD(TransformFixture, "TestHierachyReconstructWhenDispose")
     REQUIRE( t3->is_root() );
     REQUIRE( !t4->is_root() );
 
-    REQUIRE( t1->get_children().count() == 1 );
-    REQUIRE( t1->get_children(true).count() == 1 );
-}
-
-static void dump_heriachy(Transform* t, int index = 1, int level = 0)
-{
-    if( t->get_children().count() == 0 )
-        return;
-
-    for( size_t i = 0; i < level; i++ )
-        printf("\t");
-    printf("[%d]", index);
-    for( auto& transform : t->get_children() )
-        printf("%d ", transform.handle.get_index() );
-    printf("\n");
-
-    size_t count = 0;
-    for( auto& transform : t->get_children() )
-        dump_heriachy(&transform, ++count, level+1);
+    REQUIRE( t1->find_children().count() == 1 );
+    REQUIRE( t1->find_children(true).count() == 1 );
 }
 
 TEST_CASE_METHOD(TransformFixture, "TestIteration")
 {
     std::vector<Transform*> transforms;
     for( size_t i = 0; i < 255; i++ )
-    {
-        auto e = create_with<Transform>();
-        transforms.push_back(get_component<Transform>(e));
-    }
+        transforms.push_back(create_with());
 
     std::srand(std::time(0));
     std::vector<Transform*> constructed;
@@ -233,16 +208,17 @@ TEST_CASE_METHOD(TransformFixture, "TestIteration")
         if( pindex == 0 ) count ++;
         constructed[pindex]->append_child(*transforms[index]);
 
-        // if( constructed[0]->get_children(true).count() != i+ 1)
-        //     dump_heriachy(constructed[0]);
-        REQUIRE( constructed[0]->get_children(true).count() == i+1 );
+        if( (constructed[0]->find_children(true).count() != i+ 1) || (constructed[0]->find_children().count() != count) )
+            dump_heriachy(constructed[0]);
+
+        REQUIRE( constructed[0]->find_children(true).count() == i+1 );
 
         constructed.push_back(transforms[index]);
         transforms.erase(transforms.begin()+index);
     }
 
     size_t direct = 0;
-    constructed[0]->get_children().visit([&](Transform& t)
+    constructed[0]->find_children().visit([&](Transform& t)
     {
         direct ++;
     });
@@ -250,13 +226,13 @@ TEST_CASE_METHOD(TransformFixture, "TestIteration")
     REQUIRE( direct == count );
 
     direct = 0;
-    for( auto& transform : constructed[0]->get_children() )
+    for( auto transform : constructed[0]->find_children() )
         direct ++;
 
     REQUIRE( direct == count );
 
     size_t total = 0;
-    for( auto& transform : constructed[0]->get_children(true) )
+    for( auto transform : constructed[0]->find_children(true) )
         total ++;
 
     REQUIRE( total == 254 );
@@ -270,19 +246,18 @@ TEST_CASE_METHOD(TransformFixture, "TestGenericIteration")
     std::vector<Transform*> transforms;
     std::vector<Widget*> widgets;
 
-    auto r = create();
-    auto root = add_component<Transform>(r);
+    auto root = create_with();
 
-    for( size_t i = 0; i < 255; i++ )
+    for( size_t i = 0; i < 3; i++ )
     {
-        auto e = create_with<Transform>();
-        transforms.push_back(get_component<Transform>(e));
+        auto t = create_with();
+        transforms.push_back(t);
         root->append_child(*transforms.back());
 
         if( (i % 2) == 1 )
-            widgets.push_back( add_component<Widget>(e) );
+            widgets.push_back( t->entity.add_component<Widget>() );
     }
 
-    REQUIRE( transforms.size() == root->get_children_with<Transform>(true).count() );
-    REQUIRE( widgets.size() == root->get_children_with<Widget>(true).count() );
+    REQUIRE( transforms.size() == root->find_children_with<Transform>(true).count() );
+    REQUIRE( widgets.size() == root->find_children_with<Widget>(true).count() );
 }

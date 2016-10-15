@@ -1,20 +1,20 @@
 // @date 2016/08/26
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <core/private/task.hpp>
+#include <core/task.hpp>
 
 #include <SDL2/SDL.h>
 
 NS_LEMON_CORE_BEGIN
 
-bool Scheduler::initialize(unsigned nworker)
+bool JobSystem::initialize()
 {
-    if( nworker == 0 )
-        nworker = SDL_GetCPUCount() - 1;
+    if( _core == 0 )
+        _core = SDL_GetCPUCount() - 1;
 
-    nworker = std::max(nworker, (uint32_t)1);
+    _core = std::max(_core, (uint32_t)1);
     _stop = false;
-    for( uint32_t i = 0; i < nworker; i++ )
+    for( uint32_t i = 0; i < _core; i++ )
     {
         _workers.emplace_back(thread_run, std::ref(*this), i+1);
         _thread_indices.insert(std::make_pair(_workers.back().get_id(), i+1));
@@ -25,7 +25,7 @@ bool Scheduler::initialize(unsigned nworker)
     return true;
 }
 
-void Scheduler::dispose()
+void JobSystem::dispose()
 {
     {
         std::unique_lock<std::mutex> lock(_mutex);
@@ -37,9 +37,9 @@ void Scheduler::dispose()
         thread.join();
 }
 
-TaskHandle Scheduler::create_task(const char* name, std::function<void()> closure)
+Handle JobSystem::create_internal(const char* name, std::function<void()> closure)
 {
-    TaskHandle handle = create_task_chunk();
+    Handle handle = create_task_chunk();
     Task* task = _tasks.get_t(handle);
 
     task->closure = closure;
@@ -48,9 +48,9 @@ TaskHandle Scheduler::create_task(const char* name, std::function<void()> closur
     return handle;
 }
 
-TaskHandle Scheduler::create_task_as_child(TaskHandle parent, const char* name, std::function<void()> closure)
+Handle JobSystem::create_as_child_internal(Handle parent, const char* name, std::function<void()> closure)
 {
-    TaskHandle handle = create_task_chunk();
+    Handle handle = create_task_chunk();
     Task* task = _tasks.get_t(handle);
 
     task->closure = closure;
@@ -67,7 +67,7 @@ TaskHandle Scheduler::create_task_as_child(TaskHandle parent, const char* name, 
     return handle;
 }
 
-TaskHandle Scheduler::create_task_chunk()
+Handle JobSystem::create_task_chunk()
 {
     Handle handle;
     {
@@ -82,7 +82,7 @@ TaskHandle Scheduler::create_task_chunk()
     return handle;
 }
 
-void Scheduler::run_task(TaskHandle handle)
+void JobSystem::run(Handle handle)
 {
     Task* task = _tasks.get_t(handle);
     ASSERT( task != nullptr && task->jobs.load() > 0, "invalid task handle to run." );
@@ -95,7 +95,7 @@ void Scheduler::run_task(TaskHandle handle)
     _condition.notify_one();
 }
 
-bool Scheduler::is_task_completed(TaskHandle handle)
+bool JobSystem::is_completed(Handle handle)
 {
     Task* task = _tasks.get_t(handle);
     if( task == nullptr )
@@ -103,22 +103,22 @@ bool Scheduler::is_task_completed(TaskHandle handle)
     return task->jobs.load() == 0;
 }
 
-void Scheduler::wait_task(TaskHandle handle)
+void JobSystem::wait(Handle handle)
 {
     Task* task = _tasks.get_t(handle);
     if( task == nullptr )
         return;
 
     unsigned index = get_thread_index();
-    while( !is_task_completed(handle) )
+    while( !is_completed(handle) )
     {
         std::this_thread::yield();
-        if( !execute_one_task(index, false) )
+        if( !execute_one(index, false) )
             break;
     }
 }
 
-void Scheduler::finish_task(TaskHandle handle)
+void JobSystem::finish(Handle handle)
 {
     Task* task = _tasks.get_t(handle);
     if( task == nullptr )
@@ -128,7 +128,7 @@ void Scheduler::finish_task(TaskHandle handle)
     const uint32_t jobs = -- task->jobs;
     if( jobs == 0 )
     {
-        finish_task(task->parent);
+        finish(task->parent);
 
         // free captured reference and recycle task
         task->closure = nullptr;
@@ -141,9 +141,9 @@ void Scheduler::finish_task(TaskHandle handle)
     }
 }
 
-bool Scheduler::execute_one_task(unsigned index, bool wait)
+bool JobSystem::execute_one(unsigned index, bool wait)
 {
-    TaskHandle handle;
+    Handle handle;
     {
         std::unique_lock<std::mutex> L(_mutex);
 
@@ -176,7 +176,7 @@ bool Scheduler::execute_one_task(unsigned index, bool wait)
     if( task->closure != nullptr )
         task->closure();
 
-    finish_task(handle);
+    finish(handle);
 
     if( on_task_stop )
         on_task_stop(index, task->name);
@@ -184,21 +184,21 @@ bool Scheduler::execute_one_task(unsigned index, bool wait)
     return true;
 }
 
-unsigned Scheduler::get_thread_index() const
+unsigned JobSystem::get_thread_index() const
 {
     auto found = _thread_indices.find(std::this_thread::get_id());
     if( found != _thread_indices.end() ) return found->second;
     return 0xFFFFFFFF;
 }
 
-void Scheduler::thread_run(Scheduler& scheduler, unsigned index)
+void JobSystem::thread_run(JobSystem& scheduler, unsigned index)
 {
     if( scheduler.on_thread_start )
         scheduler.on_thread_start(index);
 
     for( ;; )
     {
-        if( !scheduler.execute_one_task(index, true) )
+        if( !scheduler.execute_one(index, true) )
             break;
     }
 

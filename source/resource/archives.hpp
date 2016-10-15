@@ -51,14 +51,17 @@ protected:
 //subsystem for file and archive operations and access control
 struct ArchiveCollection : core::Subsystem
 {
-    ArchiveCollection() {}
-    virtual ~ArchiveCollection();
-
     template<typename T> using boolean = typename std::enable_if<
         std::is_base_of<Archive, T>::value,
         bool>::type;
+
+    // dispose all archives
+    void dispose() override;
+    // add a archive to collection subsystem
     template<typename T, typename ... Args> boolean<T> add_archive(Args && ...);
+    // add a search path
     bool add_search_path(const fs::Path&);
+    // returns a opend fstream if we located file successful
     std::fstream open(const fs::Path&, fs::FileMode);
 
 protected:

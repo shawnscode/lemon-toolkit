@@ -148,9 +148,6 @@ enum class KeyboardQualifier
 // and internal events.
 struct Input : public core::Subsystem
 {
-    Input() {}
-    virtual ~Input() {}
-
     bool initialize() override;
     void dispose() override;
 

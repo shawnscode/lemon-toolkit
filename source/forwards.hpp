@@ -41,6 +41,8 @@ extern void ASSERT_MAIN_THREAD(const char* message);
 #define ENSURE(condition) ASSERT(condition, "")
 #define NOTUSED(v) for(;;) { (void)(1 ? (void)0 : ((void)v)); break; }
 
+static const unsigned kMaxRenderLayer = 32;
+
 NS_LEMON_END
 
 // MATH COLLECTIONS
@@ -54,7 +56,7 @@ NS_LEMON_END
 NS_LEMON_CORE_BEGIN
 
 static const unsigned kEntPoolChunkSize = 128;
-static const unsigned kEntMaxComponents = 128;
+static const unsigned kEntMaxComponents = 64;
 struct EntityComponentSystem;
 
 NS_LEMON_CORE_END
