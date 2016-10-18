@@ -3,14 +3,12 @@
 
 #include <core/task.hpp>
 
-#include <SDL2/SDL.h>
-
 NS_LEMON_CORE_BEGIN
 
 bool JobSystem::initialize()
 {
     if( _core == 0 )
-        _core = SDL_GetCPUCount() - 1;
+        _core = std::thread::hardware_concurrency() - 1;
 
     _core = std::max(_core, (uint32_t)1);
     _stop = false;

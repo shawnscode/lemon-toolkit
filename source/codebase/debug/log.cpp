@@ -1,7 +1,6 @@
 // @date 2016/06/07
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <core/core.hpp>
 #include <codebase/debug/log.hpp>
 #include <codebase/debug/stacktrace.hpp>
 #include <iostream>
@@ -90,12 +89,6 @@ void LOGE(const char* format, ...)
     va_start(args, format);
     s_log.write(LogLevel::ERROR, format, args);
     va_end(args);
-}
-
-void ASSERT_MAIN_THREAD(const char* message)
-{
-    if( !core::is_main_thread() )
-        LOGE("%s only run on the main thread.", message);
 }
 
 NS_LEMON_END

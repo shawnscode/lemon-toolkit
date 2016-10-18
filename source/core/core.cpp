@@ -2,7 +2,6 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <core/core.hpp>
-#include <SDL2/SDL.h>
 
 NS_LEMON_CORE_BEGIN
 
@@ -47,11 +46,6 @@ namespace details
 bool is_main_thread()
 {
     return false;
-}
-
-size_t get_cpu_count()
-{
-   return SDL_GetCPUCount();
 }
 
 NS_LEMON_CORE_END

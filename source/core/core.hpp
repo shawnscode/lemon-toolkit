@@ -23,9 +23,6 @@ template<typename ... Args> bool has_subsystems();
 //
 bool is_main_thread();
 
-//
-size_t get_cpu_count();
-
 namespace details
 {
     enum class Status : uint8_t

@@ -51,6 +51,10 @@ struct JobSystem : public Subsystem
     template<typename F, typename ... Args>
     Handle create_as_child(Handle parent, const char* name, F&& functor, Args&&... args);
 
+    // perform certain task for a fixed number of elements
+    template<typename F, typename IT>
+    Handle create_parallel_for(const char* name, F&& functor, IT begin, IT end, size_t step);
+
     // run_task insert a task into a queue instead of executing it immediately
     void run(Handle);
 
@@ -125,6 +129,15 @@ Handle JobSystem::create_as_child(Handle parent, const char* name, F&& functor, 
 {
     auto functor_with_env = std::bind(std::forward<F>(functor), std::forward<Args>(args)...);
     return create_as_child_internal(parent, name, functor_with_env);
+}
+
+template<typename F, typename IT>
+Handle JobSystem::create_parallel_for(const char* name, F&& functor, IT begin, IT end, size_t step)
+{
+    auto master = create_internal(name, nullptr);
+    for( auto it = begin; it < end; it += step )
+        run(create_as_child(master, name, std::bind(std::forward<F>(functor), it, it+step)));
+    return master;
 }
 
 NS_LEMON_CORE_END
