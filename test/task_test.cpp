@@ -91,7 +91,7 @@ static void works(size_t start, size_t end)
 
 static int idle = 100;
 
-BENCHMARK(TestTest, JobSystemParralleFor, 3, 1)
+BENCHMARK(TaskTest, JobSystemParralleFor, 3, 1)
 {
     JobSystemTestContext context;
     auto partition = idle/std::thread::hardware_concurrency();
@@ -100,7 +100,7 @@ BENCHMARK(TestTest, JobSystemParralleFor, 3, 1)
     context.task.wait(handle);
 }
 
-BENCHMARK(TestTest, JobSystemParralleForSequence, 3, 1)
+BENCHMARK(TaskTest, JobSystemParralleForSequence, 3, 1)
 {
     works(1, idle);
 }

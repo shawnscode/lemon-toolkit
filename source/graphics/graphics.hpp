@@ -63,6 +63,18 @@ enum class VertexElementFormat : uint8_t
     FLOAT
 };
 
+// specifies what kind of primitives to render.
+enum class PrimitiveType : uint8_t
+{
+    POINTS = 0,
+    LINES,
+    LINE_LOOP,
+    LINE_STRIP,
+    TRIANGLES,
+    TRIANGLE_STRIP,
+    TRIANGLE_FAN,
+};
+
 // VertexAttribute defines an generic vertex attribute data
 struct VertexAttribute
 {

@@ -410,11 +410,7 @@ details::ComponentResolverT<T>* EntityComponentSystem::resolve()
         _resolvers.resize(index+1);
 
     if( _resolvers[index] == nullptr )
-    {
         _resolvers[index] = new (std::nothrow) details::ComponentResolverT<T>();
-//        for( size_t i = 0; i < std::tuple_size<typename T::ancestors>::value; i++ )
-//            get_ancestor_resolver<std::tuple_element<i, T::ancestors>>().set(index);
-    }
 
     return static_cast<details::ComponentResolverT<T>*>(_resolvers[index]);
 }
