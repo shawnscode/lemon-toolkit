@@ -4,6 +4,7 @@
 #pragma once
 
 #include <core/core.hpp>
+#include <codebase/spin.hpp>
 #include <codebase/memory/indexed_pool.hpp>
 
 #include <vector>
@@ -101,7 +102,7 @@ protected:
     std::mutex _allocator_mutex;
     IndexedMemoryPoolT<Task, 32> _tasks;
 
-    std::mutex _mutex;
+    std::mutex _queue_mutex;
     std::queue<Handle> _alive_tasks;
 
     std::vector<std::thread> _workers;
@@ -112,6 +113,8 @@ protected:
     std::unordered_map<std::thread::id, unsigned> _thread_indices;
 };
 
+//
+// IMPLEMENTATIONS of JOBSYSTEM
 INLINE Handle JobSystem::create(const char* name)
 {
     return create_internal(name, nullptr);
@@ -136,7 +139,7 @@ Handle JobSystem::create_parallel_for(const char* name, F&& functor, IT begin, I
 {
     auto master = create_internal(name, nullptr);
     for( auto it = begin; it < end; it += step )
-        run(create_as_child(master, name, std::bind(std::forward<F>(functor), it, it+step)));
+        run(create_as_child_internal(master, name, std::bind(std::forward<F>(functor), it, it+step)));
     return master;
 }
 

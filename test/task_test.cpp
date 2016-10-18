@@ -85,12 +85,13 @@ BENCHMARK(TaskTest, JobSystemParallel, 3, 1)
 
 static void works(size_t start, size_t end)
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(end-start));
+    for( size_t i = 0; i < end-start; i++ )
+        fibonacci(25);
 }
 
 static int idle = 100;
 
-BENCHMARK(TestTest, JobSystemParralleForSequence, 3, 1)
+BENCHMARK(TestTest, JobSystemParralleFor, 3, 1)
 {
     JobSystemTestContext context;
     auto partition = idle/std::thread::hardware_concurrency();
@@ -99,7 +100,7 @@ BENCHMARK(TestTest, JobSystemParralleForSequence, 3, 1)
     context.task.wait(handle);
 }
 
-BENCHMARK(TestTest, JobSystemParralleFor, 3, 1)
+BENCHMARK(TestTest, JobSystemParralleForSequence, 3, 1)
 {
     works(1, idle);
 }

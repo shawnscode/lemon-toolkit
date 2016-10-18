@@ -26,7 +26,7 @@ bool JobSystem::initialize()
 void JobSystem::dispose()
 {
     {
-        std::unique_lock<std::mutex> lock(_mutex);
+        std::unique_lock<std::mutex> lock(_queue_mutex);
         _stop = true;
     }
 
@@ -86,7 +86,7 @@ void JobSystem::run(Handle handle)
     ASSERT( task != nullptr && task->jobs.load() > 0, "invalid task handle to run." );
 
     {
-        std::unique_lock<std::mutex> L(_mutex);
+        std::unique_lock<std::mutex> L(_queue_mutex);
         _alive_tasks.push(handle);
     }
 
@@ -142,16 +142,11 @@ void JobSystem::finish(Handle handle)
 bool JobSystem::execute_one(unsigned index, bool wait)
 {
     Handle handle;
-    {
-        std::unique_lock<std::mutex> L(_mutex);
 
+    {
+        std::unique_lock<std::mutex> L(_queue_mutex);
         if( wait )
-        {
-            _condition.wait(L, [=]
-            {
-                return _stop || !_alive_tasks.empty();
-            });
-        }
+            _condition.wait(L, [=] { return _stop || !_alive_tasks.empty(); });
 
         if( _stop && _alive_tasks.empty() )
             return false;
@@ -161,7 +156,6 @@ bool JobSystem::execute_one(unsigned index, bool wait)
 
         handle = _alive_tasks.front();
         _alive_tasks.pop();
-
     }
 
     Task* task = _tasks.get_t(handle);
