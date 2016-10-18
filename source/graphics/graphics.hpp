@@ -158,6 +158,8 @@ struct VertexBuffer : public GraphicsObject
 
     virtual bool update_data(const void*) = 0;
     virtual bool update_data(const void*, unsigned, unsigned, bool discard = false) = 0;
+
+    virtual unsigned get_size() const = 0;
 };
 
 // index element format
@@ -267,6 +269,8 @@ struct Program : public GraphicsObject
 
     // specified input identifier of vertex attribute
     virtual bool set_attribute_name(VertexAttribute::Enum, const char*) = 0;
+    // returns true if we have uniform associated with name in program
+    virtual bool has_uniform(const char*) const = 0;
 };
 
 // INCLUDED IMPLEMENTATIONS

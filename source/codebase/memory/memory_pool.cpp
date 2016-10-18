@@ -63,6 +63,8 @@ void MemoryPool::free(void* block)
         return;
     }
 
+    memset(block, 0xCC, _block_size);
+
     // recycle this memory block, add it to the first of free list
     *(size_t*)block = _first_free_block;
     _first_free_block = index;
@@ -83,6 +85,8 @@ void MemoryPool::free_all()
 size_t MemoryPool::grow()
 {
     auto chunk = static_cast<uint8_t*>(::malloc(_chunk_entries_size*_block_size));
+    memset(chunk, 0xCC, _chunk_entries_size*_block_size);
+
     if( chunk == nullptr )
         return invalid;
 

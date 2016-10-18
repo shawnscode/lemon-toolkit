@@ -276,6 +276,18 @@ Vector<N, T> min (const Vector<N, T>& v0, const Vector<N, T>& v1)
 }
 
 template<size_t N, typename T>
+T distance(const Vector<N, T>& lhs, const Vector<N, T>& rhs)
+{
+    return length(lhs - rhs);
+}
+
+template<size_t N, typename T>
+T distance_square(const Vector<N, T>& lhs, const Vector<N, T>& rhs)
+{
+    return length_square(lhs - rhs);
+}
+
+template<size_t N, typename T>
 T length (const Vector<N, T>& lhs)
 {
     return std::sqrt(dot(lhs, lhs));

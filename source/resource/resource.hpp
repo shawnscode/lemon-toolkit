@@ -24,6 +24,8 @@ struct Resource
     // return true if successful
     virtual bool read(std::istream&) = 0;
     virtual bool save(std::ostream&) = 0;
+    virtual bool initialize() { return true; }
+    virtual void dispose() {}
 
     void set_name(const char* str) { _name = str; }
     const std::string& get_name() const { return _name; }
@@ -34,11 +36,13 @@ protected:
     unsigned _memusage = 0;
 };
 
-struct ResourceResolver
+namespace details
 {
-    virtual ~ResourceResolver() {}
-    virtual Resource::ptr create() = 0;
-};
+    struct ResourceResolver
+    {
+        virtual Resource::ptr create() = 0;
+    };
+}
 
 // resource cache subsystems. loads resources on demand and cache them
 // for later access with a LRU strategy.
@@ -71,10 +75,10 @@ struct ResourceCache : public core::Subsystem
 protected:
     friend std::ostream& operator << (std::ostream&, const ResourceCache&);
 
-    template<typename T> ResourceResolver* get_resolver();
+    template<typename T> details::ResourceResolver* get_resolver();
 
     std::fstream get_file(const fs::Path&);
-    Resource::ptr get_internal(ResourceResolver*, const fs::Path&);
+    Resource::ptr get_internal(details::ResourceResolver*, const fs::Path&);
     void make_room(unsigned);
     void touch(math::StringHash);
 
@@ -84,31 +88,34 @@ protected:
     std::unordered_map<math::StringHash, std::string> _names;
     std::unordered_map<math::StringHash, Resource::ptr> _resources;
     std::list<std::pair<math::StringHash, Resource::ptr>> _lru;
-    std::vector<ResourceResolver*> _resolvers;
+    std::vector<details::ResourceResolver*> _resolvers;
 };
 
 std::ostream& operator << (std::ostream&, const ResourceCache&);
 
 /// IMPLEMENTATIONS
-template<typename T> struct ResourceResolverT : public ResourceResolver
+namespace details
 {
-    Resource::ptr create() override;
-};
+    template<typename T> struct ResourceResolverT : public ResourceResolver
+    {
+        Resource::ptr create() override;
+    };
 
-template<typename T> Resource::ptr ResourceResolverT<T>::create()
-{
-    return Resource::ptr(new (std::nothrow) T());
+    template<typename T> Resource::ptr ResourceResolverT<T>::create()
+    {
+        return Resource::ptr(new (std::nothrow) T());
+    }
 }
 
-template<typename T> ResourceResolver* ResourceCache::get_resolver()
+template<typename T> details::ResourceResolver* ResourceCache::get_resolver()
 {
     const auto index = TypeInfo::id<Resource, T>();
     if( _resolvers.size() <= index )
         _resolvers.resize(index+1, nullptr);
-
+    
     if( _resolvers[index] == nullptr )
-        _resolvers[index] = new (std::nothrow) ResourceResolverT<T>();
-
+        _resolvers[index] = new (std::nothrow) details::ResourceResolverT<T>();
+    
     return _resolvers[index];
 }
 

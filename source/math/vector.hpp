@@ -118,6 +118,12 @@ template<size_t N, typename T>
 Vector<N, T> min(const Vector<N, T>&, const Vector<N, T>&);
 
 template<size_t N, typename T>
+T distance(const Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
+T distance_square(const Vector<N, T>&, const Vector<N, T>&);
+
+template<size_t N, typename T>
 T length (const Vector<N, T>&);
 
 template<size_t N, typename T>

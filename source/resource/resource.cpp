@@ -23,7 +23,7 @@ void ResourceCache::dispose()
 {
 }
 
-Resource::ptr ResourceCache::get_internal(ResourceResolver* resolver, const fs::Path& name)
+Resource::ptr ResourceCache::get_internal(details::ResourceResolver* resolver, const fs::Path& name)
 {
     auto hash = math::StringHash(name.c_str());
 

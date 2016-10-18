@@ -55,26 +55,35 @@ float s_cube_vertices[] =
 
 Primitive::ptr Primitive::cube()
 {
-    static const fs::Path s_path = {"_default_/primitive/cube"};
+    static const fs::Path s_path = {"_buildin_/primitive/cube"};
 
     auto cache = core::get_subsystem<ResourceCache>();
     if( cache->is_exist(s_path) )
         return cache->get<Primitive>(s_path);
 
-    auto renderer = core::get_subsystem<graphics::Renderer>();
+    auto frontend = core::get_subsystem<graphics::Renderer>();
     auto layout = VertexLayout::make(
         VertexAttribute(VertexAttribute::POSITION, VertexElementFormat::FLOAT, 3),
         VertexAttribute(VertexAttribute::NORMAL, VertexElementFormat::FLOAT, 3)
     );
 
-    auto vb = renderer->create<VertexBuffer>(s_cube_vertices, 36, layout, MemoryUsage::STATIC);
+    auto vb = frontend->create<VertexBuffer>(s_cube_vertices, 36, layout, MemoryUsage::STATIC);
 
     auto cube = Primitive::ptr(new (std::nothrow) Primitive);
-    cube->_vertex_buffer = vb->handle;
+    cube->_vertex_buffer = vb;
     cube->_type = PrimitiveType::TRIANGLES;
 
     cache->add(s_path, cube);
     return cube;
+}
+
+Primitive::~Primitive()
+{
+    if( core::details::status() == core::details::Status::RUNNING )
+    {
+        core::get_subsystem<graphics::Renderer>()->free(_vertex_buffer);
+        core::get_subsystem<graphics::Renderer>()->free(_index_buffer);
+    }
 }
 
 NS_LEMON_RESOURCE_END

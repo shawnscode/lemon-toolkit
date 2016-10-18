@@ -24,8 +24,6 @@ struct Engine : public core::Subsystem
     void run_one_frame();
     // send frame update events
     void update(duration);
-    // render after frame update
-    void render();
     // poll window messages and dispatch it internally
     void process_message();
 

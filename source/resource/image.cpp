@@ -2,6 +2,7 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <resource/image.hpp>
+#include <graphics/renderer.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -9,6 +10,23 @@
 #include <stb_image_write.h>
 
 NS_LEMON_RESOURCE_BEGIN
+
+using namespace graphics;
+
+TextureFormat FORMAT[] =
+{
+    TextureFormat::ALPHA,
+    TextureFormat::ALPHA,
+    TextureFormat::LUMINANCE_ALPHA,
+    TextureFormat::RGB,
+    TextureFormat::RGBA,
+};
+
+Image::~Image()
+{
+    if( core::details::status() == core::details::Status::RUNNING )
+        core::get_subsystem<graphics::Renderer>()->free(_texture);
+}
 
 bool Image::read(std::istream& in)
 {
@@ -41,7 +59,14 @@ bool Image::read(std::istream& in)
 
     set_data(pixels);
     stbi_image_free(pixels);
-    return true;
+
+    _texture = core::get_subsystem<graphics::Renderer>()->create<graphics::Texture>(
+        _data.get(),
+        FORMAT[components],
+        static_cast<TexturePixelFormat>(_element_format),
+        _width, _height,
+        MemoryUsage::STATIC);
+    return _texture != nullptr;
 }
 
 bool Image::save(std::ostream& out)

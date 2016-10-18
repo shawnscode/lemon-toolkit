@@ -23,8 +23,11 @@
 #include <resource/image.hpp>
 #include <resource/shader.hpp>
 #include <resource/primitive.hpp>
+#include <resource/material.hpp>
 
 #include <scene/transform.hpp>
+#include <scene/mesh.hpp>
+#include <scene/camera.hpp>
 
 #include <engine/input.hpp>
 #include <engine/engine.hpp>

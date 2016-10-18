@@ -6,41 +6,63 @@ using namespace lemon::graphics;
 
 struct Example : public Application
 {
+    math::Vector3f lamp_scale = {0.35f, 0.35f, 0.35f};
+    math::Vector3f lamp_pos = {-3.0f, 3.f, -3.0f};
+    math::Vector3f lamp_color = {1.0f, 1.0f, 1.0f};
+    math::Vector3f view_pos = {0, 0, -5};
+
+    core::Entity* cube = nullptr;
+    core::Entity* lamp = nullptr;
+    core::Entity* camera = nullptr;
+
     void start() override
     {
+        fs::set_current_directory("../../example");
+
         auto engine = core::get_subsystem<Engine>();
         auto collection = core::get_subsystem<res::ArchiveCollection>();
         auto cache = core::get_subsystem<res::ResourceCache>();
-        auto frontend = core::get_subsystem<Renderer>();
+        auto frontend = core::get_subsystem<graphics::Renderer>();
+        auto ecs = core::get_subsystem<core::EntityComponentSystem>();
 
         engine->set_time_smoothing_step(10);
         engine->set_max_fps(30);
-
-        fs::set_current_directory("../../example");
         collection->add_search_path("resource");
 
         ////
-        ENSURE(!core::get_subsystem<graphics::Renderer>()->is_frame_began());
-        phong = cache->get<res::Shader>("shader/phong.shader");
-        lamp = cache->get<res::Shader>("shader/color.shader");
-        primitive = res::Primitive::cube();
+        {
+            auto shader = cache->get<res::Shader>("shader/phong.shader");
+            auto material = res::Material::create("_buildin_/material/phong", shader);
+            material->set_attribute_name(VertexAttribute::POSITION, "position");
+            material->set_attribute_name(VertexAttribute::NORMAL, "normal");
+
+            cube = ecs->create();
+            cube->add_component<Transform>(*cube);
+            cube->add_component<MeshRenderer>(material, res::Primitive::cube());
+        }
+
+        {
+            auto shader = cache->get<res::Shader>("shader/color.shader");
+            auto material = res::Material::create("_buildin_/material/color", shader);
+            material->set_attribute_name(VertexAttribute::POSITION, "position");
+
+            lamp = ecs->create();
+            lamp->add_component<Transform>(*cube, lamp_pos, lamp_scale);
+            lamp->add_component<MeshRenderer>(material, res::Primitive::cube());
+        }
+
+        {
+            camera = ecs->create();
+            auto t = camera->add_component<Transform>(*camera, view_pos);
+            auto c = camera->add_component<PerspectiveCamera>();
+            auto size = core::get_subsystem<WindowDevice>()->get_window_size();
+            c->set_aspect((float)size[0]/(float)size[1]);
+        }
 
         ////
-        uniform = frontend->create<UniformBuffer>()->handle;
-        lamp_uniform = frontend->create<UniformBuffer>()->handle;
-
-        auto p = frontend->get<Program>(phong->get_program_handle());
-        p->set_attribute_name(VertexAttribute::POSITION, "position");
-        p->set_attribute_name(VertexAttribute::NORMAL, "normal");
-
-        p = frontend->get<Program>(lamp->get_program_handle());
-        p->set_attribute_name(VertexAttribute::POSITION, "position");
-
-        auto u = frontend->get<UniformBuffer>(uniform);
-        u->set_uniform_3f("light_pos", lamp_pos);
-
         core::get_subsystem<core::EventSystem>()->subscribe<EvtUpdate>(*this);
         core::get_subsystem<core::EventSystem>()->subscribe<EvtRender>(*this);
+        std::cout << *cache << std::endl;
     }
 
     void receive(const EvtUpdate& evt)
@@ -51,77 +73,30 @@ struct Example : public Application
         lamp_color[2] = sin((float)now/1000.f * 1.3f);
 
         auto input = core::get_subsystem<Input>();
-
-        if( input->get_key_press(KeyboardCode::D) )
-            x += 0.1f;
-        if( input->get_key_press(KeyboardCode::A) )
-            x -= 0.1f;
-        auto view_pos = math::Vector3f{-1, 0, -5+x*10};
-
         if( input->get_mouse_button_down(MouseCode::LEFT) )
         {
+            auto transform = cube->get_component<Transform>();
+            auto rotation = transform->get_rotation(TransformSpace::WORLD);
             auto delta = input->get_mouse_delta();
-            rotation *= from_euler_angles({-(float)delta[1], (float)delta[0], 0});
+
+            rotation *= math::from_euler_angles({-(float)delta[1], (float)delta[0], 0});
+            transform->set_rotation(rotation, TransformSpace::WORLD);
         }
 
-        auto window = core::get_subsystem<WindowDevice>();
-        auto frontend = core::get_subsystem<Renderer>();
-        auto size = window->get_window_size();
+        {
+            auto material = cube->get_component<MeshRenderer>()->material;
+            material->set_uniform_3f("LightPos", lamp_pos);
+            material->set_uniform_3f("LightColor", lamp_color);
+            material->set_uniform_3f("ObjectColor", {1.0f, 1.0f, 1.0f});
+        }
 
-        auto projection = math::perspective(45.f, (float)size[0]/(float)size[1], 0.1f, 100.f);
-        auto view = math::look_at(view_pos, math::Vector3f {0, 0, 0}, math::Vector3f {0, 1, 0});
-
-        auto u = frontend->get<UniformBuffer>(uniform);
-        u->set_uniform_4fm("projection", projection);
-        u->set_uniform_4fm("view", view);
-        u->set_uniform_4fm("model", hlift(to_rotation_matrix(rotation)));
-        u->set_uniform_3f("light_color", lamp_color);
-        u->set_uniform_3f("object_color", {1.0f, 1.0f, 1.0f});
-        u->set_uniform_3f("view_pos", view_pos);
-
-        u = frontend->get<UniformBuffer>(lamp_uniform);
-        u->set_uniform_4fm("projection", projection);
-        u->set_uniform_4fm("view", view);
-        u->set_uniform_4fm("model", hlift(scale(lamp_scale))*translation(lamp_pos));
-        u->set_uniform_3f("object_color", lamp_color);
+        {
+            auto material = lamp->get_component<MeshRenderer>()->material;
+            material->set_uniform_3f("ObjectColor", lamp_color);
+        }
     }
 
-    void receive(const EvtRender& evt)
-    {
-        auto frontend = core::get_subsystem<Renderer>();
-        frontend->clear(ClearOption::COLOR | ClearOption::DEPTH, {0.75, 0.75, 0.75}, 1.f);
-
-        RenderDrawcall drawcall;
-        drawcall.state.depth.enable = true;
-
-        drawcall.program = phong->get_program_handle();
-        drawcall.uniform_buffer = uniform;
-        drawcall.vertex_buffer = primitive->get_vertex_buffer();
-        drawcall.index_buffer = primitive->get_index_buffer();
-        drawcall.primitive = primitive->get_type();
-        drawcall.first = 0;
-        drawcall.count = 36;
-        frontend->submit(RenderLayer::BACKGROUND, 0, drawcall);
-
-        drawcall.program = lamp->get_program_handle();
-        drawcall.uniform_buffer = lamp_uniform;
-        drawcall.first = 0;
-        drawcall.count = 36;
-        frontend->submit(RenderLayer::BACKGROUND, 0, drawcall);
-    }
-
-    res::Shader::ptr phong;
-    res::Primitive::ptr primitive;
-    Handle uniform;
-
-    res::Shader::ptr lamp;
-    Handle lamp_uniform;
-    math::Vector3f lamp_scale = {0.15f, 0.15f, 0.15f};
-    math::Vector3f lamp_pos = {-1.0f, 0.5f, -1.0f};
-    math::Vector3f lamp_color = {1.0f, 1.0f, 1.0f};
-
-    math::Quaternion rotation;
-    float x, y;
+    void receive(const EvtRender& evt) {}
 };
 
 DEFINE_APPLICATION_MAIN(Example);

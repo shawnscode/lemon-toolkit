@@ -10,17 +10,23 @@
 NS_LEMON_BEGIN
 
 // static max generator
-template<size_t S, size_t ... Args> struct static_max;
+template<size_t S, size_t ... Args> struct StaticMax;
 
-template<size_t S> struct static_max<S>
+template<size_t S> struct StaticMax<S>
 {
     static const size_t value = S;
 };
 
-template<size_t S1, size_t S2, size_t ... Args> struct static_max<S1, S2, Args...>
+template<size_t S1, size_t S2, size_t ... Args> struct StaticMax<S1, S2, Args...>
 {
-    static const size_t value = S1 > S2 ? static_max<S1, Args...>::value : static_max<S2, Args...>::value;
+    static const size_t value = S1 > S2 ? StaticMax<S1, Args...>::value : StaticMax<S2, Args...>::value;
 };
+
+// static all true
+template<bool...> struct BooleanValuePack;
+template<bool... Values> using AllTrue = std::is_same<
+    BooleanValuePack<Values..., true>,
+    BooleanValuePack<true, Values...>>;
 
 // incremental id of type
 struct TypeInfo

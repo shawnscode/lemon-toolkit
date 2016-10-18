@@ -20,8 +20,8 @@ template<typename ... Types> struct Variant
 {
     static_assert(sizeof...(Types) > 0, "template arguments type list of variant can not be empty.");
 
-    constexpr static const size_t size = static_max<sizeof(Types)...>::value;
-    constexpr static const size_t align = static_max<alignof(Types)...>::value;
+    constexpr static const size_t size = StaticMax<sizeof(Types)...>::value;
+    constexpr static const size_t align = StaticMax<alignof(Types)...>::value;
     constexpr static const size_t type_size = sizeof...(Types);
 
     using resolver_t = VariantResolver<Types...>;

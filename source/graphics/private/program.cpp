@@ -95,7 +95,7 @@ void ProgramGL::dispose()
         _attributes[i] = -1;
 }
 
-GLint ProgramGL::get_uniform_location(const char* name)
+GLint ProgramGL::get_uniform_location(const char* name, bool warning) const
 {
     if( _object == 0 )
     {
@@ -109,7 +109,7 @@ GLint ProgramGL::get_uniform_location(const char* name)
         return found->second;
 
     auto location = glGetUniformLocation(_object, name);
-    if( location == -1 )
+    if( location == -1 && warning )
         LOGW("failed to locate uniform %s of program %d.", name, _object);
 
     _uniforms.insert(std::make_pair(hash, location));
@@ -141,6 +141,11 @@ bool ProgramGL::set_attribute_name(VertexAttribute::Enum va, const char* name)
     auto location = get_attribute_location(name);
     _attributes[value(va)] = location;
     return location != -1;
+}
+
+bool ProgramGL::has_uniform(const char* name) const
+{
+    return get_uniform_location(name, false) != -1;
 }
 
 NS_LEMON_GRAPHICS_END

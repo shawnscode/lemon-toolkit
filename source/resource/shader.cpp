@@ -9,6 +9,52 @@
 
 NS_LEMON_RESOURCE_BEGIN
 
+const char* s_default_vs = 
+"#version 330 core\n"
+"\n"
+"layout (location = 0) in vec3 position;\n"
+"\n"
+"uniform mat4 ProjectionMatrix;\n"
+"uniform mat4 ViewMatrix;\n"
+"uniform mat4 ModelMatrix;\n"
+"\n"
+"void main()\n"
+"{\n"
+"    gl_Position = vec4(position, 1.0f) * ModelMatrix * ViewMatrix * ProjectionMatrix;\n"
+"}\n";
+
+const char* s_default_fs =
+"#version 330 core\n"
+"\n"
+"uniform vec3 ObjectColor;\n"
+"out vec4 color;\n"
+"\n"
+"void main()\n"
+"{\n"
+"    color = vec4(ObjectColor, 1.0f);\n"
+"}\n";
+
+Shader::ptr Shader::create(const fs::Path& name, const char* vs, const char* fs)
+{
+    auto cache = core::get_subsystem<ResourceCache>();
+    if( cache->is_exist(name) )
+        return cache->get<Shader>(name);
+
+    auto shader = Shader::ptr(new (std::nothrow) Shader);
+    shader->_vertex = vs;
+    shader->_fragment = fs;
+    shader->_program = core::get_subsystem<graphics::Renderer>()->create<graphics::Program>(vs, fs);
+
+    cache->add(name, shader);
+    return shader;
+}
+
+Shader::ptr Shader::color()
+{
+    static const fs::Path s_path = {"_buildin_/shader/default"};
+    return create(s_path, s_default_vs, s_default_fs);
+}
+
 struct Token
 {
     constexpr static char const*const VertexShader = "VERTEX_SHADER";
@@ -22,6 +68,12 @@ enum class ShaderType
     VERTEX,
     FRAGMENT
 };
+
+Shader::~Shader()
+{
+    if( core::details::status() == core::details::Status::RUNNING )
+        core::get_subsystem<graphics::Renderer>()->free(_program);
+}
 
 bool Shader::read(std::istream& in)
 {
@@ -84,8 +136,8 @@ bool Shader::read(std::istream& in)
     auto frontend = core::get_subsystem<graphics::Renderer>();
     ENSURE(frontend != nullptr);
 
-    _program = frontend->create<graphics::Program>(_vertex.c_str(), _fragment.c_str())->handle;
-    return _program.is_valid();
+    _program = frontend->create<graphics::Program>(_vertex.c_str(), _fragment.c_str());
+    return _program != nullptr;
 }
 
 bool Shader::save(std::ostream& out)

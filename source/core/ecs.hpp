@@ -5,6 +5,7 @@
 
 #include <forwards.hpp>
 #include <core/subsystem.hpp>
+
 #include <codebase/type/type_traits.hpp>
 #include <codebase/memory/indexed_pool.hpp>
 
@@ -139,8 +140,11 @@ struct EntityComponentSystem : public Subsystem
     template<typename ... Args> struct view_traits : public view
     {
         view_traits(EntityComponentSystem&);
+
         void visit(const std::function<void(Entity&, Args& ...)>&);
         void collect(std::vector<Entity*>&);
+        template<typename ... ToArgs> void collect(std::vector<std::tuple<ToArgs*...>>&);
+        size_t count() const;
     };
 
 public:
@@ -384,6 +388,27 @@ void EntityComponentSystem::view_traits<Args...>::collect(std::vector<Entity*>& 
     for( auto entity : *this )
         ct.push_back(entity);
 }
+
+template<typename ... Args> template<typename ... ToArgs>
+void EntityComponentSystem::view_traits<Args...>::collect(std::vector<std::tuple<ToArgs*...>>& ct)
+{
+    static_assert(AllTrue<std::is_convertible<Args*, ToArgs*>::value...>::value, "");
+    for( auto entity : *this )
+    {
+        auto tuple = std::make_tuple(static_cast<ToArgs*>(entity->template get_component<Args>())... );
+        ct.push_back(tuple);
+    }
+}
+
+template<typename ... Args>
+size_t EntityComponentSystem::view_traits<Args...>::count() const
+{
+    size_t i = 0;
+    for( auto entity : *this )
+        i ++;
+    return i;
+}
+
 
 INLINE Entity* EntityComponentSystem::get(Handle handle)
 {

@@ -19,11 +19,11 @@ struct VertexBufferGL : public VertexBuffer
     //
     bool update_data(const void*) override;
     bool update_data(const void*, unsigned, unsigned, bool discard = false) override;
+    unsigned get_size() const override { return _size; }
 
     //
     GLuint get_handle() const { return _object; }
     const VertexLayout& get_layout() const { return _attributes; }
-    unsigned get_size() const { return _size; }
 
 protected:
     unsigned _size;

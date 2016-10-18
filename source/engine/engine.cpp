@@ -11,6 +11,8 @@
 #include <core/ecs.hpp>
 #include <core/task.hpp>
 
+#include <scene/scene.hpp>
+
 #include <SDL2/SDL.h>
 
 NS_LEMON_BEGIN
@@ -32,6 +34,7 @@ bool Engine::initialize()
     core::add_subsystem<res::ArchiveCollection>();
     core::add_subsystem<res::ResourceCache>();
     core::add_subsystem<Input>();
+    core::add_subsystem<Scene>();
 
     _timestep.zero();
     _last_frame_timepoint = clock::now();
@@ -67,7 +70,6 @@ void Engine::run_one_frame()
     if( !_pause_minimized || !device->is_minimized() )
         update(_timestep);
 
-    render();
     input->end_frame();
 
     // perform waiting loop if maximum fps set
@@ -101,8 +103,6 @@ void Engine::run_one_frame()
             eplased = target_duration;
     }
 
-    // std::cout << "update with eplased " << std::chrono::duration_cast<std::chrono::milliseconds>(eplased).count() << std::endl;
-
     // perform timestep smoothing
     _timestep.zero();
     _previous_timesteps.push_back(eplased);
@@ -120,22 +120,20 @@ void Engine::run_one_frame()
 
 void Engine::update(duration dt)
 {
-    auto event = core::get_subsystem<core::EventSystem>();
-    event->emit<EvtUpdate>(dt);
-    event->emit<EvtPostUpdate>(dt);
-    event->emit<EvtRenderUpdate>(dt);
-    event->emit<EvtPostRenderUpdate>(dt);
-}
-
-void Engine::render()
-{
     auto renderer = core::get_subsystem<graphics::Renderer>();
     auto event = core::get_subsystem<core::EventSystem>();
 
-    if( !renderer->begin_frame() )
-        return;
-    event->emit<EvtRender>();
-    renderer->end_frame();
+    event->emit<EvtUpdate>(dt);
+    event->emit<EvtPostUpdate>(dt);
+    event->emit<EvtRenderUpdate>(dt);
+
+    if( renderer->begin_frame() )
+    {
+        event->emit<EvtRender>();
+        renderer->end_frame();
+    }
+
+    event->emit<EvtPostRenderUpdate>(dt);
 }
 
 void Engine::process_message()

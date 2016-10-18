@@ -24,12 +24,13 @@ struct ProgramGL : public Program
     bool initialize(const char* vs, const char* ps) override;
     void dispose() override;
 
-    // set attribute name
     bool set_attribute_name(VertexAttribute::Enum, const char*) override;
+    bool has_uniform(const char*) const;
+
     // returns opengl handle of this program
     GLuint get_handle() const { return _object; }
     // returns location of specified uniform
-    GLint get_uniform_location(const char*);
+    GLint get_uniform_location(const char*, bool warning = true) const;
     // returns location of specified attribute
     GLint get_attribute_location(VertexAttribute::Enum);
 
@@ -42,7 +43,7 @@ protected:
     GLuint _object = 0;
 
     GLint _attributes[VertexAttribute::kVertexAttributeCount];
-    std::unordered_map<math::StringHash, GLint> _uniforms;
+    mutable std::unordered_map<math::StringHash, GLint> _uniforms;
 };
 
 NS_LEMON_GRAPHICS_END

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <resource/resource.hpp>
+#include <graphics/graphics.hpp>
 #include <math/color.hpp>
 
 NS_LEMON_RESOURCE_BEGIN
@@ -20,6 +21,8 @@ struct Image : public Resource
 {
     using ptr = std::shared_ptr<Image>;
     using weak_ptr = std::weak_ptr<Image>;
+
+    virtual ~Image();
 
     bool read(std::istream&) override;
     bool save(std::ostream&) override;
@@ -46,12 +49,27 @@ struct Image : public Resource
     // return number of color components
     unsigned get_components() const { return _components; }
 
+    graphics::Texture* get_texture() const;
+    Handle get_texture_handle() const;
+
 protected:
+    // texture
+    graphics::Texture* _texture = nullptr;
     // with/height
     unsigned _width = 0, _height = 0, _components = 1;
     // pixel data
     std::unique_ptr<uint8_t[]> _data;
     ImageElementFormat _element_format = ImageElementFormat::UBYTE;
 };
+
+INLINE graphics::Texture* Image::get_texture() const
+{
+    return _texture;
+}
+
+INLINE Handle Image::get_texture_handle() const
+{
+    return _texture == nullptr ? Handle() : _texture->handle;
+}
 
 NS_LEMON_RESOURCE_END
