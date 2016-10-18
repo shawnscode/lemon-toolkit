@@ -22,6 +22,7 @@
 #include <resource/resource.hpp>
 #include <resource/image.hpp>
 #include <resource/shader.hpp>
+#include <resource/primitive.hpp>
 
 #include <scene/transform.hpp>
 

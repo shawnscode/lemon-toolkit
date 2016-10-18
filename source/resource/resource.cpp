@@ -27,11 +27,7 @@ Resource::ptr ResourceCache::get_internal(ResourceResolver* resolver, const fs::
 {
     auto hash = math::StringHash(name.c_str());
 
-    auto found = _manuals.find(hash);
-    if( found != _manuals.end() )
-        return found->second;
-
-    found = _resources.find(hash);
+    auto found = _resources.find(hash);
     if( found != _resources.end() )
     {
         touch(hash);
@@ -72,15 +68,11 @@ bool ResourceCache::add(const fs::Path& name, Resource::ptr resource)
     if( found != _resources.end() )
         return false;
 
+    make_room(resource->get_memusage());
     _resources[hash] = resource;
-    _manuals[hash] = resource;
+    _lru.push_back(std::make_pair(hash, resource));
     _names[hash] = name.to_string();
     return true;
-}
-
-void ResourceCache::remove(const fs::Path& name)
-{
-    _manuals.erase(math::StringHash(name.c_str()));
 }
 
 bool ResourceCache::is_exist(const fs::Path& path) const

@@ -31,7 +31,7 @@ struct Resource
 
 protected:
     std::string _name;
-    unsigned _memusage;
+    unsigned _memusage = 0;
 };
 
 struct ResourceResolver
@@ -60,8 +60,6 @@ struct ResourceCache : public core::Subsystem
     template<typename T> return_type<T> get(const fs::Path&);
     // add a mannually constructed resource to cache, returns true if successfully
     bool add(const fs::Path&, Resource::ptr);
-    // remove a mannually added resource from cache
-    void remove(const fs::Path&);
 
     // template<typename T> std::future<return_type<T>> get_async(const fs::Path&);
     // precache resource by name if there are enough spare space in cache,
@@ -85,7 +83,6 @@ protected:
 
     std::unordered_map<math::StringHash, std::string> _names;
     std::unordered_map<math::StringHash, Resource::ptr> _resources;
-    std::unordered_map<math::StringHash, Resource::ptr> _manuals;
     std::list<std::pair<math::StringHash, Resource::ptr>> _lru;
     std::vector<ResourceResolver*> _resolvers;
 };

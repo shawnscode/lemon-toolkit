@@ -4,51 +4,6 @@
 using namespace lemon;
 using namespace lemon::graphics;
 
-float vertices[] = {
-    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-
-    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-
-    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-
-     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-
-    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-
-    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
-};
-
-
 struct Example : public Application
 {
     void start() override
@@ -67,14 +22,9 @@ struct Example : public Application
         ////
         phong = cache->get<res::Shader>("shader/phong.shader");
         lamp = cache->get<res::Shader>("shader/color.shader");
+        primitive = res::Primitive::cube();
 
         ////
-        auto layout = VertexLayout::make(
-            VertexAttribute(VertexAttribute::POSITION, VertexElementFormat::FLOAT, 3),
-            VertexAttribute(VertexAttribute::NORMAL, VertexElementFormat::FLOAT, 3)
-        );
-
-        vb = frontend->create<VertexBuffer>(vertices, 36, layout, MemoryUsage::STATIC);
         uniform = frontend->create<UniformBuffer>();
         lamp_uniform = frontend->create<UniformBuffer>();
 
@@ -88,8 +38,8 @@ struct Example : public Application
         auto u = frontend->get<UniformBuffer>(uniform);
         u->set_uniform_3f("light_pos", lamp_pos);
 
-        core::subscribe<EvtUpdate>(*this);
-        core::subscribe<EvtRender>(*this);
+        core::get_subsystem<core::EventSystem>()->subscribe<EvtUpdate>(*this);
+        core::get_subsystem<core::EventSystem>()->subscribe<EvtRender>(*this);
     }
 
     void receive(const EvtUpdate& evt)
@@ -145,7 +95,9 @@ struct Example : public Application
 
         drawcall.program = phong->get_program_handle();
         drawcall.uniform_buffer = uniform;
-        drawcall.vertex_buffer = vb;
+        drawcall.vertex_buffer = primitive->get_vertex_buffer();
+        drawcall.index_buffer = primitive->get_index_buffer();
+        drawcall.primitive = primitive->get_type();
         drawcall.first = 0;
         drawcall.count = 36;
         frontend->submit(RenderLayer::BACKGROUND, 0, drawcall);
@@ -158,8 +110,8 @@ struct Example : public Application
     }
 
     res::Shader::ptr phong;
+    res::Primitive::ptr primitive;
     Handle uniform;
-    Handle vb;
 
     res::Shader::ptr lamp;
     Handle lamp_uniform;
