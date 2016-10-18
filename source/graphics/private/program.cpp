@@ -91,7 +91,8 @@ void ProgramGL::dispose()
 
     _object = 0;
     _uniforms.clear();
-    _attribute_names.clear();
+    for( uint8_t i = 0; i < VertexAttribute::kVertexAttributeCount; i++ )
+        _attributes[i] = -1;
 }
 
 GLint ProgramGL::get_uniform_location(const char* name)
@@ -123,37 +124,22 @@ GLint ProgramGL::get_attribute_location(const char* name)
         return -1;
     }
 
-    auto hash = math::StringHash(name);
-    auto found = _attributes.find(hash);
-    if( found != _attributes.end() )
-        return found->second;
-
     auto location = glGetAttribLocation(_object, name);
     if( location == -1 )
         LOGW("failed to localte attribute %s of program %d.", name, _object);
 
-    _attributes.insert(std::make_pair(hash, location));
     return location;
 }
 
 GLint ProgramGL::get_attribute_location(VertexAttribute::Enum va)
 {
-    auto it = _attribute_names.find(value(va));
-    if( it != _attribute_names.end() )
-    {
-        auto location = _attributes.find(it->second);
-        ENSURE(location != _attributes.end());
-        return location->second;
-    }
-
-    // use default name to search attribute location
-    return get_attribute_location(VertexAttribute::name(va));
+    return _attributes[value(va)];
 }
 
 bool ProgramGL::set_attribute_name(VertexAttribute::Enum va, const char* name)
 {
     auto location = get_attribute_location(name);
-    _attribute_names.insert(std::make_pair(value(va), math::StringHash(name)));
+    _attributes[value(va)] = location;
     return location != -1;
 }
 

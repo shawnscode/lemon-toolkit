@@ -55,6 +55,16 @@ bool Renderer::initialize()
 
 void Renderer::dispose()
 {
+    for( size_t i = 0; i < _object_sets.size(); i++ )
+    {
+        auto& pool = _object_sets[i];
+        if( pool == nullptr )
+            continue;
+
+        for( auto handle : *pool )
+            _object_destructors[i](handle, pool->get(handle));
+    }
+
     if( _backend != nullptr )
     {
         delete _backend;
@@ -65,16 +75,6 @@ void Renderer::dispose()
     {
         delete _statecache;
         _statecache = nullptr;
-    }
-
-    for( size_t i = 0; i < _object_sets.size(); i++ )
-    {
-        auto& pool = _object_sets[i];
-        if( pool == nullptr )
-            continue;
-
-        for( auto handle : *pool )
-            _object_destructors[i](handle, pool->get(handle));
     }
 
     _object_sets.clear();

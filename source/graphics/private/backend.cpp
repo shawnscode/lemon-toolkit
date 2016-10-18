@@ -440,7 +440,7 @@ void check_device_error(const char* file, unsigned line)
 {
     GLenum error = glGetError();
     if( error != GL_NO_ERROR && error != GL_INVALID_ENUM )
-        FATAL("GL_%s", to_string(error));
+        ABORT(file, line, "GL_%s", to_string(error));
 }
 
 NS_LEMON_GRAPHICS_END

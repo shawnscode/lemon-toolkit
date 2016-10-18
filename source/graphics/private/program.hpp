@@ -41,9 +41,8 @@ protected:
     std::string _vertex_shader;
     GLuint _object = 0;
 
+    GLint _attributes[VertexAttribute::kVertexAttributeCount];
     std::unordered_map<math::StringHash, GLint> _uniforms;
-    std::unordered_map<math::StringHash, GLint> _attributes;
-    std::unordered_map<uint8_t, math::StringHash> _attribute_names;
 };
 
 NS_LEMON_GRAPHICS_END
