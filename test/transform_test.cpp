@@ -9,8 +9,7 @@ struct TransformFixture
 {
     template<typename ... Args> Transform* create_with(Args&& ... args)
     {
-        auto handle = ecs.create();
-        auto object = ecs.get(handle);
+        auto object = ecs.create();
         return object->add_component<Transform>(*object, std::forward<Args>(args)...);
     }
 

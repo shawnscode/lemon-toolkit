@@ -21,7 +21,7 @@ void EntityComponentSystem::dispose()
     free_all();
 }
 
-Handle EntityComponentSystem::create()
+Entity* EntityComponentSystem::create()
 {
     Handle handle;
     {
@@ -29,17 +29,16 @@ Handle EntityComponentSystem::create()
         handle = _entities.malloc();
     }
 
-    auto block = _entities.get(handle);
-    if( block == nullptr )
-        return handle;
+    if( !handle.is_valid() )
+        return nullptr;
 
-    ::new (block) Entity(*this, handle);
-    return handle;
+    return ::new (_entities.get(handle)) Entity(*this, handle);
 }
 
-Entity* EntityComponentSystem::get(Handle handle)
+void EntityComponentSystem::free(Entity* object)
 {
-    return static_cast<Entity*>(_entities.get(handle));
+    if( object != nullptr )
+        free(object->handle);
 }
 
 void EntityComponentSystem::free(Handle handle)

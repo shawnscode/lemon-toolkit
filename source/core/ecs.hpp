@@ -140,6 +140,7 @@ struct EntityComponentSystem : public Subsystem
     {
         view_traits(EntityComponentSystem&);
         void visit(const std::function<void(Entity&, Args& ...)>&);
+        void collect(std::vector<Entity*>&);
     };
 
 public:
@@ -149,10 +150,10 @@ public:
     void dispose() override;
 
     // spawn a new entity and returns handle as identifier
-    Handle create();
-    // returns Entity associated with handle
+    Entity* create();
     Entity* get(Handle);
     // recycle components and associated to this entity, and invalidate handle
+    void free(Entity*);
     void free(Handle);
     // recycle all entities and components
     void free_all();
@@ -375,6 +376,18 @@ void EntityComponentSystem::view_traits<Args...>::visit(const std::function<void
 {
     for( auto entity : *this )
         cb(*entity, *entity->template get_component<Args>()...);
+}
+
+template<typename ... Args>
+void EntityComponentSystem::view_traits<Args...>::collect(std::vector<Entity*>& ct)
+{
+    for( auto entity : *this )
+        ct.push_back(entity);
+}
+
+Entity* EntityComponentSystem::get(Handle handle)
+{
+    return static_cast<Entity*>(_entities.get(handle));
 }
 
 INLINE bool EntityComponentSystem::is_valid(Handle handle) const

@@ -99,7 +99,7 @@ TEST_CASE_METHOD(EcsTestContext, "TestCreateEntity")
 {
     REQUIRE( ecs->size() == 0UL );
 
-    auto e2 = ecs->create();
+    auto e2 = ecs->create()->handle;
     REQUIRE( ecs->is_valid(e2) );
     REQUIRE( ecs->size() == 1UL );
 
@@ -131,7 +131,7 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityAsBoolean")
 {
     REQUIRE( ecs->size() == 0UL );
 
-    auto e = ecs->create();
+    auto e = ecs->create()->handle;
     REQUIRE( ecs->is_valid(e) );
     REQUIRE( ecs->size() == 1UL );
 
@@ -143,29 +143,29 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityAsBoolean")
 TEST_CASE_METHOD(EcsTestContext, "TestEntityReuse")
 {
     auto e1 = ecs->create();
-    auto e2 = e1;
-    auto index = e1.get_index();
-    auto version = e1.get_version();
-    REQUIRE( ecs->is_valid(e1) );
+    auto e2 = e1->handle;
+    auto index = e1->handle.get_index();
+    auto version = e1->handle.get_version();
+    REQUIRE( ecs->is_valid(e1->handle) );
     REQUIRE( ecs->is_valid(e2) );
 
-    add_component<Position>(e1);
+    e1->add_component<Position>();
     ecs->free(e1);
-    REQUIRE( !ecs->is_valid(e1) );
+    REQUIRE( !ecs->is_valid(e1->handle) );
     REQUIRE( !ecs->is_valid(e2) );
 
     auto e3 = ecs->create();
-    REQUIRE( e3.get_index() == index );
-    REQUIRE( e3.get_version() != version );
-    REQUIRE( !has_components<Position>(e3) );
+    REQUIRE( e3->handle.get_index() == index );
+    REQUIRE( e3->handle.get_version() != version );
+    REQUIRE( !e3->has_components<Position>() );
 
-    add_component<Position>(e3);
-    REQUIRE( has_components<Position>(e3) );
+    e3->add_component<Position>();
+    REQUIRE( e3->has_components<Position>() );
 }
 
 TEST_CASE_METHOD(EcsTestContext, "TestEntityAssignment")
 {
-    lemon::Handle a = ecs->create();
+    lemon::Handle a = ecs->create()->handle;
     lemon::Handle b = a;
     REQUIRE( a == b );
 
@@ -179,9 +179,9 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityAssignment")
 TEST_CASE_METHOD(EcsTestContext, "TestComponentConstruction")
 {
     auto e = ecs->create();
-    auto p = add_component<Position>(e, 1, 2);
+    auto p = e->add_component<Position>(1, 2);
 
-    auto cp = get_component<Position>(e);
+    auto cp = e->get_component<Position>();
     REQUIRE( p == cp );
     REQUIRE( cp->x == Approx(1.0f) );
     REQUIRE( cp->y == Approx(2.0f) );
@@ -193,29 +193,29 @@ TEST_CASE_METHOD(EcsTestContext, "TestComponentIdsDiffer")
     REQUIRE( (Component::calculate<Position, Direction>()) != Component::calculate<Direction>() );
 }
 
-TEST_CASE_METHOD(EcsTestContext, "TestComponentlemon::HandleInvalidatedWhenEntityDestroyed") {
+TEST_CASE_METHOD(EcsTestContext, "TestComponentInvalidatedWhenEntityDestroyed") {
     auto a = ecs->create();
-    auto position = add_component<Position>(a, 1, 2);
+    auto position = a->add_component<Position>(1, 2);
+
     REQUIRE(position);
     REQUIRE(position->x == 1);
     REQUIRE(position->y == 2);
 
+    auto handle = a->handle;
+    REQUIRE(ecs->is_valid(handle));
     ecs->free(a);
-    REQUIRE( !has_components<Position>(a) );
+    REQUIRE(!ecs->is_valid(handle));
 }
 
 TEST_CASE_METHOD(EcsTestContext, "TestComponentAssignmentFromCopy")
 {
     auto e = ecs->create();
     auto p = Position(1, 2);
-    auto h = add_component<Position>(e, p);
+    auto h = e->add_component<Position>(p);
 
     REQUIRE( h );
     REQUIRE( h->x == p.x );
     REQUIRE( h->y == p.y );
-
-    ecs->free(e);
-    REQUIRE( !has_components<Position>(e) );
 }
 
 TEST_CASE_METHOD(EcsTestContext, "TestDestroyEntity")
@@ -223,33 +223,35 @@ TEST_CASE_METHOD(EcsTestContext, "TestDestroyEntity")
     auto e = ecs->create();
     auto f = ecs->create();
 
-    add_component<Position>(e);
-    add_component<Position>(f);
+    e->add_component<Position>();
+    f->add_component<Position>();
 
-    add_component<Direction>(e);
-    add_component<Direction>(f);
+    e->add_component<Direction>();
+    f->add_component<Direction>();
 
-    REQUIRE( ecs->is_valid(e) );
-    REQUIRE( ecs->is_valid(f) );
-    REQUIRE( get_component<Position>(e) != nullptr );
-    REQUIRE( get_component<Direction>(e) != nullptr );
-    REQUIRE( get_component<Position>(f) != nullptr );
-    REQUIRE( get_component<Direction>(f) != nullptr );
-    REQUIRE( has_components<Position>(e) );
-    REQUIRE( has_components<Position>(f) );
+    REQUIRE( ecs->is_valid(e->handle) );
+    REQUIRE( ecs->is_valid(f->handle) );
+    REQUIRE( e->get_component<Position>() != nullptr );
+    REQUIRE( e->get_component<Direction>() != nullptr );
+    REQUIRE( f->get_component<Position>() != nullptr );
+    REQUIRE( f->get_component<Direction>() != nullptr );
+    REQUIRE( e->has_components<Position>() );
+    REQUIRE( e->has_components<Direction>() );
 
+    auto handle = e->handle;
     ecs->free(e);
-    REQUIRE( !ecs->is_valid(e) );
-    REQUIRE( ecs->is_valid(f) );
-    REQUIRE( get_component<Position>(f) != nullptr );
-    REQUIRE( get_component<Direction>(f) != nullptr );
-    REQUIRE( has_components<Position>(f) );
+
+    REQUIRE( !ecs->is_valid(handle) );
+    REQUIRE( ecs->is_valid(f->handle) );
+    REQUIRE( f->get_component<Position>() != nullptr );
+    REQUIRE( f->get_component<Direction>() != nullptr );
+    REQUIRE( f->has_components<Position>() );
 }
 
 TEST_CASE_METHOD(EcsTestContext, "TestEntityDestroyAll")
 {
-    auto e = ecs->create();
-    auto f = ecs->create();
+    auto e = ecs->create()->handle;
+    auto f = ecs->create()->handle;
     ecs->free_all();
     REQUIRE( !ecs->is_valid(e) );
     REQUIRE( !ecs->is_valid(f) );
@@ -265,8 +267,8 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityDestroyHole") {
 
     for (int i = 0; i < 5000; i++) {
         auto e = ecs->create();
-        add_component<Position>(e);
-        entities.push_back(e);
+        e->add_component<Position>();
+        entities.push_back(e->handle);
     }
 
     REQUIRE(count() == 5000);
@@ -288,9 +290,9 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityDestroyHole") {
 
 TEST_CASE_METHOD(EcsTestContext, "TestEntityInStdSet")
 {
-    auto a = ecs->create();
-    auto b = ecs->create();
-    auto c = ecs->create();
+    auto a = ecs->create()->handle;
+    auto b = ecs->create()->handle;
+    auto c = ecs->create()->handle;
     set<Handle> entitySet;
     
     REQUIRE( entitySet.insert(a).second );
@@ -300,9 +302,9 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityInStdSet")
 
 TEST_CASE_METHOD(EcsTestContext, "TestEntityInStdMap")
 {
-    auto a = ecs->create();
-    auto b = ecs->create();
-    auto c = ecs->create();
+    auto a = ecs->create()->handle;
+    auto b = ecs->create()->handle;
+    auto c = ecs->create()->handle;
     map<Handle, int> entityMap;
     REQUIRE( entityMap.insert(pair<Handle, int>(a, 1)).second );
     REQUIRE( entityMap.insert(pair<Handle, int>(b, 2)).second );
@@ -318,10 +320,10 @@ TEST_CASE_METHOD(EcsTestContext, "TestGetEntitiesWithComponent")
     auto f = ecs->create();
     auto g = ecs->create();
 
-    add_component<Position>(e, 1, 2);
-    add_component<Direction>(e);
-    add_component<Position>(f, 3, 4);
-    add_component<Direction>(g);
+    e->add_component<Position>(1, 2);
+    e->add_component<Direction>();
+    f->add_component<Position>(3, 4);
+    g->add_component<Direction>();
 
     REQUIRE( 2 == size(ecs->find_entities_with<Position>()) );
     REQUIRE( 2 == size(ecs->find_entities_with<Direction>()) );
@@ -332,8 +334,8 @@ TEST_CASE_METHOD(EcsTestContext, "TestGetEntitiesWithComponent")
     for( auto i=0; i<150; i++ )
     {
         auto h = ecs->create();
-        if( i % 2 == 0 ) add_component<Position>(h);
-        if( i % 3 == 0 ) add_component<Direction>(h);
+        if( i % 2 == 0 ) h->add_component<Position>();
+        if( i % 3 == 0 ) h->add_component<Direction>();
     }
 
     REQUIRE( 50 == size(ecs->find_entities_with<Direction>()) );
@@ -343,10 +345,10 @@ TEST_CASE_METHOD(EcsTestContext, "TestGetEntitiesWithComponent")
 
 TEST_CASE_METHOD(EcsTestContext, "TestGetComponentsAsTuple") {
     auto e = ecs->create();
-    add_component<Position>(e, 1, 2);
-    add_component<Direction>(e, 3, 4);
+    e->add_component<Position>(1, 2);
+    e->add_component<Direction>(3, 4);
 
-    auto components = get_components<Position, Direction>(e);
+    auto components = e->get_components<Position, Direction>();
     REQUIRE(std::get<0>(components)->x == 1);
     REQUIRE(std::get<0>(components)->y == 2);
     REQUIRE(std::get<1>(components)->x == 3);
@@ -358,7 +360,7 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityIteration")
     auto e = ecs->create();
     auto f = ecs->create();
 
-    add_component<Position>(e, 1, 2);
+    e->add_component<Position>(1, 2);
 
     auto count = 0;
     ecs->find_entities_with<Position>().visit([&](Entity& object, Position& position)
@@ -366,7 +368,7 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityIteration")
         count ++;
         REQUIRE( position.x == 1 );
         REQUIRE( position.y == 2 );
-        REQUIRE( object.handle == e );
+        REQUIRE( object.handle == e->handle );
     });
 
     REQUIRE( count == 1 );
@@ -374,6 +376,11 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityIteration")
     for( auto ne : ecs->find_entities_with<Position>() )
         count ++;
     REQUIRE( count == 2 );
+
+    std::vector<Entity*> entities;
+    ecs->find_entities_with<Position>().collect(entities);
+
+    REQUIRE(entities.size() == 1);
 }
 
 TEST_CASE_METHOD(EcsTestContext, "TestIterateAllEntitiesSkipsDestroyed") {
@@ -384,9 +391,9 @@ TEST_CASE_METHOD(EcsTestContext, "TestIterateAllEntitiesSkipsDestroyed") {
     ecs->free(f);
     auto it = ecs->find_entities().begin();
 
-    REQUIRE( (*it)->handle == e );
+    REQUIRE( (*it) == e );
     ++it;
-    REQUIRE( (*it)->handle == g );
+    REQUIRE( (*it) == g );
     ++it;
 
     REQUIRE( it == ecs->find_entities().end() );
@@ -394,31 +401,31 @@ TEST_CASE_METHOD(EcsTestContext, "TestIterateAllEntitiesSkipsDestroyed") {
 
 TEST_CASE_METHOD(EcsTestContext, "TestComponentsRemovedFromReusedEntities")
 {
-  auto e = ecs->create();
-  auto eversion = e.get_version();
-  auto eindex = e.get_index();
-  add_component<Position>(e, 1, 2); 
-  ecs->free(e);
+    auto e = ecs->create();
+    auto eversion = e->handle.get_version();
+    auto eindex = e->handle.get_index();
+    e->add_component<Position>(1, 2); 
+    ecs->free(e);
 
-  auto f = ecs->create();
-  REQUIRE( eindex == f.get_index() );
-  REQUIRE( eversion < f.get_version() );
-  REQUIRE( !has_components<Position>(f) );
+    auto f = ecs->create();
+    REQUIRE( eindex == f->handle.get_index() );
+    REQUIRE( eversion < f->handle.get_version() );
+    REQUIRE( !f->has_components<Position>() );
 }
 
 struct FreedSentinel : public Component
 {
-  explicit FreedSentinel(bool &yes) : yes(yes) {}
-  ~FreedSentinel() { yes = true; }
-  bool &yes;
+    explicit FreedSentinel(bool &yes) : yes(yes) {}
+    ~FreedSentinel() { yes = true; }
+    bool &yes;
 };
 
 TEST_CASE_METHOD(EcsTestContext, "TestComponentDestruction")
 {
     bool freed = false;
     auto e = ecs->create();
-    add_component<FreedSentinel>(e, freed);
-    remove_component<FreedSentinel>(e);
+    e->add_component<FreedSentinel>(freed);
+    e->remove_component<FreedSentinel>();
 
     REQUIRE( freed );
 }
@@ -429,7 +436,7 @@ TEST_CASE("TestComponentDestructorCalledWhenManagerDestroyed")
     {
         EcsTestContext context;
         auto e = context.ecs->create();
-        context.add_component<FreedSentinel>(e, freed);
+        e->add_component<FreedSentinel>(freed);
         REQUIRE( !freed );
     }
     REQUIRE( freed );
@@ -439,7 +446,7 @@ TEST_CASE_METHOD(EcsTestContext, "TestComponentDestructorCalledWhenEntityDestroy
 {
     bool freed = false;
     auto e = ecs->create();
-    add_component<FreedSentinel>(e, freed);
+    e->add_component<FreedSentinel>(freed);
     REQUIRE( !freed );
     ecs->free(e);
     REQUIRE( freed );
@@ -490,14 +497,14 @@ TEST_CASE_METHOD(EcsTestContext, "TestConstructSystemWithArgs")
 
 TEST_CASE_METHOD(EcsTestContext, "TestApplySystem")
 {
-    std::vector<Handle> created_entities;
+    std::vector<Entity*> created_entities;
     for (int i = 0; i < 75; ++i)
     {
         auto e = ecs->create();
         created_entities.push_back(e);
-        if (i % 2 == 0) add_component<Position>(e, 1, 2);
-        if (i % 3 == 0) add_component<Direction>(e, 1, 1);
-        add_component<Counter>(e, 0);
+        if (i % 2 == 0) e->add_component<Position>(1, 2);
+        if (i % 3 == 0) e->add_component<Direction>(1, 1);
+        e->add_component<Counter>(0);
     }
 
     add_subsystem<MovementSystem>();
@@ -505,16 +512,16 @@ TEST_CASE_METHOD(EcsTestContext, "TestApplySystem")
     {
         auto e = ecs->create();
         created_entities.push_back(e);
-        if (i % 2 == 0) add_component<Position>(e, 1, 2);
-        if (i % 3 == 0) add_component<Direction>(e, 1, 1);
-        add_component<Counter>(e, 0);
+        if (i % 2 == 0) e->add_component<Position>(1, 2);
+        if (i % 3 == 0) e->add_component<Direction>(1, 1);
+        e->add_component<Counter>(0);
     }
 
     get_subsystem<MovementSystem>()->update(0.f);
     for (auto entity : created_entities)
     {
-        auto position = get_component<Position>(entity);
-        auto direction = get_component<Direction>(entity);
+        auto position = entity->get_component<Position>();
+        auto direction = entity->get_component<Direction>();
 
         if (position && direction)
         {
@@ -531,13 +538,13 @@ TEST_CASE_METHOD(EcsTestContext, "TestApplySystem")
 
 TEST_CASE_METHOD(EcsTestContext, "TestApplyAllSystems")
 {
-    std::vector<Handle> created_entities;
+    std::vector<Entity*> created_entities;
     for (int i = 0; i < 150; ++i) {
         auto e = ecs->create();
         created_entities.push_back(e);
-        if (i % 2 == 0) add_component<Position>(e, 1, 2);
-        if (i % 3 == 0) add_component<Direction>(e, 1, 1);
-        add_component<Counter>(e, 0);
+        if (i % 2 == 0) e->add_component<Position>(1, 2);
+        if (i % 3 == 0) e->add_component<Direction>(1, 1);
+        e->add_component<Counter>(0);
     }
 
     add_subsystem<MovementSystem>();
@@ -548,9 +555,9 @@ TEST_CASE_METHOD(EcsTestContext, "TestApplyAllSystems")
 
     for (auto entity : created_entities)
     {
-        auto position   = get_component<Position>(entity);
-        auto direction  = get_component<Direction>(entity);
-        auto counter    = get_component<Counter>(entity);
+        auto position   = entity->get_component<Position>();
+        auto direction  = entity->get_component<Direction>();
+        auto counter    = entity->get_component<Counter>();
 
         if (position && direction)
         {

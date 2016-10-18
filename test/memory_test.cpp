@@ -149,10 +149,7 @@ TEST_CASE_METHOD(IndexedPoolTestContext, "TestIndexedObjectChunks")
 
     std::vector<Entity*> entities;
     for( size_t i = 0; i < kChunkSize*3; i++ )
-    {
-        auto handle = create();
-        entities.push_back(get(handle));
-    }
+        entities.push_back(create());
 
     REQUIRE( size() == 0 );
     REQUIRE( capacity() == 0 );
@@ -214,8 +211,7 @@ TEST_CASE_METHOD(IndexedPoolTestContext, "TestIndexedObjectChunks")
     {
         if( *cursor % 7 == 0 && *cursor % 2 != 0 && *cursor % 3 != 0 )
         {
-            auto handle = create();
-            get(handle)->add_component<IntPosition>(*this, 0, 0);
+            create()->add_component<IntPosition>(*this, 0, 0);
             holes --;
         }
     }
@@ -227,8 +223,7 @@ TEST_CASE_METHOD(IndexedPoolTestContext, "TestIndexedObjectChunks")
     {
         if( *cursor % 3 == 0 && *cursor % 7 != 0 && *cursor % 2 != 0 )
         {
-            auto handle = create();
-            get(handle)->add_component<IntPosition>(*this, 0, 0);
+            create()->add_component<IntPosition>(*this, 0, 0);
             holes --;
         }
     }
@@ -249,7 +244,7 @@ TEST_CASE_METHOD(IndexedPoolTestContext, "TestIndexedObjectChunksWithRandomHoles
         int holes = std::rand()%kChunkSize;
 
         for( size_t i = 0; i < kChunkSize; i++ )
-            shuffle.push_back(std::make_pair(get(create()), i));
+            shuffle.push_back(std::make_pair(create(), i));
 
         for( size_t i = 0; i < kChunkSize - holes; i++ )
         {
@@ -290,7 +285,7 @@ TEST_CASE_METHOD(IndexedPoolTestContext, "TestIndexedObjectChunksWithRandomHoles
 
         std::vector<std::pair<Entity*, size_t>> indices, shuffle;
         for( size_t i = 0; i < kChunkSize*chunks; i++ )
-            shuffle.push_back(std::make_pair(get(create()), i));
+            shuffle.push_back(std::make_pair(create(), i));
 
         for( size_t i = 0; i < kChunkSize*chunks - holes; i++ )
         {
