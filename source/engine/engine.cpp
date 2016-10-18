@@ -134,7 +134,6 @@ void Engine::render()
 
     if( !renderer->begin_frame() )
         return;
-
     event->emit<EvtRender>();
     renderer->end_frame();
 }

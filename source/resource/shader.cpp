@@ -84,7 +84,7 @@ bool Shader::read(std::istream& in)
     auto frontend = core::get_subsystem<graphics::Renderer>();
     ENSURE(frontend != nullptr);
 
-    _program = frontend->create<graphics::Program>(_vertex.c_str(), _fragment.c_str());
+    _program = frontend->create<graphics::Program>(_vertex.c_str(), _fragment.c_str())->handle;
     return _program.is_valid();
 }
 

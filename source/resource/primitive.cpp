@@ -70,7 +70,7 @@ Primitive::ptr Primitive::cube()
     auto vb = renderer->create<VertexBuffer>(s_cube_vertices, 36, layout, MemoryUsage::STATIC);
 
     auto cube = Primitive::ptr(new (std::nothrow) Primitive);
-    cube->_vertex_buffer = vb;
+    cube->_vertex_buffer = vb->handle;
     cube->_type = PrimitiveType::TRIANGLES;
 
     cache->add(s_path, cube);

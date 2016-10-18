@@ -54,7 +54,7 @@ workspace("chore")
         location( "build/example" )
         links({ "glew", "SDL2", "lemon-toolkit" })
         linkoptions { "-framework OpenGL", "-framework Cocoa", "-framework IOKit", "-framework CoreVideo" }
-        files({ "example/phong/*.cpp" })
+        files({ "example/phong/*.cpp", "source/**.cpp" })
 
     project( "light-casters" )
         location( "build/example" )

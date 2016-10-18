@@ -18,15 +18,20 @@ NS_LEMON_GRAPHICS_BEGIN
 #define ENSURE_NOT_RENDER_PHASE \
     ASSERT(!_renderer.is_frame_began(), "can not manipulate resource during frame render phase.");
 
-#define DEFINE_SHARED_PTR(T) \
+#define DECLARE_GRAPHICS_OBJECT(T) \
     using ptr = std::shared_ptr<T>; \
-    using weak_ptr = std::weak_ptr<T>;
+    using weak_ptr = std::weak_ptr<T>; \
+    T(Renderer& renderer, Handle handle) : GraphicsObject(renderer, handle) {} \
+    virtual ~T() {}
 
 // GraphicsObject is the base class of all the graphic card resources
 struct GraphicsObject
 {
-    GraphicsObject(Renderer& renderer) : _renderer(renderer) {}
+    GraphicsObject(Renderer& renderer, Handle handle) : _renderer(renderer), handle(handle) {}
     virtual ~GraphicsObject() {}
+
+    // returns handle to this graphics object
+    const Handle handle;
 
 protected:
     Renderer& _renderer;
@@ -146,9 +151,7 @@ protected:
 
 struct VertexBuffer : public GraphicsObject
 {
-    DEFINE_SHARED_PTR(VertexBuffer);
-    VertexBuffer(Renderer& renderer) : GraphicsObject(renderer) {}
-    virtual ~VertexBuffer() {}
+    DECLARE_GRAPHICS_OBJECT(VertexBuffer);
 
     virtual bool initialize(const void*, unsigned, const VertexLayout&, MemoryUsage) = 0;
     virtual void dispose() = 0;
@@ -166,9 +169,7 @@ enum class IndexElementFormat : uint8_t
 
 struct IndexBuffer : GraphicsObject
 {
-    DEFINE_SHARED_PTR(IndexBuffer);
-    IndexBuffer(Renderer& renderer) : GraphicsObject(renderer) {}
-    virtual ~IndexBuffer() {}
+    DECLARE_GRAPHICS_OBJECT(IndexBuffer);
 
     virtual bool initialize(const void*, unsigned, IndexElementFormat, MemoryUsage) = 0;
     virtual void dispose() = 0;
@@ -220,9 +221,7 @@ enum class TexturePixelFormat : uint8_t
 
 struct Texture : public GraphicsObject
 {
-    DEFINE_SHARED_PTR(Texture);
-    Texture(Renderer& renderer) : GraphicsObject(renderer) {}
-    virtual ~Texture() {}
+    DECLARE_GRAPHICS_OBJECT(Texture);
 
     virtual bool initialize(const void*, TextureFormat, TexturePixelFormat, unsigned, unsigned, MemoryUsage) = 0;
     virtual void dispose() = 0;
@@ -240,9 +239,7 @@ struct Texture : public GraphicsObject
 //
 struct UniformBuffer : public GraphicsObject
 {
-    DEFINE_SHARED_PTR(UniformBuffer);
-    UniformBuffer(Renderer& renderer) : GraphicsObject(renderer) {}
-    virtual ~UniformBuffer() {}
+    DECLARE_GRAPHICS_OBJECT(UniformBuffer);
 
     virtual bool initialize() = 0;
     virtual void dispose() = 0;
@@ -263,9 +260,7 @@ struct UniformBuffer : public GraphicsObject
 //
 struct Program : public GraphicsObject
 {
-    DEFINE_SHARED_PTR(Program);
-    Program(Renderer& renderer) : GraphicsObject(renderer) {}
-    virtual ~Program() {}
+    DECLARE_GRAPHICS_OBJECT(Program);
 
     virtual bool initialize(const char* vs, const char* ps) = 0;
     virtual void dispose() = 0;

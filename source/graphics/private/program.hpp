@@ -18,8 +18,8 @@
 NS_LEMON_GRAPHICS_BEGIN
 struct ProgramGL : public Program
 {
-    ProgramGL(Renderer& renderer) : Program(renderer) {}
-    ~ProgramGL() { dispose(); }
+    ProgramGL(Renderer& renderer, Handle handle) : Program(renderer, handle) {}
+    virtual ~ProgramGL() { dispose(); }
 
     bool initialize(const char* vs, const char* ps) override;
     void dispose() override;

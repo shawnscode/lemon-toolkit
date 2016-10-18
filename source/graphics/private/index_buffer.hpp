@@ -10,8 +10,8 @@ NS_LEMON_GRAPHICS_BEGIN
 
 struct IndexBufferGL : public IndexBuffer
 {
-    IndexBufferGL(Renderer& renderer) : IndexBuffer(renderer) {}
-    ~IndexBufferGL() { dispose(); }
+    IndexBufferGL(Renderer& renderer, Handle handle) : IndexBuffer(renderer, handle) {}
+    virtual ~IndexBufferGL() { dispose(); }
 
     bool initialize(const void*, unsigned, IndexElementFormat, MemoryUsage);
     void dispose();

@@ -24,8 +24,8 @@ using UniformVariable = Variant<
 
 struct UniformBufferGL : public UniformBuffer
 {
-    UniformBufferGL(Renderer& renderer) : UniformBuffer(renderer) {}
-    ~UniformBufferGL() { dispose(); }
+    UniformBufferGL(Renderer& renderer, Handle handle) : UniformBuffer(renderer, handle) {}
+    virtual ~UniformBufferGL() { dispose(); }
 
     bool initialize() override;
     void dispose() override;

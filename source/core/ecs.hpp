@@ -385,7 +385,7 @@ void EntityComponentSystem::view_traits<Args...>::collect(std::vector<Entity*>& 
         ct.push_back(entity);
 }
 
-Entity* EntityComponentSystem::get(Handle handle)
+INLINE Entity* EntityComponentSystem::get(Handle handle)
 {
     return static_cast<Entity*>(_entities.get(handle));
 }

@@ -33,8 +33,9 @@ struct Renderer : public core::Subsystem
     void dispose() override;
 
     // resource manipulation should be finished before frame render phase
-    template<typename T, typename ... Args> Handle create(Args&& ...);
+    template<typename T, typename ... Args> T* create(Args&& ...);
     template<typename T> T* get(Handle);
+    template<typename T> void free(T*);
     template<typename T> void free(Handle);
 
     // clear and start current frame
@@ -81,7 +82,7 @@ protected:
 };
 
 // implementations of templates
-template<typename T, typename ... Args> Handle Renderer::create(Args&& ... args)
+template<typename T, typename ... Args> T* Renderer::create(Args&& ... args)
 {
     const auto index = TypeInfo::id<GraphicsObject, T>();
     ASSERT(index < _object_sets.size() && _object_sets[index] != nullptr,
@@ -95,12 +96,10 @@ template<typename T, typename ... Args> Handle Renderer::create(Args&& ... args)
         handle = pool->malloc();
     }
 
-    auto object = static_cast<T*>(pool->get(handle));
-    if( object == nullptr )
-    {
-        return Handle();
-    }
+    if( !handle.is_valid() )
+        return nullptr;
 
+    auto object = static_cast<T*>(pool->get(handle));
     _object_creators[index](handle, object);
     if( !object->initialize(std::forward<Args>(args)...) )
     {
@@ -108,10 +107,10 @@ template<typename T, typename ... Args> Handle Renderer::create(Args&& ... args)
             std::unique_lock<std::mutex> L(*_object_mutexs[index]);
             pool->free(handle);
         }
-        return Handle();
+        return nullptr;
     }
 
-    return handle;
+    return object;
 }
 
 template<typename T> T* Renderer::get(Handle handle)
@@ -121,6 +120,12 @@ template<typename T> T* Renderer::get(Handle handle)
         "trying to access un-registered graphics object %s.", typeid(T).name());
 
     return static_cast<T*>(_object_sets[index]->get(handle));
+}
+
+template<typename T> void Renderer::free(T* object)
+{
+    if( object != nullptr )
+        free<T>(object->handle);
 }
 
 template<typename T> void Renderer::free(Handle handle)
@@ -161,9 +166,9 @@ bool Renderer::register_graphics_object(const resolver& dtor)
         static_cast<T*>(object)->~T();
     };
 
-    _object_creators[index] = [=](Handle, void* object)
+    _object_creators[index] = [=](Handle handle, void* object)
     {
-        ::new(object) Impl(*this);
+        ::new(object) Impl(*this, handle);
     };
 
     return _object_sets[index] != nullptr;

@@ -35,7 +35,7 @@ static GLenum GL_TEXTURE_PIXEL_FORMAT[] =
     GL_UNSIGNED_SHORT_5_5_5_1
 };
 
-TextureGL::TextureGL(Renderer& renderer) : Texture(renderer)
+TextureGL::TextureGL(Renderer& renderer, Handle handle) : Texture(renderer, handle)
 {
     _override_parameters = true;
     _filter = TextureFilterMode::LINEAR;

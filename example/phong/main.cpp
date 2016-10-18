@@ -20,13 +20,14 @@ struct Example : public Application
         collection->add_search_path("resource");
 
         ////
+        ENSURE(!core::get_subsystem<graphics::Renderer>()->is_frame_began());
         phong = cache->get<res::Shader>("shader/phong.shader");
         lamp = cache->get<res::Shader>("shader/color.shader");
         primitive = res::Primitive::cube();
 
         ////
-        uniform = frontend->create<UniformBuffer>();
-        lamp_uniform = frontend->create<UniformBuffer>();
+        uniform = frontend->create<UniformBuffer>()->handle;
+        lamp_uniform = frontend->create<UniformBuffer>()->handle;
 
         auto p = frontend->get<Program>(phong->get_program_handle());
         p->set_attribute_name(VertexAttribute::POSITION, "position");
