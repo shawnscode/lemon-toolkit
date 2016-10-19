@@ -249,16 +249,16 @@ INLINE Matrix4f Transform::to_matrix(TransformSpace space) const
 {
     if( TransformSpace::WORLD == space )
     {
-        auto matrix = translation(_world_pose.position);
-        matrix *= (Matrix4f)to_rotation_matrix(_world_pose.rotation);
+        auto matrix = (Matrix4f)to_rotation_matrix(_world_pose.rotation);
         matrix *= (Matrix4f)math::scale(_world_pose.scale);
+        matrix *= translation(_world_pose.position);
         return matrix;
     }
     else
     {
-        auto matrix = translation(_pose.position);
-        matrix *= (Matrix4f)to_rotation_matrix(_pose.rotation);
+        auto matrix = (Matrix4f)to_rotation_matrix(_pose.rotation);
         matrix *= (Matrix4f)math::scale(_pose.scale);
+        matrix *= translation(_pose.position);
         return matrix;
     }
 }

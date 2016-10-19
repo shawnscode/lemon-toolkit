@@ -39,6 +39,7 @@ struct RenderDrawcall
 {
     // stateless render state
     RenderState state;
+    math::Matrix4f model;
     // graphics resources we need to make a draw call
     Handle program;
     Handle uniform_buffer;

@@ -54,10 +54,6 @@ void Scene::update_with_camera(Transform& transform, Camera& camera)
             if( mesh.material->has_uniform(uniform) )
                 mesh.material->set_uniform_4fm(uniform, view);
 
-            uniform = res::Material::name(res::Material::BuildinUniform::MODEL);
-            if( mesh.material->has_uniform(uniform) )
-                mesh.material->set_uniform_4fm(uniform, transform.to_matrix(TransformSpace::WORLD));
-
             uniform = res::Material::name(res::Material::BuildinUniform::VIEW_POS);
             if( mesh.material->has_uniform(uniform) )
                 mesh.material->set_uniform_3f(uniform, view_pos);
@@ -101,9 +97,9 @@ void Scene::draw_with_camera(Transform& transform, Camera& camera)
         [=](Entity&, Transform& transform, MeshRenderer& mesh)
         {
             auto distance = math::distance_square(view_pos, transform.get_position(TransformSpace::WORLD));
-
             graphics::RenderDrawcall drawcall;
             drawcall.state.depth.enable = true;
+            drawcall.model = transform.to_matrix(TransformSpace::WORLD);
             drawcall.program = mesh.material->get_program_handle();
             drawcall.uniform_buffer = mesh.material->get_uniform_handle();
             drawcall.vertex_buffer = mesh.primitive->get_vertex_handle();

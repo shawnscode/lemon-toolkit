@@ -25,7 +25,7 @@ struct ProgramGL : public Program
     void dispose() override;
 
     bool set_attribute_name(VertexAttribute::Enum, const char*) override;
-    bool has_uniform(const char*) const;
+    bool has_uniform(const char*) const override;
 
     // returns opengl handle of this program
     GLuint get_handle() const { return _object; }

@@ -127,7 +127,7 @@ void Renderer::submit(RenderLayer layer, uint32_t depth, RenderDrawcall& drawcal
 
 bool Renderer::drawcall_compare(const RenderDrawcall& lhs, const RenderDrawcall& rhs)
 {
-    return lhs.sort < rhs.sort;
+    return lhs.sort > rhs.sort;
 }
 
 void Renderer::flush()
@@ -150,6 +150,13 @@ void Renderer::flush()
         _statecache->bind_program(drawcall.program);
         _statecache->bind_uniform_buffer(drawcall.program, drawcall.uniform_buffer);
         _statecache->bind_vertex_buffer(drawcall.program, drawcall.vertex_buffer);
+
+        if( program->has_uniform("ModelMatrix") )
+        {
+            auto location = program->get_uniform_location("ModelMatrix");
+            glUniformMatrix4fv(location, 1, GL_TRUE, (float*)&drawcall.model);
+            CHECK_GL_ERROR();
+        }
 
         auto& state = drawcall.state;
         _backend->set_scissor_test(state.scissor.enable, state.scissor.area);
