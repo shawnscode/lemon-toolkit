@@ -10,3 +10,6 @@
 [submodule "3rd/hayai"]
 	path = 3rd/hayai
 	url = https://github.com/nickbruun/hayai.git
+[submodule "3rd/rapidjson"]
+	path = 3rd/rapidjson
+	url = https://github.com/miloyip/rapidjson.git
