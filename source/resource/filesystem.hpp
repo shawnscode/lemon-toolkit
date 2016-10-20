@@ -5,7 +5,6 @@
 
 #include <resource/path.hpp>
 #include <codebase/type/enumeration.hpp>
-#include <core/subsystem.hpp>
 
 #include <vector>
 #include <fstream>

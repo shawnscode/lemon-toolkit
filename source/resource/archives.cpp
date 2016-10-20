@@ -2,6 +2,7 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <resource/archives.hpp>
+#include <engine/arguments.hpp>
 
 NS_LEMON_RESOURCE_BEGIN
 
@@ -62,6 +63,24 @@ bool PackageArchive::is_exist(const fs::Path&)
 std::fstream PackageArchive::open(const fs::Path&, fs::FileMode)
 {
     return std::fstream();
+}
+
+bool ArchiveCollection::initialize()
+{
+    auto arguments = core::get_subsystem<Arguments>();
+
+    if( auto searches = arguments->fetch("/Archives/SearchPaths") )
+    {
+        for( auto& path : searches->GetArray() )
+        {
+            if( !add_search_path(arguments->get_path() / path.GetString()) )
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 void ArchiveCollection::dispose()

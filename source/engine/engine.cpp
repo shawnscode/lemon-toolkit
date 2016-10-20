@@ -3,6 +3,7 @@
 
 #include <engine/engine.hpp>
 #include <engine/input.hpp>
+#include <engine/arguments.hpp>
 #include <graphics/window.hpp>
 #include <graphics/renderer.hpp>
 #include <resource/resource.hpp>
@@ -36,16 +37,25 @@ bool Engine::initialize()
     core::add_subsystem<Input>();
     core::add_subsystem<Scene>();
 
+    auto arguments = core::get_subsystem<Arguments>();
     _timestep.zero();
     _last_frame_timepoint = clock::now();
-    _min_fps = _max_fps = _max_inactive_fps = 0;
-    _running = true;
     _launch_timepoint = clock::now();
 
+    _min_fps = arguments->fetch("/Engine/MinFPS", 0).GetInt();
+    _max_fps = arguments->fetch("/Engine/MaxFPS", 0).GetInt();
+    _max_inactive_fps = arguments->fetch("/Engine/MaxInactiveFPS", 0).GetInt();
+    _smoothing_step = arguments->fetch("/Engine/TimeSmoothingStep", 0).GetInt();
+
+    auto width = arguments->fetch("/Graphics/WindowSize/0", 128).GetInt();
+    auto height = arguments->fetch("/Graphics/WindowSize/1", 128).GetInt();
+    auto multisamples = arguments->fetch("/Graphics/Multisamples", 1).GetInt();
+
     auto device = core::get_subsystem<graphics::WindowDevice>();
-    if( !device->open(512, 512, 1, graphics::WindowOption::RESIZABLE) )
+    if( !device->open(width, height, multisamples, graphics::WindowOption::RESIZABLE) )
         return false;
 
+    _running = true;
     return true;
 }
 
@@ -74,7 +84,7 @@ void Engine::run_one_frame()
 
     // perform waiting loop if maximum fps set
     auto max_fps = _max_fps;
-    if( device->get_window_flags() & SDL_WINDOW_INPUT_FOCUS )
+    if( (device->get_window_flags() & SDL_WINDOW_INPUT_FOCUS) && max_fps > 0 )
         max_fps = std::min(_max_inactive_fps, max_fps);
 
     if( max_fps > 0 )
@@ -104,18 +114,25 @@ void Engine::run_one_frame()
     }
 
     // perform timestep smoothing
-    _timestep.zero();
-    _previous_timesteps.push_back(eplased);
-    if( _previous_timesteps.size() > _smoothing_step )
+    if( _smoothing_step > 0 )
     {
-        auto begin = _previous_timesteps.begin();
-        _previous_timesteps.erase(begin, begin+_previous_timesteps.size()-_smoothing_step);
-        for( auto step : _previous_timesteps )
-            _timestep += step;
-        _timestep /= _previous_timesteps.size();
+        _timestep.zero();
+        _previous_timesteps.push_back(eplased);
+        if( _previous_timesteps.size() > _smoothing_step )
+        {
+            auto begin = _previous_timesteps.begin();
+            _previous_timesteps.erase(begin, begin+_previous_timesteps.size()-_smoothing_step);
+            for( auto step : _previous_timesteps )
+                _timestep += step;
+            _timestep /= _previous_timesteps.size();
+        }
+        else
+            _timestep = _previous_timesteps.back();
     }
     else
-        _timestep = _previous_timesteps.back();
+    {
+        _timestep = eplased;
+    }
 }
 
 void Engine::update(duration dt)

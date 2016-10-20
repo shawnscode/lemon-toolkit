@@ -23,6 +23,8 @@ struct Application
     int run();
     // show  an error message, terminate the main loop, and set failure exit code
     void terminate_with_error(const std::string&);
+    // parse environment arguments
+    void parse(const char*);
 
 protected:
     int _exitcode;

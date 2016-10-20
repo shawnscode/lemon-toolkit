@@ -37,7 +37,7 @@ Resource::ptr ResourceCache::get_internal(details::ResourceResolver* resolver, c
     auto file = get_file(name);
     if( !file.is_open() )
     {
-        LOGW("failed to get due to file not exists, \"%s\"", name.c_str());
+        LOGW("file not exists, \"%s\"", name.c_str());
         return nullptr;
     }
 

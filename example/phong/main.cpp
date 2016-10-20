@@ -15,19 +15,15 @@ struct Example : public Application
     core::Entity* lamp = nullptr;
     core::Entity* camera = nullptr;
 
+    void setup() override
+    {
+        parse("../../example/resource/engine/defaults.json");
+    }
+
     void start() override
     {
-        fs::set_current_directory("../../example");
-
-        auto engine = core::get_subsystem<Engine>();
-        auto collection = core::get_subsystem<res::ArchiveCollection>();
         auto cache = core::get_subsystem<res::ResourceCache>();
-        auto frontend = core::get_subsystem<graphics::Renderer>();
         auto ecs = core::get_subsystem<core::EntityComponentSystem>();
-
-        engine->set_time_smoothing_step(10);
-        engine->set_max_fps(30);
-        collection->add_search_path("resource");
 
         ////
         {

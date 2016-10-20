@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <core/core.hpp>
 #include <resource/filesystem.hpp>
 
 NS_LEMON_RESOURCE_BEGIN
@@ -55,8 +56,9 @@ struct ArchiveCollection : core::Subsystem
         std::is_base_of<Archive, T>::value,
         bool>::type;
 
-    // dispose all archives
+    bool initialize() override;
     void dispose() override;
+
     // add a archive to collection subsystem
     template<typename T, typename ... Args> boolean<T> add_archive(Args && ...);
     // add a search path

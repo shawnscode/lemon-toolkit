@@ -1,0 +1,16 @@
+{
+    "WorkingDirectory": "../../",
+    "Engine" : {
+        "MinFPS" : 10,
+        "MaxFPS" : 30,
+        "TimeSmoothingStep" : 10
+    },
+    "Archives" : {
+        "SearchPaths" : [ ".." ]
+    },
+    "Graphics" : {
+        "WindowSize" : [512, 512],
+        "Multisamples" : 1,
+        "MaxPixelLights" : 2
+    }
+}
