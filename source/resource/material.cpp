@@ -63,4 +63,15 @@ bool Material::save(std::ostream& out)
     return true;
 }
 
+size_t Material::get_memory_usage() const
+{
+    auto size = sizeof(Material);
+
+    if( _uniform != nullptr )
+        size += sizeof(graphics::UniformBuffer);
+
+    size += (_images.size() * sizeof(Image::ptr));
+    return size;
+}
+
 NS_LEMON_RESOURCE_END

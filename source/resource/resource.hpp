@@ -24,16 +24,16 @@ struct Resource
     // return true if successful
     virtual bool read(std::istream&) = 0;
     virtual bool save(std::ostream&) = 0;
+    virtual size_t get_memory_usage() const { return 0; }
+
     virtual bool initialize() { return true; }
     virtual void dispose() {}
 
     void set_name(const char* str) { _name = str; }
     const std::string& get_name() const { return _name; }
-    unsigned get_memusage() const { return _memusage; } // in bytes
 
 protected:
     std::string _name;
-    unsigned _memusage = 0;
 };
 
 namespace details
@@ -48,7 +48,7 @@ namespace details
 // for later access with a LRU strategy.
 struct ResourceCache : public core::Subsystem
 {
-    ResourceCache(unsigned threshold = kCacheDefaultThreshold);
+    ResourceCache(size_t threshold = kCacheDefaultThreshold);
     ~ResourceCache();
 
     bool initialize() override;
@@ -70,7 +70,7 @@ struct ResourceCache : public core::Subsystem
     // return true if successful
     // template<typename T> bool precache(const fs::Path&);
 
-    unsigned get_memusage() const { return _memusage; }
+    size_t get_memory_usage() const { return _memusage; }
 
 protected:
     friend std::ostream& operator << (std::ostream&, const ResourceCache&);
@@ -79,11 +79,11 @@ protected:
 
     std::fstream get_file(const fs::Path&);
     Resource::ptr get_internal(details::ResourceResolver*, const fs::Path&);
-    void make_room(unsigned);
+    void make_room(size_t);
     void touch(math::StringHash);
 
-    unsigned _memusage;
-    unsigned _threshold;
+    size_t _memusage;
+    size_t _threshold;
 
     std::unordered_map<math::StringHash, std::string> _names;
     std::unordered_map<math::StringHash, Resource::ptr> _resources;

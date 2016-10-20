@@ -91,6 +91,11 @@ bool Image::save(std::ostream& out)
     return true;
 }
 
+size_t Image::get_memory_usage() const
+{
+    return _width * _height * _components;
+}
+
 bool Image::set_size(unsigned width, unsigned height, unsigned components, ImageElementFormat element)
 {
     if( width == _width && height == _width && element == _element_format )
@@ -113,7 +118,6 @@ bool Image::set_size(unsigned width, unsigned height, unsigned components, Image
     _height = height;
     _components = components;
     _element_format = element;
-    _memusage = width * height * components;
     return true;
 }
 

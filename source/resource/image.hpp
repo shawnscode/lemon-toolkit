@@ -26,6 +26,7 @@ struct Image : public Resource
 
     bool read(std::istream&) override;
     bool save(std::ostream&) override;
+    size_t get_memory_usage() const override;
 
     // set size and number of color components, old pixels will be discarded.
     bool set_size(unsigned, unsigned, unsigned, ImageElementFormat element = ImageElementFormat::UBYTE);

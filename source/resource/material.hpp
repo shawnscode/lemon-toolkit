@@ -35,6 +35,7 @@ public:
 
     bool read(std::istream&) override;
     bool save(std::ostream&) override;
+    size_t get_memory_usage() const override;
 
     // specified input identifier of vertex attribute
     bool set_attribute_name(graphics::VertexAttribute::Enum, const char*);

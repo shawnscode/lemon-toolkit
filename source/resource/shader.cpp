@@ -151,4 +151,9 @@ bool Shader::save(std::ostream& out)
     return true;
 }
 
+size_t Shader::get_memory_usage() const
+{
+    return _vertex.size() + _fragment.size();
+}
+
 NS_LEMON_RESOURCE_END

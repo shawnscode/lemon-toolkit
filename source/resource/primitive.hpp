@@ -21,6 +21,7 @@ public:
 
     bool read(std::istream&) override { return true; }
     bool save(std::ostream&) override { return true;}
+    size_t get_memory_usage() const override;
 
     graphics::PrimitiveType get_type() const;
     unsigned get_vertex_count() const;

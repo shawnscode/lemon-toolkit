@@ -86,4 +86,17 @@ Primitive::~Primitive()
     }
 }
 
+size_t Primitive::get_memory_usage() const
+{
+    auto size = sizeof(Primitive);
+
+    if( _vertex_buffer != nullptr )
+        size += sizeof(graphics::VertexBuffer);
+
+    if( _index_buffer != nullptr )
+        size += sizeof(graphics::IndexBuffer);
+
+    return size;
+}
+
 NS_LEMON_RESOURCE_END

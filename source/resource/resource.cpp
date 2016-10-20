@@ -6,7 +6,7 @@
 
 NS_LEMON_RESOURCE_BEGIN
 
-ResourceCache::ResourceCache(unsigned threshold)
+ResourceCache::ResourceCache(size_t threshold)
 : _threshold(threshold), _memusage(0)
 {}
 
@@ -47,7 +47,7 @@ Resource::ptr ResourceCache::get_internal(details::ResourceResolver* resolver, c
         resource->set_name(name.c_str());
         if( resource->read(file) )
         {
-            make_room(resource->get_memusage());
+            make_room(resource->get_memory_usage());
             _resources[hash] = resource;
             _lru.push_back(std::make_pair(hash, resource));
             _names[hash] = name.to_string();
@@ -68,7 +68,7 @@ bool ResourceCache::add(const fs::Path& name, Resource::ptr resource)
     if( found != _resources.end() )
         return false;
 
-    make_room(resource->get_memusage());
+    make_room(resource->get_memory_usage());
     _resources[hash] = resource;
     _lru.push_back(std::make_pair(hash, resource));
     _names[hash] = name.to_string();
@@ -80,7 +80,7 @@ bool ResourceCache::is_exist(const fs::Path& path) const
     return _resources.find(path.c_str()) != _resources.end();
 }
 
-void ResourceCache::make_room(unsigned size)
+void ResourceCache::make_room(size_t size)
 {
     if( _memusage + size <= _threshold )
     {
@@ -90,13 +90,13 @@ void ResourceCache::make_room(unsigned size)
 
     _memusage = size;
     for( auto pair : _resources )
-        _memusage += pair.second->get_memusage();
+        _memusage += pair.second->get_memory_usage();
 
     for( auto cursor = _lru.begin(); cursor != _lru.end(); )
     {
         if( cursor->second.use_count() == 2 )
         {
-            _memusage -= cursor->second->get_memusage();
+            _memusage -= cursor->second->get_memory_usage();
             _resources.erase(cursor->first);
             _names.erase(cursor->first);
             _lru.erase(cursor++);
@@ -135,14 +135,14 @@ std::fstream ResourceCache::get_file(const fs::Path& path)
 std::ostream& operator << (std::ostream& out, const ResourceCache& cache)
 {
     out << "ResourceCache" << std::endl;
-    unsigned usage = 0;
+    size_t usage = 0;
     for( auto pair : cache._resources )
     {
-        usage += pair.second->get_memusage();
+        usage += pair.second->get_memory_usage();
         auto name = cache._names.find(pair.first);
         if( name != cache._names.end() ) out << "\t" << name->second;
         else out << "\t" << pair.first;
-        out << " : " << pair.second->get_memusage() << " byte(s)" << std::endl;
+        out << " : " << pair.second->get_memory_usage() << " byte(s)" << std::endl;
     }
     return out << usage << " byte(s)" <<std::endl;
 }

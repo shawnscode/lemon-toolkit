@@ -160,6 +160,7 @@ struct VertexBuffer : public GraphicsObject
     virtual bool update_data(const void*, unsigned, unsigned, bool discard = false) = 0;
 
     virtual unsigned get_size() const = 0;
+    virtual const VertexLayout& get_layout() const = 0;
 };
 
 // index element format
