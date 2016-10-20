@@ -38,38 +38,22 @@ void Scene::receive(const EvtRenderUpdate& evt)
 
 void Scene::update_with_camera(Transform& transform, Camera& camera)
 {
-    auto projection = camera.get_projection_matrix();
-    auto view = Camera::get_view_matrix(transform);
+    auto projection_matrix = camera.get_projection_matrix();
+    auto view_matrix = Camera::get_view_matrix(transform);
     auto view_pos = transform.get_position(TransformSpace::WORLD);
-    auto ecs = core::get_subsystem<EntityComponentSystem>();
 
+    auto ecs = core::get_subsystem<EntityComponentSystem>();
     ecs->find_entities_with<Transform, MeshRenderer>().visit(
         [=](Entity&, Transform& transform, MeshRenderer& mesh)
         {
-            auto uniform = res::Material::name(res::Material::BuildinUniform::PROJECTION);
-            if( mesh.material->has_uniform(uniform) )
-                mesh.material->set_uniform_4fm(uniform, projection);
+            auto name = graphics::BuildinUniforms::name(graphics::BuildinUniforms::PROJECTION);
+            mesh.material->set_uniform_4fm(name, projection_matrix);
 
-            uniform = res::Material::name(res::Material::BuildinUniform::VIEW);
-            if( mesh.material->has_uniform(uniform) )
-                mesh.material->set_uniform_4fm(uniform, view);
+            name = graphics::BuildinUniforms::name(graphics::BuildinUniforms::VIEW);
+            mesh.material->set_uniform_4fm(name, view_matrix);
 
-            uniform = res::Material::name(res::Material::BuildinUniform::VIEW_POS);
-            if( mesh.material->has_uniform(uniform) )
-                mesh.material->set_uniform_3f(uniform, view_pos);
-
-            // if( lights.size() <= 0 )
-            //     continue;
-
-            // if( mesh.material->has_uniform(Material::BuildinUniform::LIGHT_POS) )
-            // {
-            //     auto t = lights[0]->get_component<Transform>();
-            //     auto light_pos = t->get_position(TransformSpace::WORLD);
-            //     uniform->set_uniform_3f(Material::name(Material::BuildinUniform::LIGHT_POS), light_pos);
-            // }
-
-            // if( mesh.material->has_uniform(Material::BuildinUniform::LIGHT_COLOR) )
-            //     uniform->set_uniform_3f(Material::name(Material::BuildinUniform::LIGHT_POS), lights[0]->color);
+            name = graphics::BuildinUniforms::name(graphics::BuildinUniforms::VIEW_POS);
+            mesh.material->set_uniform_3f(name, view_pos);
         });
 }
 
@@ -87,19 +71,22 @@ void Scene::receive(const EvtRender& evt)
 
 void Scene::draw_with_camera(Transform& transform, Camera& camera)
 {
-    auto view_pos = transform.get_position(TransformSpace::WORLD);
-
     auto frontend = core::get_subsystem<graphics::Renderer>();
     frontend->clear(graphics::ClearOption::COLOR | graphics::ClearOption::DEPTH, {0.75, 0.75, 0.75}, 1.f);
 
+    auto view_pos = transform.get_position(TransformSpace::WORLD);
     auto ecs = core::get_subsystem<EntityComponentSystem>();
     ecs->find_entities_with<Transform, MeshRenderer>().visit(
         [=](Entity&, Transform& transform, MeshRenderer& mesh)
         {
-            auto distance = math::distance_square(view_pos, transform.get_position(TransformSpace::WORLD));
             graphics::RenderDrawcall drawcall;
+
+            // TODO: fill render state associated with materials
             drawcall.state.depth.enable = true;
-            drawcall.model = transform.to_matrix(TransformSpace::WORLD);
+            drawcall.buildin.model = transform.get_model_matrix(TransformSpace::WORLD);
+            drawcall.buildin.normal = transform.get_normal_matrix(TransformSpace::WORLD);
+
+            //
             drawcall.program = mesh.material->get_program_handle();
             drawcall.uniform_buffer = mesh.material->get_uniform_handle();
             drawcall.vertex_buffer = mesh.primitive->get_vertex_handle();
@@ -107,6 +94,9 @@ void Scene::draw_with_camera(Transform& transform, Camera& camera)
             drawcall.primitive = mesh.primitive->get_type();
             drawcall.first = 0;
             drawcall.count = mesh.primitive->get_vertex_count();
+
+            //
+            auto distance = math::distance_square(view_pos, transform.get_position(TransformSpace::WORLD));
             frontend->submit(graphics::RenderLayer::BACKGROUND, distance, drawcall);
         });
 }

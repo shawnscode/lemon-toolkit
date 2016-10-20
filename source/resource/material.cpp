@@ -9,21 +9,6 @@
 
 NS_LEMON_RESOURCE_BEGIN
 
-static const char* BUILDIN_UNIFORM_NAME[] =
-{
-    "ProjectionMatrix",
-    "ViewMatrix",
-    "ModelMatrix",
-    "ViewPos",
-    "LightPos",
-    "LightColor",
-};
-
-const char* Material::name(Material::BuildinUniform uni)
-{
-    return BUILDIN_UNIFORM_NAME[value(uni)];
-}
-
 Material::ptr Material::create(const fs::Path& name, Shader::ptr shader)
 {
     if( shader == nullptr )

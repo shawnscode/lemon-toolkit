@@ -135,15 +135,20 @@ std::fstream ResourceCache::get_file(const fs::Path& path)
 std::ostream& operator << (std::ostream& out, const ResourceCache& cache)
 {
     out << "ResourceCache" << std::endl;
+
     size_t usage = 0;
     for( auto pair : cache._resources )
     {
         usage += pair.second->get_memory_usage();
+
         auto name = cache._names.find(pair.first);
         if( name != cache._names.end() ) out << "\t" << name->second;
         else out << "\t" << pair.first;
-        out << " : " << pair.second->get_memory_usage() << " byte(s)" << std::endl;
+
+        out << "REF("<<pair.second.use_count()<<")\t: "
+            << pair.second->get_memory_usage() << " byte(s)" << std::endl;
     }
+
     return out << usage << " byte(s)" <<std::endl;
 }
 

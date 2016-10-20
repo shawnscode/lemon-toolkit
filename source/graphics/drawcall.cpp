@@ -65,4 +65,18 @@ SortValue SortValue::decode(uint64_t in)
     return out;
 }
 
+static const char* BUILDIN_UNIFORM_NAME[] =
+{
+    "lm_ProjectionMatrix",
+    "lm_ViewMatrix",
+    "lm_ModelMatrix",
+    "lm_NormalMatrix",
+    "lm_ViewPos",
+};
+
+const char* BuildinUniforms::name(BuildinUniforms::Enum uni)
+{
+    return BUILDIN_UNIFORM_NAME[value(uni)];
+}
+
 NS_LEMON_GRAPHICS_END

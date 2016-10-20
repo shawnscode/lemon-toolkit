@@ -44,16 +44,39 @@ void RenderStateCache::bind_program(Handle program_handle)
     CHECK_GL_ERROR();
 }
 
-void RenderStateCache::bind_uniform_buffer(Handle program_handle, Handle uniform_handle)
+static GLuint get_buildin_unifom_location(BuildinUniforms::Enum uni, ProgramGL& program)
 {
-    auto found = _active_uniforms.find(program_handle);
-    if( found != _active_uniforms.end() && found->second == uniform_handle )
-        return;
+    auto name = BuildinUniforms::name(uni);
+    return program.get_uniform_location(name, false);
+}
 
+void RenderStateCache::bind_uniform_buffer(
+    Handle program_handle,
+    Handle uniform_handle,
+    const BuildinUniforms& buildin)
+{
     auto program = static_cast<ProgramGL*>(_renderer.get<Program>(program_handle));
     auto uniform = static_cast<UniformBufferGL*>(_renderer.get<UniformBuffer>(uniform_handle));
 
     if( program == nullptr || uniform == nullptr )
+        return;
+
+    // bind uniforms per object
+    {
+        auto location = get_buildin_unifom_location(BuildinUniforms::MODEL, *program);
+        if( location != -1 )
+            glUniformMatrix4fv(location, 1, GL_TRUE, (float*)&buildin.model);
+    }
+
+    {
+        auto location = get_buildin_unifom_location(BuildinUniforms::NORMAL, *program);
+        if( location != -1 )
+            glUniformMatrix3fv(location, 1, GL_TRUE, (float*)&buildin.normal);
+    }
+
+    //
+    auto found = _active_uniforms.find(program_handle);
+    if( found != _active_uniforms.end() && found->second == uniform_handle )
         return;
 
     unsigned unit = 0;
@@ -74,7 +97,8 @@ void RenderStateCache::bind_uniform_buffer(Handle program_handle, Handle uniform
 
     for( const auto& pair : uniform->get_uniforms() )
     {
-        auto location = program->get_uniform_location(pair.first.c_str());
+        auto bi = strncmp(pair.first.c_str(), "lm_", 3) == 0;
+        auto location = program->get_uniform_location(pair.first.c_str(), !bi);
         if( location == -1 )
             continue;
 

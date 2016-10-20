@@ -165,7 +165,8 @@ public:
     const Transform* get_root() const;
 
     // returns representation of matrix
-    Matrix4f to_matrix(TransformSpace space = TransformSpace::LOCAL) const;
+    Matrix4f get_model_matrix(TransformSpace space = TransformSpace::LOCAL) const;
+    Matrix3f get_normal_matrix(TransformSpace space = TransformSpace::LOCAL) const;
 
 protected:
     template<typename T> static T* find_parent(T* current);

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <graphics/graphics.hpp>
+#include <graphics/drawcall.hpp>
 #include <graphics/private/opengl.hpp>
 #include <math/string_hash.hpp>
 
@@ -17,7 +18,7 @@ struct RenderStateCache
 
     void begin_frame();
     void bind_program(Handle program);
-    void bind_uniform_buffer(Handle program, Handle uniform);
+    void bind_uniform_buffer(Handle program, Handle uniform, const BuildinUniforms&);
     void bind_vertex_buffer(Handle program, Handle vb);
     void end_frame();
 

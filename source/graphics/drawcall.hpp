@@ -34,12 +34,29 @@ struct SortValue
     static SortValue decode(uint64_t in);
 };
 
+struct BuildinUniforms
+{
+    enum Enum : uint8_t
+    {
+        PROJECTION = 0,
+        VIEW,
+        MODEL,
+        NORMAL,
+        VIEW_POS,
+    };
+
+    static const char* name(BuildinUniforms::Enum);
+
+    math::Matrix4f model;
+    math::Matrix3f normal;
+};
+
 // RenderDrawcall
 struct RenderDrawcall
 {
     // stateless render state
     RenderState state;
-    math::Matrix4f model;
+    BuildinUniforms buildin;
     // graphics resources we need to make a draw call
     Handle program;
     Handle uniform_buffer;

@@ -14,13 +14,13 @@ const char* s_default_vs =
 "\n"
 "layout (location = 0) in vec3 position;\n"
 "\n"
-"uniform mat4 ProjectionMatrix;\n"
-"uniform mat4 ViewMatrix;\n"
-"uniform mat4 ModelMatrix;\n"
+"uniform mat4 lm_ProjectionMatrix;\n"
+"uniform mat4 lm_ViewMatrix;\n"
+"uniform mat4 lm_ModelMatrix;\n"
 "\n"
 "void main()\n"
 "{\n"
-"    gl_Position = vec4(position, 1.0f) * ModelMatrix * ViewMatrix * ProjectionMatrix;\n"
+"    gl_Position = vec4(position, 1.0f) * lm_ModelMatrix * lm_ViewMatrix * lm_ProjectionMatrix;\n"
 "}\n";
 
 const char* s_default_fs =

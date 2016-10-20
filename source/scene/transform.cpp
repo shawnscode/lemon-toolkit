@@ -231,4 +231,27 @@ Transform* Transform::get_root()
     return parent;
 }
 
+INLINE static Matrix4f calculate_model_matrix(const TransformPose& pose)
+{
+    auto matrix = (Matrix4f)to_rotation_matrix(pose.rotation);
+    matrix *= (Matrix4f)math::scale(pose.scale);
+    matrix *= translation(pose.position);
+    return matrix;
+}
+
+Matrix4f Transform::get_model_matrix(TransformSpace space) const
+{
+    return calculate_model_matrix(TransformSpace::WORLD == space ? _world_pose : _pose);
+}
+
+INLINE static Matrix3f calculate_normal_matrix(const TransformPose& pose)
+{
+    return to_rotation_matrix(pose.rotation);
+}
+
+Matrix3f Transform::get_normal_matrix(TransformSpace space) const
+{
+    return calculate_normal_matrix(TransformSpace::WORLD == space ? _world_pose : _pose);
+}
+
 NS_LEMON_END

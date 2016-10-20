@@ -14,20 +14,6 @@ struct Material : public Resource
 {
     using ptr = std::shared_ptr<Material>;
     using weak_ptr = std::weak_ptr<Material>;
-
-    enum class BuildinUniform : uint8_t
-    {
-        PROJECTION = 0,
-        VIEW,
-        MODEL,
-
-        VIEW_POS,
-        LIGHT_POS,
-        LIGHT_COLOR
-    };
-
-    static const char* name(BuildinUniform);
-
     static Material::ptr create(const fs::Path&, Shader::ptr);
 
 public:
