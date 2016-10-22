@@ -25,6 +25,12 @@ NS_LEMON_GRAPHICS_BEGIN
 struct EvtGraphicsDisposed {};
 struct EvtGraphicsInitialized {};
 
+namespace resource
+{
+    template<typename T> void free();
+    template<typename T, typename ... Args> T* create(Args&& ...);
+}
+
 // Renderer provides sort-based draw call bucketing. this means that submission
 // order doesn't necessarily match the rendering order, but on the low-level
 // they will be sorted and ordered correctly.
@@ -32,9 +38,6 @@ struct RendererBackend;
 struct RenderStateCache;
 struct Renderer : public core::Subsystem
 {
-    template<typename T> static void checked_free(T*);
-
-public:
     bool initialize() override;
     void dispose() override;
 
@@ -88,10 +91,20 @@ protected:
 };
 
 // implementations of templates
-template<typename T> void Renderer::checked_free(T* object)
+namespace resource
 {
-    if( auto frontend = core::get_subsystem<Renderer>() )
-        frontend->free(object);
+    template<typename T> void free(T* object)
+    {
+        if( auto frontend = core::get_subsystem<Renderer>() )
+            frontend->free(object);
+    }
+
+    template<typename T, typename ... Args> T* create(Args&& ... args)
+    {
+        if( auto frontend = core::get_subsystem<Renderer>() )
+            return frontend->create<T>(std::forward<Args>(args)...);
+        return nullptr;
+    }
 }
 
 template<typename T, typename ... Args> T* Renderer::create(Args&& ... args)
@@ -137,7 +150,7 @@ template<typename T> T* Renderer::get(Handle handle)
 template<typename T> void Renderer::free(T* object)
 {
     if( object != nullptr )
-        free<T>(object->handle);
+        Renderer::free<T>(object->handle);
 }
 
 template<typename T> void Renderer::free(Handle handle)

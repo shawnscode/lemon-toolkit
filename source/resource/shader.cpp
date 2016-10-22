@@ -34,25 +34,12 @@ const char* s_default_fs =
 "    color = vec4(ObjectColor, 1.0f);\n"
 "}\n";
 
-Shader::ptr Shader::create(const fs::Path& name, const char* vs, const char* fs)
-{
-    auto cache = core::get_subsystem<ResourceCache>();
-    if( cache->is_exist(name) )
-        return cache->fetch<Shader>(name);
-
-    auto shader = Shader::ptr(new (std::nothrow) Shader);
-    shader->_vertex = vs;
-    shader->_fragment = fs;
-    shader->_program = core::get_subsystem<graphics::Renderer>()->create<graphics::Program>(vs, fs);
-
-    cache->add(name, shader);
-    return shader;
-}
-
 Shader::ptr Shader::color()
 {
     static const fs::Path s_path = {"_buildin_/shader/default"};
-    return create(s_path, s_default_vs, s_default_fs);
+    if( auto cache = core::get_subsystem<ResourceCache>() )
+        return cache->create<Shader>(s_path, s_default_vs, s_default_fs);
+    return nullptr;
 }
 
 struct Token
@@ -71,7 +58,7 @@ enum class ShaderType
 
 Shader::~Shader()
 {
-    graphics::Renderer::checked_free(_program);
+    graphics::resource::free(_program);
 }
 
 bool Shader::read(std::istream& in)
@@ -84,6 +71,7 @@ bool Shader::read(std::istream& in)
     bool bracket = false;
     ShaderType type = ShaderType::VERTEX;
 
+    std::string vertex, fragment;
     while( std::getline(in, line) )
     {
         if( std::regex_match(line, syntax) )
@@ -95,13 +83,13 @@ bool Shader::read(std::istream& in)
                 {
                     ENSURE(!bracket);
                     type = ShaderType::VERTEX;
-                    _vertex.clear();
+                    vertex.clear();
                 }
                 else if( strcmp((*iterator).str().c_str(), Token::FragmentShader) == 0 )
                 {
                     ENSURE(!bracket);
                     type = ShaderType::FRAGMENT;
-                    _fragment.clear();
+                    fragment.clear();
                 }
                 else if( strcmp((*iterator).str().c_str(), Token::OpenBracket) == 0 )
                 {
@@ -119,24 +107,19 @@ bool Shader::read(std::istream& in)
         {
             if( type == ShaderType::VERTEX )
             {
-                _vertex.append(line);
-                _vertex.push_back('\n');
+                vertex.append(line);
+                vertex.push_back('\n');
             }
             else
             {
-                _fragment.append(line);
-                _fragment.push_back('\n');
+                fragment.append(line);
+                fragment.push_back('\n');
             }
         }
     }
 
     ENSURE(!bracket);
-
-    auto frontend = core::get_subsystem<graphics::Renderer>();
-    ENSURE(frontend != nullptr);
-
-    _program = frontend->create<graphics::Program>(_vertex.c_str(), _fragment.c_str());
-    return _program != nullptr;
+    return initialize(vertex.c_str(), fragment.c_str());
 }
 
 bool Shader::save(std::ostream& out)
@@ -150,9 +133,38 @@ bool Shader::save(std::ostream& out)
     return true;
 }
 
+bool Shader::update_video_object()
+{
+    if( _dirty )
+    {
+        if( _program )
+            graphics::resource::free(_program);
+        _program = graphics::resource::create<graphics::Program>(_vertex.c_str(), _fragment.c_str());
+        _dirty = false;
+    }
+
+    return _program != nullptr;
+}
+
 size_t Shader::get_memory_usage() const
 {
-    return _vertex.size() + _fragment.size();
+    return sizeof(Shader) + _vertex.size() + _fragment.size();
+}
+
+size_t Shader::get_video_memory_usage() const
+{
+    return 0;
+}
+
+bool Shader::initialize(const char* vs, const char* fs)
+{
+    if( vs == nullptr || fs == nullptr )
+        return false;
+
+    _vertex = vs;
+    _fragment = fs;
+    _dirty = true;
+    return true;
 }
 
 NS_LEMON_RESOURCE_END

@@ -65,7 +65,7 @@ bool ResourceCache::add(math::StringHash hash, Resource::ptr resource)
 void ResourceCache::make_room(Resource::ptr resource)
 {
     _memory_usage += resource->get_memory_usage();
-    _video_memory_usage += resource->get_video_memroy_usage();
+    _video_memory_usage += resource->get_video_memory_usage();
 
     if( _memory_usage <= _memory_threshold && _video_memory_usage <= _video_memory_threshold )
         return;
@@ -76,7 +76,7 @@ void ResourceCache::make_room(Resource::ptr resource)
         if( cursor->second.use_count() == 2 )
         {
             _memory_usage -= cursor->second->get_memory_usage();
-            _video_memory_usage -= cursor->second->get_video_memroy_usage();
+            _video_memory_usage -= cursor->second->get_video_memory_usage();
 
             _resources.erase(cursor->first);
             _lru.erase(cursor++);
@@ -123,7 +123,7 @@ std::ostream& operator << (std::ostream& out, const ResourceCache& cache)
         out << "\t" << pair.second->get_name()
             << " REF("<<pair.second.use_count() << "): RAM "
             << pair.second->get_memory_usage() << " byte(s), VRAM "
-            << pair.second->get_video_memroy_usage() << " byte(s)." << std::endl;
+            << pair.second->get_video_memory_usage() << " byte(s)." << std::endl;
     }
 
     return out << usage << " byte(s)" <<std::endl;

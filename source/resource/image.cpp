@@ -11,20 +11,18 @@
 
 NS_LEMON_RESOURCE_BEGIN
 
-using namespace graphics;
-
-TextureFormat FORMAT[] =
+graphics::TextureFormat FORMAT[] =
 {
-    TextureFormat::ALPHA,
-    TextureFormat::ALPHA,
-    TextureFormat::LUMINANCE_ALPHA,
-    TextureFormat::RGB,
-    TextureFormat::RGBA,
+    graphics::TextureFormat::ALPHA,
+    graphics::TextureFormat::ALPHA,
+    graphics::TextureFormat::LUMINANCE_ALPHA,
+    graphics::TextureFormat::RGB,
+    graphics::TextureFormat::RGBA,
 };
 
 Image::~Image()
 {
-    graphics::Renderer::checked_free(_texture);
+    graphics::resource::free(_texture);
 }
 
 bool Image::read(std::istream& in)
@@ -58,7 +56,8 @@ bool Image::read(std::istream& in)
 
     set_data(pixels);
     stbi_image_free(pixels);
-    return update_texture(MemoryUsage::STATIC);
+    return true;
+    // return update_texture(graphics::MemoryUsage::STATIC);
 }
 
 bool Image::save(std::ostream& out)
@@ -83,25 +82,30 @@ bool Image::save(std::ostream& out)
     return true;
 }
 
+bool Image::update_video_object()
+{
+    auto format = FORMAT[_components];
+    auto element_format = static_cast<graphics::TexturePixelFormat>(_element_format);
+    if( _texture == nullptr )
+    {
+        _texture = core::get_subsystem<graphics::Renderer>()->create<graphics::Texture>(
+            _data.get(), format, element_format, _width, _height, _usage);
+        return _texture != nullptr;
+    }
+    else
+    {
+        return _texture->initialize(_data.get(), format, element_format, _width, _height, _usage);
+    }
+}
+
 size_t Image::get_memory_usage() const
 {
     return _width * _height * _components;
 }
 
-bool Image::update_texture(graphics::MemoryUsage usage)
+size_t Image::get_video_memory_usage() const
 {
-    auto format = FORMAT[_components];
-    auto element_format = static_cast<TexturePixelFormat>(_element_format);
-    if( _texture == nullptr )
-    {
-        _texture = core::get_subsystem<graphics::Renderer>()->create<graphics::Texture>(
-            _data.get(), format, element_format, _width, _height, usage);
-        return _texture != nullptr;
-    }
-    else
-    {
-        return _texture->initialize(_data.get(), format, element_format, _width, _height, usage);
-    }
+    return 0;
 }
 
 bool Image::initialize(unsigned width, unsigned height, unsigned components, ImageElementFormat element)

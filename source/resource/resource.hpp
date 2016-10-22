@@ -39,8 +39,11 @@ public:
     virtual bool save(std::ostream&) = 0;
 
     // returns memory/video memory consumptions of this resource
-    virtual size_t get_memory_usage() const { return 0;}
-    virtual size_t get_video_memroy_usage() const { return 0; }
+    virtual size_t get_memory_usage() const;
+    virtual size_t get_video_memory_usage() const;
+
+    // override this method to handle graphics object initialization
+    virtual bool update_video_object();
 
     // setter/getter of name
     void set_name(const char* str) { _name = str; }
@@ -63,6 +66,9 @@ struct ResourceCache : public core::Subsystem
 
     // returns whether a resource exists
     bool is_exist(const fs::Path&) const;
+    // create resource and add it to cache, returns true if successfully
+    template<typename T, typename ... Args>
+    Resource::shared_derived_ptr<T> create(const fs::Path&, Args&&...);
     // add resource to cache, returns true if successfully
     bool add(const fs::Path&, Resource::ptr);
     bool add(math::StringHash, Resource::ptr);
@@ -73,7 +79,7 @@ struct ResourceCache : public core::Subsystem
     template<typename T> Resource::shared_derived_ptr<T> fetch(const fs::Path&);
     // returns memory/video usage of cached resource
     size_t get_memory_usage() const;
-    size_t get_video_memroy_usage() const;
+    size_t get_video_memory_usage() const;
     // set threshold of cache
     void set_threshold(size_t, size_t);
 
@@ -101,7 +107,7 @@ template<typename T, typename ... Args>
 Resource::shared_derived_ptr<T> Resource::create(Args&& ... args)
 {
     auto v = new (std::nothrow) T();
-    if( v && v->initialize(std::forward<Args>(args)...) ) return v;
+    if( v && v->initialize(std::forward<Args>(args)...) ) return Resource::shared_derived_ptr<T>(v);
     if( v ) delete v;
     return nullptr;
 }
@@ -117,6 +123,43 @@ Resource::shared_derived_ptr<T> Resource::read(const fs::Path& name)
         if( v ) delete v;
     }
     return nullptr;
+}
+
+INLINE size_t Resource::get_memory_usage() const
+{
+    return 0;
+}
+
+INLINE size_t Resource::get_video_memory_usage() const
+{
+    return 0;
+}
+
+INLINE bool Resource::update_video_object()
+{
+    return true;
+}
+
+template<typename T, typename ... Args>
+Resource::shared_derived_ptr<T> ResourceCache::create(const fs::Path& name, Args&& ... args)
+{
+    auto hash = math::StringHash(name.c_str());
+    if( auto resource = find<T>(hash) )
+        return resource;
+
+    if( auto v = Resource::create<T>(std::forward<Args>(args)...) )
+    {
+        v->set_name(name.c_str());
+        return (v->update_video_object() && add(hash, v)) ? v : nullptr;
+    }
+    return nullptr;
+}
+
+INLINE bool ResourceCache::add(const fs::Path& name, Resource::ptr resource)
+{
+    if( resource != nullptr )
+        resource->set_name(name.c_str());
+    return add(math::StringHash(name.c_str()), resource);
 }
 
 template<typename T>
@@ -147,7 +190,7 @@ Resource::shared_derived_ptr<T> ResourceCache::fetch(const fs::Path& name)
     if( auto resource = Resource::read<T>(name) )
     {
         resource->set_name(name.c_str());
-        return add(hash, resource) ? resource : nullptr;
+        return (resource->update_video_object() && add(hash, resource)) ? resource : nullptr;
     }
 
     return nullptr;
@@ -158,19 +201,12 @@ INLINE bool ResourceCache::is_exist(const fs::Path& path) const
     return _resources.find(path.c_str()) != _resources.end();
 }
 
-INLINE bool ResourceCache::add(const fs::Path& name, Resource::ptr resource)
-{
-    if( resource != nullptr )
-        resource->set_name(name.c_str());
-    return add(math::StringHash(name.c_str()), resource);
-}
-
 INLINE size_t ResourceCache::get_memory_usage() const
 {
     return _memory_usage;
 }
 
-INLINE size_t ResourceCache::get_video_memroy_usage() const
+INLINE size_t ResourceCache::get_video_memory_usage() const
 {
     return _video_memory_usage;
 }

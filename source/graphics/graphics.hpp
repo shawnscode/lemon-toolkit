@@ -32,6 +32,7 @@ struct GraphicsObject
 
     // returns handle to this graphics object
     const Handle handle;
+    operator Handle() const { return handle; }
 
 protected:
     Renderer& _renderer;

@@ -18,7 +18,7 @@ bool IndexBufferGL::initialize(const void* data, unsigned size, IndexElementForm
     glGenBuffers(1, &_object);
     if( !_object )
     {
-        LOGW("failed to create vertex buffer object.");
+        LOGW("failed to create index buffer object.");
         return false;
     }
 
@@ -50,7 +50,7 @@ bool IndexBufferGL::update_data(const void* data)
 
     if( !data )
     {
-        LOGW("failed to update vertex buffer with nullptr.");
+        LOGW("failed to update index buffer with nullptr.");
         return false;
     }
 
@@ -73,13 +73,13 @@ bool IndexBufferGL::update_data(const void* data, unsigned start, unsigned size,
 
     if( data != nullptr )
     {
-        LOGW("failed to update vertex buffer with nullptr.");
+        LOGW("failed to update index buffer with nullptr.");
         return false;
     }
 
     if( start + size > _size )
     {
-        LOGW("out-of-range while setting new vertex buffer data.");
+        LOGW("out-of-range while setting new index buffer data.");
         return false;
     }
 

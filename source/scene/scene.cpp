@@ -46,14 +46,15 @@ void Scene::update_with_camera(Transform& transform, Camera& camera)
     ecs->find_entities_with<Transform, MeshRenderer>().visit(
         [=](Entity&, Transform& transform, MeshRenderer& mesh)
         {
+            auto uniforms = mesh.material->get_uniform_buffer();
             auto name = graphics::BuildinUniforms::name(graphics::BuildinUniforms::PROJECTION);
-            mesh.material->set_uniform_4fm(name, projection_matrix);
+            uniforms->set_uniform_4fm(name, projection_matrix);
 
             name = graphics::BuildinUniforms::name(graphics::BuildinUniforms::VIEW);
-            mesh.material->set_uniform_4fm(name, view_matrix);
+            uniforms->set_uniform_4fm(name, view_matrix);
 
             name = graphics::BuildinUniforms::name(graphics::BuildinUniforms::VIEW_POS);
-            mesh.material->set_uniform_3f(name, view_pos);
+            uniforms->set_uniform_3f(name, view_pos);
         });
 }
 
@@ -87,13 +88,22 @@ void Scene::draw_with_camera(Transform& transform, Camera& camera)
             drawcall.buildin.normal = transform.get_normal_matrix(TransformSpace::WORLD);
 
             //
-            drawcall.program = mesh.material->get_program_handle();
-            drawcall.uniform_buffer = mesh.material->get_uniform_handle();
-            drawcall.vertex_buffer = mesh.primitive->get_vertex_handle();
-            drawcall.index_buffer = mesh.primitive->get_index_handle();
-            drawcall.primitive = mesh.primitive->get_type();
+            drawcall.program = *mesh.material->get_program();
+            drawcall.uniform_buffer = *mesh.material->get_uniform_buffer();
+            drawcall.vertex_buffer = *mesh.primitive->get_vertex_buffer();
+            drawcall.primitive = mesh.primitive->get_primitive_type();
             drawcall.first = 0;
-            drawcall.count = mesh.primitive->get_vertex_count();
+
+            auto ib = mesh.primitive->get_index_buffer();
+            if( ib != nullptr )
+            {
+                drawcall.index_buffer = *ib;
+                drawcall.count = mesh.primitive->get_index_size();
+            }
+            else
+            {
+                drawcall.count = mesh.primitive->get_vertex_size();
+            }
 
             //
             auto distance = math::distance_square(view_pos, transform.get_position(TransformSpace::WORLD));

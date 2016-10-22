@@ -20,39 +20,86 @@ public:
     virtual ~Primitive();
 
     bool read(std::istream&) override { return true; }
-    bool save(std::ostream&) override { return true;}
-    size_t get_memory_usage() const override;
+    bool save(std::ostream&) override { return true; }
+    bool update_video_object() override;
 
-    graphics::PrimitiveType get_type() const;
-    unsigned get_vertex_count() const;
-    Handle get_vertex_handle() const;
-    Handle get_index_handle() const;
+    size_t get_memory_usage() const override;
+    size_t get_video_memory_usage() const override;
+
+    // set the vertex data and layout of this primitive
+    bool initialize(const void*, const graphics::VertexLayout&, size_t);
+    bool initialize(const void*, const graphics::VertexLayout&, size_t, const void*, graphics::IndexElementFormat, size_t);
+    // specifies what kind of primitives to draw
+    void set_primitive_type(graphics::PrimitiveType);
+    // specifies the expected usage pattern of the data source
+    void set_video_memory_hint(graphics::MemoryUsage);
+
+    // returns current primitive type
+    graphics::PrimitiveType get_primitive_type() const;
+    // returns current memory usage
+    graphics::MemoryUsage get_video_memory_hint() const;
+
+    // returns the size of vertices
+    size_t get_vertex_size() const;
+    // returns the size of indices
+    size_t get_index_size() const;
+
+    // returns graphics object of vertex/index buffer
+    graphics::VertexBuffer* get_vertex_buffer() const;
+    graphics::IndexBuffer* get_index_buffer() const;
 
 protected:
-    graphics::PrimitiveType _type;
+    size_t _vertex_size = 0;
+    size_t _index_size = 0;
+    graphics::VertexLayout _layout;
+    std::unique_ptr<uint8_t[]> _vertices;
+    graphics::IndexElementFormat _index_format;
+    std::unique_ptr<uint8_t[]> _indices;
+    graphics::MemoryUsage _usage = graphics::MemoryUsage::STATIC;
+    graphics::PrimitiveType _type = graphics::PrimitiveType::TRIANGLES;
+
     graphics::VertexBuffer* _vertex_buffer = nullptr;
     graphics::IndexBuffer* _index_buffer = nullptr;
 };
 
-INLINE graphics::PrimitiveType Primitive::get_type() const
+INLINE void Primitive::set_primitive_type(graphics::PrimitiveType type)
+{
+    _type = type;
+}
+
+INLINE void Primitive::set_video_memory_hint(graphics::MemoryUsage usage)
+{
+    _usage = usage;
+}
+
+INLINE graphics::PrimitiveType Primitive::get_primitive_type() const
 {
     return _type;
 }
 
-INLINE Handle Primitive::get_index_handle() const
+INLINE graphics::MemoryUsage Primitive::get_video_memory_hint() const
 {
-    return _index_buffer == nullptr ? Handle() : _index_buffer->handle;
+    return _usage;
 }
 
-INLINE Handle Primitive::get_vertex_handle() const
+INLINE size_t Primitive::get_vertex_size() const
 {
-    return _vertex_buffer == nullptr ? Handle() : _vertex_buffer->handle;
+    return _vertex_size;
 }
 
-INLINE unsigned Primitive::get_vertex_count() const
+INLINE size_t Primitive::get_index_size() const
 {
-    return _vertex_buffer == nullptr ? 0 : _vertex_buffer->get_size();
+    return _index_size;
 }
 
+INLINE graphics::VertexBuffer* Primitive::get_vertex_buffer() const
+{
+    return _vertex_buffer;
+}
+
+INLINE graphics::IndexBuffer* Primitive::get_index_buffer() const
+{
+    return _index_buffer;
+}
 
 NS_LEMON_RESOURCE_END
