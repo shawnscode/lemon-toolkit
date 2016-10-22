@@ -26,24 +26,18 @@ bool Renderer::initialize()
     auto program_dtor = [=](Handle handle, void* p)
     {
         _statecache->free_program(handle);
-
-        auto program = static_cast<ProgramGL*>(p);
-        program->~ProgramGL();
     };
 
     auto vb_dtor = [=](Handle handle, void* vb)
     {
         _statecache->free_vertex_buffer(handle);
-
-        auto vertex_buffer = static_cast<VertexBufferGL*>(vb);
-        vertex_buffer->~VertexBufferGL();
     };
 
-    if( !register_graphics_object<Program, ProgramGL, 8>(program_dtor) ||
-        !register_graphics_object<Texture, TextureGL, 8>() ||
-        !register_graphics_object<IndexBuffer, IndexBufferGL, 16>() ||
-        !register_graphics_object<VertexBuffer, VertexBufferGL, 16>(vb_dtor) ||
-        !register_graphics_object<UniformBuffer, UniformBufferGL, 16>() )
+    if( !attach<Program, ProgramGL, 8>(program_dtor) ||
+        !attach<Texture, TextureGL, 8>() ||
+        !attach<IndexBuffer, IndexBufferGL, 16>() ||
+        !attach<VertexBuffer, VertexBufferGL, 16>(vb_dtor) ||
+        !attach<UniformBuffer, UniformBufferGL, 16>() )
     {
         dispose();
         return false;
@@ -55,15 +49,7 @@ bool Renderer::initialize()
 
 void Renderer::dispose()
 {
-    for( size_t i = 0; i < _object_sets.size(); i++ )
-    {
-        auto& pool = _object_sets[i];
-        if( pool == nullptr )
-            continue;
-
-        for( auto handle : *pool )
-            _object_destructors[i](handle, pool->get(handle));
-    }
+    _resolvers.clear();
 
     if( _backend != nullptr )
     {
@@ -76,10 +62,6 @@ void Renderer::dispose()
         delete _statecache;
         _statecache = nullptr;
     }
-
-    _object_sets.clear();
-    _object_mutexs.clear();
-    _object_destructors.clear();
 }
 
 bool Renderer::restore(SDL_Window* window)

@@ -31,6 +31,17 @@ namespace resource
     template<typename T, typename ... Args> T* create(Args&& ...);
 }
 
+namespace details
+{
+    struct Resolver
+    {
+        virtual ~Resolver() {}
+        virtual void* create() = 0;
+        virtual void* get(Handle) = 0;
+        virtual void free(Handle) = 0;
+    };
+}
+
 // Renderer provides sort-based draw call bucketing. this means that submission
 // order doesn't necessarily match the rendering order, but on the low-level
 // they will be sorted and ordered correctly.
@@ -65,9 +76,9 @@ struct Renderer : public core::Subsystem
 protected:
     static bool drawcall_compare(const RenderDrawcall&, const RenderDrawcall&);
 
-    using resolver = std::function<void(Handle, void*)>;
+    template<typename T> details::Resolver* resolve();
     template<typename T, typename Impl, size_t Growth>
-    bool register_graphics_object(const resolver& dtor = nullptr);
+    bool attach(const std::function<void(Handle, void*)>& dtor = nullptr);
 
 protected:
     friend struct WindowDevice;
@@ -83,13 +94,9 @@ protected:
     RendererBackend* _backend = nullptr;
     RenderStateCache* _statecache = nullptr;
 
-    std::vector<std::unique_ptr<std::mutex>> _object_mutexs;
-    std::vector<resolver> _object_destructors;
-    std::vector<resolver> _object_creators;
-    std::vector<std::unique_ptr<IndexedMemoryPool>> _object_sets;
-
     std::mutex _mutex;
     std::vector<RenderDrawcall> _drawcalls;
+    std::vector<std::unique_ptr<details::Resolver>> _resolvers;
 };
 
 // implementations of templates
@@ -111,42 +118,15 @@ namespace resource
 
 template<typename T, typename ... Args> T* Renderer::create(Args&& ... args)
 {
-    const auto index = TypeInfo::id<GraphicsObject, T>();
-    ASSERT(index < _object_sets.size() && _object_sets[index] != nullptr,
-        "trying to access un-registered graphics object %s.", typeid(T).name());
-
-    auto& pool = _object_sets[index];
-    Handle handle;
-
-    {
-        std::unique_lock<std::mutex> L(*_object_mutexs[index]);
-        handle = pool->malloc();
-    }
-
-    if( !handle.is_valid() )
-        return nullptr;
-
-    auto object = static_cast<T*>(pool->get(handle));
-    _object_creators[index](handle, object);
-    if( !object->initialize(std::forward<Args>(args)...) )
-    {
-        {
-            std::unique_lock<std::mutex> L(*_object_mutexs[index]);
-            pool->free(handle);
-        }
-        return nullptr;
-    }
-
-    return object;
+    auto object = static_cast<T*>(resolve<T>()->create());
+    if( object && object->initialize(std::forward<Args>(args)...) ) return object;
+    if( object ) resolve<T>()->free(*object);
+    return nullptr;
 }
 
 template<typename T> T* Renderer::get(Handle handle)
 {
-    const auto index = TypeInfo::id<GraphicsObject, T>();
-    ASSERT(index < _object_sets.size() && _object_sets[index] != nullptr,
-        "trying to access un-registered graphics object %s.", typeid(T).name());
-
-    return static_cast<T*>(_object_sets[index]->get(handle));
+    return static_cast<T*>(resolve<T>()->get(handle));
 }
 
 template<typename T> void Renderer::free(T* object)
@@ -157,48 +137,91 @@ template<typename T> void Renderer::free(T* object)
 
 template<typename T> void Renderer::free(Handle handle)
 {
-    const auto index = TypeInfo::id<GraphicsObject, T>();
-    ASSERT(index < _object_sets.size() && _object_sets[index] != nullptr,
-        "trying to access un-registered graphics object %s.", typeid(T).name());
+    resolve<T>()->free(handle);
+}
 
-    auto object = _object_sets[index]->get(handle);
-    if( object == nullptr )
-        return;
-
-    _object_destructors[index](handle, object);
+namespace details
+{
+    template<typename T, size_t Growth>
+    struct ResolverT : public Resolver
     {
-        std::unique_lock<std::mutex> L(*_object_mutexs[index]);
-        _object_sets[index]->free(handle);
-    }
+        ResolverT(Renderer& renderer, const std::function<void(Handle, void*)>& cb)
+        : _renderer(renderer), _dispose(cb) {}
+
+        ~ResolverT()
+        {
+            for( auto handle : _allocator )
+            {
+                if( auto object = _allocator.get_t(handle) )
+                {
+                    if( _dispose != nullptr) _dispose(handle, object);
+                    object->~T();
+                }
+            }
+        }
+
+        void* create()
+        {
+            Handle handle;
+            {
+                std::unique_lock<std::mutex> L(_mutex);
+                handle = _allocator.malloc();
+            }
+
+            if( auto object = _allocator.get(handle) )
+            {
+                ::new (object) T(_renderer, handle);
+                return object;
+            }
+
+            return nullptr;
+        }
+
+        void* get(Handle handle)
+        {
+            return _allocator.get(handle);
+        }
+
+        void free(Handle handle)
+        {
+            if( auto object = _allocator.get_t(handle) )
+            {
+                if( _dispose != nullptr) _dispose(handle, object);
+                object->~T();
+
+                {
+                    std::unique_lock<std::mutex> L(_mutex);
+                    _allocator.free(handle);
+                }
+            }
+        }
+
+    protected:
+        Renderer& _renderer;
+        std::mutex _mutex;
+        std::function<void(Handle, void*)> _dispose;
+        IndexedMemoryPoolT<T, Growth> _allocator;
+    };
+}
+
+template<typename T> details::Resolver* Renderer::resolve()
+{
+    const auto index = TypeInfo::id<GraphicsObject, T>();
+    ASSERT(index < _resolvers.size() && _resolvers[index] != nullptr,
+        "trying to access un-registered graphics object %s.", typeid(T).name());
+    return _resolvers[index].get();
 }
 
 template<typename T, typename Impl, size_t Growth>
-bool Renderer::register_graphics_object(const resolver& dtor)
+bool Renderer::attach(const std::function<void(Handle, void*)>& cb)
 {
     const auto index = TypeInfo::id<GraphicsObject, T>();
 
-    if( _object_sets.size() <= index )
-    {
-        _object_sets.resize(index+1);
-        _object_destructors.resize(index+1);
-        _object_creators.resize(index+1);
-        _object_mutexs.resize(index+1);
-    }
+    if( _resolvers.size() <= index )
+        _resolvers.resize(index+1);
 
-    _object_sets[index].reset(new (std::nothrow) IndexedMemoryPoolT<Impl, Growth>());
-    _object_mutexs[index].reset(new std::mutex());
-
-    _object_destructors[index] = dtor != nullptr ? dtor : [=](Handle, void* object)
-    {
-        static_cast<T*>(object)->~T();
-    };
-
-    _object_creators[index] = [=](Handle handle, void* object)
-    {
-        ::new(object) Impl(*this, handle);
-    };
-
-    return _object_sets[index] != nullptr;
+    _resolvers[index].reset(new (std::nothrow) details::ResolverT<Impl, Growth>(*this, cb));
+    return _resolvers[index] != nullptr;
 }
 
 NS_LEMON_GRAPHICS_END
