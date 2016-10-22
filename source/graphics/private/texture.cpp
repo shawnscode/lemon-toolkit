@@ -82,15 +82,15 @@ bool TextureGL::initialize(
 
     update_parameters(true);
     glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        GL_TEXTURE_FORMAT[value(_format)],
-        _width,
-        _height,
-        0,
-        GL_TEXTURE_FORMAT[value(_format)],
-        GL_TEXTURE_PIXEL_FORMAT[value(_pixel_format)],
-        pixels);
+        /*target*/ GL_TEXTURE_2D,
+        /*level*/ 0,
+        /*internalFormat*/ GL_TEXTURE_FORMAT[value(_format)],
+        /*width*/ _width,
+        /*height*/ _height,
+        /*border*/ 0,
+        /*format*/ GL_TEXTURE_FORMAT[value(_format)],
+        /*type*/ GL_TEXTURE_PIXEL_FORMAT[value(_pixel_format)],
+        /*data*/ pixels);
 
     if( _mipmap )
         glGenerateMipmap(GL_TEXTURE_2D);

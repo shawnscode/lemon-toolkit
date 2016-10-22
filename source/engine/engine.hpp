@@ -37,10 +37,12 @@ struct Engine : public core::Subsystem
     void set_time_smoothing_step(unsigned);
     // set whether to pause update when minimized
     void set_pause_minimized(bool);
-    // return if engine is exiting
+    // returns if engine is exiting
     bool is_running() const { return _running; }
-    // return duration since lemon-toolkit launched
+    // returns duration since lemon-toolkit launched
     duration get_time_since_launch() const;
+    // returns frames per second
+    unsigned get_fps() const;
 
 protected:
     // minimum/maximum frames per second

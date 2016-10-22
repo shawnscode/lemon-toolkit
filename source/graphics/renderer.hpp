@@ -11,7 +11,7 @@
 
 #include <codebase/type/type_traits.hpp>
 #include <codebase/memory/indexed_pool.hpp>
-#include <core/subsystem.hpp>
+#include <core/core.hpp>
 #include <math/color.hpp>
 #include <math/vector.hpp>
 #include <math/matrix.hpp>
@@ -22,6 +22,9 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
+struct EvtGraphicsDisposed {};
+struct EvtGraphicsInitialized {};
+
 // Renderer provides sort-based draw call bucketing. this means that submission
 // order doesn't necessarily match the rendering order, but on the low-level
 // they will be sorted and ordered correctly.
@@ -29,6 +32,9 @@ struct RendererBackend;
 struct RenderStateCache;
 struct Renderer : public core::Subsystem
 {
+    template<typename T> static void checked_free(T*);
+
+public:
     bool initialize() override;
     void dispose() override;
 
@@ -82,6 +88,12 @@ protected:
 };
 
 // implementations of templates
+template<typename T> void Renderer::checked_free(T* object)
+{
+    if( auto frontend = core::get_subsystem<Renderer>() )
+        frontend->free(object);
+}
+
 template<typename T, typename ... Args> T* Renderer::create(Args&& ... args)
 {
     const auto index = TypeInfo::id<GraphicsObject, T>();

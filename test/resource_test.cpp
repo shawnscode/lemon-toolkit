@@ -188,13 +188,17 @@ struct Text : public Resource
         
         stream.read(buffer, 512);
         text = buffer;
-        _memusage = 1024;
         return true;
     };
 
     bool save(std::ostream& stream) override
     {
         return true;
+    }
+
+    size_t get_memory_usage() const override
+    {
+        return 1024;
     }
 
     std::string text;
@@ -210,7 +214,7 @@ struct ResourceCacheFixture
         pwd = get_current_directory();
         set_current_directory("../../test");
         add_subsystem<ArchiveCollection>();
-        add_subsystem<ResourceCache>(1025);
+        add_subsystem<ResourceCache>()->set_threshold(1025, 1025);
 
         REQUIRE( create_directory("tmp") );
         auto file = open("tmp/resource.txt", FileMode::APPEND);
@@ -242,31 +246,31 @@ TEST_CASE_METHOD(ResourceCacheFixture, "")
     auto cache = get_subsystem<ResourceCache>();
     auto collection = get_subsystem<ArchiveCollection>();
 
-    auto r = cache->get<Text>("./resource.txt");
+    auto r = cache->fetch<Text>("./resource.txt");
     REQUIRE( !r );
 
     collection->add_search_path("tmp");
-    r = cache->get<Text>("./resource.txt");
+    r = cache->fetch<Text>("./resource.txt");
     REQUIRE( r );
 
     REQUIRE( r->text == "do" );
     REQUIRE( r.use_count() == 3 );
 
-    auto r2 = cache->get<Text>("./resource.txt");
+    auto r2 = cache->fetch<Text>("./resource.txt");
     REQUIRE( r2 == r );
     REQUIRE( r2.use_count() == 4 );
 
-    auto r3 = cache->get<Text>("./resource2.txt");
+    auto r3 = cache->fetch<Text>("./resource2.txt");
     REQUIRE( r3.use_count() == 3 );
-    REQUIRE( cache->get_memusage() == 2048 );
+    REQUIRE( cache->get_memory_usage() == 2048 );
     r3.reset();
 
-    auto r4 = cache->get<Text>("./resource3.txt");
-    REQUIRE( cache->get_memusage() == 2048 );
+    auto r4 = cache->fetch<Text>("./resource3.txt");
+    REQUIRE( cache->get_memory_usage() == 2048 );
 
-    r = cache->get<Text>("./resource.txt");
-    REQUIRE( cache->get_memusage() == 2048 );
+    r = cache->fetch<Text>("./resource.txt");
+    REQUIRE( cache->get_memory_usage() == 2048 );
 
-    r4 = cache->get<Text>("./resource2.txt");
-    REQUIRE( cache->get_memusage() == 3072 );
+    r4 = cache->fetch<Text>("./resource2.txt");
+    REQUIRE( cache->get_memory_usage() == 3072 );
 };

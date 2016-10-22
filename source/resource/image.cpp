@@ -24,8 +24,7 @@ TextureFormat FORMAT[] =
 
 Image::~Image()
 {
-    if( core::details::status() == core::details::Status::RUNNING )
-        core::get_subsystem<graphics::Renderer>()->free(_texture);
+    graphics::Renderer::checked_free(_texture);
 }
 
 bool Image::read(std::istream& in)
@@ -51,7 +50,7 @@ bool Image::read(std::istream& in)
     }
     tmp.reset();
 
-    if( !set_size(width, height, components) )
+    if( !initialize(width, height, components) )
     {
         stbi_image_free(pixels);
         return false;
@@ -59,14 +58,7 @@ bool Image::read(std::istream& in)
 
     set_data(pixels);
     stbi_image_free(pixels);
-
-    _texture = core::get_subsystem<graphics::Renderer>()->create<graphics::Texture>(
-        _data.get(),
-        FORMAT[components],
-        static_cast<TexturePixelFormat>(_element_format),
-        _width, _height,
-        MemoryUsage::STATIC);
-    return _texture != nullptr;
+    return update_texture(MemoryUsage::STATIC);
 }
 
 bool Image::save(std::ostream& out)
@@ -96,7 +88,23 @@ size_t Image::get_memory_usage() const
     return _width * _height * _components;
 }
 
-bool Image::set_size(unsigned width, unsigned height, unsigned components, ImageElementFormat element)
+bool Image::update_texture(graphics::MemoryUsage usage)
+{
+    auto format = FORMAT[_components];
+    auto element_format = static_cast<TexturePixelFormat>(_element_format);
+    if( _texture == nullptr )
+    {
+        _texture = core::get_subsystem<graphics::Renderer>()->create<graphics::Texture>(
+            _data.get(), format, element_format, _width, _height, usage);
+        return _texture != nullptr;
+    }
+    else
+    {
+        return _texture->initialize(_data.get(), format, element_format, _width, _height, usage);
+    }
+}
+
+bool Image::initialize(unsigned width, unsigned height, unsigned components, ImageElementFormat element)
 {
     if( width == _width && height == _width && element == _element_format )
         return true;
@@ -127,6 +135,11 @@ void Image::set_data(const uint8_t* data)
         return;
 
     memcpy(_data.get(), data, _width*_height*_components);
+}
+
+void Image::set_data_raw(const uint8_t* data, unsigned offset, unsigned size)
+{
+    memcpy(_data.get()+offset, data, size);
 }
 
 void Image::clear(const math::Color& color)

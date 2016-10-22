@@ -6,6 +6,7 @@
 #include <forwards.hpp>
 #include <codebase/type/type_traits.hpp>
 
+#include <vector>
 #include <unordered_map>
 
 NS_LEMON_CORE_BEGIN
@@ -41,6 +42,7 @@ struct SubsystemContext
     template<typename S1, typename S2, typename ... Args> bool has_subsystems() const;
 
 protected:
+    std::vector<TypeInfo::index_t> _orders;
     std::unordered_map<TypeInfo::index_t, Subsystem*> _subsystems;
 };
 
@@ -56,6 +58,7 @@ template<typename S, typename ... Args> S* SubsystemContext::add_subsystem(Args&
     ASSERT( sys->initialize(),
         "failed to initialize subsystem: %s.", typeid(S).name() );
 
+    _orders.push_back(index);
     _subsystems.insert(std::make_pair(index, sys));
     return sys;
 }
@@ -80,6 +83,7 @@ template<typename S> void SubsystemContext::remove_subsystem()
     {
         found->second->dispose();
         delete found->second;
+        _orders.erase(index);
         _subsystems.erase(found);
     }   
 }

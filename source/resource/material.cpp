@@ -16,7 +16,7 @@ Material::ptr Material::create(const fs::Path& name, Shader::ptr shader)
 
     auto cache = core::get_subsystem<ResourceCache>();
     if( cache->is_exist(name) )
-        return cache->get<Material>(name);
+        return cache->fetch<Material>(name);
 
     auto frontend = core::get_subsystem<graphics::Renderer>();
     auto material = Material::ptr(new (std::nothrow) Material);
@@ -29,8 +29,7 @@ Material::ptr Material::create(const fs::Path& name, Shader::ptr shader)
 
 Material::~Material()
 {
-    if( core::details::status() == core::details::Status::RUNNING )
-        core::get_subsystem<graphics::Renderer>()->free(_uniform);
+    graphics::Renderer::checked_free(_uniform);
 }
 
 bool Material::read(std::istream& in)

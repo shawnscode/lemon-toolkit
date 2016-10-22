@@ -28,13 +28,12 @@ namespace details
 
     void dispose()
     {
-        s_status = Status::DISPOSED;
-
         if( s_context.get() )
         {
             s_context->dispose();
             s_context.reset();
         }
+        s_status = Status::DISPOSED;
     }
 
     SubsystemContext& context()

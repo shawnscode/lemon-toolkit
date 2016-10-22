@@ -38,7 +38,7 @@ Shader::ptr Shader::create(const fs::Path& name, const char* vs, const char* fs)
 {
     auto cache = core::get_subsystem<ResourceCache>();
     if( cache->is_exist(name) )
-        return cache->get<Shader>(name);
+        return cache->fetch<Shader>(name);
 
     auto shader = Shader::ptr(new (std::nothrow) Shader);
     shader->_vertex = vs;
@@ -71,8 +71,7 @@ enum class ShaderType
 
 Shader::~Shader()
 {
-    if( core::details::status() == core::details::Status::RUNNING )
-        core::get_subsystem<graphics::Renderer>()->free(_program);
+    graphics::Renderer::checked_free(_program);
 }
 
 bool Shader::read(std::istream& in)

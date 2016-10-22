@@ -69,7 +69,7 @@ bool ArchiveCollection::initialize()
 {
     auto arguments = core::get_subsystem<Arguments>();
 
-    if( auto searches = arguments->fetch("/Archives/SearchPaths") )
+    if( auto searches = arguments->fetch("/Resource/SearchPaths") )
     {
         for( auto& path : searches->GetArray() )
         {

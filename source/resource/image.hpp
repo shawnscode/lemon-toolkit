@@ -29,9 +29,10 @@ struct Image : public Resource
     size_t get_memory_usage() const override;
 
     // set size and number of color components, old pixels will be discarded.
-    bool set_size(unsigned, unsigned, unsigned, ImageElementFormat element = ImageElementFormat::UBYTE);
+    bool initialize(unsigned, unsigned, unsigned, ImageElementFormat element = ImageElementFormat::UBYTE);
     // set new image data
     void set_data(const uint8_t* data);
+    void set_data_raw(const uint8_t* data, unsigned offset, unsigned size);
     // clear the image with a color
     void clear(const math::Color&);
     // set a 2d pixel
@@ -42,15 +43,18 @@ struct Image : public Resource
     math::Color get_pixel_linear(float, float) const;
     // return the raw memory pointer of image
     const void* get_data() const { return _data.get(); }
-    // return the width/height of image
+    // return the width/height/components of image
     unsigned get_width() const { return _width; }
     unsigned get_height() const { return _height; }
+    unsigned get_components() const { return _components; }
     // return the internal format of image
     ImageElementFormat get_element_format() const { return _element_format; }
-    // return number of color components
-    unsigned get_components() const { return _components; }
 
+    // create a texture object if no exists and update data to buffer
+    bool update_texture(graphics::MemoryUsage);
+    // returns graphics object of texture
     graphics::Texture* get_texture() const;
+    // returns handle of texture
     Handle get_texture_handle() const;
 
 protected:

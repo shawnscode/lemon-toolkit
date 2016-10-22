@@ -5,8 +5,10 @@
         "MaxFPS" : 30,
         "TimeSmoothingStep" : 10
     },
-    "Archives" : {
-        "SearchPaths" : [ ".." ]
+    "Resource" : {
+        "SearchPaths" : [ ".." ],
+        "CacheMemoryThresholdInMB" : 256,
+        "CacheVideoMemoryThresholdInMB": 128
     },
     "Graphics" : {
         "WindowSize" : [512, 512],

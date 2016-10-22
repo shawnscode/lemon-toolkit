@@ -3,19 +3,40 @@
 
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
+#include <engine/arguments.hpp>
 
 NS_LEMON_RESOURCE_BEGIN
 
-ResourceCache::ResourceCache(size_t threshold)
-: _threshold(threshold), _memusage(0)
-{}
+std::fstream Resource::search_file(const fs::Path& path)
+{
+    if( core::details::status() != core::details::Status::RUNNING )
+    {
+        LOGW("failed to search file %s.", path.c_str());
+        return std::fstream();
+    }
 
-ResourceCache::~ResourceCache()
-{}
+    auto stream = core::get_subsystem<ArchiveCollection>()->open(path, fs::FileMode::READ);
+    if( !stream.is_open() )
+        LOGW("failed to open file %s.", path.c_str());
+
+    return stream;
+}
 
 bool ResourceCache::initialize()
 {
     ENSURE( core::has_subsystems<ArchiveCollection>() );
+
+    auto arguments = core::get_subsystem<Arguments>();
+
+    _memory_threshold = arguments->fetch("/Resource/CacheMemoryThresholdInMB", 64).GetInt();
+    _video_memory_threshold = arguments->fetch("/Resource/CacheVideoMemoryThresholdInMB", 64).GetInt();
+
+    // convert into bytes
+    _memory_threshold *= (1024 * 1024);
+    _video_memory_threshold *= (1024 * 1024);
+
+    _memory_usage = 0;
+    _video_memory_usage = 0;
     return true;
 }
 
@@ -23,93 +44,55 @@ void ResourceCache::dispose()
 {
 }
 
-Resource::ptr ResourceCache::get_internal(details::ResourceResolver* resolver, const fs::Path& name)
-{
-    auto hash = math::StringHash(name.c_str());
-
-    auto found = _resources.find(hash);
-    if( found != _resources.end() )
-    {
-        touch(hash);
-        return found->second;
-    }
-
-    auto file = get_file(name);
-    if( !file.is_open() )
-    {
-        LOGW("file not exists, \"%s\"", name.c_str());
-        return nullptr;
-    }
-
-    auto resource = resolver->create();
-    if( resource )
-    {
-        resource->set_name(name.c_str());
-        if( resource->read(file) )
-        {
-            make_room(resource->get_memory_usage());
-            _resources[hash] = resource;
-            _lru.push_back(std::make_pair(hash, resource));
-            _names[hash] = name.to_string();
-            return resource;
-        }
-    }
-
-    return nullptr;
-}
-
-bool ResourceCache::add(const fs::Path& name, Resource::ptr resource)
+bool ResourceCache::add(math::StringHash hash, Resource::ptr resource)
 {
     if( resource == nullptr )
         return false;
 
-    auto hash = math::StringHash(name.c_str());
     auto found = _resources.find(hash);
     if( found != _resources.end() )
         return false;
 
-    make_room(resource->get_memory_usage());
-    _resources[hash] = resource;
-    _lru.push_back(std::make_pair(hash, resource));
-    _names[hash] = name.to_string();
+    {
+        std::unique_lock<std::mutex> L(_mutex);
+        make_room(resource);
+        _resources[hash] = resource;
+        _lru.push_back(std::make_pair(hash, resource));
+    }
     return true;
 }
 
-bool ResourceCache::is_exist(const fs::Path& path) const
+void ResourceCache::make_room(Resource::ptr resource)
 {
-    return _resources.find(path.c_str()) != _resources.end();
-}
+    _memory_usage += resource->get_memory_usage();
+    _video_memory_usage += resource->get_video_memroy_usage();
 
-void ResourceCache::make_room(size_t size)
-{
-    if( _memusage + size <= _threshold )
-    {
-        _memusage += size;
+    if( _memory_usage <= _memory_threshold && _video_memory_usage <= _video_memory_threshold )
         return;
-    }
-
-    _memusage = size;
-    for( auto pair : _resources )
-        _memusage += pair.second->get_memory_usage();
 
     for( auto cursor = _lru.begin(); cursor != _lru.end(); )
     {
+        // if this resource are referenced by resource table and least-recently-used list only
         if( cursor->second.use_count() == 2 )
         {
-            _memusage -= cursor->second->get_memory_usage();
+            _memory_usage -= cursor->second->get_memory_usage();
+            _video_memory_usage -= cursor->second->get_video_memroy_usage();
+
             _resources.erase(cursor->first);
-            _names.erase(cursor->first);
             _lru.erase(cursor++);
 
-            if( _memusage + size <= _threshold ) return;
+            if( _memory_usage <= _memory_threshold && _video_memory_usage <= _video_memory_threshold )
+                return;
         }
         else
             cursor ++;
     }
 
-    LOGW("failed to get spare memory in ResourceCache, %.2f/%.2f mb",
-        (float)_memusage / 1024.f / 1024.f,
-        (float)_threshold / 1024.f / 1024.f);
+    LOGW("failed to get spare memory in ResourceCache.\n\tRAM: %.2f/%.2f mb\n\tVRAM: %.2f/%.2f mb",
+        (float)_memory_usage / 1024.f / 1024.f,
+        (float)_memory_threshold / 1024.f / 1024.f,
+        (float)_video_memory_usage / 1024.f / 1024.f,
+        (float)_video_memory_threshold / 1024.f / 1024.f);
 }
 
 void ResourceCache::touch(math::StringHash hash)
@@ -122,14 +105,10 @@ void ResourceCache::touch(math::StringHash hash)
 
     if( found != _lru.end() )
     {
+        std::unique_lock<std::mutex> L(_mutex);
         _lru.push_back(*found);
         _lru.erase(found);
     }
-}
-
-std::fstream ResourceCache::get_file(const fs::Path& path)
-{
-    return core::get_subsystem<ArchiveCollection>()->open(path, fs::FileMode::READ);
 }
 
 std::ostream& operator << (std::ostream& out, const ResourceCache& cache)
@@ -141,12 +120,10 @@ std::ostream& operator << (std::ostream& out, const ResourceCache& cache)
     {
         usage += pair.second->get_memory_usage();
 
-        auto name = cache._names.find(pair.first);
-        if( name != cache._names.end() ) out << "\t" << name->second;
-        else out << "\t" << pair.first;
-
-        out << "REF("<<pair.second.use_count()<<")\t: "
-            << pair.second->get_memory_usage() << " byte(s)" << std::endl;
+        out << "\t" << pair.second->get_name()
+            << " REF("<<pair.second.use_count() << "): RAM "
+            << pair.second->get_memory_usage() << " byte(s), VRAM "
+            << pair.second->get_video_memroy_usage() << " byte(s)." << std::endl;
     }
 
     return out << usage << " byte(s)" <<std::endl;

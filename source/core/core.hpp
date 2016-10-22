@@ -40,22 +40,26 @@ namespace details
 
 template<typename S> S* get_subsystem()
 {
-    return details::context().get_subsystem<S>();
+    return details::status() != details::Status::RUNNING ?
+        nullptr : details::context().get_subsystem<S>();
 }
 
 template<typename S, typename ... Args> S* add_subsystem(Args&& ... args)
 {
-    return details::context().add_subsystem<S>(std::forward<Args>(args)...);
+    return details::status() != details::Status::RUNNING ?
+        nullptr : details::context().add_subsystem<S>(std::forward<Args>(args)...);
 }
 
 template<typename S> void remove_subsystem()
 {
-    details::context().remove_subsystem<S>();
+    if( details::status() == details::Status::RUNNING )
+        details::context().remove_subsystem<S>();
 }
 
 template<typename ... Args> bool has_subsystems()
 {
-    return details::context().has_subsystems<Args...>();
+    return details::status() != details::Status::RUNNING ?
+        false : details::context().has_subsystems<Args...>();
 }
 
 NS_LEMON_CORE_END

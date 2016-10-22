@@ -14,7 +14,7 @@ struct TextureGL : public Texture
     TextureGL(Renderer& renderer, Handle handle);
     virtual ~TextureGL() { dispose(); }
 
-    // set data from an image and restore graphics state, return true if success
+    // set data from an image and restore graphics state, returns true if successful
     bool initialize(const void*, TextureFormat, TexturePixelFormat, unsigned, unsigned, MemoryUsage) override;
     // release graphics resource and state
     void dispose() override;
@@ -26,8 +26,7 @@ struct TextureGL : public Texture
     void set_address_mode(TextureCoordinate, TextureAddressMode) override;
     // update the changed parameters to device
     void update_parameters(bool force = false) override;
-
-    //
+    // returns OpenGL handle of this buffer
     GLuint get_handle() const { return _object; }
 
 protected:

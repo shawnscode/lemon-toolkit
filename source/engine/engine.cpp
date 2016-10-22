@@ -202,4 +202,9 @@ Engine::duration Engine::get_time_since_launch() const
     return clock::now() - _launch_timepoint;
 }
 
+unsigned Engine::get_fps() const
+{
+    return 1000 / (_timestep / std::chrono::milliseconds(1000));
+}
+
 NS_LEMON_END

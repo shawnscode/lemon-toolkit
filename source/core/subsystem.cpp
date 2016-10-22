@@ -12,13 +12,18 @@ bool SubsystemContext::initialize()
 
 void SubsystemContext::dispose()
 {
-    for( auto pair : _subsystems )
+    for( auto iter = _orders.rbegin(); iter != _orders.rend(); iter ++ )
     {
-        pair.second->dispose();
-        delete pair.second;
+        auto found = _subsystems.find(*iter);
+        ENSURE(found != _subsystems.end());
+
+        found->second->dispose();
+        delete found->second;
+        _subsystems.erase(found);
     }
 
-    _subsystems.clear();
+    _orders.clear();
+    ENSURE(_subsystems.size() == 0);
 }
 
 NS_LEMON_CORE_END

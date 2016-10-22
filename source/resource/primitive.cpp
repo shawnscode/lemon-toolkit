@@ -59,7 +59,7 @@ Primitive::ptr Primitive::cube()
 
     auto cache = core::get_subsystem<ResourceCache>();
     if( cache->is_exist(s_path) )
-        return cache->get<Primitive>(s_path);
+        return cache->fetch<Primitive>(s_path);
 
     auto frontend = core::get_subsystem<graphics::Renderer>();
     auto layout = VertexLayout::make(
@@ -79,11 +79,8 @@ Primitive::ptr Primitive::cube()
 
 Primitive::~Primitive()
 {
-    if( core::details::status() == core::details::Status::RUNNING )
-    {
-        core::get_subsystem<graphics::Renderer>()->free(_vertex_buffer);
-        core::get_subsystem<graphics::Renderer>()->free(_index_buffer);
-    }
+    graphics::Renderer::checked_free(_vertex_buffer);
+    graphics::Renderer::checked_free(_index_buffer);
 }
 
 size_t Primitive::get_memory_usage() const
