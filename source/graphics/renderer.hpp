@@ -59,6 +59,8 @@ struct Renderer : public core::Subsystem
     unsigned end_frame();
     // returns true if we are under frame render phase
     bool is_frame_began() const { return _frame_began; }
+    // check if we have valid window and OpenGL context
+    bool is_device_lost() const;
 
 protected:
     static bool drawcall_compare(const RenderDrawcall&, const RenderDrawcall&);

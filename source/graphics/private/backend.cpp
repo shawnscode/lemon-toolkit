@@ -157,7 +157,7 @@ void RendererBackend::dispose()
 
 bool RendererBackend::begin_frame()
 {
-    return _window != nullptr;
+    return !is_device_lost();
 }
 
 void RendererBackend::end_frame()

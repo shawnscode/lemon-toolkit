@@ -27,10 +27,10 @@ struct Example : public Application
 
         ////
         {
-            auto shader = cache->get<res::Shader>("shader/phong.shader");
-            auto material = res::Material::create("_buildin_/material/phong", shader);
-            material->set_attribute_name(VertexAttribute::POSITION, "position");
-            material->set_attribute_name(VertexAttribute::NORMAL, "normal");
+            auto shader = cache->fetch<res::Shader>("shader/phong.shader");
+            auto material = cache->create<res::Material>("_buildin_/material/phong", shader);
+            material->get_program()->set_attribute_name(VertexAttribute::POSITION, "position");
+            material->get_program()->set_attribute_name(VertexAttribute::NORMAL, "normal");
 
             cube = ecs->create();
             cube->add_component<Transform>(*cube);
@@ -38,9 +38,9 @@ struct Example : public Application
         }
 
         {
-            auto shader = cache->get<res::Shader>("shader/color.shader");
-            auto material = res::Material::create("_buildin_/material/color", shader);
-            material->set_attribute_name(VertexAttribute::POSITION, "position");
+            auto shader = cache->fetch<res::Shader>("shader/color.shader");
+            auto material = cache->create<res::Material>("_buildin_/material/color", shader);
+            material->get_program()->set_attribute_name(VertexAttribute::POSITION, "position");
 
             lamp = ecs->create();
             lamp->add_component<Transform>(*cube, lamp_pos, lamp_scale);
@@ -49,19 +49,18 @@ struct Example : public Application
 
         {
             camera = ecs->create();
-            auto t = camera->add_component<Transform>(*camera, view_pos);
+            camera->add_component<Transform>(*camera, view_pos);
             auto c = camera->add_component<PerspectiveCamera>();
             auto size = core::get_subsystem<WindowDevice>()->get_window_size();
             c->set_aspect((float)size[0]/(float)size[1]);
         }
 
         ////
-        core::get_subsystem<core::EventSystem>()->subscribe<EvtUpdate>(*this);
-        core::get_subsystem<core::EventSystem>()->subscribe<EvtRender>(*this);
+        core::get_subsystem<core::EventSystem>()->subscribe<EvtRenderUpdate>(*this);
         std::cout << *cache << std::endl;
     }
 
-    void receive(const EvtUpdate& evt)
+    void receive(const EvtRenderUpdate& evt)
     {
         auto now = core::get_subsystem<Engine>()->get_time_since_launch() / std::chrono::milliseconds(1);
         lamp_color[0] = sin((float)now/1000.f * 2.0f);
@@ -81,18 +80,16 @@ struct Example : public Application
 
         {
             auto material = cube->get_component<MeshRenderer>()->material;
-            material->set_uniform_3f("LightPos", lamp_pos);
-            material->set_uniform_3f("LightColor", lamp_color);
-            material->set_uniform_3f("ObjectColor", {1.0f, 1.0f, 1.0f});
+            material->get_uniform_buffer()->set_uniform_3f("LightPos", lamp_pos);
+            material->get_uniform_buffer()->set_uniform_3f("LightColor", lamp_color);
+            material->get_uniform_buffer()->set_uniform_3f("ObjectColor", {1.0f, 1.0f, 1.0f});
         }
 
         {
             auto material = lamp->get_component<MeshRenderer>()->material;
-            material->set_uniform_3f("ObjectColor", lamp_color);
+            material->get_uniform_buffer()->set_uniform_3f("ObjectColor", lamp_color);
         }
     }
-
-    void receive(const EvtRender& evt) {}
 };
 
 DEFINE_APPLICATION_MAIN(Example);

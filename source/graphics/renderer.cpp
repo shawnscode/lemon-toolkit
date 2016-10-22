@@ -92,6 +92,11 @@ void Renderer::release()
     _backend->dispose();
 }
 
+bool Renderer::is_device_lost() const
+{
+    return _backend->is_device_lost();
+}
+
 bool Renderer::begin_frame()
 {
     if( !_backend->begin_frame() )

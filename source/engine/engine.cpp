@@ -142,15 +142,17 @@ void Engine::update(duration dt)
 
     event->emit<EvtUpdate>(dt);
     event->emit<EvtPostUpdate>(dt);
-    event->emit<EvtRenderUpdate>(dt);
 
-    if( renderer->begin_frame() )
+    if( !renderer->is_device_lost() )
     {
-        event->emit<EvtRender>();
-        renderer->end_frame();
+        event->emit<EvtRenderUpdate>(dt);
+        if( renderer->begin_frame() )
+        {
+            event->emit<EvtRender>();
+            renderer->end_frame();
+        }
+        event->emit<EvtPostRenderUpdate>(dt);
     }
-
-    event->emit<EvtPostRenderUpdate>(dt);
 }
 
 void Engine::process_message()
