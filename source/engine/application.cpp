@@ -14,7 +14,7 @@ Application::Application() : _exitcode(0)
 
 void Application::parse(const char* path)
 {
-    ENSURE(core::add_subsystem<Arguments>()->parse(path));
+    ENSURE(core::get_subsystem<Arguments>()->parse(path));
 }
 
 int Application::run()
@@ -25,9 +25,6 @@ int Application::run()
     setup();
     if( _exitcode != 0 )
         return _exitcode;
-
-    if( !core::has_subsystems<Arguments>() )
-        core::add_subsystem<Arguments>();
 
     auto arguments = core::get_subsystem<Arguments>();
     if( auto pwd = arguments->fetch("/WorkingDirectory") )

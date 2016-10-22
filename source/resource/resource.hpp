@@ -109,10 +109,13 @@ Resource::shared_derived_ptr<T> Resource::create(Args&& ... args)
 template<typename T>
 Resource::shared_derived_ptr<T> Resource::read(const fs::Path& name)
 {
-    auto v = new (std::nothrow) T();
     auto fstream = Resource::search_file(name);
-    if( v && v->read(fstream) ) return shared_derived_ptr<T>(v);
-    if( v ) delete v;
+    if( fstream.is_open() )
+    {
+        auto v = new (std::nothrow) T();
+        if( v && v->read(fstream) ) return shared_derived_ptr<T>(v);
+        if( v ) delete v;
+    }
     return nullptr;
 }
 

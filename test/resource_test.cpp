@@ -209,8 +209,6 @@ struct ResourceCacheFixture
     ResourceCacheFixture()
     {
         core::details::initialize();
-
-        set_output_stream(LogLevel::ERROR, &std::cout);
         pwd = get_current_directory();
         set_current_directory("../../test");
         add_subsystem<ArchiveCollection>();

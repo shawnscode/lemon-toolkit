@@ -2,6 +2,7 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <core/core.hpp>
+#include <engine/arguments.hpp>
 
 NS_LEMON_CORE_BEGIN
 
@@ -18,6 +19,7 @@ namespace details
 
         s_context = std::move(context);
         s_status = Status::RUNNING;
+        s_context->add_subsystem<Arguments>();
         return true;
     }
 
