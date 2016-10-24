@@ -5,8 +5,8 @@
 
 #include <forwards.hpp>
 
-#include <codebase/type/type_traits.hpp>
-#include <codebase/type/tuple.hpp>
+#include <codebase/type_traits.hpp>
+#include <codebase/tuple.hpp>
 
 #include <type_traits>
 #include <stdexcept>

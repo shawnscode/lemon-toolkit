@@ -8,7 +8,7 @@
 #include <math/matrix.hpp>
 
 #include <codebase/handle.hpp>
-#include <codebase/type/enumeration.hpp>
+#include <codebase/enumeration.hpp>
 
 #include <limits>
 #include <memory>

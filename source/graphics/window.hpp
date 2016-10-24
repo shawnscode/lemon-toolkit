@@ -5,7 +5,7 @@
 
 #include <forwards.hpp>
 #include <core/core.hpp>
-#include <codebase/type/enumeration.hpp>
+#include <codebase/enumeration.hpp>
 #include <math/vector.hpp>
 
 struct SDL_Window;

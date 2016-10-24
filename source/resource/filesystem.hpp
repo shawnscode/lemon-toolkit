@@ -4,7 +4,7 @@
 #pragma once
 
 #include <resource/path.hpp>
-#include <codebase/type/enumeration.hpp>
+#include <codebase/enumeration.hpp>
 
 #include <vector>
 #include <fstream>

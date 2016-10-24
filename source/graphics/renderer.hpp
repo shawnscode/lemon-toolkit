@@ -9,7 +9,7 @@
 #include <graphics/state.hpp>
 #include <graphics/drawcall.hpp>
 
-#include <codebase/type/type_traits.hpp>
+#include <codebase/type_traits.hpp>
 #include <codebase/memory/indexed_pool.hpp>
 #include <core/core.hpp>
 #include <math/color.hpp>

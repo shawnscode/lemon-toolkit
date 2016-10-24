@@ -6,7 +6,7 @@
 #include <forwards.hpp>
 #include <core/subsystem.hpp>
 
-#include <codebase/type/type_traits.hpp>
+#include <codebase/type_traits.hpp>
 #include <codebase/memory/indexed_pool.hpp>
 
 #include <bitset>

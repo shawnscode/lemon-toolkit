@@ -2,7 +2,7 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <graphics/graphics.hpp>
-#include <codebase/type/enumeration.hpp>
+#include <codebase/enumeration.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 

@@ -4,7 +4,7 @@
 #pragma once
 
 #include <engine/engine.hpp>
-#include <codebase/type/enumeration.hpp>
+#include <codebase/enumeration.hpp>
 #include <math/vector.hpp>
 
 #include <unordered_set>

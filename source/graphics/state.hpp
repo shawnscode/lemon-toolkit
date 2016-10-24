@@ -5,7 +5,7 @@
 
 #include <forwards.hpp>
 #include <math/rect.hpp>
-#include <codebase/type/enumeration.hpp>
+#include <codebase/enumeration.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
