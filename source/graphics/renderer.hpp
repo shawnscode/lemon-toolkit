@@ -42,6 +42,34 @@ namespace details
     };
 }
 
+// struct DeferredVertexBuffer : public VertexBuffer
+// {
+//     virtual bool initialize(const void*, unsigned data, )
+// };
+
+// struct DeferredRenderer
+// {
+//     template<typename T, typename ... Args> T* create();
+//     template<typename T> T* get();
+//     template<typename T> void free(T*);
+//     template<typename T> void free(Handle);
+
+//     Handle create_vertex_buffer();
+//     Handle create_index_buffer();
+
+//     void update_vertex_buffer();
+
+// protected:
+//     // retrieves a pointer to memory location based on the supplied offset
+//     void* get_map_pointer(size_t offset);
+//     // retrieves the next offset position for the supplied size
+//     size_t get_map_offset(size_t offset);
+
+// protected:
+//     std::vector<uint8_t> _commands;
+//     std::vector<uint8_t> _maps;
+// };
+
 // Renderer provides sort-based draw call bucketing. this means that submission
 // order doesn't necessarily match the rendering order, but on the low-level
 // they will be sorted and ordered correctly.

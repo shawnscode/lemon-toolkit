@@ -3,7 +3,6 @@
 
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
-#include <engine/arguments.hpp>
 
 NS_LEMON_RESOURCE_BEGIN
 
@@ -26,15 +25,8 @@ bool ResourceCache::initialize()
 {
     ENSURE( core::has_subsystems<ArchiveCollection>() );
 
-    auto arguments = core::get_subsystem<Arguments>();
-
-    _memory_threshold = arguments->fetch("/Resource/CacheMemoryThresholdInMB", 64).GetInt();
-    _video_memory_threshold = arguments->fetch("/Resource/CacheVideoMemoryThresholdInMB", 64).GetInt();
-
-    // convert into bytes
-    _memory_threshold *= (1024 * 1024);
-    _video_memory_threshold *= (1024 * 1024);
-
+    _memory_threshold = 0;
+    _video_memory_threshold = 0;
     _memory_usage = 0;
     _video_memory_usage = 0;
     return true;

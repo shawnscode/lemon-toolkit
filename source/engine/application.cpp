@@ -5,7 +5,6 @@
 #include <engine/engine.hpp>
 #include <engine/arguments.hpp>
 #include <core/core.hpp>
-#include <resource/filesystem.hpp>
 
 NS_LEMON_BEGIN
 
@@ -21,17 +20,13 @@ int Application::run()
 {
     std::srand(time(0));
     core::details::initialize();
+    core::add_subsystem<Arguments>();
 
     setup();
     if( _exitcode != 0 )
         return _exitcode;
 
-    auto arguments = core::get_subsystem<Arguments>();
-    if( auto pwd = arguments->fetch("/WorkingDirectory") )
-        fs::set_current_directory( arguments->get_path() / fs::Path(pwd->GetString()) );
-
     auto engine = core::add_subsystem<Engine>();
-
     start();
     if( _exitcode != 0 )
         return _exitcode;

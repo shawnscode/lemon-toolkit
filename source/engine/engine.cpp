@@ -8,6 +8,7 @@
 #include <graphics/renderer.hpp>
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
+#include <resource/filesystem.hpp>
 #include <core/event.hpp>
 #include <core/ecs.hpp>
 #include <core/task.hpp>
@@ -38,15 +39,8 @@ bool Engine::initialize()
     core::add_subsystem<Scene>();
 
     auto arguments = core::get_subsystem<Arguments>();
-    _timestep.zero();
-    _last_frame_timepoint = clock::now();
-    _launch_timepoint = clock::now();
 
-    _min_fps = arguments->fetch("/Engine/MinFPS", 0).GetInt();
-    _max_fps = arguments->fetch("/Engine/MaxFPS", 0).GetInt();
-    _max_inactive_fps = arguments->fetch("/Engine/MaxInactiveFPS", 0).GetInt();
-    _smoothing_step = arguments->fetch("/Engine/TimeSmoothingStep", 0).GetInt();
-
+    // create window device and restore OpenGL state internally
     auto width = arguments->fetch("/Graphics/WindowSize/0", 128).GetInt();
     auto height = arguments->fetch("/Graphics/WindowSize/1", 128).GetInt();
     auto multisamples = arguments->fetch("/Graphics/Multisamples", 1).GetInt();
@@ -55,7 +49,36 @@ bool Engine::initialize()
     if( !device->open(width, height, multisamples, graphics::WindowOption::RESIZABLE) )
         return false;
 
+    // initialize filesystem and configurated archives
+    if( auto pwd = arguments->fetch("/WorkingDirectory") )
+        fs::set_current_directory( arguments->get_path() / fs::Path(pwd->GetString()) );
+
+    if( auto searches = arguments->fetch("/Resource/SearchPaths") )
+    {
+        auto collection = core::get_subsystem<res::ArchiveCollection>();
+        for( auto& path : searches->GetArray() )
+            if( !collection->add_search_path(arguments->get_path() / path.GetString()) )
+                return false;
+    }
+
+    // initialize resource 
+    auto cache = core::get_subsystem<res::ResourceCache>();
+    auto memory_threshold = arguments->fetch("/Resource/CacheMemoryThresholdInMB", 64).GetInt();
+    auto video_memory_threshold = arguments->fetch("/Resource/CacheVideoMemoryThresholdInMB", 64).GetInt();
+    memory_threshold *= (1024 * 1024);
+    video_memory_threshold *= (1024 * 1024);
+    cache->set_threshold(memory_threshold, video_memory_threshold);
+
+    // fire engine
     _running = true;
+    _timestep.zero();
+    _last_frame_timepoint = clock::now();
+    _launch_timepoint = clock::now();
+
+    _min_fps = arguments->fetch("/Engine/MinFPS", 0).GetInt();
+    _max_fps = arguments->fetch("/Engine/MaxFPS", 0).GetInt();
+    _max_inactive_fps = arguments->fetch("/Engine/MaxInactiveFPS", 0).GetInt();
+    _smoothing_step = arguments->fetch("/Engine/TimeSmoothingStep", 0).GetInt();
     return true;
 }
 

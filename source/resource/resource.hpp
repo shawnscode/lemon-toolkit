@@ -80,7 +80,7 @@ struct ResourceCache : public core::Subsystem
     // returns memory/video usage of cached resource
     size_t get_memory_usage() const;
     size_t get_video_memory_usage() const;
-    // set threshold of cache
+    // set threshold of cache in bytes
     void set_threshold(size_t, size_t);
 
 protected:

@@ -13,7 +13,7 @@ struct VertexBufferGL : public VertexBuffer
     VertexBufferGL(Renderer& renderer, Handle handle) : VertexBuffer(renderer, handle) {}
     virtual ~VertexBufferGL() { dispose(); }
 
-    // set buffer with data and restore graphics state, returns true if successful
+    // initialize the OpenGL specific functionality for this buffer
     bool initialize(const void*, unsigned, const VertexLayout&, MemoryUsage) override;
     // release graphics resource and state
     void dispose() override;
@@ -25,7 +25,7 @@ struct VertexBufferGL : public VertexBuffer
     unsigned get_size() const override { return _size; }
     // returns vertex layout of this buffer
     const VertexLayout& get_layout() const override { return _attributes; }
-    // returns OpenGL to this buffer
+    // retrieves a unique id for this vertex buffer
     GLuint get_handle() const { return _object; }
 
 protected:

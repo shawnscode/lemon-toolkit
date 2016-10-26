@@ -6,6 +6,7 @@
 #include <forwards.hpp>
 #include <core/ecs.hpp>
 #include <math/color.hpp>
+#include <math/vector.hpp>
 
 NS_LEMON_BEGIN
 
