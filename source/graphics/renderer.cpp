@@ -166,7 +166,7 @@ void Renderer::flush()
 
         if( ib != nullptr )
         {
-            ib->bind();
+            _statecache->bind_index_buffer(*ib);
             _backend->draw_index(drawcall.primitive, ib->get_format(), drawcall.first, drawcall.count);
         }
         else

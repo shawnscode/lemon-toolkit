@@ -24,12 +24,11 @@ using UniformVariable = Variant<
 
 struct UniformBufferGL : public UniformBuffer
 {
-    UniformBufferGL(Renderer& renderer, Handle handle) : UniformBuffer(renderer, handle) {}
+    UniformBufferGL(Handle handle) : UniformBuffer(handle) {}
     virtual ~UniformBufferGL() { dispose(); }
 
+    // initialize the OpenGL specific functionality for this buffer
     bool initialize() override;
-    void dispose() override;
-
     // set uniform vector value
     bool set_uniform_1f(const char*, const math::Vector<1, float>&) override;
     bool set_uniform_2f(const char*, const math::Vector<2, float>&) override;
@@ -42,9 +41,14 @@ struct UniformBufferGL : public UniformBuffer
     // set uniform texture
     bool set_uniform_texture(const char*, Handle) override;
 
+    // release internal video resources
+    void dispose();
+
+    // retrieves textures uniforms
     std::map<std::string, Handle>& get_textures() { return _textures; }
     const std::map<std::string, Handle>& get_textures() const { return _textures; }
 
+    // retrieves variable uniforms
     std::unordered_map<std::string, UniformVariable>& get_uniforms() { return _uniforms; }
     const std::unordered_map<std::string, UniformVariable>& get_uniforms() const { return _uniforms; }
 

@@ -15,30 +15,26 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-#define ENSURE_NOT_RENDER_PHASE \
-    ASSERT(!_renderer.is_frame_began(), "can not manipulate resource during frame render phase.");
-
 #define DECLARE_GRAPHICS_OBJECT(T) \
     using ptr = std::shared_ptr<T>; \
     using weak_ptr = std::weak_ptr<T>; \
-    T(Renderer& renderer, Handle handle) : GraphicsObject(renderer, handle) {} \
+    T(Handle handle) : GraphicsObject(handle) {} \
     virtual ~T() {}
 
 // GraphicsObject is the base class of all the graphic card resources
 struct GraphicsObject
 {
-    GraphicsObject(Renderer& renderer, Handle handle) : _renderer(renderer), handle(handle) {}
+    GraphicsObject(Handle handle) : handle(handle) {}
     virtual ~GraphicsObject() {}
 
     // returns handle to this graphics object
     const Handle handle;
     operator Handle() const { return handle; }
-
-protected:
-    Renderer& _renderer;
 };
 
-// the expected usage pattern of the data store
+// MemoryUsage is a hint to the OpenGL implementation as to how a buffer object
+// store will be accessed, this enable OpenGL implementation to make more intelligent
+// decisions that may significantly impact buffer object performance
 enum class MemoryUsage : uint8_t
 {
     // the data store contents will be modified once and used at most a few times
@@ -154,17 +150,15 @@ struct VertexBuffer : public GraphicsObject
 {
     DECLARE_GRAPHICS_OBJECT(VertexBuffer);
 
-    virtual bool initialize(const void*, unsigned, const VertexLayout&, MemoryUsage) = 0;
-    virtual void dispose() = 0;
-
+    // initialize the OpenGL specific functionality for this buffer
+    virtual bool initialize(const void*, size_t, const VertexLayout&, MemoryUsage) = 0;
+    // creates a new data store boound to the buffer, any pre-existing data is deleted
     virtual bool update_data(const void*) = 0;
-    virtual bool update_data(const void*, unsigned, unsigned, bool discard = false) = 0;
-
-    virtual unsigned get_size() const = 0;
-    virtual const VertexLayout& get_layout() const = 0;
+    // update a subset of a buffer object's data store, optionally discard pre-existing data
+    virtual bool update_data(const void*, size_t, size_t, bool discard = false) = 0;
 };
 
-// index element format
+// the type of values in indices
 enum class IndexElementFormat : uint8_t
 {
     UBYTE = 0,
@@ -175,11 +169,12 @@ struct IndexBuffer : GraphicsObject
 {
     DECLARE_GRAPHICS_OBJECT(IndexBuffer);
 
-    virtual bool initialize(const void*, unsigned, IndexElementFormat, MemoryUsage) = 0;
-    virtual void dispose() = 0;
-
+    // initialize the OpenGL specific functionality for this buffer
+    virtual bool initialize(const void*, size_t, IndexElementFormat, MemoryUsage) = 0;
+    // creates a new data store boound to the buffer, any pre-existing data is deleted
     virtual bool update_data(const void*) = 0;
-    virtual bool update_data(const void*, unsigned, unsigned, bool discard = false) = 0;
+    // update a subset of a buffer object's data store, optionally discard pre-existing data
+    virtual bool update_data(const void*, size_t, size_t, bool discard = false) = 0;
 };
 
 //
@@ -227,16 +222,15 @@ struct Texture : public GraphicsObject
 {
     DECLARE_GRAPHICS_OBJECT(Texture);
 
+    // initialize the OpenGL specific functionality for this buffer
     virtual bool initialize(const void*, TextureFormat, TexturePixelFormat, unsigned, unsigned, MemoryUsage) = 0;
-    virtual void dispose() = 0;
-
     // set number of requested mip levels
     virtual void set_mipmap(bool) = 0;
     // set filtering mode
     virtual void set_filter_mode(TextureFilterMode) = 0;
     // set adddress mode
     virtual void set_address_mode(TextureCoordinate, TextureAddressMode) = 0;
-    // update the changed parameters to device
+    // commit the changed parameters to device
     virtual void update_parameters(bool force = false) = 0;
 };
 
@@ -245,9 +239,8 @@ struct UniformBuffer : public GraphicsObject
 {
     DECLARE_GRAPHICS_OBJECT(UniformBuffer);
 
+    // initialize the OpenGL specific functionality for this buffer
     virtual bool initialize() = 0;
-    virtual void dispose() = 0;
-
     // set uniform vector value
     virtual bool set_uniform_1f(const char*, const math::Vector<1, float>&) = 0;
     virtual bool set_uniform_2f(const char*, const math::Vector<2, float>&) = 0;
@@ -266,9 +259,8 @@ struct Program : public GraphicsObject
 {
     DECLARE_GRAPHICS_OBJECT(Program);
 
+    // initialize the OpenGL specific functionality for this buffer
     virtual bool initialize(const char* vs, const char* ps) = 0;
-    virtual void dispose() = 0;
-
     // specified input identifier of vertex attribute
     virtual bool set_attribute_name(VertexAttribute::Enum, const char*) = 0;
     // returns true if we have uniform associated with name in program

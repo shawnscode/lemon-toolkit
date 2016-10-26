@@ -3,16 +3,14 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-unsigned GL_INDEX_ELEMENT_SIZES[] =
+size_t GL_INDEX_ELEMENT_SIZES[] =
 {
     1,
     2
 };
 
-bool IndexBufferGL::initialize(const void* data, unsigned size, IndexElementFormat format, MemoryUsage usage)
+bool IndexBufferGL::initialize(const void* data, size_t size, IndexElementFormat format, MemoryUsage usage)
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     dispose();
 
     glGenBuffers(1, &_object);
@@ -30,24 +28,14 @@ bool IndexBufferGL::initialize(const void* data, unsigned size, IndexElementForm
 
 void IndexBufferGL::dispose()
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     if( _object != 0 )
         glDeleteBuffers(1, &_object);
 
     _object = 0;
 }
 
-void IndexBufferGL::bind()
-{
-    if( _object != 0 )
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _object);
-}
-
 bool IndexBufferGL::update_data(const void* data)
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     if( !data )
     {
         LOGW("failed to update index buffer with nullptr.");
@@ -64,10 +52,8 @@ bool IndexBufferGL::update_data(const void* data)
     return true;
 }
 
-bool IndexBufferGL::update_data(const void* data, unsigned start, unsigned size, bool discard)
+bool IndexBufferGL::update_data(const void* data, size_t start, size_t size, bool discard)
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     if( start == 0 && size == _size )
         return update_data(data);
 

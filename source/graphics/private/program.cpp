@@ -31,8 +31,6 @@ GLuint compile(GLenum type, const char* source)
 
 bool ProgramGL::initialize(const char* vsraw, const char* psraw)
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     if( vsraw == nullptr || psraw == nullptr )
     {
         LOGW("failed to restore shader without vertex/fragment shader.");
@@ -84,8 +82,6 @@ bool ProgramGL::initialize(const char* vsraw, const char* psraw)
 
 void ProgramGL::dispose()
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     if( _object != 0 )
         glDeleteProgram(_object);
 

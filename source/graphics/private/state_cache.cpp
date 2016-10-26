@@ -6,6 +6,7 @@
 #include <graphics/private/program.hpp>
 #include <graphics/private/vertex_buffer.hpp>
 #include <graphics/private/uniform_buffer.hpp>
+#include <graphics/private/index_buffer.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
@@ -40,7 +41,7 @@ void RenderStateCache::bind_program(Handle program_handle)
         return;
 
     auto program = static_cast<ProgramGL*>(_renderer.get<Program>(program_handle));
-    glUseProgram(program == nullptr ? 0 : program->get_handle());
+    glUseProgram(program == nullptr ? 0 : program->get_uid());
     CHECK_GL_ERROR();
 }
 
@@ -85,7 +86,7 @@ void RenderStateCache::bind_uniform_buffer(
         glActiveTexture(GL_TEXTURE0+unit);
 
         auto texture = static_cast<TextureGL*>(_renderer.get<Texture>(pair.second));
-        glBindTexture(GL_TEXTURE_2D, texture == nullptr ? 0 : texture->get_handle());
+        glBindTexture(GL_TEXTURE_2D, texture == nullptr ? 0 : texture->get_uid());
 
         auto location = program->get_uniform_location(pair.first.c_str());
         if( location == -1 )
@@ -149,8 +150,8 @@ void RenderStateCache::bind_vertex_buffer(Handle program_handle, Handle vb_handl
     auto program = static_cast<ProgramGL*>(_renderer.get<Program>(program_handle));
     auto vb = static_cast<VertexBufferGL*>(_renderer.get<VertexBuffer>(vb_handle));
 
-    GLuint glprogram = program == nullptr ? 0 : program->get_handle();
-    GLuint glvb = vb == nullptr ? 0 : vb->get_handle();
+    GLuint glprogram = program == nullptr ? 0 : program->get_uid();
+    GLuint glvb = vb == nullptr ? 0 : vb->get_uid();
 
     if( glprogram == 0 || glvb == 0 )
     {
@@ -200,6 +201,15 @@ void RenderStateCache::bind_vertex_buffer(Handle program_handle, Handle vb_handl
     }
 
     CHECK_GL_ERROR();
+}
+
+void RenderStateCache::bind_index_buffer(Handle ib)
+{
+    if( auto buffer = static_cast<IndexBufferGL*>(_renderer.get<IndexBuffer>(ib)) )
+    {
+        if( buffer->get_uid() != 0 )
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->get_uid());
+    }
 }
 
 bool operator < (const std::pair<Handle, Handle>& lhs, const std::pair<Handle, Handle>& rhs)

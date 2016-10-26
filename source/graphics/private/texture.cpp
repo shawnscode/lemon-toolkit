@@ -35,7 +35,7 @@ static GLenum GL_TEXTURE_PIXEL_FORMAT[] =
     GL_UNSIGNED_SHORT_5_5_5_1
 };
 
-TextureGL::TextureGL(Renderer& renderer, Handle handle) : Texture(renderer, handle)
+TextureGL::TextureGL(Handle handle) : Texture(handle)
 {
     _override_parameters = true;
     _filter = TextureFilterMode::LINEAR;
@@ -54,8 +54,6 @@ bool TextureGL::initialize(
     unsigned height,
     MemoryUsage usage)
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     if( !pixels || width == 0 || height == 0 )
     {
         LOGW("failed to set data of texture with null image.");
@@ -101,8 +99,6 @@ bool TextureGL::initialize(
 
 void TextureGL::dispose()
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     if( _object != 0 )
     {
         glDeleteBuffers(1, &_object);
@@ -112,8 +108,6 @@ void TextureGL::dispose()
 
 void TextureGL::set_mipmap(bool mipmap)
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     if( _object != 0 && _mipmap != mipmap && mipmap )
     {
         glActiveTexture(GL_TEXTURE0);
@@ -127,24 +121,18 @@ void TextureGL::set_mipmap(bool mipmap)
 
 void TextureGL::set_filter_mode(TextureFilterMode mode)
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     _filter = mode;
     _override_parameters = true;
 }
 
 void TextureGL::set_address_mode(TextureCoordinate coord, TextureAddressMode mode)
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     _address[value(coord)] = mode;
     _override_parameters = true;
 }
 
 void TextureGL::update_parameters(bool force)
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     if( !force && !_override_parameters )
         return;
 

@@ -10,22 +10,27 @@ NS_LEMON_GRAPHICS_BEGIN
 
 struct IndexBufferGL : public IndexBuffer
 {
-    IndexBufferGL(Renderer& renderer, Handle handle) : IndexBuffer(renderer, handle) {}
+    IndexBufferGL(Handle handle) : IndexBuffer(handle) {}
     virtual ~IndexBufferGL() { dispose(); }
 
-    bool initialize(const void*, unsigned, IndexElementFormat, MemoryUsage);
+    // initialize the OpenGL specific functionality for this buffer
+    bool initialize(const void*, size_t, IndexElementFormat, MemoryUsage) override;
+    // creates a new data store boound to the buffer, any pre-existing data is deleted
+    bool update_data(const void*) override;
+    // update a subset of a buffer object's data store, optionally discard pre-existing data
+    bool update_data(const void*, size_t, size_t, bool discard = false) override;
+
+    // release internal video resources
     void dispose();
-
-    bool update_data(const void*);
-    bool update_data(const void*, unsigned, unsigned, bool discard = false);
-
-    void bind();
-    GLuint get_handle() const { return _object; }
+    // retrieves the element format of this buffer, must be one of GL_UNSIGNED_SHORT or GL_UNSIGNED_BYTE
     IndexElementFormat get_format() const { return _format; }
-    unsigned get_size() const { return _size; }
+    // retrieves a unique id for this vertex buffer
+    size_t get_size() const { return _size; }
+    // retrieves a unique id for this buffer
+    GLuint get_uid() const { return _object; }
 
 protected:
-    unsigned _size;
+    size_t _size;
     GLuint _object;
     GLenum _usage;
     IndexElementFormat _format;

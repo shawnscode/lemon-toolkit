@@ -6,10 +6,8 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-bool VertexBufferGL::initialize(const void* data, unsigned size, const VertexLayout& layout, MemoryUsage usage)
+bool VertexBufferGL::initialize(const void* data, size_t size, const VertexLayout& layout, MemoryUsage usage)
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     dispose();
 
     glGenBuffers(1, &_object);
@@ -27,8 +25,6 @@ bool VertexBufferGL::initialize(const void* data, unsigned size, const VertexLay
 
 void VertexBufferGL::dispose()
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     if( _object != 0 )
         glDeleteBuffers(1, &_object);
 
@@ -37,8 +33,6 @@ void VertexBufferGL::dispose()
 
 bool VertexBufferGL::update_data(const void* data)
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     if( !data )
     {
         LOGW("failed to update vertex buffer with nullptr.");
@@ -55,10 +49,8 @@ bool VertexBufferGL::update_data(const void* data)
     return true;
 }
 
-bool VertexBufferGL::update_data(const void* data, unsigned start, unsigned size, bool discard)
+bool VertexBufferGL::update_data(const void* data, size_t start, size_t size, bool discard)
 {
-    ENSURE_NOT_RENDER_PHASE;
-
     if( start == 0 && size == _size )
         return update_data(data);
 

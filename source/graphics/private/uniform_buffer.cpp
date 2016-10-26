@@ -19,35 +19,30 @@ void UniformBufferGL::dispose()
 
 bool UniformBufferGL::set_uniform_texture(const char* name, Handle texture)
 {
-    ENSURE_NOT_RENDER_PHASE;
    _textures[name] = texture;
     return true;
 }
 
 bool UniformBufferGL::set_uniform_1f(const char* name, const math::Vector<1, float>& value)
 {
-    ENSURE_NOT_RENDER_PHASE;
     _uniforms[name].set<math::Vector<1, float>>(value);
     return true;
 }
 
 bool UniformBufferGL::set_uniform_2f(const char* name, const math::Vector<2, float>& value)
 {
-    ENSURE_NOT_RENDER_PHASE;
     _uniforms[name].set<math::Vector<2, float>>(value);
     return true;
 }
 
 bool UniformBufferGL::set_uniform_3f(const char* name, const math::Vector<3, float>& value)
 {
-    ENSURE_NOT_RENDER_PHASE;
      _uniforms[name].set<math::Vector<3, float>>(value);
     return true;
 }
 
 bool UniformBufferGL::set_uniform_4f(const char* name, const math::Vector<4, float>& value)
 {
-    ENSURE_NOT_RENDER_PHASE;
     _uniforms[name].set<math::Vector<4, float>>(value);
     return true;
 }
@@ -55,21 +50,18 @@ bool UniformBufferGL::set_uniform_4f(const char* name, const math::Vector<4, flo
 // OpenGL use column-major layout, so we always transpose our matrix
 bool UniformBufferGL::set_uniform_2fm(const char* name, const math::Matrix<2, 2, float>& value)
 {
-    ENSURE_NOT_RENDER_PHASE;
     _uniforms[name].set<math::Matrix<2, 2, float>>(value);
     return true;
 }
 
 bool UniformBufferGL::set_uniform_3fm(const char* name, const math::Matrix<3, 3, float>& value)
 {
-    ENSURE_NOT_RENDER_PHASE;
     _uniforms[name].set<math::Matrix<3, 3, float>>(value);
     return true;
 }
 
 bool UniformBufferGL::set_uniform_4fm(const char* name, const math::Matrix<4, 4, float>& value)
 {
-    ENSURE_NOT_RENDER_PHASE;
     _uniforms[name].set<math::Matrix<4, 4, float>>(value);
     return true;
 }

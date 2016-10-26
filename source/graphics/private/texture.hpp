@@ -11,23 +11,24 @@ NS_LEMON_GRAPHICS_BEGIN
 
 struct TextureGL : public Texture
 {
-    TextureGL(Renderer& renderer, Handle handle);
+    TextureGL(Handle handle);
     virtual ~TextureGL() { dispose(); }
 
-    // set data from an image and restore graphics state, returns true if successful
+    // initialize the OpenGL specific functionality for this buffer
     bool initialize(const void*, TextureFormat, TexturePixelFormat, unsigned, unsigned, MemoryUsage) override;
-    // release graphics resource and state
-    void dispose() override;
     // set number of requested mip levels
     void set_mipmap(bool) override;
     // set filtering mode
     void set_filter_mode(TextureFilterMode) override;
     // set adddress mode
     void set_address_mode(TextureCoordinate, TextureAddressMode) override;
-    // update the changed parameters to device
+    // commit the changed parameters to device
     void update_parameters(bool force = false) override;
-    // returns OpenGL handle of this buffer
-    GLuint get_handle() const { return _object; }
+
+    // release internal video resources
+    void dispose();
+    // retrieves a unique id for this buffer
+    GLuint get_uid() const { return _object; }
 
 protected:
     GLuint _object;

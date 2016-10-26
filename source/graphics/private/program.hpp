@@ -18,17 +18,20 @@
 NS_LEMON_GRAPHICS_BEGIN
 struct ProgramGL : public Program
 {
-    ProgramGL(Renderer& renderer, Handle handle) : Program(renderer, handle) {}
+    ProgramGL(Handle handle) : Program(handle) {}
     virtual ~ProgramGL() { dispose(); }
 
+    // initialize the OpenGL specific functionality for this buffer
     bool initialize(const char* vs, const char* ps) override;
-    void dispose() override;
-
+    // specified input identifier of vertex attribute
     bool set_attribute_name(VertexAttribute::Enum, const char*) override;
+    // returns true if we have uniform associated with name in program
     bool has_uniform(const char*) const override;
 
-    // returns opengl handle of this program
-    GLuint get_handle() const { return _object; }
+    // release internal video resources
+    void dispose();
+    // retrieves a unique id for this buffer
+    GLuint get_uid() const { return _object; }
     // returns location of specified uniform
     GLint get_uniform_location(const char*, bool warning = true) const;
     // returns location of specified attribute

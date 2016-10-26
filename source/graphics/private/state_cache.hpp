@@ -20,6 +20,7 @@ struct RenderStateCache
     void bind_program(Handle program);
     void bind_uniform_buffer(Handle program, Handle uniform, const BuildinUniforms&);
     void bind_vertex_buffer(Handle program, Handle vb);
+    void bind_index_buffer(Handle ib);
     void end_frame();
 
     void free_program(Handle);

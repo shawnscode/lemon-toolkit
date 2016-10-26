@@ -198,7 +198,7 @@ namespace details
 
             if( auto object = _allocator.get(handle) )
             {
-                ::new (object) T(_renderer, handle);
+                ::new (object) T(handle);
                 return object;
             }
 
