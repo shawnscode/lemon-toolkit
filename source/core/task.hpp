@@ -34,9 +34,9 @@ struct Task
 
 // a light-weight task scheduler with automatic load balancing,
 // the dependencies between tasks are addressed as parent-child relationships.
-struct JobSystem : public Subsystem
+struct TaskSystem : public Subsystem
 {
-    JobSystem(unsigned worker = 0) : _core(worker) {}
+    TaskSystem(unsigned worker = 0) : _core(worker) {}
 
     // initialize task scheduler with specified worker count
     bool initialize() override;
@@ -89,7 +89,7 @@ public:
     task_callback on_task_stop;
 
 protected:
-    static void thread_run(JobSystem&, unsigned index);
+    static void thread_run(TaskSystem&, unsigned index);
 
     Handle create_task_chunk();
     void finish(Handle);
@@ -115,27 +115,27 @@ protected:
 
 //
 // IMPLEMENTATIONS of JOBSYSTEM
-INLINE Handle JobSystem::create(const char* name)
+INLINE Handle TaskSystem::create(const char* name)
 {
     return create_internal(name, nullptr);
 }
 
 template<typename F, typename ... Args>
-Handle JobSystem::create(const char* name, F&& functor, Args&& ... args)
+Handle TaskSystem::create(const char* name, F&& functor, Args&& ... args)
 {
     auto functor_with_env = std::bind(std::forward<F>(functor), std::forward<Args>(args)...);
     return create_internal(name, functor_with_env);
 }
 
 template<typename F, typename ... Args>
-Handle JobSystem::create_as_child(Handle parent, const char* name, F&& functor, Args&&... args)
+Handle TaskSystem::create_as_child(Handle parent, const char* name, F&& functor, Args&&... args)
 {
     auto functor_with_env = std::bind(std::forward<F>(functor), std::forward<Args>(args)...);
     return create_as_child_internal(parent, name, functor_with_env);
 }
 
 template<typename F, typename IT>
-Handle JobSystem::create_parallel_for(const char* name, F&& functor, IT begin, IT end, size_t step)
+Handle TaskSystem::create_parallel_for(const char* name, F&& functor, IT begin, IT end, size_t step)
 {
     auto master = create_internal(name, nullptr);
     for( auto it = begin; it < end; it += step )

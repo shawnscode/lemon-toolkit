@@ -28,14 +28,14 @@ static void fib(unsigned& out, unsigned index)
     }
 }
 
-struct JobSystemTestContext
+struct TaskSystemTestContext
 {
-    JobSystemTestContext() { task.initialize(); }
-    ~JobSystemTestContext() { task.dispose(); }
-    core::JobSystem task;
+    TaskSystemTestContext() { task.initialize(); }
+    ~TaskSystemTestContext() { task.dispose(); }
+    core::TaskSystem task;
 };
 
-TEST_CASE_METHOD(JobSystemTestContext, "TestSchedulerParalle")
+TEST_CASE_METHOD(TaskSystemTestContext, "TestSchedulerParalle")
 {
     unsigned result = 0, cmp = 0;
     for( unsigned i = 1; i < 10; i++ )
@@ -60,16 +60,16 @@ TEST_CASE_METHOD(JobSystemTestContext, "TestSchedulerParalle")
     REQUIRE( cmp == result );
 }
 
-BENCHMARK(TaskTest, JobSystemParallelSequence, 3, 1)
+BENCHMARK(TaskTest, TaskSystemParallelSequence, 3, 1)
 {
     unsigned result = 0;
     for( unsigned i = 1; i < 20; i++ )
         fib(result, i);
 }
 
-BENCHMARK(TaskTest, JobSystemParallel, 3, 1)
+BENCHMARK(TaskTest, TaskSystemParallel, 3, 1)
 {
-    JobSystemTestContext context;
+    TaskSystemTestContext context;
 
     unsigned result = 0;
     auto master = context.task.create("master");
@@ -91,16 +91,16 @@ static void works(size_t start, size_t end)
 
 static int idle = 100;
 
-BENCHMARK(TaskTest, JobSystemParralleFor, 3, 1)
+BENCHMARK(TaskTest, TaskSystemParralleFor, 3, 1)
 {
-    JobSystemTestContext context;
+    TaskSystemTestContext context;
     auto partition = idle/std::thread::hardware_concurrency();
     auto handle = context.task.create_parallel_for("master", works, 1, idle, partition);
     context.task.run(handle);
     context.task.wait(handle);
 }
 
-BENCHMARK(TaskTest, JobSystemParralleForSequence, 3, 1)
+BENCHMARK(TaskTest, TaskSystemParralleForSequence, 3, 1)
 {
     works(1, idle);
 }

@@ -30,7 +30,7 @@ bool Engine::initialize()
 
     core::add_subsystem<core::EventSystem>();
     core::add_subsystem<core::EntityComponentSystem>();
-    core::add_subsystem<core::JobSystem>();
+    core::add_subsystem<core::TaskSystem>();
     core::add_subsystem<graphics::WindowDevice>();
     core::add_subsystem<graphics::Renderer>();
     core::add_subsystem<res::ArchiveCollection>();

@@ -5,7 +5,7 @@
 
 NS_LEMON_CORE_BEGIN
 
-bool JobSystem::initialize()
+bool TaskSystem::initialize()
 {
     if( _core == 0 )
         _core = std::thread::hardware_concurrency() - 1;
@@ -23,7 +23,7 @@ bool JobSystem::initialize()
     return true;
 }
 
-void JobSystem::dispose()
+void TaskSystem::dispose()
 {
     {
         std::unique_lock<std::mutex> lock(_queue_mutex);
@@ -35,7 +35,7 @@ void JobSystem::dispose()
         thread.join();
 }
 
-Handle JobSystem::create_internal(const char* name, std::function<void()> closure)
+Handle TaskSystem::create_internal(const char* name, std::function<void()> closure)
 {
     Handle handle = create_task_chunk();
     Task* task = _tasks.get_t(handle);
@@ -46,7 +46,7 @@ Handle JobSystem::create_internal(const char* name, std::function<void()> closur
     return handle;
 }
 
-Handle JobSystem::create_as_child_internal(Handle parent, const char* name, std::function<void()> closure)
+Handle TaskSystem::create_as_child_internal(Handle parent, const char* name, std::function<void()> closure)
 {
     Handle handle = create_task_chunk();
     Task* task = _tasks.get_t(handle);
@@ -65,7 +65,7 @@ Handle JobSystem::create_as_child_internal(Handle parent, const char* name, std:
     return handle;
 }
 
-Handle JobSystem::create_task_chunk()
+Handle TaskSystem::create_task_chunk()
 {
     Handle handle;
     {
@@ -80,7 +80,7 @@ Handle JobSystem::create_task_chunk()
     return handle;
 }
 
-void JobSystem::run(Handle handle)
+void TaskSystem::run(Handle handle)
 {
     Task* task = _tasks.get_t(handle);
     ASSERT( task != nullptr && task->jobs.load() > 0, "invalid task handle to run." );
@@ -93,7 +93,7 @@ void JobSystem::run(Handle handle)
     _condition.notify_one();
 }
 
-bool JobSystem::is_completed(Handle handle)
+bool TaskSystem::is_completed(Handle handle)
 {
     Task* task = _tasks.get_t(handle);
     if( task == nullptr )
@@ -101,7 +101,7 @@ bool JobSystem::is_completed(Handle handle)
     return task->jobs.load() == 0;
 }
 
-void JobSystem::wait(Handle handle)
+void TaskSystem::wait(Handle handle)
 {
     Task* task = _tasks.get_t(handle);
     if( task == nullptr )
@@ -116,7 +116,7 @@ void JobSystem::wait(Handle handle)
     }
 }
 
-void JobSystem::finish(Handle handle)
+void TaskSystem::finish(Handle handle)
 {
     Task* task = _tasks.get_t(handle);
     if( task == nullptr )
@@ -139,7 +139,7 @@ void JobSystem::finish(Handle handle)
     }
 }
 
-bool JobSystem::execute_one(unsigned index, bool wait)
+bool TaskSystem::execute_one(unsigned index, bool wait)
 {
     Handle handle;
 
@@ -176,14 +176,14 @@ bool JobSystem::execute_one(unsigned index, bool wait)
     return true;
 }
 
-unsigned JobSystem::get_thread_index() const
+unsigned TaskSystem::get_thread_index() const
 {
     auto found = _thread_indices.find(std::this_thread::get_id());
     if( found != _thread_indices.end() ) return found->second;
     return 0xFFFFFFFF;
 }
 
-void JobSystem::thread_run(JobSystem& scheduler, unsigned index)
+void TaskSystem::thread_run(TaskSystem& scheduler, unsigned index)
 {
     if( scheduler.on_thread_start )
         scheduler.on_thread_start(index);
