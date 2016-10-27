@@ -1,78 +1,80 @@
-// @date 2016/10/09
+// @date 2016/10/26
 // @author Mao Jingkai(oammix@gmail.com)
 
 #pragma once
 
 #include <forwards.hpp>
-#include <graphics/graphics.hpp>
-#include <graphics/state.hpp>
+#include <graphics/defer/graphics.hpp>
+#include <codebase/handle.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
-// specifies in which kind of order the drawcall will be rendered.
-enum class RenderLayer : uint16_t
+struct RenderDrawCall
 {
-    BACKGROUND = 1000,
-    GEOMETRY = 2000,
-    ALPHATEST = 2500,
-    // transparent geometreis will be renderred from-back-to-front
-    TRANSPARENCY = 3000,
-    OVERLAY = 4000
-};
-
-// SortValue
-struct SortValue
-{
-    uint8_t layer;
-    uint8_t transparency;
-    uint32_t depth;
-    uint16_t program;
-
-    static uint32_t post_depth_process(uint8_t transparency, uint32_t depth);
-    static uint64_t encode(SortValue in);
-    static uint64_t encode(RenderLayer layer, uint32_t depth, uint16_t program);
-    static SortValue decode(uint64_t in);
-};
-
-struct BuildinUniforms
-{
-    enum Enum : uint8_t
-    {
-        PROJECTION = 0,
-        VIEW,
-        MODEL,
-        NORMAL,
-        VIEW_POS,
-    };
-
-    static const char* name(BuildinUniforms::Enum);
-
-    math::Matrix4f model;
-    math::Matrix3f normal;
-};
-
-// RenderDrawcall
-struct RenderDrawcall
-{
-    // stateless render state
-    RenderState state;
-    BuildinUniforms buildin;
-    // graphics resources we need to make a draw call
-    Handle program;
-    Handle uniform_buffer;
-    Handle vertex_buffer;
-    Handle index_buffer;
-    // specifies what kind of primitive to render
-    PrimitiveType primitive = PrimitiveType::TRIANGLES;
-    // specifies the starting index in the enabled arrays
-    unsigned first = 0;
-    // specifies the number of indices or vertices to be rendered
-    unsigned count = 0;
+    void set_program(const Program&);
+    // void set_render_state(const RenderState&);
+    void set_data_source(const VertexBuffer&, uint16_t, uint16_t);
+    void set_data_source(const VertexBuffer&, const IndexBuffer&, uint16_t, uint16_t);
+    // void set_shared_uniforms(const UniformBufferView&);
+    // void set_uniforms(const UniformBufferView&);
+    // 
 
 protected:
-    friend class Renderer;
-    // a packing value which is then used for sorting
-    uint64_t sort;
+    friend class RenderFrontend;
+
+    // the unique handle of shader program we are applying in drawing
+    Handle _program;
+    // the unique handle of render state instance
+    Handle _state;
+    // the unique handle of vertices and indices buffer
+    Handle _buffer_vertex;
+    Handle _buffer_index;
+    // offsets to identifies the uniforms buffer used by this draw call
+    uint16_t _const_offset, _const_size;
+    // its common to have some shared uniforms such like view and projection matrix
+    uint16_t _shared_const_offset, _shared_const_size;
+    // specifies the offset and count of indices or vertices to be drawed
+    uint16_t _first, _num;
 };
+
+INLINE void RenderDrawCall::set_program(const Program& program)
+{
+    _program = program;
+}
+
+// INLINE void RenderDrawCall::set_render_state(const RenderState& state)
+// {
+//     _state = state
+// }
+
+INLINE void RenderDrawCall::set_data_source(
+    const VertexBuffer& vb, const IndexBuffer& ib, uint16_t first, uint16_t num)
+{
+    _buffer_index = ib;
+    _buffer_vertex = vb;
+    _first = first;
+    _num = num;
+}
+
+INLINE void RenderDrawCall::set_data_source(
+    const VertexBuffer& vb, uint16_t first, uint16_t num)
+{
+    _buffer_index.invalidate();
+    _buffer_vertex = vb;
+    _first = first;
+    _num = num;
+}
+
+// INLINE void RenderDrawCall::set_shared_uniforms(const UniformBufferView& ubv)
+// {
+//     _shared_const_offset = ubv.get_offset();
+//     _shared_const_size = ubv.get_size();
+// }
+
+// INLINE void RenderDrawCall::set_uniforms(const UniformBufferView& ubv)
+// {
+//     _const_offset = ubv.get_offset();
+//     _const_size = ubv.get_size();
+// }
 
 NS_LEMON_GRAPHICS_END

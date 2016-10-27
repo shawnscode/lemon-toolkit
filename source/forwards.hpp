@@ -66,6 +66,9 @@ NS_LEMON_CORE_END
 
 NS_LEMON_GRAPHICS_BEGIN
 
+const static unsigned kMaxRenderDrawCall = 1024;
+const static unsigned kMaxRenderState = 64;
+const static unsigned kMaxUniformsPerMaterial = 32;
 struct Renderer;
 struct WindowDevice;
 

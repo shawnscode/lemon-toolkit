@@ -1,100 +1,113 @@
-// @date 2016/08/29
+// @date 2016/10/10
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <graphics/graphics.hpp>
-#include <codebase/enumeration.hpp>
+#include <graphics/details/uniform.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
-static const uint8_t SIZE_OF_VERTEX_ELEMENT_FORMAT[] =
+bool UniformBufferView::set_uniform_1f(const char* name, const math::Vector<1, float>& value)
 {
-    1,
-    1,
-    2,
-    2,
-    2,
-    4
-};
+    if( auto uniform = find(name) )
+    {
+        uniform->value.set<math::Vector<1, float>>(value);
+        return true;
+    }
 
-static const char* ATTRIBUTE_DEFAULT_NAME[] =
-{
-    "Position",
-    "Normal",
-    "Tangent",
-    "Bitangent",
-    "Color_0",
-    "Color_1",
-    "Indices",
-    "Weight",
-    "Texcoord_0",
-    "Texcoord_1",
-    "Texcoord_3",
-    "Texcoord_4",
-};
-
-VertexAttribute::VertexAttribute(
-    VertexAttribute::Enum attribute,
-    VertexElementFormat format,
-    unsigned size,
-    bool normalized) : attribute(attribute), format(format), size(size), normalized(normalized) {}
-
-uint8_t VertexAttribute::encode(const VertexAttribute& in)
-{
-    ASSERT( in.size >= 1 && in.size <= 4,
-        "the number of components per generic vertex attribute, must be 1, 2, 3, or 4." );
-
-    const uint8_t format = (value(in.format) & 0xF) << 0;
-    const uint8_t size = (in.size & 0x7) << 4;
-    const uint8_t normalized = (in.normalized ? 1 : 0) << 7;
-
-    return format | size | normalized;
+    return false;
 }
 
-VertexAttribute VertexAttribute::decode(VertexAttribute::Enum va, uint8_t in)
+bool UniformBufferView::set_uniform_2f(const char* name, const math::Vector<2, float>& value)
 {
-    return {
-        va,
-        static_cast<VertexElementFormat>(in & 0xF),
-        static_cast<unsigned>((in >> 4) & 0x7),
-        static_cast<bool>((in >> 7) & 1)
-    };
+    if( auto uniform = find(name) )
+    {
+        uniform->value.set<math::Vector<2, float>>(value);
+        return true;
+    }
+
+    return false;
 }
 
-const char* VertexAttribute::name(VertexAttribute::Enum va)
+bool UniformBufferView::set_uniform_3f(const char* name, const math::Vector<3, float>& value)
 {
-    return ATTRIBUTE_DEFAULT_NAME[value(va)];
+    if( auto uniform = find(name) )
+    {
+        uniform->value.set<math::Vector<3, float>>(value);
+        return true;
+    }
+
+    return false;
 }
 
-VertexLayout::VertexLayout() : _stride(0)
+bool UniformBufferView::set_uniform_4f(const char* name, const math::Vector<4, float>& value)
 {
-    memset(_offsets, 0, sizeof(_offsets));
-    memset(_attributes, invalid, sizeof(_attributes));
+    if( auto uniform = find(name) )
+    {
+        uniform->value.set<math::Vector<4, float>>(value);
+        return true;
+    }
+
+    return false;
 }
 
-VertexAttribute VertexLayout::get_attribute(VertexAttribute::Enum va) const
+bool UniformBufferView::set_uniform_2fm(const char* name, const math::Matrix<2, 2, float>& value)
 {
-    return VertexAttribute::decode(va, _attributes[va]);
+    if( auto uniform = find(name) )
+    {
+        uniform->value.set<math::Matrix<2, 2, float>>(value);
+        return true;
+    }
+
+    return false;
 }
 
-VertexLayout& VertexLayout::append(const VertexAttribute& va)
+bool UniformBufferView::set_uniform_3fm(const char* name, const math::Matrix<3, 3, float>& value)
 {
-    const size_t size = SIZE_OF_VERTEX_ELEMENT_FORMAT[value(va.format)] * va.size;
-    ASSERT(((size_t)_stride + size) < (size_t)invalid,
-        "failed to make layout with a max stride %d.", invalid);
+    if( auto uniform = find(name) )
+    {
+        uniform->value.set<math::Matrix<3, 3, float>>(value);
+        return true;
+    }
 
-    _attributes[va.attribute] = VertexAttribute::encode(va);
-    _offsets[va.attribute] = _stride;
-    _stride += (uint8_t)size;
-    return *this;
+    return false;
 }
 
-VertexLayout& VertexLayout::append(size_t size)
+bool UniformBufferView::set_uniform_4fm(const char* name, const math::Matrix<4, 4, float>& value)
 {
-    ASSERT(((size_t)_stride + size) < (size_t)invalid,
-        "failed to make layout with a max stride %d.", invalid);
+    if( auto uniform = find(name) )
+    {
+        uniform->value.set<math::Matrix<4, 4, float>>(value);
+        return true;
+    }
 
-    _stride += (uint8_t)size;
-    return *this;
+    return false;
 }
+
+bool UniformBufferView::set_uniform_texture(const char* name, Handle value)
+{
+    if( auto uniform = find(name) )
+    {
+        uniform->value.set<Handle>(value);
+        return true;
+    }
+
+    return false;
+}
+
+Uniform* UniformBufferView::find(const char* name)
+{
+    for( auto i = 0; i < _tail; i ++ )
+        if( _uniforms[i]->name == name )
+            return _uniforms[i];
+
+    if( _tail < _size )
+    {
+        _uniforms[_tail]->name = name;
+        return _uniforms[_tail++];
+    }
+
+    return nullptr;
+}
+
 
 NS_LEMON_GRAPHICS_END

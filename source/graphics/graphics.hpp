@@ -4,38 +4,19 @@
 #pragma once
 
 #include <forwards.hpp>
+
 #include <math/vector.hpp>
 #include <math/matrix.hpp>
 
 #include <codebase/handle.hpp>
 #include <codebase/enumeration.hpp>
 
-#include <limits>
-#include <memory>
-
 NS_LEMON_GRAPHICS_BEGIN
 
-#define DECLARE_GRAPHICS_OBJECT(T) \
-    using ptr = std::shared_ptr<T>; \
-    using weak_ptr = std::weak_ptr<T>; \
-    T(Handle handle) : GraphicsObject(handle) {} \
-    virtual ~T() {}
-
-// GraphicsObject is the base class of all the graphic card resources
-struct GraphicsObject
-{
-    GraphicsObject(Handle handle) : handle(handle) {}
-    virtual ~GraphicsObject() {}
-
-    // returns handle to this graphics object
-    const Handle handle;
-    operator Handle() const { return handle; }
-};
-
-// MemoryUsage is a hint to the OpenGL implementation as to how a buffer object
-// store will be accessed, this enable OpenGL implementation to make more intelligent
-// decisions that may significantly impact buffer object performance
-enum class MemoryUsage : uint8_t
+// BufferUsage is a hint to the video implementation as to how a buffer object
+// store will be accessed, this enable video implementation to make more
+// intelligent decisions that may significantly impact buffer object performance
+enum class BufferUsage : uint8_t
 {
     // the data store contents will be modified once and used at most a few times
     STREAM = 0,
@@ -43,15 +24,6 @@ enum class MemoryUsage : uint8_t
     STATIC,
     // the data store contents will be modified repeatedly and used many times
     DYNAMIC
-};
-
-// clear options
-enum class ClearOption : uint8_t
-{
-    NONE    = 0x0,
-    COLOR   = 0x1,
-    DEPTH   = 0x2,
-    STENCIL = 0x4
 };
 
 // vertex element format
@@ -65,16 +37,11 @@ enum class VertexElementFormat : uint8_t
     FLOAT
 };
 
-// specifies what kind of primitives to render.
-enum class PrimitiveType : uint8_t
+// the type of values in indices
+enum class IndexElementFormat : uint8_t
 {
-    POINTS = 0,
-    LINES,
-    LINE_LOOP,
-    LINE_STRIP,
-    TRIANGLES,
-    TRIANGLE_STRIP,
-    TRIANGLE_FAN,
+    UBYTE = 0,
+    USHORT
 };
 
 // VertexAttribute defines an generic vertex attribute data
@@ -146,128 +113,31 @@ protected:
     uint8_t _attributes[VertexAttribute::kVertexAttributeCount];
 };
 
-struct VertexBuffer : public GraphicsObject
+struct VertexBuffer
 {
-    DECLARE_GRAPHICS_OBJECT(VertexBuffer);
-
-    // initialize the OpenGL specific functionality for this buffer
+    // initialize the video specific functionality for this buffer
     virtual bool initialize(const void*, size_t, const VertexLayout&, MemoryUsage) = 0;
+    // destroy vertex buffer
+    virtual void dispose() = 0;
     // creates a new data store boound to the buffer, any pre-existing data is deleted
     virtual bool update_data(const void*) = 0;
     // update a subset of a buffer object's data store, optionally discard pre-existing data
     virtual bool update_data(const void*, size_t, size_t, bool discard = false) = 0;
 };
 
-// the type of values in indices
-enum class IndexElementFormat : uint8_t
+struct IndexBuffer
 {
-    UBYTE = 0,
-    USHORT
-};
-
-struct IndexBuffer : GraphicsObject
-{
-    DECLARE_GRAPHICS_OBJECT(IndexBuffer);
-
-    // initialize the OpenGL specific functionality for this buffer
+    // initialize the video specific functionality for this buffer
     virtual bool initialize(const void*, size_t, IndexElementFormat, MemoryUsage) = 0;
+    // destroy index buffer
+    virtual void dispose() = 0;
     // creates a new data store boound to the buffer, any pre-existing data is deleted
     virtual bool update_data(const void*) = 0;
     // update a subset of a buffer object's data store, optionally discard pre-existing data
     virtual bool update_data(const void*, size_t, size_t, bool discard = false) = 0;
 };
 
-//
-enum class TextureFilterMode : uint8_t
-{
-    NEAREST = 0,
-    LINEAR,
-    TRILINEAR,
-    ANISOTROPIC
-};
-
-enum class TextureAddressMode : uint8_t
-{
-    WRAP = 0,
-    MIRROR,
-    CLAMP,
-    BORDER
-};
-
-enum class TextureCoordinate : uint8_t
-{
-    U = 0,
-    V,
-    W
-};
-
-enum class TextureFormat : uint8_t
-{
-    ALPHA = 0,
-    RGB,
-    RGBA,
-    LUMINANCE,
-    LUMINANCE_ALPHA
-};
-
-enum class TexturePixelFormat : uint8_t
-{
-    UBYTE = 0,
-    USHORT565,
-    USHORT4444,
-    USHORT5551
-};
-
-struct Texture : public GraphicsObject
-{
-    DECLARE_GRAPHICS_OBJECT(Texture);
-
-    // initialize the OpenGL specific functionality for this buffer
-    virtual bool initialize(const void*, TextureFormat, TexturePixelFormat, unsigned, unsigned, MemoryUsage) = 0;
-    // set number of requested mip levels
-    virtual void set_mipmap(bool) = 0;
-    // set filtering mode
-    virtual void set_filter_mode(TextureFilterMode) = 0;
-    // set adddress mode
-    virtual void set_address_mode(TextureCoordinate, TextureAddressMode) = 0;
-    // commit the changed parameters to device
-    virtual void update_parameters(bool force = false) = 0;
-};
-
-//
-struct UniformBuffer : public GraphicsObject
-{
-    DECLARE_GRAPHICS_OBJECT(UniformBuffer);
-
-    // initialize the OpenGL specific functionality for this buffer
-    virtual bool initialize() = 0;
-    // set uniform vector value
-    virtual bool set_uniform_1f(const char*, const math::Vector<1, float>&) = 0;
-    virtual bool set_uniform_2f(const char*, const math::Vector<2, float>&) = 0;
-    virtual bool set_uniform_3f(const char*, const math::Vector<3, float>&) = 0;
-    virtual bool set_uniform_4f(const char*, const math::Vector<4, float>&) = 0;
-    // set uniform matrix value
-    virtual bool set_uniform_2fm(const char*, const math::Matrix<2, 2, float>&) = 0;
-    virtual bool set_uniform_3fm(const char*, const math::Matrix<3, 3, float>&) = 0;
-    virtual bool set_uniform_4fm(const char*, const math::Matrix<4, 4, float>&) = 0;
-    // set uniform texture
-    virtual bool set_uniform_texture(const char*, Handle) = 0;
-};
-
-//
-struct Program : public GraphicsObject
-{
-    DECLARE_GRAPHICS_OBJECT(Program);
-
-    // initialize the OpenGL specific functionality for this buffer
-    virtual bool initialize(const char* vs, const char* ps) = 0;
-    // specified input identifier of vertex attribute
-    virtual bool set_attribute_name(VertexAttribute::Enum, const char*) = 0;
-    // returns true if we have uniform associated with name in program
-    virtual bool has_uniform(const char*) const = 0;
-};
-
-// INCLUDED IMPLEMENTATIONS
+// INCLUDED IMPLEMENTATIONS of VERTEX LAYOUT
 template<>
 INLINE VertexLayout VertexLayout::make()
 {

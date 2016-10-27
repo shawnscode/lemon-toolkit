@@ -32,10 +32,11 @@ bool Engine::initialize()
     core::add_subsystem<core::EntityComponentSystem>();
     core::add_subsystem<core::TaskSystem>();
     core::add_subsystem<graphics::WindowDevice>();
-    core::add_subsystem<graphics::Renderer>();
     core::add_subsystem<res::ArchiveCollection>();
     core::add_subsystem<res::ResourceCache>();
     core::add_subsystem<Input>();
+
+    core::add_subsystem<graphics::Renderer>();
     core::add_subsystem<Scene>();
 
     auto arguments = core::get_subsystem<Arguments>();
