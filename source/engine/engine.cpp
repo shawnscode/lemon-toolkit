@@ -5,7 +5,8 @@
 #include <engine/input.hpp>
 #include <engine/arguments.hpp>
 #include <graphics/window.hpp>
-#include <graphics/renderer.hpp>
+#include <graphics/frontend.hpp>
+#include <graphics/backend/backend.hpp>
 #include <resource/resource.hpp>
 #include <resource/archives.hpp>
 #include <resource/filesystem.hpp>
@@ -36,7 +37,7 @@ bool Engine::initialize()
     core::add_subsystem<res::ResourceCache>();
     core::add_subsystem<Input>();
 
-    core::add_subsystem<graphics::Renderer>();
+    core::add_subsystem<graphics::RenderFrontend>();
     core::add_subsystem<Scene>();
 
     auto arguments = core::get_subsystem<Arguments>();
@@ -161,21 +162,18 @@ void Engine::run_one_frame()
 
 void Engine::update(duration dt)
 {
-    auto renderer = core::get_subsystem<graphics::Renderer>();
+    auto renderer = core::get_subsystem<graphics::RenderFrontend>();
     auto event = core::get_subsystem<core::EventSystem>();
 
     event->emit<EvtUpdate>(dt);
     event->emit<EvtPostUpdate>(dt);
 
-    if( !renderer->is_device_lost() )
+    if( renderer->begin_frame() )
     {
         event->emit<EvtRenderUpdate>(dt);
-        if( renderer->begin_frame() )
-        {
-            event->emit<EvtRender>();
-            renderer->end_frame();
-        }
+        event->emit<EvtRender>();
         event->emit<EvtPostRenderUpdate>(dt);
+        renderer->end_frame();
     }
 }
 

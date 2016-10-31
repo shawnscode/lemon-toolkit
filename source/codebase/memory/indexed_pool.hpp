@@ -4,8 +4,6 @@
 #pragma once
 
 #include <forwards.hpp>
-
-#include <codebase/handle.hpp>
 #include <codebase/handle_set.hpp>
 #include <codebase/memory/memory_pool.hpp>
 
@@ -34,9 +32,9 @@ struct IndexedMemoryPool : protected MemoryPool
     size_t capacity() const;
 
     // returns the iterator referrring to the first alive handle
-    ReuseableHandleSet::iterator begin() const;
+    ReuseableHandleSet::iterator_t begin() const;
     // returns an iterator referrring to the past-the-end handle
-    ReuseableHandleSet::iterator end() const;
+    ReuseableHandleSet::iterator_t end() const;
 
 protected:
     ReuseableHandleSet _handles;
@@ -68,12 +66,12 @@ INLINE size_t IndexedMemoryPool::capacity() const
     return MemoryPool::capacity();
 }
 
-INLINE ReuseableHandleSet::iterator IndexedMemoryPool::begin() const
+INLINE ReuseableHandleSet::iterator_t IndexedMemoryPool::begin() const
 {
     return _handles.begin();
 }
 
-INLINE ReuseableHandleSet::iterator IndexedMemoryPool::end() const
+INLINE ReuseableHandleSet::iterator_t IndexedMemoryPool::end() const
 {
     return _handles.end();
 }

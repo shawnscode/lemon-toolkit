@@ -2,7 +2,7 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <resource/shader.hpp>
-#include <graphics/renderer.hpp>
+#include <graphics/frontend.hpp>
 
 #include <regex>
 #include <iostream>
@@ -12,7 +12,7 @@ NS_LEMON_RESOURCE_BEGIN
 const char* s_default_vs = 
 "#version 330 core\n"
 "\n"
-"layout (location = 0) in vec3 position;\n"
+"layout (location = 0) in vec3 Position;\n"
 "\n"
 "uniform mat4 lm_ProjectionMatrix;\n"
 "uniform mat4 lm_ViewMatrix;\n"
@@ -20,7 +20,7 @@ const char* s_default_vs =
 "\n"
 "void main()\n"
 "{\n"
-"    gl_Position = vec4(position, 1.0f) * lm_ModelMatrix * lm_ViewMatrix * lm_ProjectionMatrix;\n"
+"    gl_Position = vec4(Position, 1.0f) * lm_ModelMatrix * lm_ViewMatrix * lm_ProjectionMatrix;\n"
 "}\n";
 
 const char* s_default_fs =
@@ -58,13 +58,15 @@ enum class ShaderType
 
 Shader::~Shader()
 {
-    graphics::resource::free(_program);
+    if( auto frontend = core::get_subsystem<graphics::RenderFrontend>() )
+        frontend->free_program(_program);
 }
 
 bool Shader::read(std::istream& in)
 {
     std::regex syntax("//->.*");
     std::regex tokenize("(\\S+)");
+
     std::smatch pieces;
 
     std::string line;
@@ -133,19 +135,6 @@ bool Shader::save(std::ostream& out)
     return true;
 }
 
-bool Shader::update_video_object()
-{
-    if( _dirty )
-    {
-        if( _program )
-            graphics::resource::free(_program);
-        _program = graphics::resource::create<graphics::Program>(_vertex.c_str(), _fragment.c_str());
-        _dirty = false;
-    }
-
-    return _program != nullptr;
-}
-
 size_t Shader::get_memory_usage() const
 {
     return sizeof(Shader) + _vertex.size() + _fragment.size();
@@ -163,8 +152,43 @@ bool Shader::initialize(const char* vs, const char* fs)
 
     _vertex = vs;
     _fragment = fs;
+
+    scan_uniforms(_vertex);
+    scan_uniforms(_fragment);
+
     _dirty = true;
     return true;
+}
+
+void Shader::scan_uniforms(const std::string& str)
+{
+    std::regex uniform("uniform( +)(\\w+)( +)(\\w+)( *);");
+    std::smatch match;
+    
+    auto iterator = std::sregex_iterator(str.begin(), str.end(), uniform);
+    for( ; iterator != std::sregex_iterator(); iterator ++ )
+    {
+        std::string line = iterator->str();
+        if( std::regex_search(line, match, uniform) && match.size() >= 4 )
+            _uniforms.push_back(match[4].str());
+    }
+}
+
+bool Shader::update_video_object()
+{
+    if( _dirty )
+    {
+        if( auto frontend = core::get_subsystem<graphics::RenderFrontend>() )
+        {
+            frontend->free_program(_program);
+            _program = frontend->create_program(_vertex.c_str(), _fragment.c_str());
+            for( auto& uniform : _uniforms )
+                frontend->update_program_uniform(_program, uniform.c_str());
+            _dirty = false;
+        }
+    }
+
+    return _program.is_valid();
 }
 
 NS_LEMON_RESOURCE_END

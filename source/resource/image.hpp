@@ -41,7 +41,7 @@ struct Image : public Resource
     // set a 2d pixel
     void set_pixel(unsigned, unsigned, const math::Color&);
     // specifies the expected usage pattern of the data source
-    void set_video_memory_hint(graphics::MemoryUsage);
+    void set_video_memory_hint(graphics::BufferUsage);
     // return a 2D pixel color
     math::Color get_pixel(unsigned, unsigned) const;
     // return a linearly sampled 2d pixel color, x and y have the range 0-1
@@ -55,14 +55,11 @@ struct Image : public Resource
     // returns the internal format of image
     ImageElementFormat get_element_format() const { return _element_format; }
     // returns memory usage of this image
-    graphics::MemoryUsage get_video_memory_hint() const { return _usage; }
-
+    graphics::BufferUsage get_video_memory_hint() const { return _usage; }
     // returns graphics object of texture
-    graphics::Texture* get_texture() const;
+    Handle get_video_uid() const;
 
 protected:
-    // texture
-    graphics::Texture* _texture = nullptr;
     // with/height
     unsigned _width = 0, _height = 0, _components = 1;
     // pixel data
@@ -70,17 +67,24 @@ protected:
     //
     ImageElementFormat _element_format = ImageElementFormat::UBYTE;
     //
-    graphics::MemoryUsage _usage = graphics::MemoryUsage::STATIC;
+    graphics::BufferUsage _usage = graphics::BufferUsage::STATIC;
+    // 
+    Handle _video_uid;
 };
 
-INLINE void Image::set_video_memory_hint(graphics::MemoryUsage usage)
+INLINE void Image::set_video_memory_hint(graphics::BufferUsage usage)
 {
     _usage = usage;
 }
 
-INLINE graphics::Texture* Image::get_texture() const
+INLINE Handle Image::get_video_uid() const
 {
-    return _texture;
+    return _video_uid;
 }
+
+// INLINE graphics::Texture* Image::get_texture() const
+// {
+//     return _texture;
+// }
 
 NS_LEMON_RESOURCE_END

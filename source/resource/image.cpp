@@ -2,7 +2,7 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <resource/image.hpp>
-#include <graphics/renderer.hpp>
+#include <graphics/frontend.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -22,7 +22,8 @@ graphics::TextureFormat FORMAT[] =
 
 Image::~Image()
 {
-    graphics::resource::free(_texture);
+    if( auto frontend = core::get_subsystem<graphics::RenderFrontend>() )
+        frontend->free_texture(_video_uid);
 }
 
 bool Image::read(std::istream& in)
@@ -57,7 +58,6 @@ bool Image::read(std::istream& in)
     set_data(pixels);
     stbi_image_free(pixels);
     return true;
-    // return update_texture(graphics::MemoryUsage::STATIC);
 }
 
 bool Image::save(std::ostream& out)
@@ -86,16 +86,14 @@ bool Image::update_video_object()
 {
     auto format = FORMAT[_components];
     auto element_format = static_cast<graphics::TexturePixelFormat>(_element_format);
-    if( _texture == nullptr )
+
+    if( auto frontend = core::get_subsystem<graphics::RenderFrontend>() )
     {
-        _texture = core::get_subsystem<graphics::Renderer>()->create<graphics::Texture>(
+        _video_uid = frontend->create_texture(
             _data.get(), format, element_format, _width, _height, _usage);
-        return _texture != nullptr;
     }
-    else
-    {
-        return _texture->initialize(_data.get(), format, element_format, _width, _height, _usage);
-    }
+
+    return _video_uid.is_valid();
 }
 
 size_t Image::get_memory_usage() const

@@ -3,9 +3,9 @@
 
 #include <scene/scene.hpp>
 #include <core/event.hpp>
-#include <graphics/renderer.hpp>
 #include <scene/mesh.hpp>
 #include <math/vector.hpp>
+#include <graphics/frontend.hpp>
 
 NS_LEMON_BEGIN
 
@@ -46,15 +46,15 @@ void Scene::update_with_camera(Transform& transform, Camera& camera)
     ecs->find_entities_with<Transform, MeshRenderer>().visit(
         [=](Entity&, Transform& transform, MeshRenderer& mesh)
         {
-            auto uniforms = mesh.material->get_uniform_buffer();
-            auto name = graphics::BuildinUniforms::name(graphics::BuildinUniforms::PROJECTION);
-            uniforms->set_uniform_4fm(name, projection_matrix);
+            graphics::UniformVariable v;
+            v.set<math::Matrix4f>(projection_matrix);
+            mesh.material->set_uniform_variable("lm_ProjectionMatrix", v);
 
-            name = graphics::BuildinUniforms::name(graphics::BuildinUniforms::VIEW);
-            uniforms->set_uniform_4fm(name, view_matrix);
+            v.set<math::Matrix4f>(view_matrix);
+            mesh.material->set_uniform_variable("lm_ViewMatrix", v);
 
-            name = graphics::BuildinUniforms::name(graphics::BuildinUniforms::VIEW_POS);
-            uniforms->set_uniform_3f(name, view_pos);
+            v.set<math::Vector3f>(view_pos);
+            mesh.material->set_uniform_variable("lm_ViewPos", v);
         });
 }
 
@@ -72,42 +72,36 @@ void Scene::receive(const EvtRender& evt)
 
 void Scene::draw_with_camera(Transform& transform, Camera& camera)
 {
-    auto frontend = core::get_subsystem<graphics::Renderer>();
+    auto frontend = core::get_subsystem<graphics::RenderFrontend>();
     frontend->clear(graphics::ClearOption::COLOR | graphics::ClearOption::DEPTH, {0.75, 0.75, 0.75}, 1.f);
 
-    auto view_pos = transform.get_position(TransformSpace::WORLD);
     auto ecs = core::get_subsystem<EntityComponentSystem>();
     ecs->find_entities_with<Transform, MeshRenderer>().visit(
         [=](Entity&, Transform& transform, MeshRenderer& mesh)
         {
-            graphics::RenderDrawcall drawcall;
+            graphics::RenderDrawCall drawcall;
 
-            // TODO: fill render state associated with materials
-            drawcall.state.depth.enable = true;
-            drawcall.buildin.model = transform.get_model_matrix(TransformSpace::WORLD);
-            drawcall.buildin.normal = transform.get_normal_matrix(TransformSpace::WORLD);
+            drawcall.program = mesh.material->get_shader()->get_video_uid();
+            drawcall.state = mesh.material->get_video_state();
+            drawcall.buffer_vertex = mesh.primitive->get_video_vertex_buffer();
+            drawcall.buffer_index = mesh.primitive->get_video_index_buffer();
+            drawcall.shared_uniforms = mesh.material->get_video_uniforms();
 
-            //
-            drawcall.program = *mesh.material->get_program();
-            drawcall.uniform_buffer = *mesh.material->get_uniform_buffer();
-            drawcall.vertex_buffer = *mesh.primitive->get_vertex_buffer();
-            drawcall.primitive = mesh.primitive->get_primitive_type();
+            graphics::UniformVariable v;
+            auto uniforms = frontend->allocate_uniform_buffer(2);
+            v.set<math::Matrix4f>(transform.get_model_matrix(TransformSpace::WORLD));
+            frontend->update_uniform_buffer(uniforms, "lm_ModelMatrix", v);
+            v.set<math::Matrix3f>(transform.get_normal_matrix(TransformSpace::WORLD));
+            frontend->update_uniform_buffer(uniforms, "lm_NormalMatrix", v);
+            drawcall.uniforms = uniforms;
+
             drawcall.first = 0;
-
-            auto ib = mesh.primitive->get_index_buffer();
-            if( ib != nullptr )
-            {
-                drawcall.index_buffer = *ib;
-                drawcall.count = mesh.primitive->get_index_size();
-            }
+            if( mesh.primitive->get_video_index_buffer().is_valid() )
+                drawcall.num = mesh.primitive->get_index_size();
             else
-            {
-                drawcall.count = mesh.primitive->get_vertex_size();
-            }
+                drawcall.num = mesh.primitive->get_vertex_size();
 
-            //
-            auto distance = math::distance_square(view_pos, transform.get_position(TransformSpace::WORLD));
-            frontend->submit(graphics::RenderLayer::BACKGROUND, distance, drawcall);
+            frontend->submit(drawcall);
         });
 }
 

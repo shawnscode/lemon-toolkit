@@ -10,8 +10,42 @@
 
 #include <codebase/handle.hpp>
 #include <codebase/enumeration.hpp>
+#include <codebase/variant.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
+
+enum class FrameOperation : uint8_t
+{
+    PRE,
+    POST
+};
+
+struct RenderBackend;
+struct FrameCommand
+{
+    virtual void dispatch(RenderBackend&) = 0;
+};
+
+// specifies what kind of primitives to render.
+enum class PrimitiveType : uint8_t
+{
+    POINTS = 0,
+    LINES,
+    LINE_LOOP,
+    LINE_STRIP,
+    TRIANGLES,
+    TRIANGLE_STRIP,
+    TRIANGLE_FAN,
+};
+
+// clear options
+enum class ClearOption : uint8_t
+{
+    NONE    = 0x0,
+    COLOR   = 0x1,
+    DEPTH   = 0x2,
+    STENCIL = 0x4
+};
 
 // BufferUsage is a hint to the video implementation as to how a buffer object
 // store will be accessed, this enable video implementation to make more
@@ -113,29 +147,64 @@ protected:
     uint8_t _attributes[VertexAttribute::kVertexAttributeCount];
 };
 
-struct VertexBuffer
+using UniformVariable = Variant<
+    Handle,
+    math::Vector<1, float>,
+    math::Vector<2, float>,
+    math::Vector<3, float>,
+    math::Vector<4, float>,
+    math::Matrix<2, 2, float>,
+    math::Matrix<3, 3, float>,
+    math::Matrix<4, 4, float>>;
+
+enum class TextureFilterMode : uint8_t
 {
-    // initialize the video specific functionality for this buffer
-    virtual bool initialize(const void*, size_t, const VertexLayout&, MemoryUsage) = 0;
-    // destroy vertex buffer
-    virtual void dispose() = 0;
-    // creates a new data store boound to the buffer, any pre-existing data is deleted
-    virtual bool update_data(const void*) = 0;
-    // update a subset of a buffer object's data store, optionally discard pre-existing data
-    virtual bool update_data(const void*, size_t, size_t, bool discard = false) = 0;
+    NEAREST = 0,
+    LINEAR,
+    TRILINEAR,
+    ANISOTROPIC
 };
 
-struct IndexBuffer
+enum class TextureAddressMode : uint8_t
 {
-    // initialize the video specific functionality for this buffer
-    virtual bool initialize(const void*, size_t, IndexElementFormat, MemoryUsage) = 0;
-    // destroy index buffer
-    virtual void dispose() = 0;
-    // creates a new data store boound to the buffer, any pre-existing data is deleted
-    virtual bool update_data(const void*) = 0;
-    // update a subset of a buffer object's data store, optionally discard pre-existing data
-    virtual bool update_data(const void*, size_t, size_t, bool discard = false) = 0;
+    WRAP = 0,
+    MIRROR,
+    CLAMP,
+    BORDER
 };
+
+enum class TextureCoordinate : uint8_t
+{
+    U = 0,
+    V,
+    W
+};
+
+// Specifies the format of the texel data.
+enum class TextureFormat : uint8_t
+{
+    ALPHA = 0,
+    RGB,
+    RGBA,
+    LUMINANCE,
+    LUMINANCE_ALPHA
+};
+
+// Specifies the data type of the texel data.
+enum class TexturePixelFormat : uint8_t
+{
+    // each of the byte is interpreted as one color component
+    UBYTE = 0,
+    // each unshort value is interpreted as containing all the components
+    // for a single texel, with the color components arranged according
+    // to TextureFormat
+    USHORT565,
+    USHORT4444,
+    USHORT5551
+};
+
+// Calculate the size of texture.
+size_t size_of_texture(TextureFormat, TexturePixelFormat, uint16_t, uint16_t);
 
 // INCLUDED IMPLEMENTATIONS of VERTEX LAYOUT
 template<>
@@ -164,3 +233,5 @@ INLINE VertexLayout& VertexLayout::recursive_make(VertexLayout& layout, T1&& t1,
 }
 
 NS_LEMON_GRAPHICS_END
+
+ENABLE_BITMASK_OPERATORS(lemon::graphics::ClearOption);

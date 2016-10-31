@@ -2,11 +2,17 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <resource/primitive.hpp>
-#include <graphics/renderer.hpp>
+#include <graphics/frontend.hpp>
 
 NS_LEMON_RESOURCE_BEGIN
 
 using namespace graphics;
+
+unsigned INDEX_ELEMENT_SIZES[] =
+{
+    1,
+    2
+};
 
 float s_cube_vertices[] =
 {
@@ -69,29 +75,39 @@ Primitive::ptr Primitive::cube()
 
 Primitive::~Primitive()
 {
-    graphics::resource::free(_vertex_buffer);
-    graphics::resource::free(_index_buffer);
+    if( auto frontend = core::get_subsystem<graphics::RenderFrontend>() )
+    {
+        frontend->free_vertex_buffer(_vb_handle);
+        frontend->free_index_buffer(_ib_handle);
+    }
 }
 
 bool Primitive::update_video_object()
 {
-    if( (_vertex_buffer = graphics::resource::create<VertexBuffer>(
-        _vertices.get(), _vertex_size, _layout, _usage)) )
+    if( auto frontend = core::get_subsystem<graphics::RenderFrontend>() )
     {
-        if( _indices != nullptr )
-        {
-            if( (_index_buffer = graphics::resource::create<IndexBuffer>(
-                _indices.get(), _index_size, _index_format, _usage)) )
-            {
-                return true;
-            }
+        frontend->free_vertex_buffer(_vb_handle);
+        frontend->free_index_buffer(_ib_handle);
 
-            graphics::resource::free<VertexBuffer>(_vertex_buffer);
-            _vertex_buffer = nullptr;
+        _vb_handle = frontend->create_vertex_buffer(
+            _vertices.get(),
+            _vertex_size * _layout.get_stride(),
+            _layout,
+            _usage);
+        
+        if( _index_size > 0 )
+        {
+            _ib_handle = frontend->create_index_buffer(
+                _indices.get(),
+                _index_size * INDEX_ELEMENT_SIZES[value(_index_format)],
+                _index_format,
+                _usage);
         }
-        return true;
     }
-    return false;
+
+    return
+        _vb_handle.is_valid() &&
+        (_index_size > 0 ? _ib_handle.is_valid() : true);
 }
 
 bool Primitive::initialize(const void* data, const graphics::VertexLayout& layout, size_t size)
@@ -116,12 +132,6 @@ bool Primitive::initialize(const void* data, const graphics::VertexLayout& layou
     _index_size = 0;
     return true;
 }
-
-unsigned INDEX_ELEMENT_SIZES[] =
-{
-    1,
-    2
-};
 
 bool Primitive::initialize(
     const void* vdata,

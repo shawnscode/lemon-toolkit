@@ -67,9 +67,20 @@ NS_LEMON_CORE_END
 NS_LEMON_GRAPHICS_BEGIN
 
 const static unsigned kMaxRenderDrawCall = 1024;
-const static unsigned kMaxRenderState = 64;
+
+const static unsigned kMaxProgram = 32;
+
+const static unsigned kMaxTexturePerMaterial = 8;
 const static unsigned kMaxUniformsPerMaterial = 32;
-struct Renderer;
+
+const static unsigned kMaxUniforms = 1024;
+const static unsigned kMaxVertexBuffer = 256;
+const static unsigned kMaxIndexBuffer = 256;
+const static unsigned kMaxTexture = 64;
+const static unsigned kMaxRenderState = 32;
+
+struct RenderFrame;
+struct RenderFrontend;
 struct WindowDevice;
 
 NS_LEMON_GRAPHICS_END

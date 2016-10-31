@@ -32,12 +32,12 @@ public:
     // specifies what kind of primitives to draw
     void set_primitive_type(graphics::PrimitiveType);
     // specifies the expected usage pattern of the data source
-    void set_video_memory_hint(graphics::MemoryUsage);
+    void set_video_memory_hint(graphics::BufferUsage);
 
     // returns current primitive type
     graphics::PrimitiveType get_primitive_type() const;
     // returns current memory usage
-    graphics::MemoryUsage get_video_memory_hint() const;
+    graphics::BufferUsage get_video_memory_hint() const;
 
     // returns the size of vertices
     size_t get_vertex_size() const;
@@ -45,8 +45,8 @@ public:
     size_t get_index_size() const;
 
     // returns graphics object of vertex/index buffer
-    graphics::VertexBuffer* get_vertex_buffer() const;
-    graphics::IndexBuffer* get_index_buffer() const;
+    Handle get_video_vertex_buffer() const;
+    Handle get_video_index_buffer() const;
 
 protected:
     size_t _vertex_size = 0;
@@ -55,11 +55,11 @@ protected:
     std::unique_ptr<uint8_t[]> _vertices;
     graphics::IndexElementFormat _index_format;
     std::unique_ptr<uint8_t[]> _indices;
-    graphics::MemoryUsage _usage = graphics::MemoryUsage::STATIC;
+    graphics::BufferUsage _usage = graphics::BufferUsage::STATIC;
     graphics::PrimitiveType _type = graphics::PrimitiveType::TRIANGLES;
 
-    graphics::VertexBuffer* _vertex_buffer = nullptr;
-    graphics::IndexBuffer* _index_buffer = nullptr;
+    Handle _vb_handle;
+    Handle _ib_handle;
 };
 
 INLINE void Primitive::set_primitive_type(graphics::PrimitiveType type)
@@ -67,7 +67,7 @@ INLINE void Primitive::set_primitive_type(graphics::PrimitiveType type)
     _type = type;
 }
 
-INLINE void Primitive::set_video_memory_hint(graphics::MemoryUsage usage)
+INLINE void Primitive::set_video_memory_hint(graphics::BufferUsage usage)
 {
     _usage = usage;
 }
@@ -77,7 +77,7 @@ INLINE graphics::PrimitiveType Primitive::get_primitive_type() const
     return _type;
 }
 
-INLINE graphics::MemoryUsage Primitive::get_video_memory_hint() const
+INLINE graphics::BufferUsage Primitive::get_video_memory_hint() const
 {
     return _usage;
 }
@@ -92,14 +92,14 @@ INLINE size_t Primitive::get_index_size() const
     return _index_size;
 }
 
-INLINE graphics::VertexBuffer* Primitive::get_vertex_buffer() const
+INLINE Handle Primitive::get_video_vertex_buffer() const
 {
-    return _vertex_buffer;
+    return _vb_handle;
 }
 
-INLINE graphics::IndexBuffer* Primitive::get_index_buffer() const
+INLINE Handle Primitive::get_video_index_buffer() const
 {
-    return _index_buffer;
+    return _ib_handle;
 }
 
 NS_LEMON_RESOURCE_END

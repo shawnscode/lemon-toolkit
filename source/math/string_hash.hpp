@@ -30,6 +30,7 @@ struct StringHash
 
     bool is_empty() const { return _value == 0; }
     uint32_t get_hash() const { return _value; }
+    void clear() { _value = 0; }
 
 protected:
     uint32_t _value;

@@ -2,7 +2,7 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <graphics/window.hpp>
-#include <graphics/renderer.hpp>
+#include <graphics/frontend.hpp>
 
 #include <SDL2/SDL.h>
 
@@ -58,8 +58,8 @@ bool WindowDevice::open(int width, int height, int multisample, WindowOption opt
     }
 
     // close the existing window and OpenGL context, mark GPU objects as lost
-    auto frontend = get_subsystem<Renderer>();
-    frontend->release();
+    auto frontend = get_subsystem<RenderFrontend>();
+    frontend->dispose_video_context();
 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, multisample > 1 ? 1 : 0);
@@ -90,7 +90,7 @@ bool WindowDevice::open(int width, int height, int multisample, WindowOption opt
         return false;
     }
 
-    if( !frontend->restore(_window) )
+    if( !frontend->restore_video_context(_window) )
         return false;
 
     // set vsync
@@ -109,19 +109,19 @@ bool WindowDevice::open(int width, int height, int multisample, WindowOption opt
     // reset_render_targets();
 
     // try th clear the initial window content to black
-    if( frontend->begin_frame() )
-    {
-        frontend->clear(ClearOption::COLOR);
-        SDL_GL_SwapWindow(_window);
-        frontend->end_frame();
-    }
+    // if( frontend->begin_frame() )
+    // {
+    //     frontend->clear(ClearOption::COLOR);
+    //     SDL_GL_SwapWindow(_window);
+    //     frontend->end_frame();
+    // }
 
     return true;
 }
 
 void WindowDevice::close()
 {
-    get_subsystem<Renderer>()->release();
+    get_subsystem<RenderFrontend>()->dispose_video_context();
     SDL_ShowCursor(SDL_TRUE);
 
     if( _window != nullptr )

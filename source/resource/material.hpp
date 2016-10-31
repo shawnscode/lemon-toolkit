@@ -5,6 +5,9 @@
 
 #include <resource/shader.hpp>
 #include <resource/image.hpp>
+#include <graphics/state.hpp>
+
+#include <array>
 
 NS_LEMON_RESOURCE_BEGIN
 
@@ -28,36 +31,41 @@ public:
     // initialize material with shader
     bool initialize(Shader::ptr);
     // material will keep a reference to this image
-    bool set_uniform_texture(const char*, Image::ptr);
+    bool set_texture(const char*, Image::ptr);
+    // set the uniform variable of program
+    bool set_uniform_variable(const char*, const graphics::UniformVariable&);
+    //
+    bool set_render_state(const graphics::RenderState&);
+    // returns internal shader
+    Shader::ptr get_shader();
 
-    // returns handle of specified graphics object
-    graphics::UniformBuffer* get_uniform_buffer() const;
-    graphics::Program* get_program() const;
+    // returns 
+    Handle get_video_uniforms();
+    Handle get_video_state();
 
-protected:
-    graphics::UniformBuffer* _uniform = nullptr;
+protected:    
+    template<size_t S> using uniform_array_t = 
+        std::array<std::pair<math::StringHash, graphics::UniformVariable>, S>;
+
+    template<size_t S> using texture_array_t =
+        std::array<std::pair<math::StringHash, Image::ptr>, S>;
+
     Shader::ptr _shader;
-    std::unordered_map<math::StringHash, Image::ptr> _references;
+
+    uint8_t _uniform_size = 0;
+    uniform_array_t<graphics::kMaxUniformsPerMaterial> _uniforms;
+
+    uint8_t _texture_size = 0;
+    texture_array_t<graphics::kMaxTexturePerMaterial> _textures;
+
+    bool _uniform_dirty = false;
+    Handle _uniform_buffer;
+    Handle _render_state;
 };
 
-INLINE bool Material::set_uniform_texture(const char* name, Image::ptr image)
+INLINE Shader::ptr Material::get_shader()
 {
-    if( _uniform != nullptr )
-    {
-        _references[name] = image;
-        return _uniform->set_uniform_texture(name, *image->get_texture());
-    }
-    return false;
-}
-
-INLINE graphics::UniformBuffer* Material::get_uniform_buffer() const
-{
-    return _uniform;
-}
-
-INLINE graphics::Program* Material::get_program() const
-{
-    return _shader->get_program();
+    return _shader;
 }
 
 NS_LEMON_RESOURCE_END

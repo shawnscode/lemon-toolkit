@@ -107,7 +107,7 @@ struct EntityComponentSystem : public Subsystem
     // an iterator over a specified view with components of the entites in an HandleManager.
     struct iterator : public std::iterator<std::forward_iterator_tag, Entity*>
     {
-        iterator(EntityComponentSystem& world, Component::Mask mask, ReuseableHandleSet::iterator current)
+        iterator(EntityComponentSystem& world, Component::Mask mask, ReuseableHandleSet::iterator_t current)
         : _world(world), _mask(mask), _current(current) {}
 
         iterator operator ++ (int);
@@ -121,7 +121,7 @@ struct EntityComponentSystem : public Subsystem
     protected:
         EntityComponentSystem& _world;
         Component::Mask _mask;
-        ReuseableHandleSet::iterator _current;
+        ReuseableHandleSet::iterator_t _current;
     };
 
     struct view

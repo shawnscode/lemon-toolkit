@@ -27,18 +27,22 @@ public:
 
     // initialize shader with vertex/fragment text
     bool initialize(const char* vs, const char* fs);
-    // returns string representation of shaders
+
     const std::string& get_vertex_shader() const;
     const std::string& get_fragment_shader() const;
 
-    // returns graphics object of program
-    graphics::Program* get_program() const;
+    bool has_uniform_variable(const char* name) const;
+
+    Handle get_video_uid() const;
 
 protected:
-    graphics::Program* _program = nullptr;
+    void scan_uniforms(const std::string&);
+
+    Handle _program;
     bool _dirty = false;
     std::string _vertex;
     std::string _fragment;
+    std::vector<std::string> _uniforms;
 };
 
 INLINE const std::string& Shader::get_vertex_shader() const
@@ -51,9 +55,20 @@ INLINE const std::string& Shader::get_fragment_shader() const
     return _fragment;
 }
 
-INLINE graphics::Program* Shader::get_program() const
+INLINE Handle Shader::get_video_uid() const
 {
     return _program;
+}
+
+INLINE bool Shader::has_uniform_variable(const char* name) const
+{
+    for( size_t i = 0; i < _uniforms.size(); i++ )
+    {
+        if( _uniforms[i] == name )
+            return true;
+    }
+
+    return false;
 }
 
 NS_LEMON_RESOURCE_END

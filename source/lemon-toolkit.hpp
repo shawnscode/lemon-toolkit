@@ -14,7 +14,7 @@
 #include <math/stringify.hpp>
 
 #include <graphics/window.hpp>
-#include <graphics/renderer.hpp>
+#include <graphics/frontend.hpp>
 
 #include <resource/path.hpp>
 #include <resource/filesystem.hpp>
