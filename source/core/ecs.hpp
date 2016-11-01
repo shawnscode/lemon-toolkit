@@ -7,7 +7,8 @@
 #include <core/subsystem.hpp>
 
 #include <codebase/type_traits.hpp>
-#include <codebase/memory/indexed_pool.hpp>
+#include <codebase/memory_pool.hpp>
+#include <codebase/handle_object_set.hpp>
 
 #include <bitset>
 #include <mutex>
@@ -42,6 +43,9 @@ protected:
 struct EntityComponentSystem;
 struct Entity
 {
+    Entity(EntityComponentSystem& world, Handle handle);
+    Entity(EntityComponentSystem& world);
+
     // assign a component to object, passing through component constructor arguments
     template<typename T, typename ... Args> Component::enable_if<T>* add_component(Args&&...);
 
@@ -71,9 +75,7 @@ protected:
 protected:
     friend class EntityComponentSystem;
 
-    Entity(EntityComponentSystem& world, Handle handle);
     EntityComponentSystem& _world;
-
     Component::Mask _mask; // bitmask of components associated with each entity
     Component* _table[kEntMaxComponents]; // a sparse array which keeps all the references to component
 };
@@ -104,10 +106,15 @@ namespace details
 
 struct EntityComponentSystem : public Subsystem
 {
+    using object_set_t = DynamicHandleObjectSet<Entity, kEntPoolChunkSize>;
+
     // an iterator over a specified view with components of the entites in an HandleManager.
     struct iterator : public std::iterator<std::forward_iterator_tag, Entity*>
     {
-        iterator(EntityComponentSystem& world, Component::Mask mask, ReuseableHandleSet::iterator_t current)
+        iterator(
+            EntityComponentSystem& world,
+            Component::Mask mask,
+            object_set_t::const_iterator_t current)
         : _world(world), _mask(mask), _current(current) {}
 
         iterator operator ++ (int);
@@ -121,7 +128,7 @@ struct EntityComponentSystem : public Subsystem
     protected:
         EntityComponentSystem& _world;
         Component::Mask _mask;
-        ReuseableHandleSet::iterator_t _current;
+        object_set_t::const_iterator_t _current;
     };
 
     struct view
@@ -175,8 +182,7 @@ protected:
     template<typename T> details::ComponentResolverT<T>* resolve();
 
 protected:
-    std::mutex _mutex;
-    IndexedMemoryPoolT<Entity, kEntPoolChunkSize> _entities;
+    object_set_t _entities;
     std::vector<details::ComponentResolver*> _resolvers;
 };
 
@@ -325,7 +331,7 @@ INLINE EntityComponentSystem::iterator& EntityComponentSystem::iterator::operato
     ++_current;
     for( ; _current != _world._entities.end(); ++_current )
     {
-        if( (_world._entities.get_t(*_current)->_mask & _mask) == _mask )
+        if( (_world._entities.fetch(*_current)->_mask & _mask) == _mask )
         {
             break;
         }
@@ -359,7 +365,7 @@ INLINE EntityComponentSystem::iterator EntityComponentSystem::view::begin() cons
 {
     for( auto it = _world._entities.begin(); it != _world._entities.end(); it++ )
     {
-        if( (_world._entities.get_t(*it)->_mask & _mask) == _mask )
+        if( (_world._entities.fetch(*it)->_mask & _mask) == _mask )
             return iterator(_world, _mask, it);
     }
 
@@ -412,12 +418,12 @@ size_t EntityComponentSystem::view_traits<Args...>::count() const
 
 INLINE Entity* EntityComponentSystem::get(Handle handle)
 {
-    return static_cast<Entity*>(_entities.get(handle));
+    return static_cast<Entity*>(_entities.fetch(handle));
 }
 
 INLINE bool EntityComponentSystem::is_valid(Handle handle) const
 {
-    return _entities.is_valid(handle);
+    return _entities.is_alive(handle);
 }
 
 INLINE size_t EntityComponentSystem::size() const

@@ -1,7 +1,7 @@
 // @date 2016/05/24
 // @author Mao Jingkai(oammix@gmail.com)
 
-#include <codebase/memory/memory_pool.hpp>
+#include <codebase/memory_pool.hpp>
 #include <cstdlib>
 
 NS_LEMON_BEGIN

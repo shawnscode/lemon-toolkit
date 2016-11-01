@@ -11,7 +11,6 @@ bool TaskSystem::initialize()
         _core = std::thread::hardware_concurrency() - 1;
 
     _core = std::max(_core, (uint32_t)1);
-    _core = 1;
     _stop = false;
     for( uint32_t i = 0; i < _core; i++ )
     {
@@ -38,52 +37,42 @@ void TaskSystem::dispose()
 
 Handle TaskSystem::create_internal(const char* name, std::function<void()> closure)
 {
-    Handle handle = create_task_chunk();
-    Task* task = _tasks.get_t(handle);
+    if( auto handle = _tasks.create() )
+    {
+        auto task = _tasks.fetch(handle);
+        task->closure = closure;
+        task->jobs.store(1);
+        strncpy(task->name, name, std::min(sizeof(task->name), strlen(name)));
+        return handle;
+    }
 
-    task->closure = closure;
-    task->jobs.store(1);
-    strncpy(task->name, name, std::min(sizeof(task->name), strlen(name)));
-    return handle;
+    return Handle();
 }
 
 Handle TaskSystem::create_as_child_internal(Handle parent, const char* name, std::function<void()> closure)
 {
-    Handle handle = create_task_chunk();
-    Task* task = _tasks.get_t(handle);
-
-    task->closure = closure;
-    task->jobs.store(1);
-    strncpy(task->name, name, std::min(sizeof(task->name), strlen(name)));
-
-    Task* ptask = _tasks.get_t(parent);
-    if( ptask != nullptr )
+    if( auto handle = _tasks.create() )
     {
-        uint32_t current_jobs = ptask->jobs++;
-        if( current_jobs > 0 ) task->parent = parent;
-        else ptask->jobs --;
-    }
-    return handle;
-}
+        auto task = _tasks.fetch(handle);
+        task->closure = closure;
+        task->jobs.store(1);
+        strncpy(task->name, name, std::min(sizeof(task->name), strlen(name)));
 
-Handle TaskSystem::create_task_chunk()
-{
-    Handle handle;
-    {
-        std::unique_lock<std::mutex> L(_allocator_mutex);
-        handle = _tasks.malloc();
-        if( !handle.is_valid() )
-            return handle;
+        Task* ptask = _tasks.fetch(parent);
+        if( ptask != nullptr )
+        {
+            uint32_t current_jobs = ptask->jobs++;
+            if( current_jobs > 0 ) task->parent = parent;
+            else ptask->jobs --;
+        }
+        return handle;
     }
-
-    auto task = _tasks.get(handle);
-    ::new (task) Task();
-    return handle;
+    return Handle();
 }
 
 void TaskSystem::run(Handle handle)
 {
-    Task* task = _tasks.get_t(handle);
+    Task* task = _tasks.fetch(handle);
     ASSERT( task != nullptr && task->jobs.load() > 0, "invalid task handle to run." );
 
     {
@@ -96,7 +85,7 @@ void TaskSystem::run(Handle handle)
 
 bool TaskSystem::is_completed(Handle handle)
 {
-    Task* task = _tasks.get_t(handle);
+    Task* task = _tasks.fetch(handle);
     if( task == nullptr )
         return true;
     return task->jobs.load() == 0;
@@ -104,7 +93,7 @@ bool TaskSystem::is_completed(Handle handle)
 
 void TaskSystem::wait(Handle handle)
 {
-    Task* task = _tasks.get_t(handle);
+    Task* task = _tasks.fetch(handle);
     if( task == nullptr )
         return;
 
@@ -119,7 +108,7 @@ void TaskSystem::wait(Handle handle)
 
 void TaskSystem::finish(Handle handle)
 {
-    Task* task = _tasks.get_t(handle);
+    Task* task = _tasks.fetch(handle);
     if( task == nullptr )
         return;
 
@@ -132,11 +121,7 @@ void TaskSystem::finish(Handle handle)
         // free captured reference and recycle task
         task->closure = nullptr;
         task->parent.invalidate(); // invalidate parent handle
-
-        {
-            std::unique_lock<std::mutex> L(_allocator_mutex);
-            _tasks.free(handle);
-        }
+        _tasks.free(handle);
     }
 }
 
@@ -159,20 +144,19 @@ bool TaskSystem::execute_one(unsigned index, bool wait)
         _alive_tasks.pop();
     }
 
-    Task* task = _tasks.get_t(handle);
-    if( task == nullptr )
-        ENSURE( task != nullptr );
+    if( auto task = _tasks.fetch(handle) )
+    {
+        if( on_task_start )
+            on_task_start(index, task->name);
 
-    if( on_task_start )
-        on_task_start(index, task->name);
+        if( task->closure != nullptr )
+            task->closure();
 
-    if( task->closure != nullptr )
-        task->closure();
+        finish(handle);
 
-    finish(handle);
-
-    if( on_task_stop )
-        on_task_stop(index, task->name);
+        if( on_task_stop )
+            on_task_stop(index, task->name);
+    }
 
     return true;
 }

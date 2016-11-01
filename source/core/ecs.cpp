@@ -11,6 +11,12 @@ Entity::Entity(EntityComponentSystem& world, Handle handle)
     memset(_table, 0, sizeof(_table));
 }
 
+Entity::Entity(EntityComponentSystem& world)
+: _world(world), handle()
+{
+    memset(_table, 0, sizeof(_table));
+}
+
 bool EntityComponentSystem::initialize()
 {
     return true;
@@ -23,16 +29,14 @@ void EntityComponentSystem::dispose()
 
 Entity* EntityComponentSystem::create()
 {
-    Handle handle;
+    if( auto handle = _entities.create(*this) )
     {
-        std::unique_lock<std::mutex> L(_mutex);
-        handle = _entities.malloc();
+        auto object = _entities.fetch(handle);
+        *const_cast<Handle*>(&object->handle) = handle;
+        return object;
     }
 
-    if( !handle.is_valid() )
-        return nullptr;
-
-    return ::new (_entities.get(handle)) Entity(*this, handle);
+    return nullptr;
 }
 
 void EntityComponentSystem::free(Entity* object)
@@ -43,19 +47,17 @@ void EntityComponentSystem::free(Entity* object)
 
 void EntityComponentSystem::free(Handle handle)
 {
-    auto entity = _entities.get_t(handle);
-    if( entity == nullptr )
-        return;
-
-    for( size_t i = 0; i < _resolvers.size(); i++ )
+    if( auto object = _entities.fetch(handle) )
     {
-        if( _resolvers[i] != nullptr && entity->_mask.test(i) )
-            _resolvers[i]->free(entity->_table[i]);
-    }
-
-    {
-        std::unique_lock<std::mutex> L(_mutex);
-        _entities.free(handle);
+        Entity tmp(*object);
+        if( _entities.free(handle) )
+        {
+            for( size_t i = 0; i < _resolvers.size(); i++ )
+            {
+                if( _resolvers[i] != nullptr && tmp._mask.test(i) )
+                    _resolvers[i]->free(tmp._table[i]);
+            }
+        }
     }
 }
 
@@ -63,7 +65,7 @@ void EntityComponentSystem::free_all()
 {
     for( auto handle : _entities )
     {
-        auto entity = _entities.get_t(handle);
+        auto entity = _entities.fetch(handle);
         for( size_t i = 0; i < _resolvers.size(); i++ )
         {
             if( _resolvers[i] == nullptr || !entity->_mask.test(i) )
@@ -81,7 +83,7 @@ void EntityComponentSystem::free_all()
     }
 
     _resolvers.clear();
-    _entities.free_all();
+    _entities.clear();
 }
 
 NS_LEMON_CORE_END

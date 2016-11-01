@@ -5,7 +5,7 @@
 
 #include <core/core.hpp>
 #include <codebase/spin.hpp>
-#include <codebase/memory/indexed_pool.hpp>
+#include <codebase/handle_object_set.hpp>
 
 #include <vector>
 #include <queue>
@@ -16,24 +16,18 @@
 
 NS_LEMON_CORE_BEGIN
 
-struct Task
-{
-    Task() {}
-    Task(Task&& rhs) : jobs(rhs.jobs.load())
-    {
-        closure = std::move(rhs.closure);
-        parent = rhs.parent;
-        strncpy(name, rhs.name, strlen(rhs.name));
-    }
+//
+// Why we need a automatic task scheduler:
+// 1. Better scalability, easier to take advantage of N cores by automatic
+// load balancing;
+// 2. Less error-prone, dependencies can be expressed as simple parent-child
+// relationships between tasks;
+// 3. Easier to gain benefits from both function and data parallelism.
 
-    std::function<void()> closure = nullptr;
-    std::atomic<uint32_t> jobs;
-    Handle parent;
-    char name[64] = {0};
-};
-
-// a light-weight task scheduler with automatic load balancing,
-// the dependencies between tasks are addressed as parent-child relationships.
+/**
+ * @brief      A Light-weight task scheduler with automatic load balancing,
+ * the dependencies between tasks are addressed as parent-child relationships.
+ */
 struct TaskSystem : public Subsystem
 {
     TaskSystem(unsigned worker = 0) : _core(worker) {}
@@ -69,6 +63,22 @@ struct TaskSystem : public Subsystem
     std::thread::id get_main_thread() const { return _thread_main; }
 
 protected:
+    struct Task
+    {
+        Task() {}
+        Task(Task&& rhs) : jobs(rhs.jobs.load())
+        {
+            closure = std::move(rhs.closure);
+            parent = rhs.parent;
+            strncpy(name, rhs.name, strlen(rhs.name));
+        }
+
+        std::function<void()> closure = nullptr;
+        std::atomic<uint32_t> jobs;
+        Handle parent;
+        char name[64] = {0};
+    };
+
     // create a task
     Handle create_internal(const char*, std::function<void()>);
 
@@ -91,7 +101,6 @@ public:
 protected:
     static void thread_run(TaskSystem&, unsigned index);
 
-    Handle create_task_chunk();
     void finish(Handle);
     bool execute_one(unsigned, bool);
     unsigned get_thread_index() const;
@@ -99,8 +108,7 @@ protected:
 protected:
     unsigned _core;
 
-    std::mutex _allocator_mutex;
-    IndexedMemoryPoolT<Task, 32> _tasks;
+    DynamicHandleObjectSet<Task, 32> _tasks;
 
     std::mutex _queue_mutex;
     std::queue<Handle> _alive_tasks;
