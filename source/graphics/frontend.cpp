@@ -1,6 +1,8 @@
 // @date 2016/10/26
 // @author Mao Jingkai(oammix@gmail.com)
 
+#include <core/task.hpp>
+
 #include <graphics/frontend.hpp>
 #include <graphics/backend/backend.hpp>
 #include <graphics/backend/task.hpp>
@@ -10,13 +12,32 @@ NS_LEMON_GRAPHICS_BEGIN
 
 bool RenderFrontend::initialize()
 {
-    _submit = new RenderFrame(1024, 1024*1024);
+    _frames[0] = new RenderFrame(1024, 1024*1024);
+    _frames[1] = new RenderFrame(1024, 1024*1024);
+
+    _draw = nullptr;
+    _submit = _frames[0];
     _backend.reset(new RenderBackend());
     return true;
 }
 
 void RenderFrontend::dispose()
 {
+    if( auto task = core::get_subsystem<core::TaskSystem>() )
+        task->wait(_paint);
+
+    for( size_t i = 0; i < 2; i ++ )
+    {
+        if( _frames[i] != nullptr )
+        {
+            delete _frames[i];
+            _frames[i] = nullptr;
+        }
+    }
+
+    _submit = nullptr;
+    _draw = nullptr;
+    _backend.reset();
 }
 
 Handle RenderFrontend::create_vertex_buffer(
@@ -24,7 +45,7 @@ Handle RenderFrontend::create_vertex_buffer(
 {
     if( auto handle = _vb_handles.create() )
     {
-        auto cvb = _submit->make<CreateVertexBuffer>();
+        auto cvb = _submit->create_task<CreateVertexBuffer>();
         cvb->handle = handle;
         cvb->layout = layout;
         cvb->usage = usage;
@@ -42,7 +63,7 @@ void RenderFrontend::update_vertex_buffer(
 {
     if( _vb_handles.is_alive(handle) )
     {
-        auto uvb = _submit->make<UpdateVertexBuffer>();
+        auto uvb = _submit->create_task<UpdateVertexBuffer>();
         uvb->handle = handle;
         uvb->start = start;
         uvb->size = size;
@@ -55,7 +76,7 @@ void RenderFrontend::free_vertex_buffer(Handle handle)
 {
     if( _vb_handles.free(handle) )
     {
-        auto fvb = _submit->make<FreeVertexBuffer>();
+        auto fvb = _submit->create_task<FreeVertexBuffer>();
         fvb->handle = handle;
     }
 }
@@ -65,7 +86,7 @@ Handle RenderFrontend::create_index_buffer(
 {
     if( auto handle = _ib_handles.create() )
     {
-        auto cib = _submit->make<CreateIndexBuffer>();
+        auto cib = _submit->create_task<CreateIndexBuffer>();
         cib->handle = handle;
         cib->format = format;
         cib->usage = usage;
@@ -83,7 +104,7 @@ void RenderFrontend::update_index_buffer(
 {
     if( _ib_handles.is_alive(handle) )
     {
-        auto uvb = _submit->make<UpdateIndexBuffer>();
+        auto uvb = _submit->create_task<UpdateIndexBuffer>();
         uvb->handle = handle;
         uvb->start = start;
         uvb->size = size;
@@ -96,7 +117,7 @@ void RenderFrontend::free_index_buffer(Handle handle)
 {
     if( _ib_handles.free(handle) )
     {
-        auto fvb = _submit->make<FreeIndexBuffer>();
+        auto fvb = _submit->create_task<FreeIndexBuffer>();
         fvb->handle = handle;
     }
 }
@@ -129,7 +150,7 @@ Handle RenderFrontend::create_program(const char* vs, const char* fs)
 {
     if( auto handle = _material_handles.create() )
     {
-        auto cp = _submit->make<CreateProgram>();
+        auto cp = _submit->create_task<CreateProgram>();
         cp->handle = handle;
 
         auto vs_len = strlen(vs);
@@ -150,7 +171,7 @@ void RenderFrontend::create_program_uniform(
 {
     if( _material_handles.is_alive(handle) )
     {
-        auto cpu = _submit->make<CreateProgramUniform>();
+        auto cpu = _submit->create_task<CreateProgramUniform>();
         cpu->handle = handle;
 
         auto len = strlen(name);
@@ -164,7 +185,7 @@ void RenderFrontend::create_program_attribute(
 {
     if( _material_handles.is_alive(handle) )
     {
-        auto cpa = _submit->make<CreateProgramAttribute>();
+        auto cpa = _submit->create_task<CreateProgramAttribute>();
         cpa->handle = handle;
         cpa->attribute = va;
 
@@ -178,7 +199,7 @@ void RenderFrontend::free_program(Handle handle)
 {
     if( _material_handles.free(handle) )
     {
-        auto fp = _submit->make<FreeProgram>();
+        auto fp = _submit->create_task<FreeProgram>();
         fp->handle = handle;
     }
 }
@@ -191,7 +212,7 @@ Handle RenderFrontend::create_texture(
 {
     if( auto handle = _texture_handles.create() )
     {
-        auto cib = _submit->make<CreateTexture>();
+        auto cib = _submit->create_task<CreateTexture>();
         cib->handle = handle;
         cib->format = format;
         cib->pixel_format = pixel_format;
@@ -212,7 +233,7 @@ void RenderFrontend::update_texture_mipmap(Handle handle, bool mipmap)
 {
     if( _texture_handles.is_alive(handle) )
     {
-        auto utm = _submit->make<UpdateTextureMipmap>();
+        auto utm = _submit->create_task<UpdateTextureMipmap>();
         utm->handle = handle;
         utm->mipmap = mipmap;
     }
@@ -223,7 +244,7 @@ void RenderFrontend::update_texture_address_mode(
 {
     if( _texture_handles.is_alive(handle) )
     {
-        auto uta = _submit->make<UpdateTextureAddress>();
+        auto uta = _submit->create_task<UpdateTextureAddress>();
         uta->handle = handle;
         uta->coordinate = coordinate;
         uta->wrap = wrap;
@@ -235,7 +256,7 @@ void RenderFrontend::update_texture_filter_mode(
 {
     if( _texture_handles.is_alive(handle) )
     {
-        auto utf = _submit->make<UpdateTextureFilter>();
+        auto utf = _submit->create_task<UpdateTextureFilter>();
         utf->handle = handle;
         utf->filter = filter;
     }
@@ -245,7 +266,7 @@ void RenderFrontend::free_texture(Handle handle)
 {
     if( _texture_handles.free(handle) )
     {
-        auto ft = _submit->make<FreeTexture>();
+        auto ft = _submit->create_task<FreeTexture>();
         ft->handle = handle;
     }
 }
@@ -306,7 +327,7 @@ void RenderFrontend::dispose_video_context()
 
 bool RenderFrontend::begin_frame()
 {
-    if( !_backend->begin_frame() )
+    if( _backend->is_device_lost() )
         return false;
 
     _ub_views.clear();
@@ -317,7 +338,7 @@ bool RenderFrontend::begin_frame()
 void RenderFrontend::clear(
     ClearOption option, const math::Color& color, float depth, uint32_t stencil)
 {
-    auto cv = _submit->make<ClearView>();
+    auto cv = _submit->create_task<ClearView>();
     cv->option = option;
     cv->color = color;
     cv->depth = depth;
@@ -326,141 +347,118 @@ void RenderFrontend::clear(
 
 void RenderFrontend::submit(const RenderDrawCall& drawcall)
 {
-    _drawcalls.push_back(drawcall);
+    _submit->submit(drawcall);
 }
 
 void RenderFrontend::flush()
 {
-    for( size_t i = 0; i < _submit->_packet_tail; i++ )
-    {
-        _submit->_packets[i]->dispatch(*_backend);
-    }
+    auto task = core::get_subsystem<core::TaskSystem>();
+    task->wait(_paint);
 
-    for( size_t i = 0; i < _drawcalls.size(); i++ )
-    {
-        auto& dc = _drawcalls[i];
-        if( dc.num <= 0 )
-            continue;
-        
-        _backend->set_program(dc.program);
-        _backend->set_vertex_buffer(dc.buffer_vertex);
-        _backend->set_index_buffer(dc.buffer_index);
+    ENSURE(_draw == nullptr);
+    _draw = _submit;
+    _submit = _submit == _frames[0] ? _frames[1] : _frames[0];
 
-        if( auto state = _states.fetch(dc.state) )
-        {
-            _backend->set_scissor_test(
-                state->scissor.enable,
-                state->scissor.area);
-
-            _backend->set_front_face(
-                state->cull.winding);
-
-            _backend->set_cull_face(
-                state->cull.enable,
-                state->cull.face);
-
-            _backend->set_depth_test(
-                state->depth.enable,
-                state->depth.compare);
-
-            _backend->set_depth_write(
-                state->depth_write.enable,
-                state->depth_write.bias_slope_scaled,
-                state->depth_write.bias_constant);
-
-            _backend->set_color_blend(
-                state->blend.enable,
-                state->blend.equation,
-                state->blend.source_factor,
-                state->blend.destination_factor);
-
-            _backend->set_color_write(
-                state->color_write);
-
-            _backend->set_stencil_test(
-                state->stencil.enable,
-                state->stencil.compare,
-                state->stencil.reference,
-                state->stencil.mask);
-
-            _backend->set_stencil_write(
-                state->stencil_write.sfail,
-                state->stencil_write.dpfail,
-                state->stencil_write.dppass,
-                state->stencil_write.mask);
-        }
-
-        if( auto shared_uniforms = _ub_views.fetch(dc.shared_uniforms) )
-        {
-            uint32_t end = shared_uniforms->first + shared_uniforms->used;
-            for( uint32_t i = shared_uniforms->first; i < end; i++ )
-            {
-                _backend->update_program_uniform(dc.program,
-                    _uniform_buffer._names[i],
-                    _uniform_buffer._values[i]);
-            }
-        }
-
-        if( auto uniforms = _ub_views.fetch(dc.uniforms) )
-        {
-            uint32_t end = uniforms->first + uniforms->used;
-            for( uint32_t i = uniforms->first; i < end; i++ )
-            {
-                _backend->update_program_uniform(dc.program,
-                    _uniform_buffer._names[i],
-                    _uniform_buffer._values[i]);
-            }   
-        }
-
-        _backend->draw(PrimitiveType::TRIANGLES, dc.first, dc.num);
-    }
-
-    _submit->clear();
-    _drawcalls.clear();
+    _paint = task->create("graphics.draw", &RenderFrontend::draw, this);
+    task->run(_paint);
 }
 
 void RenderFrontend::end_frame()
 {
     flush();
-    _backend->end_frame();
 }
 
-// void RenderFrontend::end_frame()
-// {
-//     ENSURE(_insync.fetch_add(1) == 0);
+void RenderFrontend::draw()
+{
+    if( _backend->begin_frame() )
+    {
+        for( size_t i = 0; i < _draw->_packet_tail; i++ )
+        {
+            _draw->_packets[i]->dispatch(*_backend);
+        }
 
-//     while( _render != nullptr )
-//         std::this_thread::yield();
+        for( auto dc : _draw->_drawcalls )
+        {
+            if( dc.num <= 0 )
+                continue;
 
-//     _render = _submit;
-//     _submit = _frames[0] == _submit : _frames[1] : _frames[0];
+            _backend->set_program(dc.program);
+            _backend->set_vertex_buffer(dc.buffer_vertex);
+            _backend->set_index_buffer(dc.buffer_index);
 
-//     ENSURE(_insync.fetch_sub(1) == 1);
-// }
+            if( auto state = _states.fetch(dc.state) )
+            {
+                _backend->set_scissor_test(
+                    state->scissor.enable,
+                    state->scissor.area);
 
-// bool RenderFrontend::initialize()
-// {
-//     _dispose.store(false);
-//     _insync.store(0);
+                _backend->set_front_face(
+                    state->cull.winding);
 
-//     _backend_thread = std::thread(std::bind(RenderFrontend::consume, this));
-//     _frames[0] = new RenderFrame(1024, 1024*1024);
-//     _frames[1] = new RenderFrame(1024, 1024*1024);
-//     return true;
-// }
+                _backend->set_cull_face(
+                    state->cull.enable,
+                    state->cull.face);
 
-// void RenderFrontend::dispose()
-// {
-//     _insync.store(1);
-//     _dispose.store(true);
+                _backend->set_depth_test(
+                    state->depth.enable,
+                    state->depth.compare);
 
-//     _backend_thread.join();
-//     _backend_thread = nullptr;
+                _backend->set_depth_write(
+                    state->depth_write.enable,
+                    state->depth_write.bias_slope_scaled,
+                    state->depth_write.bias_constant);
 
-//     delete _frames[0];
-//     delete _frames[1];
-//     _frames[0] = _frames[1] = _submit = _render = nullptr;
-// }
+                _backend->set_color_blend(
+                    state->blend.enable,
+                    state->blend.equation,
+                    state->blend.source_factor,
+                    state->blend.destination_factor);
 
+                _backend->set_color_write(
+                    state->color_write);
+
+                _backend->set_stencil_test(
+                    state->stencil.enable,
+                    state->stencil.compare,
+                    state->stencil.reference,
+                    state->stencil.mask);
+
+                _backend->set_stencil_write(
+                    state->stencil_write.sfail,
+                    state->stencil_write.dpfail,
+                    state->stencil_write.dppass,
+                    state->stencil_write.mask);
+            }
+
+            if( auto shared_uniforms = _ub_views.fetch(dc.shared_uniforms) )
+            {
+                uint32_t end = shared_uniforms->first + shared_uniforms->used;
+                for( uint32_t i = shared_uniforms->first; i < end; i++ )
+                {
+                    _backend->update_program_uniform(dc.program,
+                        _uniform_buffer._names[i],
+                        _uniform_buffer._values[i]);
+                }
+            }
+
+            if( auto uniforms = _ub_views.fetch(dc.uniforms) )
+            {
+                uint32_t end = uniforms->first + uniforms->used;
+                for( uint32_t i = uniforms->first; i < end; i++ )
+                {
+                    _backend->update_program_uniform(dc.program,
+                        _uniform_buffer._names[i],
+                        _uniform_buffer._values[i]);
+                }
+            }
+
+            _backend->draw(PrimitiveType::TRIANGLES, dc.first, dc.num);
+        }
+    }
+
+    _backend->end_frame();
+    _draw->clear();
+    _draw = nullptr;
+}
 
 NS_LEMON_GRAPHICS_END

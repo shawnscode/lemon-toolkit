@@ -15,7 +15,6 @@
 #include <math/color.hpp>
 #include <math/string_hash.hpp>
 
-#include <mutex>
 #include <string>
 #include <atomic>
 
@@ -311,6 +310,7 @@ protected:
     friend struct WindowDevice;
     bool restore_video_context(SDL_Window*);
     void dispose_video_context();
+    void draw();
 
 protected:
     struct UniformBuffer
@@ -328,12 +328,12 @@ protected:
     };
 
 protected:
-    std::unique_ptr<RenderBackend> _backend;
+    Handle _paint;
+    RenderFrame* _frames[2];
     RenderFrame* _submit = nullptr;
+    RenderFrame* _draw = nullptr;
 
-    // tmp
-    std::vector<RenderDrawCall> _drawcalls;
-
+    std::unique_ptr<RenderBackend> _backend;
     HandleSet<kMaxProgram> _material_handles;
     HandleSet<kMaxIndexBuffer> _ib_handles;
     HandleSet<kMaxVertexBuffer> _vb_handles;

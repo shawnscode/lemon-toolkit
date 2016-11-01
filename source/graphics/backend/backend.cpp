@@ -4,6 +4,8 @@
 #include <graphics/backend/backend.hpp>
 #include <SDL2/SDL.h>
 
+#include <iostream>
+#include <thread>
 NS_LEMON_GRAPHICS_BEGIN
 
 void VertexBufferGL::create(const void* data, size_t size, const VertexLayout& layout, GLenum usage)
@@ -503,7 +505,6 @@ bool RenderBackend::initialize(SDL_Window* window)
 
     // get default render framebuffer
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &_system_frame_object);
-    reset_cached_state();
 
     // ouput informations
     LOGI("Restore OpenGL context with:");
@@ -530,12 +531,17 @@ bool RenderBackend::begin_frame()
     _active_ibo.invalidate();
     _active_vao.first.invalidate();
     _active_vao.second.invalidate();
+    _active_texunit = _bound_textype = _bound_texture = 0;
+
+    SDL_GL_MakeCurrent(_window, _context);
     return !is_device_lost();
 }
 
 void RenderBackend::end_frame()
 {
+    glFinish();
     SDL_GL_SwapWindow(_window);
+    SDL_GL_MakeCurrent(_window, nullptr);
 }
 
 void RenderBackend::create_vertex_buffer(
@@ -694,16 +700,6 @@ void RenderBackend::clear(ClearOption options, const math::Color& color, float d
     }
 
     glClear(flags);
-}
-
-void RenderBackend::reset_cached_state()
-{
-    _active_material.invalidate();
-    _active_vbo.invalidate();
-    _active_ibo.invalidate();
-
-    _bound_fbo = _system_frame_object;
-    _active_texunit = _bound_textype = _bound_texture = 0;
 }
 
 void RenderBackend::set_cull_face(bool enable, CullFace face)

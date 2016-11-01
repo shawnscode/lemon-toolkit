@@ -132,6 +132,7 @@ Handle Material::get_video_uniforms()
             auto& pair = _uniforms[i];
             frontend->update_uniform_buffer(_uniform_buffer, pair.first, pair.second);
         }
+        _uniform_dirty = false;
     }
 
     return _uniform_buffer;

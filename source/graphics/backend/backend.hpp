@@ -25,6 +25,8 @@
 #include <GL/glew.h>
 #endif
 
+#include <thread>
+
 NS_LEMON_GRAPHICS_BEGIN
 
 extern void check_device_error(const char* file, unsigned line);
@@ -107,9 +109,6 @@ struct RenderBackend
     bool initialize(SDL_Window*);
     // release OpenGL context and handle the device lost of GPU resources
     void dispose();
-
-    // reset all the graphics state to default
-    void reset_cached_state();
 
     // begin frame rendering. return true if device available and can reneder
     bool begin_frame();
@@ -206,15 +205,11 @@ protected:
     RenderState _render_state;
     math::Rect2i _viewport;
 
-    unsigned _bound_fbo;
     unsigned _active_texunit = 0;
     unsigned _bound_texture = 0;
     unsigned _bound_textype = 0;
 
-    Handle _active_material;
-    Handle _active_vbo;
-    Handle _active_ibo;
-
+    // video resources
     ProgramGL _materials[kMaxProgram];
     IndexBufferGL _ibs[kMaxIndexBuffer];
     VertexBufferGL _vbs[kMaxVertexBuffer];
@@ -222,8 +217,13 @@ protected:
 
     // vao cache
     bool _vao_support = true;
-    std::pair<Handle, Handle> _active_vao;
     vao_table_t _vao_cache;
+
+    // cached active resource handles
+    Handle _active_material;
+    Handle _active_vbo;
+    Handle _active_ibo;
+    std::pair<Handle, Handle> _active_vao;
 };
 
 NS_LEMON_GRAPHICS_END

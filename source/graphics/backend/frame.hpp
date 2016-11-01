@@ -4,6 +4,7 @@
 #pragma once
 
 #include <forwards.hpp>
+#include <graphics/drawcall.hpp>
 #include <cstdlib>
 #include <atomic>
 
@@ -34,7 +35,7 @@ struct RenderFrame
         _buffer.reset( new (std::nothrow) uint8_t[buffer_size] );
     }
 
-    template<typename T> T* make()
+    template<typename T> T* create_task()
     {
         using aligned_storage_t = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
 
@@ -62,6 +63,7 @@ struct RenderFrame
     {
         _packet_tail.store(0);
         _buffer_tail.store(0);
+        _drawcalls.clear();
     }
 
     size_t _packet_size;
@@ -72,6 +74,15 @@ struct RenderFrame
 
     std::atomic<size_t> _buffer_tail;
     std::unique_ptr<uint8_t[]> _buffer;
+
+    void submit(const RenderDrawCall& drawcall)
+    {
+        std::unique_lock<std::mutex> lock(_drawcall_mutex);
+        _drawcalls.push_back(drawcall);
+    }
+
+    std::mutex _drawcall_mutex;
+    std::vector<RenderDrawCall> _drawcalls;
 };
 
 

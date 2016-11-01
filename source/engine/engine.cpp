@@ -77,10 +77,14 @@ bool Engine::initialize()
     _last_frame_timepoint = clock::now();
     _launch_timepoint = clock::now();
 
+    _max_inactive_fps = arguments->fetch("/Engine/MaxInactiveFPS", 0).GetInt();
     _min_fps = arguments->fetch("/Engine/MinFPS", 0).GetInt();
     _max_fps = arguments->fetch("/Engine/MaxFPS", 0).GetInt();
-    _max_inactive_fps = arguments->fetch("/Engine/MaxInactiveFPS", 0).GetInt();
     _smoothing_step = arguments->fetch("/Engine/TimeSmoothingStep", 0).GetInt();
+
+    if( _max_inactive_fps == 0 )
+        _max_inactive_fps = std::max(_max_inactive_fps, _max_fps);
+
     return true;
 }
 
@@ -109,7 +113,7 @@ void Engine::run_one_frame()
 
     // perform waiting loop if maximum fps set
     auto max_fps = _max_fps;
-    if( (device->get_window_flags() & SDL_WINDOW_INPUT_FOCUS) && max_fps > 0 )
+    if( !(device->get_window_flags() & SDL_WINDOW_INPUT_FOCUS) && max_fps > 0 )
         max_fps = std::min(_max_inactive_fps, max_fps);
 
     if( max_fps > 0 )
@@ -228,7 +232,8 @@ Engine::duration Engine::get_time_since_launch() const
 
 unsigned Engine::get_fps() const
 {
-    return 1000 / (_timestep / std::chrono::milliseconds(1000));
+    auto t = _timestep / std::chrono::milliseconds(1);
+    return t == 0 ? 0 : 1000 / t;
 }
 
 NS_LEMON_END

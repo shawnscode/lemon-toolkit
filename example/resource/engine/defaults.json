@@ -2,7 +2,7 @@
     "WorkingDirectory": "../../",
     "Engine" : {
         "MinFPS" : 10,
-        "MaxFPS" : 30,
+        "MaxFPS" : 25,
         "TimeSmoothingStep" : 10
     },
     "Resource" : {
