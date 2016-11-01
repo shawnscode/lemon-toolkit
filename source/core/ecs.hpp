@@ -169,7 +169,7 @@ public:
     // recycle all entities and components
     void free_all();
     // returns true if the entity handle is current alive
-    bool is_valid(Handle) const;
+    bool is_alive(Handle) const;
     // returns the count of alive entities
     size_t size() const;
 
@@ -421,7 +421,7 @@ INLINE Entity* EntityComponentSystem::get(Handle handle)
     return static_cast<Entity*>(_entities.fetch(handle));
 }
 
-INLINE bool EntityComponentSystem::is_valid(Handle handle) const
+INLINE bool EntityComponentSystem::is_alive(Handle handle) const
 {
     return _entities.is_alive(handle);
 }

@@ -100,11 +100,11 @@ TEST_CASE_METHOD(EcsTestContext, "TestCreateEntity")
     REQUIRE( ecs->size() == 0UL );
 
     auto e2 = ecs->create()->handle;
-    REQUIRE( ecs->is_valid(e2) );
+    REQUIRE( ecs->is_alive(e2) );
     REQUIRE( ecs->size() == 1UL );
 
     auto e1 = e2;
-    REQUIRE( ecs->is_valid(e1) );
+    REQUIRE( ecs->is_alive(e1) );
 }
 
 // its complex to implementation a generic clone senario,
@@ -132,12 +132,12 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityAsBoolean")
     REQUIRE( ecs->size() == 0UL );
 
     auto e = ecs->create()->handle;
-    REQUIRE( ecs->is_valid(e) );
+    REQUIRE( ecs->is_alive(e) );
     REQUIRE( ecs->size() == 1UL );
 
     ecs->free(e);
     REQUIRE( ecs->size() == 0UL );
-    REQUIRE( !ecs->is_valid(e) );
+    REQUIRE( !ecs->is_alive(e) );
 }
 
 TEST_CASE_METHOD(EcsTestContext, "TestEntityReuse")
@@ -146,13 +146,13 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityReuse")
     auto e2 = e1->handle;
     auto index = e1->handle.get_index();
     auto version = e1->handle.get_version();
-    REQUIRE( ecs->is_valid(e1->handle) );
-    REQUIRE( ecs->is_valid(e2) );
+    REQUIRE( ecs->is_alive(e1->handle) );
+    REQUIRE( ecs->is_alive(e2) );
 
     e1->add_component<Position>();
     ecs->free(e1);
-    REQUIRE( !ecs->is_valid(e1->handle) );
-    REQUIRE( !ecs->is_valid(e2) );
+    REQUIRE( !ecs->is_alive(e1->handle) );
+    REQUIRE( !ecs->is_alive(e2) );
 
     auto e3 = ecs->create();
     REQUIRE( e3->handle.get_index() == index );
@@ -172,8 +172,8 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityAssignment")
     a.invalidate();
     REQUIRE( a != b );
 
-    REQUIRE( !ecs->is_valid(a) );
-    REQUIRE( ecs->is_valid(b) );
+    REQUIRE( !ecs->is_alive(a) );
+    REQUIRE( ecs->is_alive(b) );
 }
 
 TEST_CASE_METHOD(EcsTestContext, "TestComponentConstruction")
@@ -202,9 +202,9 @@ TEST_CASE_METHOD(EcsTestContext, "TestComponentInvalidatedWhenEntityDestroyed") 
     REQUIRE(position->y == 2);
 
     auto handle = a->handle;
-    REQUIRE(ecs->is_valid(handle));
+    REQUIRE(ecs->is_alive(handle));
     ecs->free(a);
-    REQUIRE(!ecs->is_valid(handle));
+    REQUIRE(!ecs->is_alive(handle));
 }
 
 TEST_CASE_METHOD(EcsTestContext, "TestComponentAssignmentFromCopy")
@@ -229,8 +229,8 @@ TEST_CASE_METHOD(EcsTestContext, "TestDestroyEntity")
     e->add_component<Direction>();
     f->add_component<Direction>();
 
-    REQUIRE( ecs->is_valid(e->handle) );
-    REQUIRE( ecs->is_valid(f->handle) );
+    REQUIRE( ecs->is_alive(e->handle) );
+    REQUIRE( ecs->is_alive(f->handle) );
     REQUIRE( e->get_component<Position>() != nullptr );
     REQUIRE( e->get_component<Direction>() != nullptr );
     REQUIRE( f->get_component<Position>() != nullptr );
@@ -241,8 +241,8 @@ TEST_CASE_METHOD(EcsTestContext, "TestDestroyEntity")
     auto handle = e->handle;
     ecs->free(e);
 
-    REQUIRE( !ecs->is_valid(handle) );
-    REQUIRE( ecs->is_valid(f->handle) );
+    REQUIRE( !ecs->is_alive(handle) );
+    REQUIRE( ecs->is_alive(f->handle) );
     REQUIRE( f->get_component<Position>() != nullptr );
     REQUIRE( f->get_component<Direction>() != nullptr );
     REQUIRE( f->has_components<Position>() );
@@ -253,8 +253,8 @@ TEST_CASE_METHOD(EcsTestContext, "TestEntityDestroyAll")
     auto e = ecs->create()->handle;
     auto f = ecs->create()->handle;
     ecs->free_all();
-    REQUIRE( !ecs->is_valid(e) );
-    REQUIRE( !ecs->is_valid(f) );
+    REQUIRE( !ecs->is_alive(e) );
+    REQUIRE( !ecs->is_alive(f) );
 }
 
 TEST_CASE_METHOD(EcsTestContext, "TestEntityDestroyHole") {
