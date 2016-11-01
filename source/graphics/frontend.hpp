@@ -200,7 +200,7 @@ struct RenderFrontend : public core::Subsystem
      * @param[in]  handle  The handle of program.
      * @param[in]  name    The name of unifom variable.
      */
-    void update_program_uniform(Handle handle, const char* name);
+    void create_program_uniform(Handle handle, const char* name);
 
     /**
      * @brief      Bind and attribute belongs to program.
@@ -209,7 +209,7 @@ struct RenderFrontend : public core::Subsystem
      * @param[in]  va      The vertex attribute.
      * @param[in]  name    The name of attribute.
      */
-    void update_program_attribute(
+    void create_program_attribute(
         Handle handle, VertexAttribute::Enum va, const char* name);
 
     /**

@@ -140,11 +140,12 @@ void ProgramGL::create(const char* vsraw, const char* fsraw)
     }
 
     _uniform_size = 0;
+    _texture_size = 0;
 
     for( uint8_t i = 0; i < VertexAttribute::kVertexAttributeCount; i++ )
     {
-        _attributes[i]._name.clear();
-        _attributes[i]._location = -1;
+        _attributes[i].first.clear();
+        _attributes[i].second = -1;
         // try to bind attribute with default name first.
         auto va = (VertexAttribute::Enum)i;
         bind_attribute(va, VertexAttribute::name(va));
@@ -161,85 +162,104 @@ void ProgramGL::free()
     CHECK_GL_ERROR();
 }
 
-void ProgramGL::bind_uniform(const char* name)
+GLint ProgramGL::bind_uniform(const char* name)
 {
     ASSERT(_uid != 0, "failed to get uniform location without a decent program.");
 
     auto hash = math::StringHash(name);
     for( uint8_t i = 0; i < _uniform_size; i++ )
     {
-        if( _uniforms[i]._name == hash )
-            return;
+        if( _uniforms[i].first == hash )
+            return _uniforms[i].second;
     }
 
     ASSERT( _uniform_size < kMaxUniformsPerMaterial,
         "too many uniforms(%d).", kMaxUniformsPerMaterial);
 
-    _uniforms[_uniform_size]._name = hash;
-    _uniforms[_uniform_size++]._location = glGetUniformLocation(_uid, name);
+    auto location = glGetUniformLocation(_uid, name);
+    _uniforms[_uniform_size].first = hash;
+    _uniforms[_uniform_size++].second = location;
+    return location;
 }
 
-void ProgramGL::bind_attribute(VertexAttribute::Enum va, const char* name)
+GLint ProgramGL::bind_attribute(VertexAttribute::Enum va, const char* name)
 {
     ASSERT(_uid != 0, "failed to get attribute location without a decent program.");
 
     name = name == nullptr ? VertexAttribute::name(va) : name;
     auto hash = math::StringHash(name);
-    if( _attributes[va]._name != hash )
+    if( _attributes[va].first != hash  )
     {
-        _attributes[va]._name = hash;
-        _attributes[va]._location = glGetAttribLocation(_uid, name);
+        _attributes[va].first = hash;
+        _attributes[va].second = glGetAttribLocation(_uid, name);
     }
+
+    return _attributes[va].second;
 }
 
-void ProgramGL::update_uniform(
-    math::StringHash hash, const UniformVariable& value)
+void ProgramGL::update_uniform(math::StringHash hash, const UniformVariable& value)
 {
     for( uint8_t i = 0; i < _uniform_size; i++ )
     {
-        if( _uniforms[i]._name == hash )
+        if( _uniforms[i].first == hash )
         {
             auto& uniform = _uniforms[i];
-//            if( uniform._value != value )
-//            {
-                if( value.is<math::Vector<1, float>>() )
+            if( value.is<math::Vector<1, float>>() )
+            {
+                auto v = value.get<math::Vector<1, float>>();
+                glUniform1f(uniform.second, v[0]);
+            }
+            else if( value.is<math::Vector<2, float>>() )
+            {
+                auto v = value.get<math::Vector<2, float>>();
+                glUniform2f(uniform.second, v[0], v[1]);
+            }
+            else if( value.is<math::Vector<3, float>>() )
+            {
+                auto v = value.get<math::Vector<3, float>>();
+                glUniform3f(uniform.second, v[0], v[1], v[2]);
+            }
+            else if( value.is<math::Vector<4, float>>() )
+            {
+                auto v = value.get<math::Vector<4, float>>();
+                glUniform4f(uniform.second, v[0], v[1], v[2], v[3]);
+            }
+            else if( value.is<math::Matrix<2, 2, float>>() )
+            {
+                auto v = value.get<math::Matrix<2, 2, float>>();
+                glUniformMatrix2fv(uniform.second, 1, GL_TRUE, (float*)&v);
+            }
+            else if( value.is<math::Matrix<3, 3, float>>() )
+            {
+                auto v = value.get<math::Matrix<3, 3, float>>();
+                glUniformMatrix3fv(uniform.second, 1, GL_TRUE, (float*)&v);
+            }
+            else if( value.is<math::Matrix<4, 4, float>>() )
+            {
+                auto v = value.get<math::Matrix<4, 4, float>>();
+                glUniformMatrix4fv(uniform.second, 1, GL_TRUE, (float*)&v);
+            }
+            else if( value.is<Handle>() )
+            {
+                for( uint8_t i = 0; i < _texture_size; i++ )
                 {
-                    auto v = value.get<math::Vector<1, float>>();
-                    glUniform1f(uniform._location, v[0]);
-                }
-                else if( value.is<math::Vector<2, float>>() )
-                {
-                    auto v = value.get<math::Vector<2, float>>();
-                    glUniform2f(uniform._location, v[0], v[1]);
-                }
-                else if( value.is<math::Vector<3, float>>() )
-                {
-                    auto v = value.get<math::Vector<3, float>>();
-                    glUniform3f(uniform._location, v[0], v[1], v[2]);
-                }
-                else if( value.is<math::Vector<4, float>>() )
-                {
-                    auto v = value.get<math::Vector<4, float>>();
-                    glUniform4f(uniform._location, v[0], v[1], v[2], v[3]);
-                }
-                else if( value.is<math::Matrix<2, 2, float>>() )
-                {
-                    auto v = value.get<math::Matrix<2, 2, float>>();
-                    glUniformMatrix2fv(uniform._location, 1, GL_TRUE, (float*)&v);
-                }
-                else if( value.is<math::Matrix<3, 3, float>>() )
-                {
-                    auto v = value.get<math::Matrix<3, 3, float>>();
-                    glUniformMatrix3fv(uniform._location, 1, GL_TRUE, (float*)&v);
-                }
-                else if( value.is<math::Matrix<4, 4, float>>() )
-                {
-                    auto v = value.get<math::Matrix<4, 4, float>>();
-                    glUniformMatrix4fv(uniform._location, 1, GL_TRUE, (float*)&v);
+                    if( _textures[i].first == hash )
+                    {
+                        _textures[i].second = value.get<Handle>();
+                        return;
+                    }
                 }
 
-                uniform._value = value;
-//            }
+                ASSERT(_texture_size < kMaxTexturePerMaterial,
+                    "too many textures(%d).", kMaxTexturePerMaterial);
+
+                glUniform1i(uniform.second, _texture_size);
+                _textures[_texture_size].first = hash;
+                _textures[_texture_size++].second = value.get<Handle>();
+            }
+            else
+                FATAL("invalid uniform variable variant type %d.", value.which());
+
             CHECK_GL_ERROR();
             return;
         }
@@ -630,27 +650,28 @@ void RenderBackend::free_texture(Handle handle)
 
 void RenderBackend::create_program(Handle handle, const char* vs, const char* fs)
 {
-    _mats[handle.get_index()].create(vs, fs);
+    _materials[handle.get_index()].create(vs, fs);
 }
 
 void RenderBackend::free_program(Handle handle)
 {
-    _mats[handle.get_index()].free();
+    _materials[handle.get_index()].free();
 }
 
-void RenderBackend::update_program_uniform(Handle handle, const char* name)
+void RenderBackend::create_program_uniform(Handle handle, const char* name)
 {
-    _mats[handle.get_index()].bind_uniform(name);
+    _materials[handle.get_index()].bind_uniform(name);
 }
 
 void RenderBackend::update_program_uniform(Handle handle, math::StringHash name, const UniformVariable& value)
 {
-    _mats[handle.get_index()].update_uniform(name, value);
+    set_program(handle);
+    _materials[handle.get_index()].update_uniform(name, value);
 }
 
-void RenderBackend::update_program_attribute(Handle handle, VertexAttribute::Enum va, const char* name)
+void RenderBackend::create_program_attribute(Handle handle, VertexAttribute::Enum va, const char* name)
 {
-    _mats[handle.get_index()].bind_attribute(va, name);
+    _materials[handle.get_index()].bind_attribute(va, name);
 }
 
 void RenderBackend::clear(ClearOption options, const math::Color& color, float depth, unsigned stencil)
@@ -855,7 +876,7 @@ void RenderBackend::set_program(Handle handle)
 {
     if( _active_material != handle )
     {
-        glUseProgram(_mats[handle.get_index()]._uid);
+        glUseProgram(_materials[handle.get_index()]._uid);
         CHECK_GL_ERROR();
         _active_material = handle;
     }
@@ -896,7 +917,7 @@ void RenderBackend::set_attribute_layout(Handle mat_handle, Handle vb_handle)
     if( mat_handle == _active_vao.first && vb_handle == _active_vao.second )
         return;
 
-    auto& material = _mats[mat_handle.get_index()];
+    auto& material = _materials[mat_handle.get_index()];
     auto& vb = _vbs[vb_handle.get_index()];
     ENSURE(material._uid != 0 && vb._uid != 0);
 
@@ -924,7 +945,7 @@ void RenderBackend::set_attribute_layout(Handle mat_handle, Handle vb_handle)
     for( uint8_t i = 0; i < VertexAttribute::kVertexAttributeCount; i++ )
     {
         auto va = (VertexAttribute::Enum)i;
-        auto location = material._attributes[va]._location;
+        auto location = material._attributes[va].second;
         if( location != -1 && vb._layout.has(va) )
         {
             auto attribute = vb._layout.get_attribute(va);
@@ -943,11 +964,31 @@ void RenderBackend::set_attribute_layout(Handle mat_handle, Handle vb_handle)
     _active_vao = std::make_pair(mat_handle, vb_handle);
 }
 
+void RenderBackend::set_texture_layout(Handle handle)
+{
+    auto& material = _materials[handle.get_index()];
+    for( uint8_t i = 0; i < material._texture_size; i++ )
+    {
+        glActiveTexture(GL_TEXTURE0+i);
+        if( !material._textures[i].second.is_valid() )
+        {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        else
+        {
+            auto& texture = _textures[material._textures[i].second.get_index()];
+            glBindTexture(GL_TEXTURE_2D, texture._uid);
+            texture.update_parameters();
+        }
+    }
+}
+
 void RenderBackend::draw(PrimitiveType type, uint32_t start, uint32_t num)
 {
     ASSERT( _active_vbo.is_valid(), "Vertex buffer is required to draw.");
 
     set_attribute_layout(_active_material, _active_vbo);
+    set_texture_layout(_active_material);
 
     if( _active_ibo.is_valid() )
     {

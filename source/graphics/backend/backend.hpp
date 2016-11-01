@@ -44,31 +44,25 @@ struct IndexBufferGL
 
 struct ProgramGL
 {
-    struct UniformGL
-    {
-        GLint _location;
-        math::StringHash _name;
-        UniformVariable _value;
-    };
-
-    struct AttributeGL
-    {
-        GLint _location = -1;
-        math::StringHash _name;
-    };
+    using pair_t = std::pair<math::StringHash, GLint>;
+    using tex_pair_t = std::pair<math::StringHash, Handle>;
 
     void create(const char* vs, const char* ps);
     void free();
 
-    void bind_attribute(VertexAttribute::Enum va, const char* name);
-    void bind_uniform(const char* name);
+    GLint bind_attribute(VertexAttribute::Enum va, const char* name);
+    GLint bind_uniform(const char* name);
     void update_uniform(math::StringHash, const UniformVariable&);
 
     GLuint _uid = 0;
 
     uint8_t _uniform_size = 0;
-    UniformGL _uniforms[kMaxUniformsPerMaterial];
-    AttributeGL _attributes[VertexAttribute::kVertexAttributeCount];
+    pair_t _uniforms[kMaxUniformsPerMaterial];
+
+    uint8_t _texture_size = 0;
+    tex_pair_t _textures[kMaxTexturePerMaterial];
+
+    pair_t _attributes[VertexAttribute::kVertexAttributeCount];
 };
 
 struct TextureGL
@@ -142,10 +136,10 @@ struct RenderBackend
     void free_program(Handle);
 
     // Create uniform %name associated with program.
-    void update_program_uniform(Handle, const char*);
+    void create_program_uniform(Handle, const char*);
     void update_program_uniform(Handle, math::StringHash, const UniformVariable&);
     // Create attribute %name associated with program.
-    void update_program_attribute(Handle, VertexAttribute::Enum, const char*);
+    void create_program_attribute(Handle, VertexAttribute::Enum, const char*);
 
     // set the viewport
     void set_viewport(const math::Rect2i&);
@@ -186,6 +180,7 @@ struct RenderBackend
 
 protected:
     void set_attribute_layout(Handle material, Handle vb);
+    void set_texture_layout(Handle material);
 
 protected:
     using vao_table_t = std::unordered_map<std::pair<Handle, Handle>, GLuint>;
@@ -207,7 +202,7 @@ protected:
     Handle _active_vbo;
     Handle _active_ibo;
 
-    ProgramGL _mats[kMaxProgram];
+    ProgramGL _materials[kMaxProgram];
     IndexBufferGL _ibs[kMaxIndexBuffer];
     VertexBufferGL _vbs[kMaxVertexBuffer];
     TextureGL _textures[kMaxTexture];

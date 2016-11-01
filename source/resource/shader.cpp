@@ -183,7 +183,7 @@ bool Shader::update_video_object()
             frontend->free_program(_program);
             _program = frontend->create_program(_vertex.c_str(), _fragment.c_str());
             for( auto& uniform : _uniforms )
-                frontend->update_program_uniform(_program, uniform.c_str());
+                frontend->create_program_uniform(_program, uniform.c_str());
             _dirty = false;
         }
     }

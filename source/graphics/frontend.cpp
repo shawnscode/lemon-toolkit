@@ -230,32 +230,32 @@ Handle RenderFrontend::create_program(const char* vs, const char* fs)
     return Handle();
 }
 
-struct UpdateProgramUniform : public FrameCommand
+struct CreateProgramUniform : public FrameCommand
 {
     Handle handle;
     char* name;
 
     void dispatch(RenderBackend& backend) override
     {
-        backend.update_program_uniform(handle, name);
+        backend.create_program_uniform(handle, name);
     }
 };
 
-void RenderFrontend::update_program_uniform(
+void RenderFrontend::create_program_uniform(
     Handle handle, const char* name)
 {
     if( _material_handles.is_alive(handle) )
     {
-        auto upu = _submit->make<UpdateProgramUniform>();
-        upu->handle = handle;
+        auto cpu = _submit->make<CreateProgramUniform>();
+        cpu->handle = handle;
 
         auto len = strlen(name);
-        upu->name = (char*)_submit->allocate(len+1);
-        strncpy(upu->name, name, len);
+        cpu->name = (char*)_submit->allocate(len+1);
+        strncpy(cpu->name, name, len);
     }
 }
 
-struct UpdateProgramAttribute : public FrameCommand
+struct CreateProgramAttribute : public FrameCommand
 {
     Handle handle;
     VertexAttribute::Enum attribute;
@@ -263,22 +263,22 @@ struct UpdateProgramAttribute : public FrameCommand
 
     void dispatch(RenderBackend& backend) override
     {
-        backend.update_program_attribute(handle, attribute, name);
+        backend.create_program_attribute(handle, attribute, name);
     }
 };
 
-void RenderFrontend::update_program_attribute(
+void RenderFrontend::create_program_attribute(
     Handle handle, VertexAttribute::Enum va, const char* name)
 {
     if( _material_handles.is_alive(handle) )
     {
-        auto upa = _submit->make<UpdateProgramAttribute>();
-        upa->handle = handle;
-        upa->attribute = va;
+        auto cpa = _submit->make<CreateProgramAttribute>();
+        cpa->handle = handle;
+        cpa->attribute = va;
 
         auto len = strlen(name);
-        upa->name = (char*)_submit->allocate(len+1);
-        strncpy(upa->name, name, len);
+        cpa->name = (char*)_submit->allocate(len+1);
+        strncpy(cpa->name, name, len);
     }
 }
 

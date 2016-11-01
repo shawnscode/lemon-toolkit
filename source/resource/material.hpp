@@ -32,9 +32,9 @@ public:
     bool initialize(Shader::ptr);
     // material will keep a reference to this image
     bool set_texture(const char*, Image::ptr);
-    // set the uniform variable of program
+    // set the uniform variable of material
     bool set_uniform_variable(const char*, const graphics::UniformVariable&);
-    //
+    // set the render state of material
     bool set_render_state(const graphics::RenderState&);
     // returns internal shader
     Shader::ptr get_shader();
