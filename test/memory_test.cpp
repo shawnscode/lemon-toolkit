@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <ctime>
 
-#include <codebase/memory/memory_pool.hpp>
+#include <codebase/memory_pool.hpp>
 
 USING_NS_LEMON;
 USING_NS_LEMON_CORE;

@@ -6,14 +6,28 @@ using namespace lemon::graphics;
 
 struct Example : public Application
 {
-    math::Vector3f lamp_scale = {0.35f, 0.35f, 0.35f};
-    math::Vector3f lamp_pos = {-3.0f, 3.f, -3.0f};
-    math::Vector3f lamp_color = {1.0f, 1.0f, 1.0f};
-    math::Vector3f view_pos = {0, 0, -5};
+    math::Vector3f lamp_scale = {0.15f, 0.15f, 0.15f};
+    math::Vector3f lamp_pos = {-3.0f, 3.f, 10.0f};
+    math::Vector3f lamp_color = {0.34f, 0.14f, 1.0f};
+    math::Vector3f view_pos = {0, 0, 0};
 
-    core::Entity* cube = nullptr;
     core::Entity* lamp = nullptr;
     core::Entity* camera = nullptr;
+
+    std::vector<core::Entity*> cubes;
+
+    math::Vector3f rotations[10] = {
+        { 0.2f, 1.0f, 0.3f },
+        { 0.4f, 0.3f, 0.7f },
+        { 0.3f, 0.7f, 0.2f },
+        { 0.7f, 0.6f, 0.6f },
+        { 0.1f, 1.0f, 0.3f },
+        { 0.7f, 0.6f, 0.6f },
+        { 0.4f, 0.3f, 0.7f },
+        { 0.7f, 0.6f, 0.6f },
+        { 0.3f, 0.7f, 0.2f },
+        { 0.2f, 1.0f, 0.3f },
+    };
 
     void setup() override
     {
@@ -27,23 +41,36 @@ struct Example : public Application
 
         ////
         {
+            auto state = graphics::RenderState();
+            state.depth.enable = true;
+
             auto shader = cache->fetch<res::Shader>("shader/phong.shader");
             auto material = cache->create<res::Material>("_buildin_/material/phong", shader);
-            material->get_program()->set_attribute_name(VertexAttribute::POSITION, "position");
-            material->get_program()->set_attribute_name(VertexAttribute::NORMAL, "normal");
+            material->set_render_state(state);
 
-            cube = ecs->create();
-            cube->add_component<Transform>(*cube);
-            cube->add_component<MeshRenderer>(material, res::Primitive::cube());
+            for( size_t i = 0; i < 10; i++ )
+            {
+                auto position = math::Vector3f{
+                    (float)(std::rand() % 40) / 10.f - 2.f,
+                    (float)(std::rand() % 40) / 10.f - 2.f,
+                    (float)(std::rand() % 80) / 10.f + 4.f};
+                auto scale = Vector3f { 0.5f, 0.5f, 0.5f };
+                auto rotation = math::from_euler_angles({
+                    (float)(std::rand() % 180),
+                    (float)(std::rand() % 180),
+                    (float)(std::rand() % 180)});
+
+                auto cube = ecs->create();
+                cube->add_component<Transform>(*cube, position, scale, rotation);
+                cube->add_component<MeshRenderer>(material, res::Primitive::cube());
+                cubes.push_back(cube);
+            }
         }
 
         {
-            auto shader = cache->fetch<res::Shader>("shader/color.shader");
-            auto material = cache->create<res::Material>("_buildin_/material/color", shader);
-            material->get_program()->set_attribute_name(VertexAttribute::POSITION, "position");
-
+            auto material = cache->create<res::Material>("_buildin_/material/color", res::Shader::color());
             lamp = ecs->create();
-            lamp->add_component<Transform>(*cube, lamp_pos, lamp_scale);
+            lamp->add_component<Transform>(*lamp, lamp_pos, lamp_scale);
             lamp->add_component<MeshRenderer>(material, res::Primitive::cube());
         }
 
@@ -56,38 +83,45 @@ struct Example : public Application
         }
 
         ////
+        auto shader = res::Shader::color();
         core::get_subsystem<core::EventSystem>()->subscribe<EvtRenderUpdate>(*this);
         std::cout << *cache << std::endl;
     }
 
     void receive(const EvtRenderUpdate& evt)
     {
+        auto frontend = core::get_subsystem<graphics::RenderFrontend>();
+        frontend->clear(ClearOption::COLOR, {0.25f, 0.25f, 0.25f});
+
         auto now = core::get_subsystem<Engine>()->get_time_since_launch() / std::chrono::milliseconds(1);
-        lamp_color[0] = sin((float)now/1000.f * 2.0f);
-        lamp_color[1] = sin((float)now/1000.f * 0.7f);
-        lamp_color[2] = sin((float)now/1000.f * 1.3f);
 
-        auto input = core::get_subsystem<Input>();
-        if( input->get_mouse_button_down(MouseCode::LEFT) )
+        for( size_t i = 0; i < cubes.size(); i++ )
         {
-            auto transform = cube->get_component<Transform>();
-            auto rotation = transform->get_rotation(TransformSpace::WORLD);
-            auto delta = input->get_mouse_delta();
-
-            rotation *= math::from_euler_angles({-(float)delta[1], (float)delta[0], 0});
-            transform->set_rotation(rotation, TransformSpace::WORLD);
+            auto rotation = math::from_euler_angles((float)now/1000.f*90.f*rotations[i]);
+            cubes[i]->get_component<Transform>()->set_rotation(rotation);
         }
 
         {
-            auto material = cube->get_component<MeshRenderer>()->material;
-            material->get_uniform_buffer()->set_uniform_3f("LightPos", lamp_pos);
-            material->get_uniform_buffer()->set_uniform_3f("LightColor", lamp_color);
-            material->get_uniform_buffer()->set_uniform_3f("ObjectColor", {1.0f, 1.0f, 1.0f});
+            for( auto cube : cubes )
+            {
+                auto material = cube->get_component<MeshRenderer>()->material;
+
+                graphics::UniformVariable v;
+                v.set<math::Vector3f>(lamp_pos);
+                material->set_uniform_variable("LightPos", v);
+                v.set<math::Vector3f>(lamp_color);
+                material->set_uniform_variable("LightColor", v);
+                v.set<math::Vector3f>(math::Vector3f {1.0f, 1.0f, 1.0f});
+                material->set_uniform_variable("ObjectColor", v);
+            }
         }
 
         {
+            graphics::UniformVariable v;
+            v.set<math::Vector3f>(lamp_color);
+
             auto material = lamp->get_component<MeshRenderer>()->material;
-            material->get_uniform_buffer()->set_uniform_3f("ObjectColor", lamp_color);
+            material->set_uniform_variable("ObjectColor", v);
         }
     }
 };
