@@ -6,7 +6,6 @@
 #include <forwards.hpp>
 #include <graphics/graphics.hpp>
 #include <graphics/state.hpp>
-#include <graphics/backend/opengl.hpp>
 
 #include <math/rect.hpp>
 #include <math/color.hpp>
@@ -14,9 +13,23 @@
 
 #include <unordered_map>
 
-struct SDL_Window;
+#if defined(PLATFORM_ANDROID)
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#define GL_ES_VERSION_2_0
+#elif defined(PLATFORM_IOS)
+#include <OpenGLES/ES2/gl.h>
+#include <OpenGLES/ES2/glext.h>
+#define GL_ES_VERSION_2_0
+#else
+#include <GL/glew.h>
+#endif
 
 NS_LEMON_GRAPHICS_BEGIN
+
+extern void check_device_error(const char* file, unsigned line);
+#define CHECK_GL_ERROR() \
+    check_device_error(__FILE__, __LINE__);
 
 struct VertexBufferGL
 {

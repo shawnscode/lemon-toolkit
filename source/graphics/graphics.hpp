@@ -14,18 +14,6 @@
 
 NS_LEMON_GRAPHICS_BEGIN
 
-enum class FrameOperation : uint8_t
-{
-    PRE,
-    POST
-};
-
-struct RenderBackend;
-struct FrameCommand
-{
-    virtual void dispatch(RenderBackend&) = 0;
-};
-
 // specifies what kind of primitives to render.
 enum class PrimitiveType : uint8_t
 {

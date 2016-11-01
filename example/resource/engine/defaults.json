@@ -12,7 +12,7 @@
     },
     "Graphics" : {
         "WindowSize" : [512, 512],
-        "Multisamples" : 1,
+        "Multisamples" : 2,
         "MaxPixelLights" : 2
     }
 }

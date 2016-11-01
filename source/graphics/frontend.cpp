@@ -3,7 +3,8 @@
 
 #include <graphics/frontend.hpp>
 #include <graphics/backend/backend.hpp>
-#include <graphics/details/frame.hpp>
+#include <graphics/backend/task.hpp>
+#include <graphics/backend/frame.hpp>
 
 NS_LEMON_GRAPHICS_BEGIN
 
@@ -17,20 +18,6 @@ bool RenderFrontend::initialize()
 void RenderFrontend::dispose()
 {
 }
-
-struct CreateVertexBuffer : public FrameCommand
-{
-    Handle handle;
-    void* data;
-    size_t size;
-    VertexLayout layout;
-    BufferUsage usage;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.create_vertex_buffer(handle, data, size, layout, usage);
-    }
-};
 
 Handle RenderFrontend::create_vertex_buffer(
     const void* data, size_t size, const VertexLayout& layout, BufferUsage usage)
@@ -50,19 +37,6 @@ Handle RenderFrontend::create_vertex_buffer(
     return Handle();
 }
 
-struct UpdateVertexBuffer : public FrameCommand
-{
-    Handle handle;
-    uint16_t start;
-    void* data;
-    size_t size;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.update_vertex_buffer(handle, start, data, size);
-    }
-};
-
 void RenderFrontend::update_vertex_buffer(
     Handle handle, uint16_t start, const void* data, size_t size)
 {
@@ -77,16 +51,6 @@ void RenderFrontend::update_vertex_buffer(
     }
 }
 
-struct FreeVertexBuffer : public FrameCommand
-{
-    Handle handle;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.free_vertex_buffer(handle);
-    }
-};
-
 void RenderFrontend::free_vertex_buffer(Handle handle)
 {
     if( _vb_handles.free(handle) )
@@ -95,20 +59,6 @@ void RenderFrontend::free_vertex_buffer(Handle handle)
         fvb->handle = handle;
     }
 }
-
-struct CreateIndexBuffer : public FrameCommand
-{
-    Handle handle;
-    void* data;
-    size_t size;
-    IndexElementFormat format;
-    BufferUsage usage;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.create_index_buffer(handle, data, size, format, usage);
-    }
-};
 
 Handle RenderFrontend::create_index_buffer(
     const void* data, size_t size, IndexElementFormat format, BufferUsage usage)
@@ -128,19 +78,6 @@ Handle RenderFrontend::create_index_buffer(
     return Handle();
 }
 
-struct UpdateIndexBuffer : public FrameCommand
-{
-    Handle handle;
-    uint16_t start;
-    void* data;
-    size_t size;
-
-    virtual void dispatch(RenderBackend& backend) override
-    {
-        backend.update_index_buffer(handle, start, data, size);
-    }
-};
-
 void RenderFrontend::update_index_buffer(
     Handle handle, uint16_t start, const void* data, size_t size)
 {
@@ -154,16 +91,6 @@ void RenderFrontend::update_index_buffer(
         memcpy(uvb->data, data, size);
     }
 }
-
-struct FreeIndexBuffer : public FrameCommand
-{
-    Handle handle;
-
-    virtual void dispatch(RenderBackend& backend) override
-    {
-        backend.free_index_buffer(handle);
-    }
-};
 
 void RenderFrontend::free_index_buffer(Handle handle)
 {
@@ -198,18 +125,6 @@ void RenderFrontend::free_render_state(Handle handle)
     _states.free(handle);
 }
 
-struct CreateProgram : public FrameCommand
-{
-    Handle handle;
-    char* vs;
-    char* fs;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.create_program(handle, vs, fs);
-    }
-};
-
 Handle RenderFrontend::create_program(const char* vs, const char* fs)
 {
     if( auto handle = _material_handles.create() )
@@ -230,17 +145,6 @@ Handle RenderFrontend::create_program(const char* vs, const char* fs)
     return Handle();
 }
 
-struct CreateProgramUniform : public FrameCommand
-{
-    Handle handle;
-    char* name;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.create_program_uniform(handle, name);
-    }
-};
-
 void RenderFrontend::create_program_uniform(
     Handle handle, const char* name)
 {
@@ -254,18 +158,6 @@ void RenderFrontend::create_program_uniform(
         strncpy(cpu->name, name, len);
     }
 }
-
-struct CreateProgramAttribute : public FrameCommand
-{
-    Handle handle;
-    VertexAttribute::Enum attribute;
-    char* name;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.create_program_attribute(handle, attribute, name);
-    }
-};
 
 void RenderFrontend::create_program_attribute(
     Handle handle, VertexAttribute::Enum va, const char* name)
@@ -282,16 +174,6 @@ void RenderFrontend::create_program_attribute(
     }
 }
 
-struct FreeProgram : public FrameCommand
-{
-    Handle handle;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.free_program(handle);
-    }
-};
-
 void RenderFrontend::free_program(Handle handle)
 {
     if( _material_handles.free(handle) )
@@ -300,23 +182,6 @@ void RenderFrontend::free_program(Handle handle)
         fp->handle = handle;
     }
 }
-
-struct CreateTexture : public FrameCommand
-{
-    Handle handle;
-    void* data;
-    TextureFormat format;
-    TexturePixelFormat pixel_format;
-    uint16_t width;
-    uint16_t height;
-    BufferUsage usage;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.create_texture(
-            handle, data, format, pixel_format, width, height, usage);
-    }
-};
 
 Handle RenderFrontend::create_texture(
     const void* data,
@@ -343,17 +208,6 @@ Handle RenderFrontend::create_texture(
     return Handle();
 }
 
-struct UpdateTextureMipmap : public FrameCommand
-{
-    Handle handle;
-    bool mipmap;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.update_texture_mipmap(handle, mipmap);
-    }
-};
-
 void RenderFrontend::update_texture_mipmap(Handle handle, bool mipmap)
 {
     if( _texture_handles.is_alive(handle) )
@@ -363,18 +217,6 @@ void RenderFrontend::update_texture_mipmap(Handle handle, bool mipmap)
         utm->mipmap = mipmap;
     }
 }
-
-struct UpdateTextureAddress : public FrameCommand
-{
-    Handle handle;
-    TextureCoordinate coordinate;
-    TextureAddressMode wrap;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.update_texture_address_mode(handle, coordinate, wrap);
-    }
-};
 
 void RenderFrontend::update_texture_address_mode(
     Handle handle, TextureCoordinate coordinate, TextureAddressMode wrap)
@@ -388,17 +230,6 @@ void RenderFrontend::update_texture_address_mode(
     }
 }
 
-struct UpdateTextureFilter : public FrameCommand
-{
-    Handle handle;
-    TextureFilterMode filter;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.update_texture_filter_mode(handle, filter);
-    }
-};
-
 void RenderFrontend::update_texture_filter_mode(
     Handle handle, TextureFilterMode filter)
 {
@@ -409,16 +240,6 @@ void RenderFrontend::update_texture_filter_mode(
         utf->filter = filter;
     }
 }
-
-struct FreeTexture : public FrameCommand
-{
-    Handle handle;
-
-    void dispatch(RenderBackend& backend) override
-    {
-        backend.free_texture(handle);
-    }
-};
 
 void RenderFrontend::free_texture(Handle handle)
 {
@@ -492,19 +313,6 @@ bool RenderFrontend::begin_frame()
     _uniform_buffer._position.store(0);
     return true;
 }
-
-struct ClearView : public FrameCommand
-{
-    ClearOption option;
-    math::Color color;
-    float depth;
-    uint32_t stencil;
-
-    void dispatch(RenderBackend& backend)
-    {
-        backend.clear(option, color, depth, stencil);
-    }
-};
 
 void RenderFrontend::clear(
     ClearOption option, const math::Color& color, float depth, uint32_t stencil)

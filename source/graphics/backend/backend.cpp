@@ -2,8 +2,6 @@
 // @author Mao Jingkai(oammix@gmail.com)
 
 #include <graphics/backend/backend.hpp>
-#include <graphics/backend/opengl.hpp>
-
 #include <SDL2/SDL.h>
 
 NS_LEMON_GRAPHICS_BEGIN

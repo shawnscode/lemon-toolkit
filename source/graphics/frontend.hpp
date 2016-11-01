@@ -64,6 +64,7 @@ NS_LEMON_GRAPHICS_BEGIN
 // multi-thread environments.
 // 
 
+struct RenderBackend;
 struct RenderFrame;
 struct RenderFrontend : public core::Subsystem
 {
